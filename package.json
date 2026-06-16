@@ -1,0 +1,24 @@
+{
+  "name": "stottemedlem",
+  "private": true,
+  "packageManager": "pnpm@10.33.0",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "build": "turbo run build",
+    "dev": "turbo run dev",
+    "start": "turbo run start --filter=@stottemedlem/web",
+    "test": "turbo run test",
+    "typecheck": "turbo run typecheck",
+    "lint": "biome check .",
+    "format": "biome format --write .",
+    "check": "biome check --write .",
+    "nuke": "find . -maxdepth 3 -type d \\( -name node_modules -o -name .next -o -name .turbo -o -name dist \\) -not -path '*/node_modules/*' -exec rm -rf {} + && pnpm install"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.3.0",
+    "turbo": "^2.9.14",
+    "typescript": "catalog:"
+  }
+}

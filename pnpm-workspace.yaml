@@ -1,0 +1,26 @@
+packages:
+  - "packages/*"
+  - "apps/*"
+
+# Centralize shared dependency versions here, reference them with `catalog:`
+# in each package.json. Avoids version drift across the workspace.
+catalog:
+  typescript: ^5.9.3
+  tsx: ^4.19.2
+  vitest: ^4.0.18
+  "@types/node": ^22.13.1
+  next: ^16.1.6
+  react: ^19.2.4
+  react-dom: ^19.2.4
+  "@types/react": ^19.2.14
+  "@types/react-dom": ^19.2.3
+
+# pnpm 10 blocks dependency build scripts by default. Only allow the ones we
+# trust to run postinstall builds.
+onlyBuiltDependencies:
+  - esbuild
+  - sharp
+
+# Supply-chain hardening: don't install package versions newer than this many
+# minutes (7 days). Gives the ecosystem time to catch compromised releases.
+minimumReleaseAge: 10080
