@@ -2,6 +2,11 @@
 
 A pnpm + Turborepo TypeScript monorepo.
 
+> **Product intent lives in [`specs/`](specs/INDEX.md).** What the product does,
+> the problems it solves, and its domain concepts are specified there — kept in
+> sync with code by a mandatory harness (see [`specs/process.md`](specs/process.md)
+> and `CLAUDE.md`). This README covers the engineering setup only.
+
 ## Layout
 
 ```
