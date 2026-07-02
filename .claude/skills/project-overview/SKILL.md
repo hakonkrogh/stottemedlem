@@ -23,6 +23,11 @@ lives in `specs/`, kept in sync with code by a mandatory `Stop`-hook harness.
 - Single package: `pnpm turbo run <task> --filter=@stottemedlem/<name>`.
 - Conventions: ESM everywhere; never use the `any` type; use `ast-grep` for structural search.
 
+**Vipps research gotcha:** for ground truth on Vipps MobilePay API capabilities, fetch
+the OpenAPI specs (`developer.vippsmobilepay.com/redocusaurus/<api>-swagger-id.yaml`,
+rendered at `/api/<name>/`) — marketing and help-center pages omit hard limits (e.g.
+the Donations `Schedule.interval` enum is `[MONTHLY]` only, found nowhere in prose).
+
 ## Index
 | doc | covers |
 |-----|--------|
@@ -31,3 +36,4 @@ lives in `specs/`, kept in sync with code by a mandatory `Stop`-hook harness.
 | (canonical) `specs/INDEX.md` | high-level product map / spec registry |
 | (canonical) `README.md` | monorepo layout, commands, toolchain |
 | stop-hooks.md | how the two Stop hooks compose + how to test a hook locally |
+| (canonical) `docs/research/vipps-recurring-payments.md` | verified Vipps Recurring API v3 research (yearly agreements, tiers via LEGACY pricing PATCH, 10 webhook events, local DB as system of record, NO onboarding/retention rules); Appendix A rules out Vipps Donasjoner definitively (monthly-only enum, no API amount control) — read before any payment work; not yet fed into `specs/` |
