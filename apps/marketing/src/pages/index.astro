@@ -94,6 +94,11 @@ import HeroBackdrop from "../components/HeroBackdrop.astro";
       </main>
       <footer>
         <p class="cta">Kommer snart.</p>
+        <p class="contact">
+          {/* mailto uses the IDNA/punycode domain — ø in the raw address breaks
+              some email clients; "stttemedlem" (three t's) is correct. */}
+          Spørsmål? Skriv til <a href="mailto:hei@xn--stttemedlem-hgb.no">hei@støttemedlem.no</a>
+        </p>
       </footer>
     </HeroBackdrop>
   </body>
@@ -301,5 +306,14 @@ import HeroBackdrop from "../components/HeroBackdrop.astro";
     -webkit-backdrop-filter: blur(10px);
     backdrop-filter: blur(10px);
     border: 1px solid rgb(255 255 255 / 0.18);
+  }
+  .contact {
+    margin: 1.25rem 0 0;
+    color: rgb(255 255 255 / 0.75);
+    text-shadow: 0 1px 8px rgb(0 0 0 / 0.35);
+  }
+  .contact a {
+    color: #ffd98a;
+    font-weight: 600;
   }
 </style>

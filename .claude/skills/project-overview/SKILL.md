@@ -47,6 +47,10 @@ lives in `specs/`, kept in sync with code by a mandatory `Stop`-hook harness.
   `/zones/.../workers/routes` (both perms granted; CI verified green
   end-to-end incl. domain sync, 2026-07-07). Editing a token's permissions
   keeps its value — no secret rotation needed.
+- Public contact address: `hei@støttemedlem.no` (shown on the marketing site;
+  in `mailto:` links always use the punycode form
+  `mailto:hei@xn--stttemedlem-hgb.no` — a raw ø in the href breaks some email
+  clients).
 - Gotcha: the local `wrangler login` OAuth token has no `api_tokens` scope, so
   a CI API token cannot be minted from the CLI — only via the dashboard
   (dash.cloudflare.com/profile/api-tokens).
