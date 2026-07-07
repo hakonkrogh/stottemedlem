@@ -20,7 +20,7 @@ import HeroBackdrop from "../components/HeroBackdrop.astro";
     <HeroBackdrop>
       <header>
         <p class="eyebrow">Kommer snart</p>
-        <h1>støttemedlem</h1>
+        <h1>støttemedlem.no</h1>
         <p class="tagline">Register og årskontingent for støttemedlemmer — med Vipps.</p>
         <p class="intro">
           For korps, kor, lag og foreninger som vil la folk i lokalmiljøet støtte dem — år
@@ -184,6 +184,13 @@ import HeroBackdrop from "../components/HeroBackdrop.astro";
     text-wrap: balance;
     margin: 0 0 1rem;
   }
+  /* The domain-name headline is one unbreakable word — below 40rem the
+     3.25rem floor no longer fits, so track the viewport instead. */
+  @media (max-width: 40rem) {
+    h1 {
+      font-size: clamp(1.9rem, 9vw, 3.25rem);
+    }
+  }
   .tagline {
     font-size: clamp(1.2rem, 2.2vw, 1.45rem);
     font-weight: 600;
@@ -271,6 +278,19 @@ import HeroBackdrop from "../components/HeroBackdrop.astro";
     font-size: 1.4rem;
     letter-spacing: 0.35rem;
     margin: 0.25rem 0 1.25rem;
+  }
+  @media (max-width: 40rem) {
+    /* Keep all eight stars on one line on phones. */
+    .stars {
+      font-size: 1.05rem;
+      letter-spacing: 0.2rem;
+    }
+    section {
+      padding: 1.5rem;
+    }
+    .perks {
+      padding: 2.5rem 1.5rem;
+    }
   }
   .perk-grid {
     display: grid;
