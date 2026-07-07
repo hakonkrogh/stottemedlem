@@ -35,12 +35,18 @@ lives in `specs/`, kept in sync with code by a mandatory `Stop`-hook harness.
 - Marketing auto-deploys to Cloudflare Workers on push to `main` via
   `.github/workflows/deploy-marketing.yml` (build with turbo filter, then
   `pnpm --filter @stottemedlem/marketing run deploy` — `run` is mandatory, see
-  stack-docs pnpm gotcha). Verified live:
-  https://stottemedlem-marketing.hakon-gullord-krogh.workers.dev — Repo secrets
-  `CLOUDFLARE_ACCOUNT_ID` (account `9060f19fa0a38d810a96cda89572ce47`) and
-  `CLOUDFLARE_API_TOKEN` are both set. Minimal token permission:
-  Account → Workers Scripts → Edit (account ID comes from the secret, so no
-  extra read scopes; zone perms only needed if a custom domain is attached).
+  stack-docs pnpm gotcha). Live on https://støttemedlem.no + www (Workers
+  custom domains; punycode `xn--stttemedlem-hgb.no` — derive with
+  `node -e "new URL(...)"`, never guess; zone id
+  `95aa7289a9c15a7787106b8ab2583d67`). workers.dev serving is disabled by
+  having routes. Repo secrets `CLOUDFLARE_ACCOUNT_ID` (account
+  `9060f19fa0a38d810a96cda89572ce47`) and `CLOUDFLARE_API_TOKEN` are set.
+  Token needs Account → Workers Scripts → Edit AND (because routes exist)
+  Zone → Workers Routes → Edit on the støttemedlem.no zone — without the
+  zone perm, deploy fails with `Authentication error [code: 10000]` on
+  `/zones/.../workers/routes` (both perms granted; CI verified green
+  end-to-end incl. domain sync, 2026-07-07). Editing a token's permissions
+  keeps its value — no secret rotation needed.
 - Gotcha: the local `wrangler login` OAuth token has no `api_tokens` scope, so
   a CI API token cannot be minted from the CLI — only via the dashboard
   (dash.cloudflare.com/profile/api-tokens).
