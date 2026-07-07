@@ -12,7 +12,10 @@ A pnpm + Turborepo TypeScript (ESM) monorepo. **Spec-driven:** product intent
 lives in `specs/`, kept in sync with code by a mandatory `Stop`-hook harness.
 
 ## Where things live
-- `apps/web/` — Next.js 16 App Router app (the product surface).
+- `apps/marketing/` — Astro static landing page → Cloudflare Worker (assets only).
+- `apps/backoffice/` — Astro 7 SSR on ONE Cloudflare Worker (`src/worker.ts`:
+  fetch + scheduled + queue stubs); D1/KV/Queue bindings in `wrangler.jsonc` are
+  placeholders until first deploy. See `docs/architecture/overview.md` + `stack-docs`.
 - `packages/core/` — `@stottemedlem/core`, shared domain types/logic.
 - `specs/` — the product intent layer (problems → use cases → concepts). Entry: `specs/INDEX.md`.
 - `.claude/hooks/` — Stop hooks: `spec-sync-stop.sh` (spec harness) + `close-gaps-stop.sh`.
@@ -36,4 +39,7 @@ the Donations `Schedule.interval` enum is `[MONTHLY]` only, found nowhere in pro
 | (canonical) `specs/INDEX.md` | high-level product map / spec registry |
 | (canonical) `README.md` | monorepo layout, commands, toolchain |
 | stop-hooks.md | how the two Stop hooks compose + how to test a hook locally |
+| (canonical) `docs/architecture/overview.md` | proposed architecture: 2 deployables (Astro static marketing + one Astro-SSR Worker for backoffice/API/webhooks/cron/queues), D1 as system of record, WorkOS org-gated admin, Vipps Login for members, 11-step scaffolding plan |
+| (skill) `stack-docs` | verified platform gotchas: Astro CF adapter custom worker entry, WorkOS SDK on Workers |
+| (skill) `spec-lint` | `node .claude/skills/spec-lint/check.mjs` — validates spec links + INDEX registration after any specs/ edit |
 | (canonical) `docs/research/vipps-recurring-payments.md` | verified Vipps Recurring API v3 research (yearly agreements, tiers via LEGACY pricing PATCH, 10 webhook events, local DB as system of record, NO onboarding/retention rules); Appendix A rules out Vipps Donasjoner definitively (monthly-only enum, no API amount control) — read before any payment work; not yet fed into `specs/` |
