@@ -57,7 +57,7 @@ const images = Object.entries(modules)
       </div>
     )
   }
-  <div class="scrim" aria-hidden="true"></div>
+  <div class="top-scrim" aria-hidden="true"></div>
   <div class="content">
     <slot />
   </div>
@@ -113,19 +113,23 @@ const images = Object.entries(modules)
     margin-bottom: 0.5rem;
     break-inside: avoid;
     object-fit: cover;
-    filter: brightness(0.7) saturate(0.75);
+    filter: brightness(0.65) saturate(0.8);
   }
 
   /*
-   * Heaviest where the white header text sits, lighter further down where
-   * the content is self-contained cards.
+   * Localized scrim: darkness only where the white headline sits. The rest
+   * of the collage stays bright — the cards below carry their own frosted
+   * backgrounds for contrast.
    */
-  .scrim {
+  .top-scrim {
+    align-self: start;
+    height: 32rem;
+    pointer-events: none;
     background: linear-gradient(
       to bottom,
-      rgb(24 18 10 / 0.55),
-      rgb(24 18 10 / 0.35) 32rem,
-      rgb(24 18 10 / 0.35)
+      rgb(24 18 10 / 0.75),
+      rgb(24 18 10 / 0.45) 55%,
+      transparent
     );
   }
 

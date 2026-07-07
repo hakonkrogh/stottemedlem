@@ -107,5 +107,5 @@ Sources: https://workos.com/blog/launch-week-spring-2024-day-4-cloudflare-worker
 | topic | where |
 |-------|-------|
 | Cloudflare product guidance (D1, Queues, Cron Triggers, static assets, wrangler) | global `cloudflare` / `wrangler` skills + https://developers.cloudflare.com/ |
-| Text/cards over the marketing collage — 3 researched options (localized scrims · glassmorphism cards · duotone brand tint), user choice pending 2026-07-07 | smashingmagazine.com/2023/08/designing-accessible-text-over-images-part1/ (+part2) · ishadeed.com/article/handling-text-over-image-css/ · superdesign.dev/styles/glassmorphism · web.dev/learn/css/blend-modes |
+| Text/cards over the marketing collage — DECIDED 2026-07-07: localized top scrim + frosted-glass cards (implemented in apps/marketing); duotone brand tint is the fallback if photo colors prove too busy | smashingmagazine.com/2023/08/designing-accessible-text-over-images-part1/ (+part2) · ishadeed.com/article/handling-text-over-image-css/ · superdesign.dev/styles/glassmorphism · web.dev/learn/css/blend-modes |
 | Vipps Recurring API behaviour | `docs/research/vipps-recurring-payments.md` (canonical, cited) |

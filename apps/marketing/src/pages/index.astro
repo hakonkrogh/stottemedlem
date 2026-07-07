@@ -2,6 +2,7 @@
 // Landing page. Messaging (see specs/): register over støttemedlemmer +
 // innkreving av årskontingent som kjerne, kontakt med medlemmene, Vipps som
 // betalingsleverandør med enkel inn-/utmelding.
+import "@fontsource-variable/fraunces";
 import HeroBackdrop from "../components/HeroBackdrop.astro";
 ---
 
@@ -18,14 +19,16 @@ import HeroBackdrop from "../components/HeroBackdrop.astro";
   <body>
     <HeroBackdrop>
       <header>
+        <p class="eyebrow">Kommer snart</p>
         <h1>støttemedlem</h1>
         <p class="tagline">Register og årskontingent for støttemedlemmer — med Vipps.</p>
         <p class="intro">
           For korps, kor, lag og foreninger som vil la folk i lokalmiljøet støtte dem — år
           etter år.
         </p>
+        <p class="hero-cta"><a href="#innhold">Se hvordan det virker</a></p>
       </header>
-      <main>
+      <main id="innhold">
       <section>
         <h2>Ett register over støttemedlemmene</h2>
         <p>
@@ -97,6 +100,9 @@ import HeroBackdrop from "../components/HeroBackdrop.astro";
 </html>
 
 <style>
+  html {
+    scroll-behavior: smooth;
+  }
   body {
     margin: 0;
     min-height: 100vh;
@@ -117,29 +123,80 @@ import HeroBackdrop from "../components/HeroBackdrop.astro";
   header {
     max-width: 44rem;
     margin: 0 auto;
-    padding: 5rem 1.5rem 4rem;
+    padding: 7rem 1.5rem 5.5rem;
     text-align: center;
     color: #fff;
     text-shadow: 0 1px 12px rgb(0 0 0 / 0.35);
   }
+  .eyebrow {
+    display: inline-block;
+    margin: 0 0 1.75rem;
+    padding: 0.4rem 1.1rem;
+    font-size: 0.78rem;
+    font-weight: 650;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: #ffd98a;
+    background: rgb(24 18 10 / 0.55);
+    -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgb(255 217 138 / 0.35);
+    border-radius: 999px;
+    text-shadow: none;
+  }
+  .hero-cta {
+    margin: 2.25rem 0 0;
+  }
+  .hero-cta a {
+    display: inline-block;
+    padding: 0.85rem 1.9rem;
+    background: #f2b64a;
+    color: #2a1e0d;
+    font-weight: 680;
+    text-decoration: none;
+    border-radius: 999px;
+    text-shadow: none;
+    box-shadow: 0 6px 20px rgb(0 0 0 / 0.35);
+    transition:
+      transform 0.15s ease,
+      background 0.15s ease;
+  }
+  .hero-cta a:hover {
+    background: #ffc75e;
+    transform: translateY(-2px);
+  }
+  h1,
+  h2,
+  h3 {
+    font-family: "Fraunces Variable", Georgia, serif;
+    font-variation-settings: "SOFT" 50;
+    letter-spacing: -0.01em;
+  }
   h1 {
-    font-size: 2.75rem;
-    margin: 0 0 0.5rem;
+    font-size: clamp(3.25rem, 7vw, 4.75rem);
+    font-weight: 620;
+    line-height: 1.05;
+    text-wrap: balance;
+    margin: 0 0 1rem;
   }
   .tagline {
-    font-size: 1.3rem;
+    font-size: clamp(1.2rem, 2.2vw, 1.45rem);
     font-weight: 600;
-    margin: 0 0 0.75rem;
+    text-wrap: balance;
+    max-width: 36rem;
+    margin: 0 auto 0.75rem;
   }
   .intro {
-    margin: 0;
-    color: rgb(255 255 255 / 0.85);
+    margin: 0 auto;
+    max-width: 32rem;
+    color: rgb(255 255 255 / 0.82);
   }
   main {
     display: grid;
-    gap: 1.5rem;
-    padding-top: 2rem;
-    padding-bottom: 2rem;
+    gap: 2.5rem;
+    padding-top: 3rem;
+    padding-bottom: 3rem;
+    counter-reset: card;
   }
   @media (min-width: 40rem) {
     main {
@@ -147,14 +204,46 @@ import HeroBackdrop from "../components/HeroBackdrop.astro";
     }
   }
   section {
-    background: #fff;
-    border: 1px solid #eadfcf;
-    border-radius: 0.75rem;
-    padding: 1.25rem 1.5rem;
+    /* Cards carry their own light backdrop — text goes back to dark. */
+    color: #1f1a14;
+    background: rgb(250 247 242 / 0.86);
+    -webkit-backdrop-filter: blur(14px) saturate(1.1);
+    backdrop-filter: blur(14px) saturate(1.1);
+    border: 1px solid rgb(255 255 255 / 0.45);
+    border-radius: 1rem;
+    padding: 2rem;
+    box-shadow: 0 10px 30px rgb(0 0 0 / 0.22);
+    transition:
+      transform 0.2s ease,
+      box-shadow 0.2s ease;
+  }
+  section:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 16px 40px rgb(0 0 0 / 0.28);
+  }
+  section:not(.perks) {
+    counter-increment: card;
+  }
+  section:not(.perks) h2::before {
+    content: "0" counter(card);
+    display: block;
+    font-size: 0.85rem;
+    font-weight: 550;
+    letter-spacing: 0.22em;
+    color: #b97c0a;
+    margin-bottom: 0.85rem;
+  }
+  /* No backdrop-filter → translucent tint alone is too weak; go solid. */
+  @supports not (backdrop-filter: blur(1px)) {
+    section {
+      background: #faf7f2;
+    }
   }
   h2 {
-    font-size: 1.15rem;
-    margin: 0 0 0.5rem;
+    font-size: 1.35rem;
+    font-weight: 600;
+    text-wrap: balance;
+    margin: 0 0 0.65rem;
   }
   section p {
     margin: 0;
@@ -162,10 +251,15 @@ import HeroBackdrop from "../components/HeroBackdrop.astro";
   }
   .perks {
     grid-column: 1 / -1;
-    background: #fdf3df;
-    border-color: #ecd9b0;
+    background: rgb(253 243 223 / 0.78);
+    border-color: rgb(255 240 210 / 0.45);
     text-align: center;
-    padding: 2rem 1.5rem;
+    padding: 3rem 2rem;
+  }
+  @supports not (backdrop-filter: blur(1px)) {
+    .perks {
+      background: #fdf3df;
+    }
   }
   .stars {
     color: #b97c0a;
@@ -175,7 +269,7 @@ import HeroBackdrop from "../components/HeroBackdrop.astro";
   }
   .perk-grid {
     display: grid;
-    gap: 1.25rem;
+    gap: 2rem;
     text-align: left;
   }
   @media (min-width: 40rem) {
@@ -184,7 +278,8 @@ import HeroBackdrop from "../components/HeroBackdrop.astro";
     }
   }
   h3 {
-    font-size: 1rem;
+    font-size: 1.1rem;
+    font-weight: 600;
     margin: 0 0 0.35rem;
   }
   .perks-pitch {
@@ -197,8 +292,14 @@ import HeroBackdrop from "../components/HeroBackdrop.astro";
     text-align: center;
   }
   .cta {
+    display: inline-block;
     font-weight: 600;
-    color: #f5c469;
-    text-shadow: 0 1px 8px rgb(0 0 0 / 0.4);
+    color: #ffd98a;
+    padding: 0.5rem 1.25rem;
+    border-radius: 999px;
+    background: rgb(24 18 10 / 0.55);
+    -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgb(255 255 255 / 0.18);
   }
 </style>

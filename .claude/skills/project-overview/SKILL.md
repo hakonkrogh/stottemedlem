@@ -13,6 +13,11 @@ lives in `specs/`, kept in sync with code by a mandatory `Stop`-hook harness.
 
 ## Where things live
 - `apps/marketing/` — Astro static landing page → Cloudflare Worker (assets only).
+  Visual identity (decided 2026-07-07): masonry photo-collage backdrop
+  (`src/components/HeroBackdrop.astro` + `src/assets/backdrop/`), localized top
+  scrim + frosted-glass cards, headings in Fraunces (`@fontsource-variable/fraunces`,
+  self-hosted) over system-sans body, warm cream/amber palette. Gotcha: the hero
+  wrapper sets `color:#fff` — slotted card content must re-set its own dark color.
 - `apps/backoffice/` — Astro 7 SSR on ONE Cloudflare Worker (`src/worker.ts`:
   fetch + scheduled + queue stubs); D1/KV/Queue bindings in `wrangler.jsonc` are
   placeholders until first deploy. See `docs/architecture/overview.md` + `stack-docs`.
@@ -42,4 +47,5 @@ the Donations `Schedule.interval` enum is `[MONTHLY]` only, found nowhere in pro
 | (canonical) `docs/architecture/overview.md` | proposed architecture: 2 deployables (Astro static marketing + one Astro-SSR Worker for backoffice/API/webhooks/cron/queues), D1 as system of record, WorkOS org-gated admin, Vipps Login for members, 11-step scaffolding plan |
 | (skill) `stack-docs` | verified platform gotchas: Astro CF adapter custom worker entry, WorkOS SDK on Workers |
 | (skill) `spec-lint` | `node .claude/skills/spec-lint/check.mjs` — validates spec links + INDEX registration after any specs/ edit |
+| (skill) `preview-screenshot` | headless-Chrome screenshot of any local URL → Read the PNG; the visual validation loop for UI work |
 | (canonical) `docs/research/vipps-recurring-payments.md` | verified Vipps Recurring API v3 research (yearly agreements, tiers via LEGACY pricing PATCH, 10 webhook events, local DB as system of record, NO onboarding/retention rules); Appendix A rules out Vipps Donasjoner definitively (monthly-only enum, no API amount control) — read before any payment work; not yet fed into `specs/` |
