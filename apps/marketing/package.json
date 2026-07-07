@@ -15,6 +15,7 @@
   },
   "devDependencies": {
     "@astrojs/check": "catalog:",
+    "sharp": "^0.35.2",
     "typescript": "catalog:",
     "wrangler": "catalog:"
   }

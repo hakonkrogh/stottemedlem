@@ -71,6 +71,28 @@ through untouched, so either placement is HMAC-safe. If the non-webhook API surf
 ever outgrows Astro's basic routing, mount Hono in the same `worker.ts` before
 `handle()` — additive, no architecture change.
 
+## Astro images (`astro:assets`) — verified 2026-07-07
+
+- **`sharp` is NOT bundled with astro 7** — the default image service throws at
+  build the first time an `<Image>` actually renders. Add `sharp` to the app's
+  devDependencies (done in `apps/marketing`). sharp ≥0.33 ships prebuilt binaries
+  via optional deps, so pnpm's `onlyBuiltDependencies` gate does not block it.
+- **Zero-image globs hide the failure**: `import.meta.glob` over an empty folder
+  builds fine because the image service never runs. To validate the pipeline
+  before real assets exist, generate throwaway images with sharp itself
+  (`sharp({create:{width,height,channels,background}}).jpeg().toFile(...)`),
+  build, then delete them.
+- Working example: `apps/marketing/src/components/HeroBackdrop.astro` — glob +
+  `<Image widths sizes>` emits hashed multi-width `.webp` srcsets in `dist/_astro/`.
+- Native CSS masonry (`display: masonry` / `grid-template-rows: masonry`) is still
+  unshipped in stable browsers (as of 2026-07); CSS multi-column is the working
+  masonry for decorative layouts.
+- To review a folder of images in one Read (ordering, focal points), composite a
+  labeled contact sheet with sharp: resize each to ~300px wide, stack an SVG
+  filename label under each, composite column-major onto one canvas. Filenames
+  with spaces/parens are fragile as Vite asset URLs — rename to `NN-slug.ext`;
+  the numeric prefix doubles as composition order for globbed collages.
+
 ## WorkOS on Cloudflare Workers
 
 `@workos-inc/node` supports the Workers runtime (fetch API + Web Crypto, no Node
@@ -85,4 +107,5 @@ Sources: https://workos.com/blog/launch-week-spring-2024-day-4-cloudflare-worker
 | topic | where |
 |-------|-------|
 | Cloudflare product guidance (D1, Queues, Cron Triggers, static assets, wrangler) | global `cloudflare` / `wrangler` skills + https://developers.cloudflare.com/ |
+| Text/cards over the marketing collage — 3 researched options (localized scrims · glassmorphism cards · duotone brand tint), user choice pending 2026-07-07 | smashingmagazine.com/2023/08/designing-accessible-text-over-images-part1/ (+part2) · ishadeed.com/article/handling-text-over-image-css/ · superdesign.dev/styles/glassmorphism · web.dev/learn/css/blend-modes |
 | Vipps Recurring API behaviour | `docs/research/vipps-recurring-payments.md` (canonical, cited) |
