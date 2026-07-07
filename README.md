@@ -54,6 +54,14 @@ pnpm format          # biome format --write
 Target a single package with Turborepo's `--filter`, e.g.
 `pnpm turbo run build --filter=@stottemedlem/core`.
 
+## Deployment
+
+The marketing site deploys automatically to Cloudflare Workers on every push to
+`main` (`.github/workflows/deploy-marketing.yml`; also runnable manually via
+workflow_dispatch). It needs two repo secrets: `CLOUDFLARE_ACCOUNT_ID` and
+`CLOUDFLARE_API_TOKEN` (a token with the "Edit Cloudflare Workers" permissions).
+Deploy manually with `pnpm --filter @stottemedlem/marketing deploy`.
+
 ## Adding a shared package
 
 1. Create `packages/<name>/` with a `package.json` (`@stottemedlem/<name>`,
