@@ -1,0 +1,11 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "stottemedlem-marketing",
+  "compatibility_date": "2026-06-01",
+  // Assets-only Worker: no `main`, no server code, requests are served
+  // directly from the built static files.
+  "assets": {
+    "directory": "./dist",
+    "not_found_handling": "404-page"
+  }
+}

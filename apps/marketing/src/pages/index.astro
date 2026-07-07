@@ -1,0 +1,197 @@
+---
+// Landing page. Messaging (see specs/): register over støttemedlemmer +
+// innkreving av årskontingent som kjerne, kontakt med medlemmene, Vipps som
+// betalingsleverandør med enkel inn-/utmelding.
+---
+
+<html lang="no">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>støttemedlem — register og årskontingent for støttemedlemmer</title>
+    <meta
+      name="description"
+      content="Register over støttemedlemmene dine og innkreving av årskontingent med Vipps — for korps, kor, lag og foreninger."
+    />
+  </head>
+  <body>
+    <header>
+      <h1>støttemedlem</h1>
+      <p class="tagline">Register og årskontingent for støttemedlemmer — med Vipps.</p>
+      <p class="intro">
+        For korps, kor, lag og foreninger som vil la folk i lokalmiljøet støtte dem — år etter
+        år.
+      </p>
+    </header>
+    <main>
+      <section>
+        <h2>Ett register over støttemedlemmene</h2>
+        <p>
+          Full oversikt over hvem som støtter dere: hvem som er aktive, hvem som har betalt, og
+          historikken år for år. Registeret oppdaterer seg selv når noen melder seg inn eller
+          fornyer.
+        </p>
+      </section>
+      <section>
+        <h2>Årskontingent — betalt med Vipps</h2>
+        <p>
+          Innkrevingen er ikke et valgfritt tillegg, den er kjernen: støttemedlemmene betaler en
+          årlig kontingent med Vipps, og betalingen fornyer seg som fast avtale.
+        </p>
+      </section>
+      <section>
+        <h2>Hold kontakten med støttespillerne</h2>
+        <p>
+          Takk medlemmene for støtten, send oppdateringer om det som skjer i organisasjonen, og
+          hold dem involvert. De som støtter dere, vil gjerne høre fra dere.
+        </p>
+      </section>
+      <section>
+        <h2>Enkelt inn — enkelt ut</h2>
+        <p>
+          Med Vipps som betalingsleverandør kan medlemmene enkelt melde seg ut når de ikke
+          lenger vil være med, og organisasjonen administrerer de faste betalingene uten ekstra
+          styr.
+        </p>
+      </section>
+      <section class="perks">
+        <h2>Medlemmene får noe å samle på — og vise fram</h2>
+        <p class="stars" aria-hidden="true">★ ★ ★ ★ ★ ★ ★ ★</p>
+        <div class="perk-grid">
+          <div>
+            <h3>Én stjerne for hvert år</h3>
+            <p>
+              Hvert år som støttemedlem gir en ny stjerne. Åtte års støtte er åtte stjerner —
+              lojalitet som synes, år for år.
+            </p>
+          </div>
+          <div>
+            <h3>Støttebevis med QR-kode</h3>
+            <p>
+              Medlemmet kan skrive ut et bevis på støtten sin, med stjernene og en personlig
+              QR-kode. Den som skanner koden, melder seg inn — og vervingen krediteres
+              medlemmet.
+            </p>
+          </div>
+          <div>
+            <h3>Vervetelleren</h3>
+            <p>
+              Medlemmene ser hvor mange nye støttemedlemmer de selv har vervet. Poeng for år,
+              poeng for verving — litt vennskapelig konkurranse har aldri skadet et korps.
+            </p>
+          </div>
+        </div>
+        <p class="perks-pitch">
+          Medlemmer som blir sett, blir værende — og verver flere. Det er gevinsten for
+          organisasjonen.
+        </p>
+      </section>
+    </main>
+    <footer>
+      <p class="cta">Kommer snart.</p>
+    </footer>
+  </body>
+</html>
+
+<style>
+  body {
+    margin: 0;
+    min-height: 100vh;
+    font-family:
+      system-ui,
+      -apple-system,
+      sans-serif;
+    background: #faf7f2;
+    color: #1f1a14;
+    line-height: 1.6;
+  }
+  header,
+  main,
+  footer {
+    max-width: 44rem;
+    margin: 0 auto;
+    padding: 0 1.5rem;
+  }
+  header {
+    padding-top: 4rem;
+    text-align: center;
+  }
+  h1 {
+    font-size: 2.75rem;
+    margin: 0 0 0.5rem;
+  }
+  .tagline {
+    font-size: 1.3rem;
+    font-weight: 600;
+    margin: 0 0 0.75rem;
+  }
+  .intro {
+    margin: 0 0 1rem;
+    color: #4c4338;
+  }
+  main {
+    display: grid;
+    gap: 1.5rem;
+    padding-top: 2rem;
+    padding-bottom: 2rem;
+  }
+  @media (min-width: 40rem) {
+    main {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+  section {
+    background: #fff;
+    border: 1px solid #eadfcf;
+    border-radius: 0.75rem;
+    padding: 1.25rem 1.5rem;
+  }
+  h2 {
+    font-size: 1.15rem;
+    margin: 0 0 0.5rem;
+  }
+  section p {
+    margin: 0;
+    color: #4c4338;
+  }
+  .perks {
+    grid-column: 1 / -1;
+    background: #fdf3df;
+    border-color: #ecd9b0;
+    text-align: center;
+    padding: 2rem 1.5rem;
+  }
+  .stars {
+    color: #b97c0a;
+    font-size: 1.4rem;
+    letter-spacing: 0.35rem;
+    margin: 0.25rem 0 1.25rem;
+  }
+  .perk-grid {
+    display: grid;
+    gap: 1.25rem;
+    text-align: left;
+  }
+  @media (min-width: 40rem) {
+    .perk-grid {
+      grid-template-columns: 1fr 1fr 1fr;
+    }
+  }
+  h3 {
+    font-size: 1rem;
+    margin: 0 0 0.35rem;
+  }
+  .perks-pitch {
+    margin-top: 1.5rem;
+    font-weight: 600;
+    color: #1f1a14;
+  }
+  footer {
+    padding-bottom: 3rem;
+    text-align: center;
+  }
+  .cta {
+    font-weight: 600;
+    color: #8a5a00;
+  }
+</style>

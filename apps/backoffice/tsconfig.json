@@ -1,0 +1,14 @@
+{
+  "extends": ["../../tsconfig.base.json", "astro/tsconfigs/strict"],
+  "compilerOptions": {
+    "noEmit": true,
+    "declaration": false,
+    "declarationMap": false,
+    "sourceMap": false
+  },
+  // src/worker.ts and the wrangler-generated worker-configuration.d.ts use the
+  // Workers runtime globals, which conflict with the DOM lib Astro needs —
+  // they are type-checked separately via tsconfig.worker.json.
+  "include": [".astro/types.d.ts", "src/**/*"],
+  "exclude": ["dist", "src/worker.ts", "worker-configuration.d.ts"]
+}

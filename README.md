@@ -12,7 +12,9 @@ A pnpm + Turborepo TypeScript monorepo.
 ```
 .
 ├─ apps/
-│  └─ web/            # Next.js 16 app (App Router) — the primary web app
+│  ├─ backoffice/     # Astro SSR on one Cloudflare Worker: admin UI + API +
+│  │                  #   Vipps webhooks + cron + queue consumer
+│  └─ marketing/      # Astro static landing page → Cloudflare Worker (assets only)
 ├─ packages/
 │  └─ core/           # @stottemedlem/core — shared domain types & logic
 ├─ pnpm-workspace.yaml # workspace globs + shared dependency catalog
@@ -27,7 +29,7 @@ A pnpm + Turborepo TypeScript monorepo.
 - **Shared versions:** declared once in `pnpm-workspace.yaml` under `catalog:`,
   referenced from each `package.json` with `"catalog:"`.
 - **TypeScript:** ESM everywhere. Packages compile with `tsc` to `dist/`
-  (`module: nodenext`); the app uses `moduleResolution: bundler`.
+  (`module: nodenext`); the apps use `moduleResolution: bundler`.
 - **Builds:** orchestrated by Turborepo. `^build` ensures dependencies build first.
 - **Lint/format:** Biome.
 - **Supply chain:** `minimumReleaseAge` (7-day cooldown) + `onlyBuiltDependencies`
@@ -37,7 +39,11 @@ A pnpm + Turborepo TypeScript monorepo.
 
 ```bash
 pnpm install         # install everything
-pnpm dev             # run the app (builds deps first)
+pnpm dev             # run the stack: marketing :4321, backoffice :4322 (real
+                     #   workerd w/ local D1/KV/Queue); core in watch
+                     # NOTE: Astro 7 dev servers are persistent daemons — if a
+                     #   port is "already running", stop it with
+                     #   `pnpm --filter <app> exec astro dev stop`, not kill
 pnpm build           # build all packages + the app
 pnpm test            # run tests (vitest)
 pnpm typecheck       # type-check all packages
