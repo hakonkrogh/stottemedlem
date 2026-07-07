@@ -2,6 +2,12 @@
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "stottemedlem-marketing",
   "compatibility_date": "2026-06-01",
+  // Custom domains (støttemedlem.no in punycode). Wrangler manages the DNS
+  // records + certs on deploy; the CI token needs zone-level permission for this.
+  "routes": [
+    { "pattern": "xn--stttemedlem-hgb.no", "custom_domain": true },
+    { "pattern": "www.xn--stttemedlem-hgb.no", "custom_domain": true }
+  ],
   // Assets-only Worker: no `main`, no server code, requests are served
   // directly from the built static files.
   "assets": {
