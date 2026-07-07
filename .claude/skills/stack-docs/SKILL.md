@@ -63,6 +63,10 @@ tsconfig.worker.json`. Don't add `@cloudflare/workers-types` — generated types
   the next `astro dev` refuses with "Another astro dev server is already running".
   Stop with `pnpm --filter <app> exec astro dev stop` (or start with
   `astro dev --force`). Applies to smoke tests: always `astro dev stop` after.
+- **Astro's compiler collapses the newline between text and an inline element** in
+  `.astro` templates: `Skriv til\n<a>…</a>` renders as `Skriv til<a>` (no space).
+  Keep the text and the inline element on one line with an explicit space, and
+  verify in `dist/` output (bit the marketing footer contact link, 2026-07-07).
 - Biome lints `.astro` frontmatter as plain TS and can't see template usage → false
   "unused variable" on frontmatter vars only used in the template. Inline the
   expression in the template or suppress; do NOT auto-apply Biome's `_` rename (it
