@@ -53,6 +53,10 @@ tsconfig.worker.json`. Don't add `@cloudflare/workers-types` — generated types
 
 - `workerd` must be in `onlyBuiltDependencies` (pnpm-workspace.yaml) — its postinstall
   downloads the runtime binary; pnpm 10 blocks it otherwise and dev silently breaks.
+- **`pnpm --filter <pkg> deploy` does NOT run the package's `deploy` script** — it
+  invokes pnpm's built-in `deploy` command and fails with
+  `ERR_PNPM_INVALID_DEPLOY_TARGET`. Always `pnpm --filter <pkg> run deploy`
+  (bit the first marketing CI run, 2026-07-07).
 - `minimumReleaseAge` (7 days) silently resolves ranges to older releases — e.g.
   `^7.0.0` → 7.0.3 when 7.0.6 is 1 day old. Expect lockfile versions to lag npm.
 - **Astro 7 dev servers are persistent daemons.** `pkill` does not deregister them —

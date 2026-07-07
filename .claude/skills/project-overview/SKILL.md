@@ -34,7 +34,9 @@ lives in `specs/`, kept in sync with code by a mandatory `Stop`-hook harness.
 ## Deployment (as of 2026-07-07)
 - Marketing auto-deploys to Cloudflare Workers on push to `main` via
   `.github/workflows/deploy-marketing.yml` (build with turbo filter, then
-  `pnpm --filter @stottemedlem/marketing deploy`). Repo secrets
+  `pnpm --filter @stottemedlem/marketing run deploy` — `run` is mandatory, see
+  stack-docs pnpm gotcha). Verified live:
+  https://stottemedlem-marketing.hakon-gullord-krogh.workers.dev — Repo secrets
   `CLOUDFLARE_ACCOUNT_ID` (account `9060f19fa0a38d810a96cda89572ce47`) and
   `CLOUDFLARE_API_TOKEN` are both set. Minimal token permission:
   Account → Workers Scripts → Edit (account ID comes from the secret, so no
