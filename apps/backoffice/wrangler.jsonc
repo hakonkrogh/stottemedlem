@@ -1,0 +1,99 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "stottemedlem-backoffice",
+  "compatibility_date": "2026-06-01",
+  "compatibility_flags": ["nodejs_compat"],
+  // Custom worker entry: re-exports Astro's fetch handler and adds the
+  // scheduled (cron) and queue (webhook consumer) handlers.
+  "main": "./src/worker.ts",
+  "assets": {
+    "binding": "ASSETS",
+    "directory": "./dist"
+  },
+  "observability": {
+    "enabled": true
+  },
+  // ── Bindings ──────────────────────────────────────────────────────────
+  // The ids below are placeholders: create the real resources before the
+  // first deploy (`wrangler d1 create`, `wrangler kv namespace create`,
+  // `wrangler queues create`) and paste their ids here. Local dev does not
+  // need real ids — `astro dev` runs against local Miniflare resources.
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "stottemedlem",
+      "database_id": "00000000-0000-0000-0000-000000000000"
+    }
+  ],
+  "kv_namespaces": [
+    {
+      "binding": "VIPPS_TOKENS",
+      "id": "0000000000000000000000000000000000"
+    }
+  ],
+  "queues": {
+    "producers": [
+      {
+        "binding": "VIPPS_EVENTS",
+        "queue": "vipps-events"
+      }
+    ],
+    "consumers": [
+      {
+        "queue": "vipps-events",
+        "max_batch_size": 10,
+        "max_retries": 5
+      }
+    ]
+  },
+  // Cron Triggers — handled in src/worker.ts `scheduled` (switch on
+  // controller.cron): 04:00 renewal-charge job, 02:00 nightly reconciliation.
+  "triggers": {
+    "crons": ["0 4 * * *", "0 2 * * *"]
+  },
+  // ── Environments ──────────────────────────────────────────────────────
+  // Top-level config is production. `staging` mirrors it against the Vipps
+  // test environment; bindings are non-inheritable so they repeat here.
+  "env": {
+    "staging": {
+      "assets": {
+        "binding": "ASSETS",
+        "directory": "./dist"
+      },
+      "observability": {
+        "enabled": true
+      },
+      "d1_databases": [
+        {
+          "binding": "DB",
+          "database_name": "stottemedlem-staging",
+          "database_id": "00000000-0000-0000-0000-000000000000"
+        }
+      ],
+      "kv_namespaces": [
+        {
+          "binding": "VIPPS_TOKENS",
+          "id": "0000000000000000000000000000000000"
+        }
+      ],
+      "queues": {
+        "producers": [
+          {
+            "binding": "VIPPS_EVENTS",
+            "queue": "vipps-events-staging"
+          }
+        ],
+        "consumers": [
+          {
+            "queue": "vipps-events-staging",
+            "max_batch_size": 10,
+            "max_retries": 5
+          }
+        ]
+      },
+      "triggers": {
+        "crons": ["0 4 * * *", "0 2 * * *"]
+      }
+    }
+  }
+}

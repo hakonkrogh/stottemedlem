@@ -1,0 +1,25 @@
+{
+  "name": "@stottemedlem/backoffice",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "astro dev --port 4322",
+    "build": "astro build",
+    "preview": "astro preview",
+    "deploy": "wrangler deploy",
+    "types": "wrangler types",
+    "typecheck": "wrangler types && astro check && tsc -p tsconfig.worker.json"
+  },
+  "dependencies": {
+    "@astrojs/cloudflare": "catalog:",
+    "@stottemedlem/core": "workspace:*",
+    "astro": "catalog:"
+  },
+  "devDependencies": {
+    "@astrojs/check": "catalog:",
+    "@types/node": "catalog:",
+    "typescript": "catalog:",
+    "wrangler": "catalog:"
+  }
+}

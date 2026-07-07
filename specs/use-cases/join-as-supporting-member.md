@@ -46,3 +46,6 @@ From the supporter's point of view:
 - [Concept: Supporting member](../concepts/supporting-member.md)
 - [Concept: Membership](../concepts/membership.md)
 - [Concept: Annual fee](../concepts/annual-fee.md)
+- [Use case: Earn stars and recruit new members](earn-stars-and-recruit.md) — a
+  join may arrive via a member's referral QR code; completing it credits that
+  member's recruit count.

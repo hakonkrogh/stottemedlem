@@ -41,7 +41,8 @@ From the organization's point of view:
   preserve "status follows payment"); any exception path is a separate, explicit
   use case if needed later.
 - Bulk import/export and external CRM sync.
-- Messaging/emailing members in bulk.
+- Messaging/emailing members in bulk — that is its own use case:
+  [Keep supporting members in the loop](keep-supporters-in-the-loop.md).
 
 ## Related
 - [Concept: Membership](../concepts/membership.md)

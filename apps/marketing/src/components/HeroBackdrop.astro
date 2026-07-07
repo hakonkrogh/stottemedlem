@@ -1,0 +1,140 @@
+---
+import type { ImageMetadata } from "astro";
+import { Image } from "astro:assets";
+
+// Hero with a masonry collage of activity photos as backdrop. Every image in
+// src/assets/backdrop/ is included automatically (see the README there).
+// Images are dimmed and covered by a dark scrim so the slotted text stays
+// readable in white. Renders a plain dark hero while the folder is empty.
+
+// filename → CSS object-position for images whose subject sits off-center,
+// so any future crop (object-fit: cover) keeps the subject in frame.
+// Unlisted images crop fine from the center.
+const focalPoints: Record<string, string> = {
+  "01-marching-band-parade.jpeg": "50% 65%",
+  "03-swimming-kids.jpeg": "50% 40%",
+  "04-climbing-wall-kid.jpeg": "70% 40%",
+  "06-kayaking.jpeg": "60% 50%",
+  "12-kid-throwing.jpeg": "45% 35%",
+  "13-soccer-boys.jpeg": "50% 60%",
+  "16-track-lineup.jpeg": "50% 45%",
+  "17-kid-golfing.jpeg": "40% 50%",
+  "18-climbing-wall-orange.jpeg": "35% 30%",
+  "19-team-huddle.jpeg": "50% 60%",
+  "20-bike-skatepark.jpeg": "50% 35%",
+  "21-street-band.jpeg": "35% 50%",
+};
+
+const modules = import.meta.glob<{ default: ImageMetadata }>(
+  "../assets/backdrop/*.{jpg,jpeg,png,webp,avif}",
+  { eager: true },
+);
+
+const images = Object.entries(modules)
+  .sort(([a], [b]) => a.localeCompare(b))
+  .map(([path, mod]) => {
+    const file = path.split("/").pop() ?? path;
+    return { file, meta: mod.default, focus: focalPoints[file] };
+  });
+---
+
+<div class="hero">
+  {
+    images.length > 0 && (
+      <div class="collage" aria-hidden="true">
+        {images.map(({ meta, focus }) => (
+          <Image
+            src={meta}
+            alt=""
+            widths={[320, 640]}
+            quality={60}
+            sizes="(min-width: 90rem) 20vw, (min-width: 64rem) 25vw, (min-width: 40rem) 33vw, 50vw"
+            loading="eager"
+            decoding="async"
+            style={focus ? `object-position: ${focus}` : undefined}
+          />
+        ))}
+      </div>
+    )
+  }
+  <div class="top-scrim" aria-hidden="true"></div>
+  <div class="content">
+    <slot />
+  </div>
+</div>
+
+<style>
+  /*
+   * Grid-stacked layers: collage, scrim, and content all share the same grid
+   * cell, so the hero grows to whichever is taller. The collage stays in
+   * normal flow at its natural height — no image is ever cropped; its bottom
+   * edge is the masonry's own jagged edge. If the slotted content is taller
+   * than the collage, it continues over the plain dark background.
+   */
+  .hero {
+    display: grid;
+    /* Also the backdrop while the image folder is empty. */
+    background: #1a140c;
+    color: #fff;
+  }
+  .hero > * {
+    grid-area: 1 / 1;
+  }
+
+  /*
+   * Masonry via CSS multi-column: supported everywhere, and fine for a
+   * decorative backdrop where reading order doesn't matter.
+   */
+  .collage {
+    align-self: start;
+    columns: 2;
+    column-gap: 0.5rem;
+  }
+  @media (min-width: 40rem) {
+    .collage {
+      columns: 3;
+    }
+  }
+  @media (min-width: 64rem) {
+    .collage {
+      columns: 4;
+    }
+  }
+  @media (min-width: 90rem) {
+    .collage {
+      columns: 5;
+    }
+  }
+
+  .collage img {
+    display: block;
+    width: 100%;
+    height: auto;
+    margin-bottom: 0.5rem;
+    break-inside: avoid;
+    object-fit: cover;
+    filter: brightness(0.65) saturate(0.8);
+  }
+
+  /*
+   * Localized scrim: darkness only where the white headline sits. The rest
+   * of the collage stays bright — the cards below carry their own frosted
+   * backgrounds for contrast.
+   */
+  .top-scrim {
+    align-self: start;
+    height: 32rem;
+    pointer-events: none;
+    background: linear-gradient(
+      to bottom,
+      rgb(24 18 10 / 0.75),
+      rgb(24 18 10 / 0.45) 55%,
+      transparent
+    );
+  }
+
+  .content {
+    /* Paints above the scrim (later grid item, same cell). */
+    position: relative;
+  }
+</style>

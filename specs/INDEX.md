@@ -13,11 +13,14 @@ simple **supporting membership**: people pay a yearly fee to back the
 organization they care about.
 
 The product has **one job**: let an organization curate its list of supporting
-members, and let supporters join and pay their annual fee. It is **B2C** — an
-organization onboards and configures its membership, then its community signs up
-and pays directly. It is deliberately *not* a full CRM, accounting suite, or
-event platform; everything outside curating supporting members and collecting
-their annual fee is out of scope.
+members, and let supporters join and pay their annual fee. Around that core, the
+organization can also thank its supporting members and keep them informed and
+involved — the register is worth having because you can act on it. It is
+**B2C** — an organization onboards and configures its membership, then its
+community signs up and pays directly. It is deliberately *not* a full CRM,
+accounting suite, or event platform; everything outside curating supporting
+members, collecting their annual fee, and keeping them in the loop is out of
+scope.
 
 **Primary actors:** the **organization** (an admin acting on its behalf) and the
 **supporting member** (a person from the community).
@@ -37,6 +40,8 @@ their annual fee is out of scope.
 |---------|--------|-----------|
 | [Collecting annual support is manual and leaky](problems/collecting-annual-support.md) | Draft | [Join as a supporting member](use-cases/join-as-supporting-member.md) |
 | [Keeping an accurate list of who has paid](problems/keeping-an-accurate-member-list.md) | Draft | [Curate the member list](use-cases/curate-member-list.md), [Renew annual membership](use-cases/renew-annual-membership.md) |
+| [Supporters never hear back from the organization](problems/supporters-never-hear-back.md) | Draft | [Keep supporting members in the loop](use-cases/keep-supporters-in-the-loop.md) |
+| [Loyalty is invisible and word of mouth goes untracked](problems/invisible-loyalty-and-word-of-mouth.md) | Draft | [Earn stars and recruit new members](use-cases/earn-stars-and-recruit.md) |
 
 ## Use cases — *what the product does*
 
@@ -46,6 +51,8 @@ their annual fee is out of scope.
 | [Join as a supporting member](use-cases/join-as-supporting-member.md) | Draft | [Collecting annual support](problems/collecting-annual-support.md) |
 | [Curate the member list](use-cases/curate-member-list.md) | Draft | [Keeping an accurate list](problems/keeping-an-accurate-member-list.md) |
 | [Renew annual membership](use-cases/renew-annual-membership.md) | Draft | [Keeping an accurate list](problems/keeping-an-accurate-member-list.md) |
+| [Keep supporting members in the loop](use-cases/keep-supporters-in-the-loop.md) | Draft | [Supporters never hear back](problems/supporters-never-hear-back.md) |
+| [Earn stars and recruit new members](use-cases/earn-stars-and-recruit.md) | Draft | [Invisible loyalty and word of mouth](problems/invisible-loyalty-and-word-of-mouth.md) |
 
 ## Concepts — *shared vocabulary*
 
@@ -55,6 +62,7 @@ their annual fee is out of scope.
 | [Supporting member](concepts/supporting-member.md) | Draft |
 | [Membership](concepts/membership.md) | Draft |
 | [Annual fee](concepts/annual-fee.md) | Draft |
+| [Scorecard](concepts/scorecard.md) | Draft |
 
 ---
 
