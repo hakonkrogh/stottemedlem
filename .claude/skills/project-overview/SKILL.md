@@ -31,6 +31,19 @@ lives in `specs/`, kept in sync with code by a mandatory `Stop`-hook harness.
 - Single package: `pnpm turbo run <task> --filter=@stottemedlem/<name>`.
 - Conventions: ESM everywhere; never use the `any` type; use `ast-grep` for structural search.
 
+## Deployment (as of 2026-07-07)
+- Marketing auto-deploys to Cloudflare Workers on push to `main` via
+  `.github/workflows/deploy-marketing.yml` (build with turbo filter, then
+  `pnpm --filter @stottemedlem/marketing deploy`). Repo secrets
+  `CLOUDFLARE_ACCOUNT_ID` (account `9060f19fa0a38d810a96cda89572ce47`) and
+  `CLOUDFLARE_API_TOKEN` are both set. Minimal token permission:
+  Account → Workers Scripts → Edit (account ID comes from the secret, so no
+  extra read scopes; zone perms only needed if a custom domain is attached).
+- Gotcha: the local `wrangler login` OAuth token has no `api_tokens` scope, so
+  a CI API token cannot be minted from the CLI — only via the dashboard
+  (dash.cloudflare.com/profile/api-tokens).
+- Backoffice has no CI deploy yet.
+
 **Vipps research gotcha:** for ground truth on Vipps MobilePay API capabilities, fetch
 the OpenAPI specs (`developer.vippsmobilepay.com/redocusaurus/<api>-swagger-id.yaml`,
 rendered at `/api/<name>/`) — marketing and help-center pages omit hard limits (e.g.
