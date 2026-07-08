@@ -32,9 +32,11 @@ browsing the organization's own site can join in seconds.
    card by referencing a stable image address — no code beyond a copy-paste
    snippet. Because the address is stable and the card is generated fresh on
    request, embedded cards stay current without the website doing anything.
-5. The **marketing site** showcases this: a visitor can type an organization
-   name, see the live card, download it, and copy the embed snippet — a taste of
-   the product before signing up.
+5. The **marketing front page** showcases this: it shows a live preview of a
+   ready-made card so a prospective organization sees what it gets before signing
+   up. The preview is illustrative — its QR code points back at the marketing
+   site itself — and carries no download or embed tooling; those belong to the
+   organization's real card once it has signed up.
 
 ## Acceptance criteria
 - [ ] Every organization with a join entry point can get its QR code card
@@ -45,8 +47,8 @@ browsing the organization's own site can join in seconds.
       and on the web.
 - [ ] A copy-paste snippet lets an external website embed the card; the embedded
       card keeps working and stays current without re-embedding.
-- [ ] The marketing site demonstrates the card interactively to prospective
-      organizations.
+- [ ] The marketing front page shows a preview of the card so prospective
+      organizations can see what they get before signing up.
 
 ## Out of scope
 - Customizing the card's look (colors, logos, layout) beyond the organization's

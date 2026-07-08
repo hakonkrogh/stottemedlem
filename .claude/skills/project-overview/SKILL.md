@@ -32,6 +32,13 @@ lives in `specs/`, kept in sync with code by a mandatory `Stop`-hook harness.
 ## Run / build / test
 - `pnpm install` · `pnpm dev` · `pnpm build` · `pnpm test` (vitest) · `pnpm typecheck` · `pnpm lint` (Biome) · `pnpm format`.
 - Single package: `pnpm turbo run <task> --filter=@stottemedlem/<name>`.
+- Build-order gotcha: the apps consume `@stottemedlem/core` / `@stottemedlem/qr`
+  from their built `dist/`, so an app build needs those packages built first.
+  `pnpm --filter @stottemedlem/marketing run build` alone fails with
+  `Rolldown failed to resolve import "@stottemedlem/core"` — it bypasses Turbo's
+  dependency graph. Use `pnpm turbo run build --filter=@stottemedlem/marketing`
+  (Turbo builds deps first) or build the packages before the app. `astro preview`
+  serves `dist/` live, so the visual loop is: turbo build → preview → screenshot.
 - Conventions: ESM everywhere; never use the `any` type; use `ast-grep` for structural search.
 
 ## Deployment (as of 2026-07-07)
@@ -72,7 +79,7 @@ the Donations `Schedule.interval` enum is `[MONTHLY]` only, found nowhere in pro
 | (canonical) `specs/INDEX.md` | high-level product map / spec registry |
 | (canonical) `README.md` | monorepo layout, commands, toolchain |
 | stop-hooks.md | how the two Stop hooks compose + how to test a hook locally |
-| qr-codes.md | @stottemedlem/qr package split, the /api/qr/[slug] embed contract (backoffice), the /qr-kort demo (marketing), qrcode-lib gotchas, open domain-routing item |
+| qr-codes.md | @stottemedlem/qr package split, the /api/qr/[slug] embed contract (backoffice), the front-page card preview (marketing), qrcode-lib gotchas, open domain-routing item |
 | (skill) `verify-qr` | decode a generated QR PNG (file or URL) + assert payload — real scan-level proof |
 | (canonical) `docs/architecture/overview.md` | proposed architecture: 2 deployables (Astro static marketing + one Astro-SSR Worker for backoffice/API/webhooks/cron/queues), D1 as system of record, WorkOS org-gated admin, Vipps Login for members, 11-step scaffolding plan |
 | (skill) `stack-docs` | verified platform gotchas: Astro CF adapter custom worker entry, WorkOS SDK on Workers |
