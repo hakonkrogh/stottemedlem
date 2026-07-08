@@ -14,6 +14,7 @@
   "dependencies": {
     "@astrojs/cloudflare": "catalog:",
     "@stottemedlem/core": "workspace:*",
+    "@stottemedlem/qr": "workspace:*",
     "astro": "catalog:"
   },
   "devDependencies": {

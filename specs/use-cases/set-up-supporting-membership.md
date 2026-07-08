@@ -20,8 +20,10 @@ From the organization's point of view:
    will recognize) and basic identity.
 2. The administrator sets the [annual fee](../concepts/annual-fee.md) — the amount
    a supporter pays for one year of supporting membership.
-3. The organization is given a shareable way for supporters to join (e.g. a link
-   the organization can put on its site, social media, or posters).
+3. The organization is given a shareable
+   [join entry point](../concepts/join-entry-point.md) (e.g. a link the
+   organization can put on its site or social media, or a
+   [QR code card](promote-with-qr-card.md) for posters and external websites).
 4. Once configured, the organization is ready to receive supporting members; no
    further setup is required to take the first payment.
 
@@ -41,3 +43,5 @@ From the organization's point of view:
 ## Related
 - [Concept: Organization](../concepts/organization.md)
 - [Concept: Annual fee](../concepts/annual-fee.md)
+- [Concept: Join entry point](../concepts/join-entry-point.md)
+- [Use case: Promote membership with a QR code card](promote-with-qr-card.md)

@@ -51,6 +51,7 @@ scope.
 | [Join as a supporting member](use-cases/join-as-supporting-member.md) | Draft | [Collecting annual support](problems/collecting-annual-support.md) |
 | [Curate the member list](use-cases/curate-member-list.md) | Draft | [Keeping an accurate list](problems/keeping-an-accurate-member-list.md) |
 | [Renew annual membership](use-cases/renew-annual-membership.md) | Draft | [Keeping an accurate list](problems/keeping-an-accurate-member-list.md) |
+| [Promote membership with a QR code card](use-cases/promote-with-qr-card.md) | Draft | [Collecting annual support](problems/collecting-annual-support.md) |
 | [Keep supporting members in the loop](use-cases/keep-supporters-in-the-loop.md) | Draft | [Supporters never hear back](problems/supporters-never-hear-back.md) |
 | [Earn stars and recruit new members](use-cases/earn-stars-and-recruit.md) | Draft | [Invisible loyalty and word of mouth](problems/invisible-loyalty-and-word-of-mouth.md) |
 
@@ -62,6 +63,7 @@ scope.
 | [Supporting member](concepts/supporting-member.md) | Draft |
 | [Membership](concepts/membership.md) | Draft |
 | [Annual fee](concepts/annual-fee.md) | Draft |
+| [Join entry point](concepts/join-entry-point.md) | Draft |
 | [Scorecard](concepts/scorecard.md) | Draft |
 
 ---

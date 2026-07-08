@@ -71,6 +71,12 @@ tsconfig.worker.json`. Don't add `@cloudflare/workers-types` — generated types
   "unused variable" on frontmatter vars only used in the template. Inline the
   expression in the template or suppress; do NOT auto-apply Biome's `_` rename (it
   breaks the template reference).
+  **Consequence (as of 2026-07-08): `pnpm lint` exits 1 on `main` itself** — false
+  `noUnusedImports` on `HeroBackdrop.astro` (`Image`) and `index.astro`
+  (`HeroBackdrop`), both template-used, plus an organizeImports warning. When lint
+  fails, check whether YOUR files are the cause before chasing it:
+  `pnpm exec biome check <changed paths>` — don't "fix" the false positives by
+  removing template-used imports (breaks the build).
 
 Webhook pattern: route `POST /webhooks/vipps` in `worker.ts` *before* delegating to
 `handle()` — the webhook path is then plain Worker code (raw `Request` for HMAC over
