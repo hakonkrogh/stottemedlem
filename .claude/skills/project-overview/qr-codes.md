@@ -22,10 +22,12 @@ Distinct from the *member's personal referral* QR (`specs/use-cases/earn-stars-a
   name (until organizations are persisted — then look it up; keep the URL shape
   stable, embeds depend on it). QR payload is `joinEntryPointUrl(slug)`, never the
   request origin — printed codes must survive worker moves.
-- **Marketing** `/qr-kort` (`apps/marketing/src/pages/qr-kort.astro`): static demo —
-  card generated fully client-side by the shared package (marketing is an
-  assets-only Worker, no server code); downloads via `svgToPngBlob`; embed snippet
-  points at the canonical-origin endpoint.
+- **Marketing** front page (`apps/marketing/src/pages/index.astro`): a static
+  QR-card *preview* for prospective orgs — `qrCardSvg(...)` is called in the Astro
+  frontmatter (build time) and inlined as SVG, so there is no client JS and no
+  download/embed tooling. Its QR intentionally points at `CANONICAL_ORIGIN` (back
+  to the site) since it's illustrative. The old interactive `/qr-kort` studio was
+  removed 2026-07-08 — the front page is the only marketing QR surface now.
 
 ## Open item — domain routing (decided intent, not wired)
 The embed snippet + QR payloads use `https://xn--stttemedlem-hgb.no` paths

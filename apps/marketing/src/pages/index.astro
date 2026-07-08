@@ -4,6 +4,18 @@
 // betalingsleverandør med enkel inn-/utmelding.
 import "@fontsource-variable/fraunces";
 import HeroBackdrop from "../components/HeroBackdrop.astro";
+import { CANONICAL_ORIGIN } from "@stottemedlem/core";
+import { qrCardSvg } from "@stottemedlem/qr";
+
+// A static QR-card preview so prospective organizations see what they get
+// before signing up (see specs/use-cases/promote-with-qr-card.md). Generated at
+// build time — the card is a self-contained SVG, no client JS. In this demo the
+// QR points back at this page; a real organization's card points at its own
+// join entry point.
+const previewCardSvg = qrCardSvg({
+  joinUrl: CANONICAL_ORIGIN,
+  organizationName: "Eksempel Musikkorps",
+});
 ---
 
 <html lang="no">
@@ -91,12 +103,24 @@ import HeroBackdrop from "../components/HeroBackdrop.astro";
           organisasjonen.
         </p>
       </section>
+      <section class="qr-showcase">
+        <div class="qr-copy">
+          <h2>Et ferdig QR-kort som verver for dere</h2>
+          <p>
+            Hver organisasjon får sitt eget QR-kort — klart til å henge på veggen, legge i
+            konsertprogrammet eller dele på nett. Publikum skanner koden med mobilen og blir
+            støttemedlemmer på stedet, betalt med Vipps.
+          </p>
+          <p class="qr-note">
+            Slik ser kortet ut. Skann gjerne koden — her fører den tilbake hit; for dere peker
+            den rett til deres egen innmelding.
+          </p>
+        </div>
+        <figure class="qr-card" set:html={previewCardSvg} aria-label="Eksempel på et QR-kort"></figure>
+      </section>
       </main>
       <footer>
         <p class="cta">Kommer snart.</p>
-        <p class="contact">
-          Utålmodig? <a href="/qr-kort">Prøv QR-kortet som verver støttemedlemmer →</a>
-        </p>
         <p class="contact">
           {/* mailto uses the IDNA/punycode domain — ø in the raw address breaks
               some email clients; "stttemedlem" (three t's) is correct. */}
@@ -236,10 +260,10 @@ import HeroBackdrop from "../components/HeroBackdrop.astro";
     transform: translateY(-3px);
     box-shadow: 0 16px 40px rgb(0 0 0 / 0.28);
   }
-  section:not(.perks) {
+  section:not(.perks):not(.qr-showcase) {
     counter-increment: card;
   }
-  section:not(.perks) h2::before {
+  section:not(.perks):not(.qr-showcase) h2::before {
     content: "0" counter(card);
     display: block;
     font-size: 0.85rem;
@@ -314,6 +338,42 @@ import HeroBackdrop from "../components/HeroBackdrop.astro";
     margin-top: 1.5rem;
     font-weight: 600;
     color: #1f1a14;
+  }
+  .qr-showcase {
+    grid-column: 1 / -1;
+    display: grid;
+    gap: 2.5rem;
+    align-items: center;
+    padding: 3rem 2rem;
+  }
+  @media (min-width: 40rem) {
+    .qr-showcase {
+      grid-template-columns: 1.05fr 0.95fr;
+    }
+  }
+  .qr-copy h2 {
+    margin-bottom: 0.85rem;
+  }
+  .qr-note {
+    margin-top: 1rem;
+    font-size: 0.95rem;
+    color: #6e6353;
+  }
+  .qr-card {
+    margin: 0;
+    text-align: center;
+  }
+  .qr-card :global(svg) {
+    width: 100%;
+    max-width: 19rem;
+    height: auto;
+    border-radius: 20px;
+    filter: drop-shadow(0 14px 34px rgb(0 0 0 / 0.3));
+  }
+  @media (max-width: 40rem) {
+    .qr-showcase {
+      padding: 2rem 1.5rem;
+    }
   }
   footer {
     padding-bottom: 3rem;
