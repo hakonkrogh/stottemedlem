@@ -12,6 +12,8 @@
   },
   "dependencies": {
     "@fontsource-variable/fraunces": "^5.2.9",
+    "@stottemedlem/core": "workspace:*",
+    "@stottemedlem/qr": "workspace:*",
     "astro": "catalog:"
   },
   "devDependencies": {

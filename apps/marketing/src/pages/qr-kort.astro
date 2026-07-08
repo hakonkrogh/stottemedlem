@@ -1,0 +1,326 @@
+---
+// QR code card studio (see specs/use-cases/promote-with-qr-card.md): type the
+// organization's name, get a live card, download it, copy the embed snippet.
+// Fully static — the card is generated client-side by @stottemedlem/qr.
+import "@fontsource-variable/fraunces";
+---
+
+<html lang="no">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>QR-kort — støttemedlem.no</title>
+    <meta
+      name="description"
+      content="Lag et QR-kort som verver støttemedlemmer for organisasjonen din: publikum skanner og betaler årskontingenten med Vipps."
+    />
+  </head>
+  <body>
+    <header>
+      <p class="crumb"><a href="/">← støttemedlem.no</a></p>
+      <h1>Et QR-kort som verver for dere</h1>
+      <p class="intro">
+        Heng det på veggen, legg det i programmet, eller lim det inn på nettsiden deres. Publikum
+        skanner koden med mobilen og blir støttemedlemmer på stedet — betalt med Vipps, uten at
+        noen i styret løfter en finger.
+      </p>
+    </header>
+
+    <main>
+      <section class="studio">
+        <div class="controls">
+          <label for="org-name">Navnet på organisasjonen</label>
+          <input id="org-name" type="text" value="Eksempel Musikkorps" placeholder="F.eks. Nordnes Skolekorps" />
+          <p class="join-url">QR-koden peker til <code id="join-url"></code></p>
+
+          <div class="buttons">
+            <button id="dl-svg" type="button">Last ned kort (SVG)</button>
+            <button id="dl-png" type="button">Last ned kort (PNG)</button>
+            <button id="dl-qr" type="button">Kun QR-kode (PNG)</button>
+          </div>
+
+          <label for="embed-snippet">Lim inn på nettsiden deres</label>
+          <textarea id="embed-snippet" rows="5" readonly></textarea>
+          <button id="copy-embed" type="button" class="primary">Kopier utdrag</button>
+        </div>
+        <div class="preview" id="card-preview" aria-label="Forhåndsvisning av QR-kortet"></div>
+      </section>
+
+      <section class="steps">
+        <div>
+          <p class="step-number">1</p>
+          <h2>Skriv inn navnet</h2>
+          <p>
+            Kortet lages umiddelbart med organisasjonens navn og en QR-kode som peker på deres
+            egen innmeldingsside.
+          </p>
+        </div>
+        <div>
+          <p class="step-number">2</p>
+          <h2>Del kortet</h2>
+          <p>
+            Last ned som bilde til plakater og program, eller kopier utdraget og lim det inn på
+            organisasjonens nettside. Kortet på nettsiden holder seg alltid oppdatert.
+          </p>
+        </div>
+        <div>
+          <p class="step-number">3</p>
+          <h2>Publikum skanner</h2>
+          <p>
+            QR-koden åpner Vipps direkte — publikum godkjenner årskontingenten der og da, uten
+            skjemaer eller mellomsider.
+          </p>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      <p>
+        Spørsmål? Skriv til <a href="mailto:hei@xn--stttemedlem-hgb.no">hei@støttemedlem.no</a>
+      </p>
+    </footer>
+  </body>
+</html>
+
+<script>
+  import {
+    CANONICAL_ORIGIN,
+    CANONICAL_ORIGIN_DISPLAY,
+    joinEntryPointUrl,
+    slugifyOrganizationName,
+  } from "@stottemedlem/core";
+  import { qrCardSvg, qrSvg } from "@stottemedlem/qr";
+  import { downloadBlob, svgToPngBlob } from "@stottemedlem/qr/browser";
+
+  function must<T>(element: T | null, what: string): T {
+    if (!element) throw new Error(`Mangler element: ${what}`);
+    return element;
+  }
+
+  const input = must(document.querySelector<HTMLInputElement>("#org-name"), "#org-name");
+  const preview = must(document.querySelector<HTMLElement>("#card-preview"), "#card-preview");
+  const joinUrlLabel = must(document.querySelector<HTMLElement>("#join-url"), "#join-url");
+  const snippet = must(
+    document.querySelector<HTMLTextAreaElement>("#embed-snippet"),
+    "#embed-snippet",
+  );
+  const copyButton = must(document.querySelector<HTMLButtonElement>("#copy-embed"), "#copy-embed");
+  const svgButton = must(document.querySelector<HTMLButtonElement>("#dl-svg"), "#dl-svg");
+  const pngButton = must(document.querySelector<HTMLButtonElement>("#dl-png"), "#dl-png");
+  const qrButton = must(document.querySelector<HTMLButtonElement>("#dl-qr"), "#dl-qr");
+
+  function current() {
+    const name = input.value.trim() || "Min organisasjon";
+    const slug = slugifyOrganizationName(name);
+    const joinUrl = joinEntryPointUrl(slug);
+    return { name, slug, joinUrl };
+  }
+
+  function render(): void {
+    const { name, slug, joinUrl } = current();
+    preview.innerHTML = qrCardSvg({ joinUrl, organizationName: name });
+    joinUrlLabel.textContent = `${CANONICAL_ORIGIN_DISPLAY}/bli-med/${slug}`;
+    snippet.value = [
+      `<a href="${joinUrl}">`,
+      `  <img src="${CANONICAL_ORIGIN}/api/qr/${slug}?name=${encodeURIComponent(name)}"`,
+      `       alt="Bli støttemedlem i ${name}" width="400" height="520" />`,
+      `</a>`,
+    ].join("\n");
+  }
+
+  input.addEventListener("input", render);
+  render();
+
+  svgButton.addEventListener("click", () => {
+    const { name, slug, joinUrl } = current();
+    const svg = qrCardSvg({ joinUrl, organizationName: name });
+    downloadBlob(new Blob([svg], { type: "image/svg+xml" }), `stottemedlem-kort-${slug}.svg`);
+  });
+
+  pngButton.addEventListener("click", async () => {
+    const { name, slug, joinUrl } = current();
+    const svg = qrCardSvg({ joinUrl, organizationName: name });
+    downloadBlob(await svgToPngBlob(svg), `stottemedlem-kort-${slug}.png`);
+  });
+
+  qrButton.addEventListener("click", async () => {
+    const { slug, joinUrl } = current();
+    const svg = await qrSvg(joinUrl, { width: 1024 });
+    downloadBlob(await svgToPngBlob(svg, { scale: 1 }), `stottemedlem-qr-${slug}.png`);
+  });
+
+  copyButton.addEventListener("click", async () => {
+    await navigator.clipboard.writeText(snippet.value);
+    copyButton.textContent = "Kopiert!";
+    setTimeout(() => {
+      copyButton.textContent = "Kopier utdrag";
+    }, 2000);
+  });
+</script>
+
+<style>
+  body {
+    margin: 0;
+    min-height: 100vh;
+    font-family:
+      system-ui,
+      -apple-system,
+      sans-serif;
+    background: #faf7f2;
+    color: #1f1a14;
+    line-height: 1.6;
+  }
+  header,
+  main,
+  footer {
+    max-width: 56rem;
+    margin: 0 auto;
+    padding: 0 1.5rem;
+  }
+  header {
+    padding-top: 2.5rem;
+  }
+  .crumb {
+    margin: 0 0 2rem;
+  }
+  .crumb a {
+    color: #b97c0a;
+    font-weight: 600;
+    text-decoration: none;
+  }
+  h1,
+  h2 {
+    font-family: "Fraunces Variable", Georgia, serif;
+    font-variation-settings: "SOFT" 50;
+    letter-spacing: -0.01em;
+  }
+  h1 {
+    font-size: clamp(2.1rem, 5vw, 3rem);
+    font-weight: 620;
+    line-height: 1.1;
+    text-wrap: balance;
+    margin: 0 0 0.75rem;
+  }
+  .intro {
+    max-width: 40rem;
+    color: #4c4338;
+    margin: 0 0 2.5rem;
+  }
+  .studio {
+    display: grid;
+    gap: 2rem;
+    align-items: start;
+    background: #ffffff;
+    border: 1px solid #ece5d8;
+    border-radius: 1rem;
+    padding: 2rem;
+    box-shadow: 0 10px 30px rgb(0 0 0 / 0.07);
+  }
+  @media (min-width: 44rem) {
+    .studio {
+      grid-template-columns: 1.2fr 1fr;
+    }
+  }
+  label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 0.4rem;
+  }
+  input[type="text"] {
+    width: 100%;
+    box-sizing: border-box;
+    font: inherit;
+    padding: 0.6rem 0.75rem;
+    border: 1px solid #d9d0bf;
+    border-radius: 0.5rem;
+    background: #fffdf9;
+  }
+  .join-url {
+    color: #6e6353;
+    font-size: 0.85rem;
+    overflow-wrap: anywhere;
+  }
+  .buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin: 1rem 0 1.75rem;
+  }
+  button {
+    font: inherit;
+    font-size: 0.9rem;
+    font-weight: 600;
+    padding: 0.55rem 0.95rem;
+    border-radius: 999px;
+    border: 1px solid #d9d0bf;
+    background: #fffdf9;
+    color: #1f1a14;
+    cursor: pointer;
+    transition: background 0.15s ease;
+  }
+  button:hover {
+    background: #f6efe3;
+  }
+  button.primary {
+    background: #f2b64a;
+    border-color: #f2b64a;
+    color: #2a1e0d;
+    margin-top: 0.5rem;
+  }
+  button.primary:hover {
+    background: #ffc75e;
+  }
+  textarea {
+    width: 100%;
+    box-sizing: border-box;
+    font-family: ui-monospace, "SF Mono", monospace;
+    font-size: 0.76rem;
+    padding: 0.6rem;
+    border: 1px solid #d9d0bf;
+    border-radius: 0.5rem;
+    background: #fffdf9;
+    resize: vertical;
+  }
+  .preview {
+    text-align: center;
+  }
+  .preview :global(svg) {
+    max-width: min(20rem, 100%);
+    height: auto;
+    filter: drop-shadow(0 8px 20px rgb(0 0 0 / 0.12));
+  }
+  .steps {
+    display: grid;
+    gap: 2rem;
+    margin: 3rem 0;
+  }
+  @media (min-width: 44rem) {
+    .steps {
+      grid-template-columns: 1fr 1fr 1fr;
+    }
+  }
+  .step-number {
+    margin: 0;
+    font-size: 0.85rem;
+    font-weight: 550;
+    letter-spacing: 0.22em;
+    color: #b97c0a;
+  }
+  h2 {
+    font-size: 1.2rem;
+    font-weight: 600;
+    margin: 0.25rem 0 0.4rem;
+  }
+  .steps p {
+    color: #4c4338;
+    margin: 0;
+  }
+  footer {
+    padding: 1rem 1.5rem 3rem;
+    color: #6e6353;
+  }
+  footer a {
+    color: #b97c0a;
+    font-weight: 600;
+  }
+</style>

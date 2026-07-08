@@ -12,17 +12,21 @@ paying its annual fee, in one simple flow.
 
 ## Preconditions
 - The organization has [set up a supporting membership](set-up-supporting-membership.md)
-  and shared its join entry point.
+  and shared its [join entry point](../concepts/join-entry-point.md) (as a link
+  or a [QR code card](promote-with-qr-card.md)).
 
 ## Behaviour
 From the supporter's point of view:
 
-1. The supporter opens the organization's join entry point and sees who they are
-   supporting and the [annual fee](../concepts/annual-fee.md).
-2. The supporter provides the minimum identity needed to be listed as a
+1. The supporter opens the organization's
+   [join entry point](../concepts/join-entry-point.md) and lands directly in
+   **Vipps**, seeing who they are supporting and the
+   [annual fee](../concepts/annual-fee.md).
+2. The minimum identity needed to be listed as a
    [supporting member](../concepts/supporting-member.md) (e.g. name and a contact
-   such as email).
-3. The supporter pays the annual fee.
+   such as email) comes from the supporter's Vipps profile, with their consent —
+   the supporter only types it in themselves if Vipps cannot provide it.
+3. The supporter approves the payment of the annual fee in Vipps.
 4. On successful payment, the supporter becomes an **active** supporting member
    for the current annual period, and this is reflected immediately in the
    organization's [member list](curate-member-list.md).

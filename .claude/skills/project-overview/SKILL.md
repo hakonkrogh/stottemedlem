@@ -21,7 +21,10 @@ lives in `specs/`, kept in sync with code by a mandatory `Stop`-hook harness.
 - `apps/backoffice/` — Astro 7 SSR on ONE Cloudflare Worker (`src/worker.ts`:
   fetch + scheduled + queue stubs); D1/KV/Queue bindings in `wrangler.jsonc` are
   placeholders until first deploy. See `docs/architecture/overview.md` + `stack-docs`.
-- `packages/core/` — `@stottemedlem/core`, shared domain types/logic.
+- `packages/core/` — `@stottemedlem/core`, shared domain types/logic (incl. org
+  slugs + the canonical join entry point URL).
+- `packages/qr/` — `@stottemedlem/qr`, shared QR code/card generation, split
+  isomorphic/node/browser (see qr-codes.md before touching QR anything).
 - `specs/` — the product intent layer (problems → use cases → concepts). Entry: `specs/INDEX.md`.
 - `.claude/hooks/` — Stop hooks: `spec-sync-stop.sh` (spec harness) + `close-gaps-stop.sh`.
 - `CLAUDE.md` — auto-loaded agent instructions; the canonical "start here".
@@ -69,6 +72,8 @@ the Donations `Schedule.interval` enum is `[MONTHLY]` only, found nowhere in pro
 | (canonical) `specs/INDEX.md` | high-level product map / spec registry |
 | (canonical) `README.md` | monorepo layout, commands, toolchain |
 | stop-hooks.md | how the two Stop hooks compose + how to test a hook locally |
+| qr-codes.md | @stottemedlem/qr package split, the /api/qr/[slug] embed contract (backoffice), the /qr-kort demo (marketing), qrcode-lib gotchas, open domain-routing item |
+| (skill) `verify-qr` | decode a generated QR PNG (file or URL) + assert payload — real scan-level proof |
 | (canonical) `docs/architecture/overview.md` | proposed architecture: 2 deployables (Astro static marketing + one Astro-SSR Worker for backoffice/API/webhooks/cron/queues), D1 as system of record, WorkOS org-gated admin, Vipps Login for members, 11-step scaffolding plan |
 | (skill) `stack-docs` | verified platform gotchas: Astro CF adapter custom worker entry, WorkOS SDK on Workers |
 | (skill) `spec-lint` | `node .claude/skills/spec-lint/check.mjs` — validates spec links + INDEX registration after any specs/ edit |
