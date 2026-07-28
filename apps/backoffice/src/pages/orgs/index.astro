@@ -1,0 +1,51 @@
+---
+import Button from "@stottemedlem/ui/components/Button.astro";
+import CardFooter from "@stottemedlem/ui/components/CardFooter.astro";
+import Heading from "@stottemedlem/ui/components/Heading.astro";
+import Stack from "@stottemedlem/ui/components/Stack.astro";
+import Text from "@stottemedlem/ui/components/Text.astro";
+import TextLink from "@stottemedlem/ui/components/TextLink.astro";
+import Shell from "../../layouts/Shell.astro";
+import { getWorkOS, orgSlug } from "../../lib/workos";
+
+// Org selector — shown when the signed-in admin belongs to more than one
+// organization. Zero/one collapse to the create/auto-redirect paths so a direct
+// visit here still behaves per the product rule.
+const session = Astro.locals.session;
+if (!session) return Astro.redirect("/login");
+const workos = getWorkOS();
+const { data: memberships } = await workos.userManagement.listOrganizationMemberships({
+  userId: session.userId,
+  statuses: ["active"],
+  limit: 100,
+});
+
+const [firstOrg] = memberships;
+if (!firstOrg) return Astro.redirect("/orgs/new");
+if (memberships.length === 1) return Astro.redirect(`/o/${orgSlug(firstOrg.organizationName)}`);
+---
+
+<Shell title="Velg organisasjon">
+  <Stack gap="lg">
+    <Stack gap="sm">
+      <Heading>Velg organisasjon</Heading>
+      <Text variant="lead">Du administrerer flere organisasjoner. Hvilken vil du inn i?</Text>
+    </Stack>
+    <Stack gap="sm">
+      {
+        memberships.map((m) => (
+          <form method="post" action="/orgs/select">
+            <input type="hidden" name="organizationId" value={m.organizationId} />
+            <Button variant="secondary" block>
+              {m.organizationName}
+            </Button>
+          </form>
+        ))
+      }
+    </Stack>
+    <Button variant="primary" href="/orgs/new" block>Opprett en ny organisasjon</Button>
+    <CardFooter>
+      <TextLink href="/logout">Logg ut</TextLink>
+    </CardFooter>
+  </Stack>
+</Shell>

@@ -30,6 +30,11 @@ describe("qrCardSvg", () => {
     expect(svg).toContain('<path d="M');
   });
 
+  it("carries the støttemedlem.no attribution by default", () => {
+    const svg = qrCardSvg({ joinUrl: JOIN_URL, organizationName: "Korpset" });
+    expect(svg).toContain("støttemedlem.no");
+  });
+
   it("escapes markup in the organization name", () => {
     const svg = qrCardSvg({
       joinUrl: JOIN_URL,

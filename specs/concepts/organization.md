@@ -20,14 +20,19 @@ support.
 - An organization sets exactly one current [annual fee](annual-fee.md).
 - All supporting members and memberships belong to one organization; there is no
   sharing of members across organizations.
-- An organization is administered by one or more people acting on its behalf.
+- An organization is administered by one or more [administrators](administrator.md)
+  acting on its behalf; it is created by an administrator when they first
+  [access the back office](../use-cases/access-the-back-office.md) without one.
 
 ## Relationships
 - Has many [memberships](membership.md), one per supporting member per annual period.
 - Has many [supporting members](supporting-member.md).
+- Has one or more [administrators](administrator.md) who act on its behalf.
 - Defines one [annual fee](annual-fee.md).
 
 ## Referenced by
+- [Use case: Access the back office](../use-cases/access-the-back-office.md)
 - [Use case: Set up a supporting membership](../use-cases/set-up-supporting-membership.md)
 - [Use case: Curate the member list](../use-cases/curate-member-list.md)
+- [Concept: Administrator](administrator.md)
 - [Problem: Collecting annual support](../problems/collecting-annual-support.md)

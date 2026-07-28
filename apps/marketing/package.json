@@ -11,7 +11,7 @@
     "typecheck": "astro check"
   },
   "dependencies": {
-    "@fontsource-variable/fraunces": "^5.2.9",
+    "@fontsource-variable/fraunces": "catalog:",
     "@stottemedlem/core": "workspace:*",
     "@stottemedlem/qr": "workspace:*",
     "astro": "catalog:"

@@ -1,0 +1,17 @@
+---
+// Quiet footer zone at the bottom of a Card: hairline separator + centered
+// small text (e.g. the "Logg ut" link every backoffice screen carries).
+---
+
+<footer class="card-footer">
+  <slot />
+</footer>
+
+<style>
+  .card-footer {
+    padding-top: var(--sm-space-sm);
+    border-top: 1px solid var(--sm-border);
+    text-align: center;
+    font-size: 0.85rem;
+  }
+</style>

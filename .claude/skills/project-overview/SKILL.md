@@ -20,11 +20,43 @@ lives in `specs/`, kept in sync with code by a mandatory `Stop`-hook harness.
   wrapper sets `color:#fff` — slotted card content must re-set its own dark color.
 - `apps/backoffice/` — Astro 7 SSR on ONE Cloudflare Worker (`src/worker.ts`:
   fetch + scheduled + queue stubs); D1/KV/Queue bindings in `wrangler.jsonc` are
-  placeholders until first deploy. See `docs/architecture/overview.md` + `stack-docs`.
+  placeholders until first deploy. **WorkOS AuthKit login exists (step 3, done
+  2026-07-08):** `src/middleware.ts` gates every route on a sealed-session cookie;
+  `src/lib/workos.ts` + `src/pages/{login,callback,logout}.ts` + `orgs/` (selector,
+  create) + `o/[slug]/` (org dashboard placeholder) implement the org rule (0 orgs →
+  create, 1 → straight in, many → pick). Env/secrets come from `import { env } from
+  "cloudflare:workers"` (NOT `Astro.locals.runtime.env` — removed in Astro v6+);
+  per-env WorkOS config (`WORKOS_*`) is in `wrangler.jsonc` vars/secrets + `.dev.vars`
+  locally. Real sign-in needs `.dev.vars` filled + AuthKit redirect URIs registered.
+  See `docs/architecture/overview.md` + `stack-docs` (env access + per-env build gotchas).
 - `packages/core/` — `@stottemedlem/core`, shared domain types/logic (incl. org
   slugs + the canonical join entry point URL).
 - `packages/qr/` — `@stottemedlem/qr`, shared QR code/card generation, split
   isomorphic/node/browser (see qr-codes.md before touching QR anything).
+- `packages/ui/` — `@stottemedlem/ui` (added 2026-07-28), the shared UI
+  primitives all backoffice screens compose from: `.astro` components (Button,
+  TextField, Alert, Card, Stack, Heading, Text, TextLink) + `tokens.css` (all
+  colors/type/space — restyle here, not in components) + `base.css`. Token
+  values DELIBERATELY mirror the marketing identity (decided 2026-07-28 after a
+  trendy-font detour was reverted): Fraunces 650 "SOFT" 50 headings, golden
+  amber CTA `#f2b64a` with dark ink text + lighter hover, palette lifted from
+  `apps/marketing/src/pages/index.astro` — keep the two in sync if marketing
+  rebrands. Display font swaps = tokens.css `--sm-font-display*` + the base.css
+  @import + the @fontsource dep. Ships
+  SOURCE (no build step) — the backoffice `astro.config.mjs` lists it in
+  `vite.ssr.noExternal`. **Storybook** (since 2026-07-28, replacing earlier
+  dev-only story pages): `pnpm --filter @stottemedlem/ui run storybook --ci`
+  (port 6006) via the community `@storybook-astro/framework` (Storybook 10 +
+  Astro 7; storybook-astro.org). Stories are CSF colocated with components
+  (`*.stories.ts`); slots pass via `args.slots.default` (HTML string, component
+  ref, or configured `{ component, props, slots }`); a second glob in
+  `packages/ui/.storybook/main.ts` pulls in app screen stories from
+  `apps/backoffice/src` (e.g. CreateOrgScreen, wrapped in the shared
+  `ScreenFrame.astro` via a configured-component slot since decorators aren't
+  supported yet). Screenshot loop: see `preview-screenshot` skill. Gotcha that
+  motivated the package: Astro `<style>` in a layout is scoped, so styling
+  slotted page content from `Shell.astro` silently does nothing — never style
+  across the slot boundary; use the primitives.
 - `specs/` — the product intent layer (problems → use cases → concepts). Entry: `specs/INDEX.md`.
 - `.claude/hooks/` — Stop hooks: `spec-sync-stop.sh` (spec harness) + `close-gaps-stop.sh`.
 - `CLAUDE.md` — auto-loaded agent instructions; the canonical "start here".
@@ -40,6 +72,10 @@ lives in `specs/`, kept in sync with code by a mandatory `Stop`-hook harness.
   (Turbo builds deps first) or build the packages before the app. `astro preview`
   serves `dist/` live, so the visual loop is: turbo build → preview → screenshot.
 - Conventions: ESM everywhere; never use the `any` type; use `ast-grep` for structural search.
+- **Brand attribution (rule, 2026-07-28):** every public-facing surface carries a
+  subtle "støttemedlem.no" (ø in visible text, punycode in hrefs; admin-only
+  backoffice screens exempt; bare QR images exempt — the card around them carries
+  it, via `qrCardSvg`'s default `footer`). Spec: `specs/concepts/brand-attribution.md`.
 
 ## Deployment (as of 2026-07-07)
 - Marketing auto-deploys to Cloudflare Workers on push to `main` via
@@ -64,7 +100,18 @@ lives in `specs/`, kept in sync with code by a mandatory `Stop`-hook harness.
 - Gotcha: the local `wrangler login` OAuth token has no `api_tokens` scope, so
   a CI API token cannot be minted from the CLI — only via the dashboard
   (dash.cloudflare.com/profile/api-tokens).
-- Backoffice has no CI deploy yet.
+- Backoffice auto-deploys on push to `main` via
+  `.github/workflows/deploy-backoffice.yml` (added 2026-07-08): a `staging` job
+  then a `production` job (`needs: staging`), so main ships to both. Env is chosen
+  at BUILD time (`CLOUDFLARE_ENV=staging` for the staging job; default for prod) —
+  the deploy step is a plain `wrangler deploy`; `cancel-in-progress: false` so a
+  running staging→prod deploy isn't interrupted. Uses the same repo secrets as
+  marketing (`CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`). **Both jobs will
+  fail until each env is provisioned:** real D1/KV/Queue ids pasted into
+  `wrangler.jsonc` (still placeholder zeros), prod `WORKOS_CLIENT_ID` filled, and
+  the `WORKOS_API_KEY`/`WORKOS_COOKIE_PASSWORD` secrets set per env
+  (`wrangler secret put … [--env staging]`). turbo.json declares `CLOUDFLARE_ENV`
+  as a build cache input so a staging build can't restore a cached prod `dist/`.
 
 **Vipps research gotcha:** for ground truth on Vipps MobilePay API capabilities, fetch
 the OpenAPI specs (`developer.vippsmobilepay.com/redocusaurus/<api>-swagger-id.yaml`,
@@ -86,3 +133,4 @@ the Donations `Schedule.interval` enum is `[MONTHLY]` only, found nowhere in pro
 | (skill) `spec-lint` | `node .claude/skills/spec-lint/check.mjs` — validates spec links + INDEX registration after any specs/ edit |
 | (skill) `preview-screenshot` | headless-Chrome screenshot of any local URL → Read the PNG; the visual validation loop for UI work |
 | (canonical) `docs/research/vipps-recurring-payments.md` | verified Vipps Recurring API v3 research (yearly agreements, tiers via LEGACY pricing PATCH, 10 webhook events, local DB as system of record, NO onboarding/retention rules); Appendix A rules out Vipps Donasjoner definitively (monthly-only enum, no API amount control) — read before any payment work; not yet fed into `specs/` |
+| (canonical) `docs/vipps-org-onboarding.md` | iterable checklist of what an org must do to get Vipps live — baseline assumes an EXISTING standard Vipps business account; steps = add Faste betalinger to the agreement, approval, then org pastes its own MSN + API keys (DECIDED 2026-07-28: no Vipps platform-partner model to begin with) — in two forms: detailed post-org-creation instructions + 3-step marketing-site headlines — the source for future onboarding UI/marketing copy; not yet fed into `specs/` |

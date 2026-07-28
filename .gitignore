@@ -5,7 +5,13 @@ dist/
 tmp/
 .env
 .env.local
+# Cloudflare local secrets (real values); the .example template stays tracked.
+.dev.vars
+.dev.vars.*
+!.dev.vars.example
 .turbo/
 .astro/
 .wrangler/
 worker-configuration.d.ts
+storybook-static/
+*storybook.log

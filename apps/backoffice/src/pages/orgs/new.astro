@@ -1,0 +1,50 @@
+---
+import CreateOrgScreen from "../../components/CreateOrgScreen.astro";
+import Shell from "../../layouts/Shell.astro";
+import { env, getWorkOS, orgPath, SESSION_COOKIE, sessionCookieOptions } from "../../lib/workos";
+
+// Create-organization page — shown when a signed-in admin has no organization
+// yet (or chooses to add another). Handles its own POST: create the WorkOS
+// organization, add the user as a member, scope the session into it, land on it.
+const session = Astro.locals.session;
+if (!session) return Astro.redirect("/login");
+
+let error: string | null = null;
+let name = "";
+
+if (Astro.request.method === "POST") {
+  const form = await Astro.request.formData();
+  name = String(form.get("name") ?? "").trim();
+  if (!name) {
+    error = "Skriv inn et navn på organisasjonen.";
+  } else {
+    const workos = getWorkOS();
+    const org = await workos.organizations.createOrganization({ name });
+    await workos.userManagement.createOrganizationMembership({
+      organizationId: org.id,
+      userId: session.userId,
+    });
+
+    const sealed = Astro.cookies.get(SESSION_COOKIE)?.value;
+    if (sealed) {
+      const cookieSession = workos.userManagement.loadSealedSession({
+        sessionData: sealed,
+        cookiePassword: env.WORKOS_COOKIE_PASSWORD,
+      });
+      const refreshed = await cookieSession.refresh({
+        organizationId: org.id,
+        cookiePassword: env.WORKOS_COOKIE_PASSWORD,
+      });
+      if (refreshed.authenticated && refreshed.sealedSession) {
+        Astro.cookies.set(SESSION_COOKIE, refreshed.sealedSession, sessionCookieOptions(Astro.url));
+      }
+    }
+
+    return Astro.redirect(orgPath(org.name));
+  }
+}
+---
+
+<Shell title="Opprett organisasjon">
+  <CreateOrgScreen name={name} error={error} />
+</Shell>

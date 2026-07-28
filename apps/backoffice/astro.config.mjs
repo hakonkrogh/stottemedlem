@@ -8,4 +8,11 @@ import { defineConfig } from "astro/config";
 export default defineConfig({
   output: "server",
   adapter: cloudflare(),
+  vite: {
+    // @stottemedlem/ui ships .astro/.css source (no build step) — keep it in
+    // the bundle so Astro compiles it instead of externalizing it for SSR.
+    ssr: {
+      noExternal: ["@stottemedlem/ui", "@fontsource-variable/fraunces"],
+    },
+  },
 });

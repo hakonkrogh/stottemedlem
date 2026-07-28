@@ -1,0 +1,42 @@
+/* Design tokens for the støttemedlem product surfaces. Every primitive in
+ * @stottemedlem/ui reads exclusively from these custom properties — change the
+ * look here, not in component styles. The values mirror the marketing site's
+ * visual identity (apps/marketing/src/pages/index.astro): warm cream, dark
+ * warm ink, golden amber CTA, Fraunces display headings. */
+:root {
+  /* Color */
+  --sm-bg: #faf7f2;
+  --sm-surface: #ffffff;
+  --sm-ink: #1f1a14;
+  --sm-muted: #6e6353;
+  --sm-border: #ece3d4;
+  --sm-border-strong: #d9ccb8;
+  --sm-accent: #f2b64a;
+  --sm-accent-hover: #ffc75e;
+  --sm-accent-ink: #2a1e0d;
+  --sm-accent-deep: #b97c0a;
+  --sm-accent-soft: #fdf3df;
+  --sm-danger: #8a1c1c;
+  --sm-danger-bg: #fdeaea;
+  --sm-danger-border: #f4caca;
+  --sm-focus-ring: rgba(185, 124, 10, 0.35);
+
+  /* Shape */
+  --sm-radius-sm: 8px;
+  --sm-radius-md: 10px;
+  --sm-radius-lg: 16px;
+  --sm-shadow-card: 0 8px 30px rgba(80, 60, 30, 0.08);
+
+  /* Type — matches marketing: Fraunces (SOFT 50) headings over system sans. */
+  --sm-font-sans: system-ui, -apple-system, "Segoe UI", sans-serif;
+  --sm-font-display: "Fraunces Variable", Georgia, serif;
+  --sm-font-display-weight: 650;
+  --sm-font-display-variation: "SOFT" 50;
+
+  /* Space */
+  --sm-space-xs: 0.25rem;
+  --sm-space-sm: 0.5rem;
+  --sm-space-md: 1rem;
+  --sm-space-lg: 1.5rem;
+  --sm-space-xl: 2rem;
+}

@@ -1,0 +1,17 @@
+---
+// Surface primitive: the white panel content sits on.
+---
+
+<div class="card">
+  <slot />
+</div>
+
+<style>
+  .card {
+    background: var(--sm-surface);
+    border: 1px solid var(--sm-border);
+    border-radius: var(--sm-radius-lg);
+    padding: 2rem;
+    box-shadow: var(--sm-shadow-card);
+  }
+</style>

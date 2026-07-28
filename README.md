@@ -16,7 +16,11 @@ A pnpm + Turborepo TypeScript monorepo.
 │  │                  #   Vipps webhooks + cron + queue consumer
 │  └─ marketing/      # Astro static landing page → Cloudflare Worker (assets only)
 ├─ packages/
-│  └─ core/           # @stottemedlem/core — shared domain types & logic
+│  ├─ core/           # @stottemedlem/core — shared domain types & logic
+│  ├─ qr/             # @stottemedlem/qr — QR code/card generation
+│  └─ ui/             # @stottemedlem/ui — shared UI primitives (.astro source +
+│                     #   design tokens) with Storybook stories; run
+│                     #   `pnpm --filter @stottemedlem/ui storybook`
 ├─ pnpm-workspace.yaml # workspace globs + shared dependency catalog
 ├─ tsconfig.base.json  # shared TS compiler options (extended per package)
 ├─ turbo.json          # task graph / caching

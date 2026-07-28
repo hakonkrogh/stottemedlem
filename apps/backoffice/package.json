@@ -15,6 +15,8 @@
     "@astrojs/cloudflare": "catalog:",
     "@stottemedlem/core": "workspace:*",
     "@stottemedlem/qr": "workspace:*",
+    "@stottemedlem/ui": "workspace:*",
+    "@workos-inc/node": "catalog:",
     "astro": "catalog:"
   },
   "devDependencies": {

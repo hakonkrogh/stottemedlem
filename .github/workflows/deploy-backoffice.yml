@@ -1,0 +1,72 @@
+name: Deploy backoffice
+
+# Every merge to main deploys the backoffice to staging, then (only if staging
+# succeeds) to production. The wrangler environment is selected at BUILD time via
+# CLOUDFLARE_ENV — the adapter flattens it into dist/server/wrangler.json, so the
+# deploy step is a plain `wrangler deploy` (no --env). See stack-docs.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# Don't cancel an in-flight deploy — let a running staging→production run finish
+# rather than leave one env deployed and the other not. Newer runs queue behind it.
+concurrency:
+  group: deploy-backoffice
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  staging:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build (staging)
+        run: pnpm turbo run build --filter=@stottemedlem/backoffice
+        env:
+          CLOUDFLARE_ENV: staging
+
+      - name: Deploy to staging
+        run: pnpm --filter @stottemedlem/backoffice run deploy
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+
+  production:
+    needs: staging
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # No CLOUDFLARE_ENV → the default (top-level, production) config.
+      - name: Build (production)
+        run: pnpm turbo run build --filter=@stottemedlem/backoffice
+
+      - name: Deploy to production
+        run: pnpm --filter @stottemedlem/backoffice run deploy
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}

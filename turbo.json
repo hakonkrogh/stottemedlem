@@ -5,7 +5,11 @@
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
-      "outputs": ["dist/**"]
+      "outputs": ["dist/**"],
+      // The Astro Cloudflare adapter flattens the wrangler env into dist at build
+      // time based on CLOUDFLARE_ENV (see stack-docs). Declare it so turbo keys the
+      // cache on it — otherwise a staging build can restore a cached prod dist/.
+      "env": ["CLOUDFLARE_ENV"]
     },
     "dev": {
       "dependsOn": ["^build"],

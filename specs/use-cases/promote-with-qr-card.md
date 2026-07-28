@@ -19,8 +19,10 @@ browsing the organization's own site can join in seconds.
 ## Behaviour
 1. For any organization, the product produces a ready-made **QR code card**: a
    presentable card showing the organization's public name, an invitation to
-   become a supporting member, and a QR code. (For now the card carries just the
-   QR code and this framing; richer content may come later.)
+   become a supporting member, a QR code, and a subtle
+   [brand attribution](../concepts/brand-attribution.md) ("støttemedlem.no")
+   at the bottom. (For now the card carries just the QR code and this framing;
+   richer content may come later.)
 2. The QR code encodes the organization's
    [join entry point](../concepts/join-entry-point.md): scanning it with a phone
    opens **Vipps directly** — the supporter lands in the payment for that

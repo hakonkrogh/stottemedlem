@@ -1,0 +1,26 @@
+---
+// Prominent inline message. Only the error variant exists today; add variants
+// (success, info) here rather than styling ad-hoc boxes in screens.
+interface Props {
+  variant?: "error";
+}
+const { variant = "error" } = Astro.props;
+---
+
+<p class:list={["alert", variant]} role="alert">
+  <slot />
+</p>
+
+<style>
+  .alert {
+    margin: 0;
+    padding: 0.65rem 0.85rem;
+    font-size: 0.9rem;
+    border-radius: var(--sm-radius-md);
+  }
+  .error {
+    color: var(--sm-danger);
+    background: var(--sm-danger-bg);
+    border: 1px solid var(--sm-danger-border);
+  }
+</style>

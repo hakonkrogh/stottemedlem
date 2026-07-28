@@ -1,0 +1,69 @@
+---
+// Labeled single-line text input with optional inline error. Owns the
+// label/input/error wiring (ids, aria) so screens never hand-roll it.
+interface Props {
+  label: string;
+  name: string;
+  id?: string;
+  value?: string;
+  placeholder?: string;
+  required?: boolean;
+  autofocus?: boolean;
+  error?: string | null;
+}
+const { label, name, id = name, value, placeholder, required, autofocus, error } = Astro.props;
+const errorId = `${id}-error`;
+---
+
+<div class="field">
+  <label for={id}>{label}</label>
+  <input
+    type="text"
+    id={id}
+    name={name}
+    value={value}
+    placeholder={placeholder}
+    required={required}
+    autofocus={autofocus}
+    aria-invalid={error ? "true" : undefined}
+    aria-describedby={error ? errorId : undefined}
+  />
+  {error && <p class="error" id={errorId}>{error}</p>}
+</div>
+
+<style>
+  .field {
+    display: grid;
+    gap: 0.4rem;
+  }
+  label {
+    font-size: 0.9rem;
+    font-weight: 600;
+  }
+  input {
+    width: 100%;
+    padding: 0.65rem 0.8rem;
+    font: inherit;
+    color: var(--sm-ink);
+    background: var(--sm-surface);
+    border: 1px solid var(--sm-border-strong);
+    border-radius: var(--sm-radius-md);
+    transition: border-color 120ms ease;
+  }
+  input::placeholder {
+    color: color-mix(in srgb, var(--sm-muted) 60%, transparent);
+  }
+  input:focus-visible {
+    outline: none;
+    border-color: var(--sm-accent);
+    box-shadow: 0 0 0 3px var(--sm-focus-ring);
+  }
+  input[aria-invalid="true"] {
+    border-color: var(--sm-danger);
+  }
+  .error {
+    margin: 0;
+    font-size: 0.85rem;
+    color: var(--sm-danger);
+  }
+</style>

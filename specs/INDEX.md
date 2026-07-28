@@ -47,6 +47,7 @@ scope.
 
 | Use case | Status | Solves |
 |----------|--------|--------|
+| [Access the back office](use-cases/access-the-back-office.md) | Draft | [Collecting annual support](problems/collecting-annual-support.md) |
 | [Set up a supporting membership](use-cases/set-up-supporting-membership.md) | Draft | [Collecting annual support](problems/collecting-annual-support.md) |
 | [Join as a supporting member](use-cases/join-as-supporting-member.md) | Draft | [Collecting annual support](problems/collecting-annual-support.md) |
 | [Curate the member list](use-cases/curate-member-list.md) | Draft | [Keeping an accurate list](problems/keeping-an-accurate-member-list.md) |
@@ -60,10 +61,12 @@ scope.
 | Concept | Status |
 |---------|--------|
 | [Organization](concepts/organization.md) | Draft |
+| [Administrator](concepts/administrator.md) | Draft |
 | [Supporting member](concepts/supporting-member.md) | Draft |
 | [Membership](concepts/membership.md) | Draft |
 | [Annual fee](concepts/annual-fee.md) | Draft |
 | [Join entry point](concepts/join-entry-point.md) | Draft |
+| [Brand attribution](concepts/brand-attribution.md) | Active |
 | [Scorecard](concepts/scorecard.md) | Draft |
 
 ---

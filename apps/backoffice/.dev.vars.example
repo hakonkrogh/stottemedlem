@@ -1,0 +1,17 @@
+# WorkOS AuthKit configuration for local `astro dev` (real workerd).
+# Copy to `.dev.vars` (gitignored) and fill with values from your WorkOS
+# dashboard. For staging/production these are set as Worker vars/secrets
+# instead — see wrangler.jsonc and docs/architecture/overview.md.
+#
+# Register http://localhost:4322/callback as a redirect URI in the WorkOS
+# dashboard (Redirects) for the environment whose keys you paste below.
+
+# Non-secret (mirror wrangler.jsonc `vars` for staging/production):
+WORKOS_CLIENT_ID="client_..."
+WORKOS_REDIRECT_URI="http://localhost:4322/callback"
+
+# Secret (set via `wrangler secret put` for staging/production):
+WORKOS_API_KEY="sk_test_..."
+# 32+ random characters used to encrypt the session cookie. Generate with:
+#   node -e "console.log(crypto.randomBytes(32).toString('base64url'))"
+WORKOS_COOKIE_PASSWORD="change-me-to-32+-random-characters"

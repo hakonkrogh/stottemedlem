@@ -1,0 +1,20 @@
+/* Global baseline for product surfaces composed from @stottemedlem/ui.
+ * Import once per app (after tokens.css). Deliberately tiny: reset, body
+ * defaults, and the display font — everything else lives in the primitives. */
+@import "@fontsource-variable/fraunces";
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: var(--sm-font-sans);
+  font-size: 1rem;
+  line-height: 1.5;
+  color: var(--sm-ink);
+  background: var(--sm-bg);
+  -webkit-font-smoothing: antialiased;
+}

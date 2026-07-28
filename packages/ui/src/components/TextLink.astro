@@ -1,0 +1,27 @@
+---
+// Inline text link in the quiet warm-muted style (used for e.g. "Logg ut").
+interface Props {
+  href: string;
+}
+const { href } = Astro.props;
+---
+
+<a href={href}>
+  <slot />
+</a>
+
+<style>
+  a {
+    color: var(--sm-muted);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+    border-radius: var(--sm-radius-sm);
+  }
+  a:hover {
+    color: var(--sm-ink);
+  }
+  a:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px var(--sm-focus-ring);
+  }
+</style>
