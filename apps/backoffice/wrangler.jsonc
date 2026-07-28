@@ -8,10 +8,22 @@
   "main": "./src/worker.ts",
   "assets": {
     "binding": "ASSETS",
-    "directory": "./dist"
+    "directory": "./dist",
   },
   "observability": {
-    "enabled": true
+    "enabled": true,
+  },
+  // ── WorkOS AuthKit (production) ───────────────────────────────────────
+  // Non-secret config lives here (per-env, non-inheritable — repeat under
+  // env.staging). The two secrets WORKOS_API_KEY and WORKOS_COOKIE_PASSWORD
+  // are set out-of-band per environment:
+  //   wrangler secret put WORKOS_API_KEY            (production)
+  //   wrangler secret put WORKOS_API_KEY --env staging
+  //   wrangler secret put WORKOS_COOKIE_PASSWORD    (+ --env staging)
+  // Locally, all four come from .dev.vars (see .dev.vars.example).
+  "vars": {
+    "WORKOS_CLIENT_ID": "",
+    "WORKOS_REDIRECT_URI": "https://app.xn--stttemedlem-hgb.no/callback",
   },
   // ── Bindings ──────────────────────────────────────────────────────────
   // The ids below are placeholders: create the real resources before the
@@ -22,34 +34,34 @@
     {
       "binding": "DB",
       "database_name": "stottemedlem",
-      "database_id": "00000000-0000-0000-0000-000000000000"
-    }
+      "database_id": "00000000-0000-0000-0000-000000000000",
+    },
   ],
   "kv_namespaces": [
     {
       "binding": "VIPPS_TOKENS",
-      "id": "0000000000000000000000000000000000"
-    }
+      "id": "0000000000000000000000000000000000",
+    },
   ],
   "queues": {
     "producers": [
       {
         "binding": "VIPPS_EVENTS",
-        "queue": "vipps-events"
-      }
+        "queue": "vipps-events",
+      },
     ],
     "consumers": [
       {
         "queue": "vipps-events",
         "max_batch_size": 10,
-        "max_retries": 5
-      }
-    ]
+        "max_retries": 5,
+      },
+    ],
   },
   // Cron Triggers — handled in src/worker.ts `scheduled` (switch on
   // controller.cron): 04:00 renewal-charge job, 02:00 nightly reconciliation.
   "triggers": {
-    "crons": ["0 4 * * *", "0 2 * * *"]
+    "crons": ["0 4 * * *", "0 2 * * *"],
   },
   // ── Environments ──────────────────────────────────────────────────────
   // Top-level config is production. `staging` mirrors it against the Vipps
@@ -58,42 +70,48 @@
     "staging": {
       "assets": {
         "binding": "ASSETS",
-        "directory": "./dist"
+        "directory": "./dist",
       },
       "observability": {
-        "enabled": true
+        "enabled": true,
+      },
+      // WorkOS AuthKit (staging). Uses a separate WorkOS environment's
+      // client id; secrets set with `wrangler secret put <NAME> --env staging`.
+      "vars": {
+        "WORKOS_CLIENT_ID": "client_01KX0YS8HXEWRF32JBT371231A",
+        "WORKOS_REDIRECT_URI": "https://staging.app.xn--stttemedlem-hgb.no/callback",
       },
       "d1_databases": [
         {
           "binding": "DB",
           "database_name": "stottemedlem-staging",
-          "database_id": "00000000-0000-0000-0000-000000000000"
-        }
+          "database_id": "00000000-0000-0000-0000-000000000000",
+        },
       ],
       "kv_namespaces": [
         {
           "binding": "VIPPS_TOKENS",
-          "id": "0000000000000000000000000000000000"
-        }
+          "id": "0000000000000000000000000000000000",
+        },
       ],
       "queues": {
         "producers": [
           {
             "binding": "VIPPS_EVENTS",
-            "queue": "vipps-events-staging"
-          }
+            "queue": "vipps-events-staging",
+          },
         ],
         "consumers": [
           {
             "queue": "vipps-events-staging",
             "max_batch_size": 10,
-            "max_retries": 5
-          }
-        ]
+            "max_retries": 5,
+          },
+        ],
       },
       "triggers": {
-        "crons": ["0 4 * * *", "0 2 * * *"]
-      }
-    }
-  }
+        "crons": ["0 4 * * *", "0 2 * * *"],
+      },
+    },
+  },
 }

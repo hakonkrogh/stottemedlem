@@ -20,7 +20,15 @@ lives in `specs/`, kept in sync with code by a mandatory `Stop`-hook harness.
   wrapper sets `color:#fff` — slotted card content must re-set its own dark color.
 - `apps/backoffice/` — Astro 7 SSR on ONE Cloudflare Worker (`src/worker.ts`:
   fetch + scheduled + queue stubs); D1/KV/Queue bindings in `wrangler.jsonc` are
-  placeholders until first deploy. See `docs/architecture/overview.md` + `stack-docs`.
+  placeholders until first deploy. **WorkOS AuthKit login exists (step 3, done
+  2026-07-08):** `src/middleware.ts` gates every route on a sealed-session cookie;
+  `src/lib/workos.ts` + `src/pages/{login,callback,logout}.ts` + `orgs/` (selector,
+  create) + `o/[slug]/` (org dashboard placeholder) implement the org rule (0 orgs →
+  create, 1 → straight in, many → pick). Env/secrets come from `import { env } from
+  "cloudflare:workers"` (NOT `Astro.locals.runtime.env` — removed in Astro v6+);
+  per-env WorkOS config (`WORKOS_*`) is in `wrangler.jsonc` vars/secrets + `.dev.vars`
+  locally. Real sign-in needs `.dev.vars` filled + AuthKit redirect URIs registered.
+  See `docs/architecture/overview.md` + `stack-docs` (env access + per-env build gotchas).
 - `packages/core/` — `@stottemedlem/core`, shared domain types/logic (incl. org
   slugs + the canonical join entry point URL).
 - `packages/qr/` — `@stottemedlem/qr`, shared QR code/card generation, split
@@ -64,7 +72,18 @@ lives in `specs/`, kept in sync with code by a mandatory `Stop`-hook harness.
 - Gotcha: the local `wrangler login` OAuth token has no `api_tokens` scope, so
   a CI API token cannot be minted from the CLI — only via the dashboard
   (dash.cloudflare.com/profile/api-tokens).
-- Backoffice has no CI deploy yet.
+- Backoffice auto-deploys on push to `main` via
+  `.github/workflows/deploy-backoffice.yml` (added 2026-07-08): a `staging` job
+  then a `production` job (`needs: staging`), so main ships to both. Env is chosen
+  at BUILD time (`CLOUDFLARE_ENV=staging` for the staging job; default for prod) —
+  the deploy step is a plain `wrangler deploy`; `cancel-in-progress: false` so a
+  running staging→prod deploy isn't interrupted. Uses the same repo secrets as
+  marketing (`CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`). **Both jobs will
+  fail until each env is provisioned:** real D1/KV/Queue ids pasted into
+  `wrangler.jsonc` (still placeholder zeros), prod `WORKOS_CLIENT_ID` filled, and
+  the `WORKOS_API_KEY`/`WORKOS_COOKIE_PASSWORD` secrets set per env
+  (`wrangler secret put … [--env staging]`). turbo.json declares `CLOUDFLARE_ENV`
+  as a build cache input so a staging build can't restore a cached prod `dist/`.
 
 **Vipps research gotcha:** for ground truth on Vipps MobilePay API capabilities, fetch
 the OpenAPI specs (`developer.vippsmobilepay.com/redocusaurus/<api>-swagger-id.yaml`,

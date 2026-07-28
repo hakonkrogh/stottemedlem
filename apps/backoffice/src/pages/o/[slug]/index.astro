@@ -1,0 +1,58 @@
+---
+import Shell from "../../../layouts/Shell.astro";
+import { env, getWorkOS, orgSlug, SESSION_COOKIE, sessionCookieOptions } from "../../../lib/workos";
+
+// Org dashboard — placeholder for scaffolding step 3. The real member list,
+// period history and tier editor land in step 9. Its job today: prove the
+// session is org-scoped and the slug resolves to an org the user administers.
+//
+// Slug caveat (until the D1 org table in step 4 persists a unique slug): the
+// slug is derived from the WorkOS org name, so two equal-slugifying names would
+// collide — accepted for now; `find` picks the first match.
+const session = Astro.locals.session;
+if (!session) return Astro.redirect("/login");
+const slug = Astro.params.slug;
+if (!slug) return Astro.redirect("/orgs");
+
+const workos = getWorkOS();
+const { data: memberships } = await workos.userManagement.listOrganizationMemberships({
+  userId: session.userId,
+  statuses: ["active"],
+  limit: 100,
+});
+const membership = memberships.find((m) => orgSlug(m.organizationName) === slug);
+if (!membership) return Astro.redirect("/orgs");
+
+// Make the URL authoritative: if the session is scoped to a different org, switch
+// into this one so the dashboard is bookmarkable and self-correcting.
+if (session.organizationId !== membership.organizationId) {
+  const sealed = Astro.cookies.get(SESSION_COOKIE)?.value;
+  if (sealed) {
+    const cookieSession = workos.userManagement.loadSealedSession({
+      sessionData: sealed,
+      cookiePassword: env.WORKOS_COOKIE_PASSWORD,
+    });
+    const refreshed = await cookieSession.refresh({
+      organizationId: membership.organizationId,
+      cookiePassword: env.WORKOS_COOKIE_PASSWORD,
+    });
+    if (refreshed.authenticated && refreshed.sealedSession) {
+      Astro.cookies.set(SESSION_COOKIE, refreshed.sealedSession, sessionCookieOptions(Astro.url));
+    }
+  }
+}
+
+const displayName =
+  [session.firstName, session.lastName].filter(Boolean).join(" ") || session.email;
+const canSwitch = memberships.length > 1;
+---
+
+<Shell title={membership.organizationName}>
+  <h1>{membership.organizationName}</h1>
+  <p class="lead">
+    Innlogget som {displayName}. Dette er foreløpig et skall — medlemslisten og
+    resten av administrasjonen kommer senere.
+  </p>
+  {canSwitch && <a class="btn secondary" href="/orgs">Bytt organisasjon</a>}
+  <p class="footer"><a href="/logout">Logg ut</a></p>
+</Shell>

@@ -1,0 +1,41 @@
+---
+import Shell from "../../layouts/Shell.astro";
+import { getWorkOS, orgSlug } from "../../lib/workos";
+
+// Org selector — shown when the signed-in admin belongs to more than one
+// organization. Zero/one collapse to the create/auto-redirect paths so a direct
+// visit here still behaves per the product rule.
+const session = Astro.locals.session;
+if (!session) return Astro.redirect("/login");
+const workos = getWorkOS();
+const { data: memberships } = await workos.userManagement.listOrganizationMemberships({
+  userId: session.userId,
+  statuses: ["active"],
+  limit: 100,
+});
+
+const [firstOrg] = memberships;
+if (!firstOrg) return Astro.redirect("/orgs/new");
+if (memberships.length === 1) return Astro.redirect(`/o/${orgSlug(firstOrg.organizationName)}`);
+---
+
+<Shell title="Velg organisasjon">
+  <h1>Velg organisasjon</h1>
+  <p class="lead">Du administrerer flere organisasjoner. Hvilken vil du inn i?</p>
+  <ul class="orgs">
+    {
+      memberships.map((m) => (
+        <li>
+          <form method="post" action="/orgs/select">
+            <input type="hidden" name="organizationId" value={m.organizationId} />
+            <button type="submit">
+              <span class="org-name">{m.organizationName}</span>
+            </button>
+          </form>
+        </li>
+      ))
+    }
+  </ul>
+  <a class="btn secondary" href="/orgs/new">Opprett en ny organisasjon</a>
+  <p class="footer"><a href="/logout">Logg ut</a></p>
+</Shell>

@@ -116,6 +116,64 @@ polyfill (workos-node issue #1130) — smoke-test the installed version under
 SDK directly in Astro middleware (walkthrough: https://chan.dev/authkit-astro/).
 Sources: https://workos.com/blog/launch-week-spring-2024-day-4-cloudflare-workers-edge-support · https://github.com/workos/workos-node
 
+Verified 2026-07-08 (backoffice AuthKit login, scaffolding step 3):
+- **v10.7.0 works on workerd out of the box** — the package `exports` map has a
+  `workerd`/`edge-light` condition resolving to a `index.worker.mjs` build, so a
+  plain `import { WorkOS } from "@workos-inc/node"` picks the Workers-safe bundle
+  automatically. No buffer crash with `nodejs_compat` on. (The #1130 warning was a
+  v7 concern; long gone by v10.)
+- **Sealed sessions need no `iron-session` dep.** The SDK seals/unseals internally:
+  `authenticateWithCode({ code, clientId, session: { sealSession: true, cookiePassword } })`
+  returns `{ user, organizationId?, accessToken, refreshToken, sealedSession }`;
+  store `sealedSession` in an httpOnly cookie; `userManagement.loadSealedSession({
+  sessionData, cookiePassword })` → a `CookieSession` with `authenticate()` (verify),
+  `refresh({ organizationId?, cookiePassword })` (rotate the sealed cookie AND switch
+  active org — its success response already carries `user`/`sessionId`/`organizationId`/
+  `role`, no re-auth needed), and `getLogoutUrl()`.
+- **Org routing facts:** `getAuthorizationUrl({ provider: "authkit", clientId,
+  redirectUri })` is synchronous → 302 to it. `listOrganizationMemberships({ userId,
+  statuses: ["active"], limit })` returns `AutoPaginatable` (`.data` is the first
+  page — pass `limit` up to 100; auto-paginate only if an admin can exceed that).
+  Each `OrganizationMembership` already includes `organizationName`, so the org
+  selector needs no extra `organizations.get` call. Working example: `apps/backoffice`
+  (`src/middleware.ts` gate + `src/lib/workos.ts` + `src/pages/{login,callback,logout}.ts`
+  and `orgs/`).
+
+## Astro 7 + adapter v14: env access and per-environment deploys
+
+Two load-bearing facts the scaffold proved (2026-07-08), both easy to get wrong:
+
+- **`Astro.locals.runtime.env` was REMOVED in Astro v6+.** The adapter throws at
+  runtime pointing you to `import { env } from "cloudflare:workers"` — that virtual
+  module is now the only way to read bindings/secrets in pages/middleware/lib. (It
+  also removed `locals.runtime.cf` → `Astro.request.cf`, `.caches` → global `caches`,
+  `.ctx` → `Astro.locals.cfContext`.) Because the app tsconfig excludes the generated
+  `worker-configuration.d.ts` (DOM-lib clash, see dual-tsconfig above), app code can't
+  see the global `Env`; declare the subset it reads in `src/env.d.ts`:
+  `interface Env { … }` + `declare module "cloudflare:workers" { export const env: Env }`.
+  `worker.ts` still type-checks against the full generated `Env` via tsconfig.worker.json.
+- **Per-environment deploys select the wrangler env at BUILD time, not deploy time.**
+  The adapter writes a *flattened* `dist/server/wrangler.json` (config redirection)
+  for one environment; `wrangler deploy --env staging` against it **silently uses the
+  top-level/production values** (`definedEnvironments` is preserved but the override
+  values are not). Correct flow: `CLOUDFLARE_ENV=staging astro build` produces a
+  config named `<name>-staging` with the `env.staging` bindings/vars flattened in,
+  then a plain `wrangler deploy` (no `--env`). Validate either env without auth via
+  `wrangler deploy --dry-run` after the matching build. So per-env WorkOS config lives
+  in `wrangler.jsonc` `vars` (non-secret: `WORKOS_CLIENT_ID`, `WORKOS_REDIRECT_URI`) +
+  `wrangler secret put` (secret: `WORKOS_API_KEY`, `WORKOS_COOKIE_PASSWORD`), repeated
+  per env because vars/bindings are non-inheritable; locally all four come from `.dev.vars`.
+  - **Legacy environments** (the adapter sets `legacy_env: true`): prod and staging are
+    two *separate* Workers, `stottemedlem-backoffice` and `stottemedlem-backoffice-staging`,
+    each with its own Cloudflare-side secret store. Set secrets from `apps/backoffice`:
+    `wrangler secret put WORKOS_API_KEY` (prod) and `… --env staging` (staging), likewise
+    `WORKOS_COOKIE_PASSWORD` — 4 puts, distinct values per env. Split-brain to remember:
+    `secret put`/`secret list` read the **source** `wrangler.jsonc` (so `--env staging`
+    resolves the `env.staging` block → the `-staging` worker), but `deploy` uses the
+    **flattened build** (so the env is chosen by `CLOUDFLARE_ENV` at build, not `--env`).
+    Secrets attach to the running Worker immediately (no redeploy); the Worker must exist
+    first (deploy once, or let the `secret put` prompt create it).
+
 ## Forward references (not captured yet)
 
 | topic | where |

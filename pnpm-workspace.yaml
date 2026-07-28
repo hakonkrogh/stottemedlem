@@ -13,6 +13,7 @@ catalog:
   "@astrojs/cloudflare": ^14.0.0
   "@astrojs/check": ^0.9.9
   wrangler: ^4.83.0
+  "@workos-inc/node": ^10.0.0
 
 # pnpm 10 blocks dependency build scripts by default. Only allow the ones we
 # trust to run postinstall builds.
