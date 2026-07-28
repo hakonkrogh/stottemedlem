@@ -93,7 +93,7 @@ export function qrCardSvg(options: QrCardOptions): string {
   const name = options.organizationName.trim();
   const title = options.title ?? "Bli støttemedlem";
   const hint = options.hint ?? "Skann med mobilen — betal med Vipps";
-  const footer = options.footer ?? "stottemedlem.no";
+  const footer = options.footer ?? "støttemedlem.no";
 
   const { path, moduleCount } = qrModulesPath(options.joinUrl);
   const qrSize = 264;

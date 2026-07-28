@@ -37,6 +37,10 @@ The full process is documented in [`specs/process.md`](specs/process.md).
 
 ## Other conventions
 
+- **Every public-facing surface must carry a subtle "støttemedlem.no" link**
+  (with the ø in visible text; punycode in hrefs). This applies to every piece
+  of user-facing work — pages, cards, embeds, images, messages. See
+  [`specs/concepts/brand-attribution.md`](specs/concepts/brand-attribution.md).
 - Use `ast-grep` for structural code search.
 - TypeScript: never use the `any` type.
 - See [`README.md`](README.md) for the monorepo layout, commands, and toolchain.

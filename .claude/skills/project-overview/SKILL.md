@@ -48,6 +48,10 @@ lives in `specs/`, kept in sync with code by a mandatory `Stop`-hook harness.
   (Turbo builds deps first) or build the packages before the app. `astro preview`
   serves `dist/` live, so the visual loop is: turbo build → preview → screenshot.
 - Conventions: ESM everywhere; never use the `any` type; use `ast-grep` for structural search.
+- **Brand attribution (rule, 2026-07-28):** every public-facing surface carries a
+  subtle "støttemedlem.no" (ø in visible text, punycode in hrefs; admin-only
+  backoffice screens exempt; bare QR images exempt — the card around them carries
+  it, via `qrCardSvg`'s default `footer`). Spec: `specs/concepts/brand-attribution.md`.
 
 ## Deployment (as of 2026-07-07)
 - Marketing auto-deploys to Cloudflare Workers on push to `main` via
