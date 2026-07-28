@@ -59,6 +59,11 @@ tsconfig.worker.json`. Don't add `@cloudflare/workers-types` — generated types
   (bit the first marketing CI run, 2026-07-07).
 - `minimumReleaseAge` (7 days) silently resolves ranges to older releases — e.g.
   `^7.0.0` → 7.0.3 when 7.0.6 is 1 day old. Expect lockfile versions to lag npm.
+- A plain `pnpm add` can leave a package's *declared* deps unlinked in its
+  `.pnpm/<pkg>/node_modules/` (seen 2026-07-28: `recast` missing `tslib` →
+  Storybook died with `Cannot find module 'tslib'`). Not a missing-dependency
+  bug in the package — a broken link state; `pnpm install --force` (slow, ~5
+  min) heals it.
 - **Astro 7 dev servers are persistent daemons.** `pkill` does not deregister them —
   the next `astro dev` refuses with "Another astro dev server is already running".
   Stop with `pnpm --filter <app> exec astro dev stop` (or start with
