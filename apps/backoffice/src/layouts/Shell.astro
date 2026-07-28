@@ -1,6 +1,11 @@
 ---
-// Minimal back-office chrome: a centered card on a warm neutral background.
-// Kept intentionally plain — the real dashboard styling lands with step 9.
+// Back-office chrome: a vertically centered ScreenFrame on the warm brand
+// background. All styling of the content itself comes from @stottemedlem/ui
+// primitives — Shell only owns the page-level frame.
+import "@stottemedlem/ui/tokens.css";
+import "@stottemedlem/ui/base.css";
+import ScreenFrame from "../components/ScreenFrame.astro";
+
 interface Props {
   title: string;
 }
@@ -13,116 +18,24 @@ const { title } = Astro.props;
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="robots" content="noindex" />
     <title>{title} — støttemedlem backoffice</title>
-    <style>
-      :root {
-        color-scheme: light;
-      }
-      * {
-        box-sizing: border-box;
-      }
-      body {
-        margin: 0;
-        min-height: 100dvh;
-        display: grid;
-        place-items: center;
-        padding: 2rem 1rem;
-        font-family:
-          system-ui,
-          -apple-system,
-          "Segoe UI",
-          sans-serif;
-        color: #2b2117;
-        background: #faf6ef;
-      }
-      main {
-        width: 100%;
-        max-width: 26rem;
-        background: #fff;
-        border: 1px solid #ece3d4;
-        border-radius: 14px;
-        padding: 2rem;
-        box-shadow: 0 8px 30px rgba(80, 60, 30, 0.08);
-      }
-      h1 {
-        margin: 0 0 0.35rem;
-        font-size: 1.35rem;
-      }
-      p.lead {
-        margin: 0 0 1.5rem;
-        color: #6b5d49;
-        font-size: 0.95rem;
-      }
-      button,
-      .btn {
-        display: block;
-        width: 100%;
-        padding: 0.7rem 1rem;
-        font: inherit;
-        font-weight: 600;
-        text-align: center;
-        text-decoration: none;
-        color: #fff;
-        background: #b4530a;
-        border: 1px solid #b4530a;
-        border-radius: 9px;
-        cursor: pointer;
-      }
-      button:hover,
-      .btn:hover {
-        background: #9c4708;
-      }
-      button.secondary,
-      .btn.secondary {
-        color: #6b5d49;
-        background: transparent;
-        border-color: #ece3d4;
-      }
-      label {
-        display: block;
-        margin-bottom: 0.4rem;
-        font-size: 0.9rem;
-        font-weight: 600;
-      }
-      input[type="text"] {
-        width: 100%;
-        padding: 0.6rem 0.7rem;
-        margin-bottom: 1rem;
-        font: inherit;
-        border: 1px solid #d9ccb8;
-        border-radius: 9px;
-      }
-      ul.orgs {
-        list-style: none;
-        margin: 0 0 1rem;
-        padding: 0;
-        display: grid;
-        gap: 0.6rem;
-      }
-      .org-name {
-        font-weight: 600;
-      }
-      .error {
-        margin: 0 0 1rem;
-        padding: 0.6rem 0.75rem;
-        color: #8a1c1c;
-        background: #fdeaea;
-        border: 1px solid #f4caca;
-        border-radius: 9px;
-        font-size: 0.9rem;
-      }
-      .footer {
-        margin-top: 1.5rem;
-        font-size: 0.85rem;
-        text-align: center;
-      }
-      .footer a {
-        color: #6b5d49;
-      }
-    </style>
   </head>
   <body>
     <main>
-      <slot />
+      <ScreenFrame>
+        <slot />
+      </ScreenFrame>
     </main>
   </body>
 </html>
+
+<style>
+  body {
+    min-height: 100dvh;
+    display: grid;
+    place-items: center;
+    padding: 2rem 1rem;
+  }
+  main {
+    width: 100%;
+  }
+</style>

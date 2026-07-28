@@ -1,4 +1,5 @@
 ---
+import CreateOrgScreen from "../../components/CreateOrgScreen.astro";
 import Shell from "../../layouts/Shell.astro";
 import { env, getWorkOS, orgPath, SESSION_COOKIE, sessionCookieOptions } from "../../lib/workos";
 
@@ -45,21 +46,5 @@ if (Astro.request.method === "POST") {
 ---
 
 <Shell title="Opprett organisasjon">
-  <h1>Opprett organisasjon</h1>
-  <p class="lead">Gi organisasjonen et navn støttemedlemmene kjenner igjen.</p>
-  {error && <p class="error">{error}</p>}
-  <form method="post">
-    <label for="name">Navn på organisasjonen</label>
-    <input
-      type="text"
-      id="name"
-      name="name"
-      value={name}
-      placeholder="F.eks. Nordnes Skolekorps"
-      required
-      autofocus
-    />
-    <button type="submit">Opprett og fortsett</button>
-  </form>
-  <p class="footer"><a href="/logout">Logg ut</a></p>
+  <CreateOrgScreen name={name} error={error} />
 </Shell>

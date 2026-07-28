@@ -1,0 +1,74 @@
+---
+// Action primitive. Renders a <button> normally, or an <a> styled identically
+// when `href` is given. `block` stretches it to the container width — the
+// default in the narrow card layouts.
+interface Props {
+  variant?: "primary" | "secondary";
+  href?: string;
+  type?: "button" | "submit";
+  block?: boolean;
+  name?: string;
+  value?: string;
+}
+const { variant = "primary", href, type = "submit", block = false, name, value } = Astro.props;
+const Tag = href ? "a" : "button";
+---
+
+<Tag
+  class:list={["btn", variant, { block }]}
+  href={href}
+  type={href ? undefined : type}
+  name={name}
+  value={value}
+>
+  <slot />
+</Tag>
+
+<style>
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5em;
+    padding: 0.7rem 1.15rem;
+    font: inherit;
+    font-weight: 600;
+    line-height: 1.2;
+    text-align: center;
+    text-decoration: none;
+    border-radius: var(--sm-radius-md);
+    border: 1px solid transparent;
+    cursor: pointer;
+    transition:
+      background-color 120ms ease,
+      border-color 120ms ease;
+  }
+  .btn.block {
+    display: flex;
+    width: 100%;
+  }
+  .btn:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px var(--sm-focus-ring);
+  }
+
+  .primary {
+    color: var(--sm-accent-ink);
+    background: var(--sm-accent);
+    border-color: var(--sm-accent);
+  }
+  .primary:hover {
+    background: var(--sm-accent-hover);
+    border-color: var(--sm-accent-hover);
+  }
+
+  .secondary {
+    color: var(--sm-ink);
+    background: var(--sm-surface);
+    border-color: var(--sm-border-strong);
+  }
+  .secondary:hover {
+    background: var(--sm-accent-soft);
+    border-color: var(--sm-accent);
+  }
+</style>

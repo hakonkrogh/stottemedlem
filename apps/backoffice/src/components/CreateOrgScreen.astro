@@ -1,0 +1,44 @@
+---
+// Presentational create-organization screen, composed from @stottemedlem/ui
+// primitives. Shared by the real route (pages/orgs/new.astro, which owns the
+// POST handling) and its story (pages/dev/stories/create-org.astro), so the
+// look can be iterated on without touching WorkOS logic.
+import Alert from "@stottemedlem/ui/components/Alert.astro";
+import Button from "@stottemedlem/ui/components/Button.astro";
+import CardFooter from "@stottemedlem/ui/components/CardFooter.astro";
+import Heading from "@stottemedlem/ui/components/Heading.astro";
+import Stack from "@stottemedlem/ui/components/Stack.astro";
+import Text from "@stottemedlem/ui/components/Text.astro";
+import TextField from "@stottemedlem/ui/components/TextField.astro";
+import TextLink from "@stottemedlem/ui/components/TextLink.astro";
+
+interface Props {
+  name?: string;
+  error?: string | null;
+}
+const { name = "", error = null } = Astro.props;
+---
+
+<Stack gap="lg">
+  <Stack gap="sm">
+    <Heading>Opprett organisasjon</Heading>
+    <Text variant="lead">Gi organisasjonen et navn støttemedlemmene kjenner igjen.</Text>
+  </Stack>
+  {error && <Alert variant="error">{error}</Alert>}
+  <form method="post">
+    <Stack gap="lg">
+      <TextField
+        label="Navn på organisasjonen"
+        name="name"
+        value={name}
+        placeholder="F.eks. Nordnes Skolekorps"
+        required
+        autofocus
+      />
+      <Button block>Opprett og fortsett</Button>
+    </Stack>
+  </form>
+  <CardFooter>
+    <TextLink href="/logout">Logg ut</TextLink>
+  </CardFooter>
+</Stack>

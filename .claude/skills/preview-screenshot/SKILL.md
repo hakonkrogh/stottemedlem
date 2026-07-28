@@ -22,7 +22,19 @@ description: Render any local URL (marketing/backoffice dev or preview server) t
 - Responsive checks: `... 375 812` (iPhone 12 mini), `... 390 844` (iPhone 14),
   `... 768 1024` (tablet), default desktop. Verify mobile PNGs' pixelWidth
   matches the requested width before judging the layout.
-- Typical loop: `pnpm --filter @stottemedlem/marketing build && pnpm --filter
-  @stottemedlem/marketing preview --port 4399 &` → shot → Read → iterate.
-  (astro preview serves `dist/` live, so rebuild + reload is enough; kill via
-  `lsof -ti:4399 | xargs kill` when done.)
+- Typical loop (marketing, static): `pnpm --filter @stottemedlem/marketing build
+  && pnpm --filter @stottemedlem/marketing preview --port 4399 &` → shot → Read →
+  iterate. (astro preview serves `dist/` live, so rebuild + reload is enough;
+  kill via `lsof -ti:4399 | xargs kill` when done.)
+- Backoffice/UI loop (SSR app is auth-gated): don't fight the login wall — use
+  Storybook in packages/ui. `pnpm --filter @stottemedlem/ui run storybook --ci`
+  (port 6006, ready in seconds, hot-reloads), then shoot a story's iframe URL
+  directly: `http://localhost:6006/iframe.html?id=<story-id>&viewMode=story`.
+  Story ids slugify title + export: "Primitives/Button" + `Primary` →
+  `primitives-button--primary`; "Backoffice/Opprett organisasjon" + `WithError`
+  → `backoffice-opprett-organisasjon--with-error`. Stop with `lsof -ti:6006 |
+  xargs kill`. If the astro dev server is needed instead (port 4322): it's a
+  persistent daemon — "already running" may be a stale one from another session
+  serving old code; `pnpm --filter @stottemedlem/backoffice exec astro dev stop`
+  then restart, and stop it the same way when done. The dark pill at the bottom
+  of astro-dev screenshots is Astro's dev toolbar, not the page.

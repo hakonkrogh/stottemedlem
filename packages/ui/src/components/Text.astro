@@ -1,0 +1,29 @@
+---
+// Body copy primitive. `lead` is the softer intro line under a heading,
+// `muted`/`small` are quieter supporting text.
+interface Props {
+  variant?: "body" | "lead" | "muted" | "small";
+}
+const { variant = "body" } = Astro.props;
+---
+
+<p class:list={["text", variant]}>
+  <slot />
+</p>
+
+<style>
+  .text {
+    margin: 0;
+  }
+  .lead {
+    color: var(--sm-muted);
+    font-size: 0.95rem;
+  }
+  .muted {
+    color: var(--sm-muted);
+  }
+  .small {
+    color: var(--sm-muted);
+    font-size: 0.85rem;
+  }
+</style>

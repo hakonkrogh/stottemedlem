@@ -13,3 +13,5 @@ tmp/
 .astro/
 .wrangler/
 worker-configuration.d.ts
+storybook-static/
+*storybook.log

@@ -1,4 +1,10 @@
 ---
+import Button from "@stottemedlem/ui/components/Button.astro";
+import CardFooter from "@stottemedlem/ui/components/CardFooter.astro";
+import Heading from "@stottemedlem/ui/components/Heading.astro";
+import Stack from "@stottemedlem/ui/components/Stack.astro";
+import Text from "@stottemedlem/ui/components/Text.astro";
+import TextLink from "@stottemedlem/ui/components/TextLink.astro";
 import Shell from "../../layouts/Shell.astro";
 import { getWorkOS, orgSlug } from "../../lib/workos";
 
@@ -20,22 +26,26 @@ if (memberships.length === 1) return Astro.redirect(`/o/${orgSlug(firstOrg.organ
 ---
 
 <Shell title="Velg organisasjon">
-  <h1>Velg organisasjon</h1>
-  <p class="lead">Du administrerer flere organisasjoner. Hvilken vil du inn i?</p>
-  <ul class="orgs">
-    {
-      memberships.map((m) => (
-        <li>
+  <Stack gap="lg">
+    <Stack gap="sm">
+      <Heading>Velg organisasjon</Heading>
+      <Text variant="lead">Du administrerer flere organisasjoner. Hvilken vil du inn i?</Text>
+    </Stack>
+    <Stack gap="sm">
+      {
+        memberships.map((m) => (
           <form method="post" action="/orgs/select">
             <input type="hidden" name="organizationId" value={m.organizationId} />
-            <button type="submit">
-              <span class="org-name">{m.organizationName}</span>
-            </button>
+            <Button variant="secondary" block>
+              {m.organizationName}
+            </Button>
           </form>
-        </li>
-      ))
-    }
-  </ul>
-  <a class="btn secondary" href="/orgs/new">Opprett en ny organisasjon</a>
-  <p class="footer"><a href="/logout">Logg ut</a></p>
+        ))
+      }
+    </Stack>
+    <Button variant="primary" href="/orgs/new" block>Opprett en ny organisasjon</Button>
+    <CardFooter>
+      <TextLink href="/logout">Logg ut</TextLink>
+    </CardFooter>
+  </Stack>
 </Shell>

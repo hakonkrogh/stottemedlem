@@ -1,0 +1,20 @@
+---
+// The centered card frame every backoffice screen renders inside. Shell wraps
+// pages in it; screen stories wrap themselves in it so Storybook shows exactly
+// what ships.
+import Card from "@stottemedlem/ui/components/Card.astro";
+---
+
+<div class="frame">
+  <Card>
+    <slot />
+  </Card>
+</div>
+
+<style>
+  .frame {
+    width: 100%;
+    max-width: 26rem;
+    margin-inline: auto;
+  }
+</style>

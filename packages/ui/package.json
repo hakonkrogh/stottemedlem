@@ -1,0 +1,24 @@
+{
+  "name": "@stottemedlem/ui",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./tokens.css": "./src/styles/tokens.css",
+    "./base.css": "./src/styles/base.css",
+    "./components/*": "./src/components/*"
+  },
+  "scripts": {
+    "storybook": "storybook dev -p 6006",
+    "build-storybook": "storybook build"
+  },
+  "dependencies": {
+    "@fontsource-variable/fraunces": "catalog:"
+  },
+  "devDependencies": {
+    "@storybook-astro/framework": "^1.9.0",
+    "@storybook/builder-vite": "^10.5.3",
+    "astro": "catalog:",
+    "storybook": "^10.5.3"
+  }
+}

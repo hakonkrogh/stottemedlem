@@ -1,0 +1,33 @@
+---
+// Vertical rhythm primitive: stacks children with a consistent gap so screens
+// never sprinkle margins on individual elements.
+interface Props {
+  gap?: "xs" | "sm" | "md" | "lg" | "xl";
+}
+const { gap = "md" } = Astro.props;
+---
+
+<div class:list={["stack", `gap-${gap}`]}>
+  <slot />
+</div>
+
+<style>
+  .stack {
+    display: grid;
+  }
+  .gap-xs {
+    gap: var(--sm-space-xs);
+  }
+  .gap-sm {
+    gap: var(--sm-space-sm);
+  }
+  .gap-md {
+    gap: var(--sm-space-md);
+  }
+  .gap-lg {
+    gap: var(--sm-space-lg);
+  }
+  .gap-xl {
+    gap: var(--sm-space-xl);
+  }
+</style>

@@ -1,4 +1,10 @@
 ---
+import Button from "@stottemedlem/ui/components/Button.astro";
+import CardFooter from "@stottemedlem/ui/components/CardFooter.astro";
+import Heading from "@stottemedlem/ui/components/Heading.astro";
+import Stack from "@stottemedlem/ui/components/Stack.astro";
+import Text from "@stottemedlem/ui/components/Text.astro";
+import TextLink from "@stottemedlem/ui/components/TextLink.astro";
 import Shell from "../../../layouts/Shell.astro";
 import { env, getWorkOS, orgSlug, SESSION_COOKIE, sessionCookieOptions } from "../../../lib/workos";
 
@@ -48,11 +54,17 @@ const canSwitch = memberships.length > 1;
 ---
 
 <Shell title={membership.organizationName}>
-  <h1>{membership.organizationName}</h1>
-  <p class="lead">
-    Innlogget som {displayName}. Dette er foreløpig et skall — medlemslisten og
-    resten av administrasjonen kommer senere.
-  </p>
-  {canSwitch && <a class="btn secondary" href="/orgs">Bytt organisasjon</a>}
-  <p class="footer"><a href="/logout">Logg ut</a></p>
+  <Stack gap="lg">
+    <Stack gap="sm">
+      <Heading>{membership.organizationName}</Heading>
+      <Text variant="lead">
+        Innlogget som {displayName}. Dette er foreløpig et skall — medlemslisten og resten av
+        administrasjonen kommer senere.
+      </Text>
+    </Stack>
+    {canSwitch && <Button variant="secondary" href="/orgs" block>Bytt organisasjon</Button>}
+    <CardFooter>
+      <TextLink href="/logout">Logg ut</TextLink>
+    </CardFooter>
+  </Stack>
 </Shell>

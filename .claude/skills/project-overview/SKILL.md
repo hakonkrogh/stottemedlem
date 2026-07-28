@@ -33,6 +33,30 @@ lives in `specs/`, kept in sync with code by a mandatory `Stop`-hook harness.
   slugs + the canonical join entry point URL).
 - `packages/qr/` — `@stottemedlem/qr`, shared QR code/card generation, split
   isomorphic/node/browser (see qr-codes.md before touching QR anything).
+- `packages/ui/` — `@stottemedlem/ui` (added 2026-07-28), the shared UI
+  primitives all backoffice screens compose from: `.astro` components (Button,
+  TextField, Alert, Card, Stack, Heading, Text, TextLink) + `tokens.css` (all
+  colors/type/space — restyle here, not in components) + `base.css`. Token
+  values DELIBERATELY mirror the marketing identity (decided 2026-07-28 after a
+  trendy-font detour was reverted): Fraunces 650 "SOFT" 50 headings, golden
+  amber CTA `#f2b64a` with dark ink text + lighter hover, palette lifted from
+  `apps/marketing/src/pages/index.astro` — keep the two in sync if marketing
+  rebrands. Display font swaps = tokens.css `--sm-font-display*` + the base.css
+  @import + the @fontsource dep. Ships
+  SOURCE (no build step) — the backoffice `astro.config.mjs` lists it in
+  `vite.ssr.noExternal`. **Storybook** (since 2026-07-28, replacing earlier
+  dev-only story pages): `pnpm --filter @stottemedlem/ui run storybook --ci`
+  (port 6006) via the community `@storybook-astro/framework` (Storybook 10 +
+  Astro 7; storybook-astro.org). Stories are CSF colocated with components
+  (`*.stories.ts`); slots pass via `args.slots.default` (HTML string, component
+  ref, or configured `{ component, props, slots }`); a second glob in
+  `packages/ui/.storybook/main.ts` pulls in app screen stories from
+  `apps/backoffice/src` (e.g. CreateOrgScreen, wrapped in the shared
+  `ScreenFrame.astro` via a configured-component slot since decorators aren't
+  supported yet). Screenshot loop: see `preview-screenshot` skill. Gotcha that
+  motivated the package: Astro `<style>` in a layout is scoped, so styling
+  slotted page content from `Shell.astro` silently does nothing — never style
+  across the slot boundary; use the primitives.
 - `specs/` — the product intent layer (problems → use cases → concepts). Entry: `specs/INDEX.md`.
 - `.claude/hooks/` — Stop hooks: `spec-sync-stop.sh` (spec harness) + `close-gaps-stop.sh`.
 - `CLAUDE.md` — auto-loaded agent instructions; the canonical "start here".
