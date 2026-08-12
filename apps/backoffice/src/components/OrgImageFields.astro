@@ -95,8 +95,8 @@ const fields = [
   // Focal-point picker for the banner: drag (or tap) to place the visible-crop
   // frame; the position is written to the hidden bannerFocusX/Y inputs as
   // object-position percentages. Selecting a new file previews it immediately
-  // and recentres the frame.
-  const ASPECT = 3;
+  // and recentres the frame. Must match the landing page banner's aspect-ratio.
+  const ASPECT = 12 / 5;
 
   const picker = document.querySelector("[data-banner-picker]");
   const fileInput = document.getElementById("banner");
