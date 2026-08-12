@@ -104,6 +104,12 @@ lives in `specs/`, kept in sync with code by a mandatory `Stop`-hook harness.
   *hints* for symbols used only after a frontmatter early-`return` (0 errors =
   still green — don't chase them). A new package with `"test": "vitest run"`
   and zero test files FAILS `pnpm test` — add a first test with the package.
+  `pnpm lint` (Biome) is RED even on a clean tree (verified 2026-08-12): Biome
+  only parses `.astro` frontmatter, so imports/props used solely in the
+  template trip noUnusedImports/noUnusedVariables (Shell, PublicShell,
+  CreateOrgScreen, …). Pre-existing — judge your change by whether it adds NEW
+  findings (compare against `git stash` if unsure), and never "fix" these by
+  deleting the imports.
 - **Brand attribution (rule, 2026-07-28):** every public-facing surface carries a
   subtle "støttemedlem.no" (ø in visible text, punycode in hrefs; admin-only
   backoffice screens exempt; bare QR images exempt — the card around them carries

@@ -22,7 +22,11 @@ From the organization's point of view:
    [landing page](../concepts/org-landing-page.md) must show them for a payment
    provider to approve recurring payments.
 2. The administrator sets the [annual fee](../concepts/annual-fee.md) — the amount
-   a supporter pays for one year of supporting membership.
+   a supporter pays for one year of supporting membership. This is deliberately
+   **not** asked for in the creation step (deciding a price is a bigger decision
+   than naming the organization, and would stall getting started): the fee is set
+   afterwards in the back office, and until it is set the organization is treated
+   as having an incomplete profile and is prompted to finish it.
 3. The organization is given a stable slug and, from it, its public addresses: a
    shareable [join entry point](../concepts/join-entry-point.md) (e.g. a link the
    organization can put on its site or social media, or a
@@ -37,9 +41,12 @@ behaviour existed) is **prompted in the back office** to complete the missing
 fields, and can edit its profile there at any time.
 
 ## Acceptance criteria
-- [ ] An administrator can set the organization's public name, public profile
-      (organisasjonsnummer, contact information), and annual fee; the profile
-      fields are required during setup.
+- [ ] An administrator can create the organization with its public name and
+      profile (organisasjonsnummer, contact information); those fields are
+      required at creation, while the annual fee is **not** asked for there.
+- [ ] The annual fee is set after creation in the back office; until it is set,
+      the organization counts as having an incomplete profile (and the landing
+      page shows no price).
 - [ ] After setup the organization has a shareable join entry point and a live
       landing page + sales-terms page at stable addresses.
 - [ ] An organization missing required profile fields sees a prompt in the back

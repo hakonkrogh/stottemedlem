@@ -1,16 +1,18 @@
 ---
 // The public-profile fields every organization must fill so its landing page
 // (specs/concepts/org-landing-page.md) can show what Vipps requires: org.nr,
-// contact info, and the membership price. Shared by the create-org screen and
-// the org settings page.
+// contact info, and the membership price. Shared by the create-org screen
+// (which defers the fee to later — `withFee={false}`) and the org settings
+// page.
 import TextField from "@stottemedlem/ui/components/TextField.astro";
 import type { ProfileFieldErrors, ProfileFormValues } from "../lib/orgProfile";
 
 interface Props {
   values: ProfileFormValues;
   fieldErrors?: ProfileFieldErrors;
+  withFee?: boolean;
 }
-const { values, fieldErrors = {} } = Astro.props;
+const { values, fieldErrors = {}, withFee = true } = Astro.props;
 ---
 
 <TextField
@@ -29,11 +31,15 @@ const { values, fieldErrors = {} } = Astro.props;
   required
   error={fieldErrors.contactEmail}
 />
-<TextField
-  label="Årlig medlemsavgift (kr)"
-  name="annualFee"
-  value={values.annualFee}
-  placeholder="300"
-  required
-  error={fieldErrors.annualFee}
-/>
+{
+  withFee && (
+    <TextField
+      label="Årlig medlemsavgift (kr)"
+      name="annualFee"
+      value={values.annualFee}
+      placeholder="300"
+      required
+      error={fieldErrors.annualFee}
+    />
+  )
+}
