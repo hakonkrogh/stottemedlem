@@ -143,6 +143,14 @@ Verified 2026-07-08 (backoffice AuthKit login, scaffolding step 3):
   selector needs no extra `organizations.get` call. Working example: `apps/backoffice`
   (`src/middleware.ts` gate + `src/lib/workos.ts` + `src/pages/{login,callback,logout}.ts`
   and `orgs/`).
+- **Redirect URIs must be registered in punycode** (bit prod login wiring,
+  2026-08-12): the app sends `redirect_uri=https://app.xn--stttemedlem-hgb.no/callback`;
+  registering the visible-ø form (`https://app.støttemedlem.no/callback`) in the
+  WorkOS dashboard does NOT match — WorkOS 302s to
+  `error.workos.com/redirect-uri-invalid`. Headless check: `curl -sD-` the
+  `api.workos.com/user_management/authorize?...` URL our /login redirects to —
+  a Location on `error.workos.com` means registration mismatch; an
+  `authkit.workos.com` URL means the pair is valid.
 
 ## Astro 7 + adapter v14: env access and per-environment deploys
 
