@@ -1,8 +1,9 @@
 ---
 // Presentational create-organization screen, composed from @stottemedlem/ui
 // primitives. Shared by the real route (pages/orgs/new.astro, which owns the
-// POST handling) and its story (pages/dev/stories/create-org.astro), so the
-// look can be iterated on without touching WorkOS logic.
+// POST handling) and its story, so the look can be iterated on without
+// touching WorkOS logic. Besides the name it collects the public profile the
+// org landing page needs (see OrgProfileFields).
 import Alert from "@stottemedlem/ui/components/Alert.astro";
 import Button from "@stottemedlem/ui/components/Button.astro";
 import CardFooter from "@stottemedlem/ui/components/CardFooter.astro";
@@ -11,18 +12,30 @@ import Stack from "@stottemedlem/ui/components/Stack.astro";
 import Text from "@stottemedlem/ui/components/Text.astro";
 import TextField from "@stottemedlem/ui/components/TextField.astro";
 import TextLink from "@stottemedlem/ui/components/TextLink.astro";
+import type { ProfileFieldErrors, ProfileFormValues } from "../lib/orgProfile";
+import OrgProfileFields from "./OrgProfileFields.astro";
 
 interface Props {
   name?: string;
+  values?: ProfileFormValues;
+  fieldErrors?: ProfileFieldErrors & { name?: string };
   error?: string | null;
 }
-const { name = "", error = null } = Astro.props;
+const {
+  name = "",
+  values = { orgnr: "", contactEmail: "", annualFee: "" },
+  fieldErrors = {},
+  error = null,
+} = Astro.props;
 ---
 
 <Stack gap="lg">
   <Stack gap="sm">
     <Heading>Opprett organisasjon</Heading>
-    <Text variant="lead">Gi organisasjonen et navn støttemedlemmene kjenner igjen.</Text>
+    <Text variant="lead">
+      Gi organisasjonen et navn støttemedlemmene kjenner igjen. Resten vises på organisasjonens
+      offentlige side sammen med navnet — den trenger Vipps for å godkjenne betalinger.
+    </Text>
   </Stack>
   {error && <Alert variant="error">{error}</Alert>}
   <form method="post">
@@ -34,7 +47,9 @@ const { name = "", error = null } = Astro.props;
         placeholder="F.eks. Nordnes Skolekorps"
         required
         autofocus
+        error={fieldErrors.name}
       />
+      <OrgProfileFields values={values} fieldErrors={fieldErrors} />
       <Button block>Opprett og fortsett</Button>
     </Stack>
   </form>

@@ -14,13 +14,16 @@
   "dependencies": {
     "@astrojs/cloudflare": "catalog:",
     "@stottemedlem/core": "workspace:*",
+    "@stottemedlem/db": "workspace:*",
     "@stottemedlem/qr": "workspace:*",
     "@stottemedlem/ui": "workspace:*",
+    "@stottemedlem/vipps": "workspace:*",
     "@workos-inc/node": "catalog:",
     "astro": "catalog:"
   },
   "devDependencies": {
     "@astrojs/check": "catalog:",
+    "@cloudflare/workers-types": "catalog:",
     "@types/node": "catalog:",
     "typescript": "catalog:",
     "wrangler": "catalog:"

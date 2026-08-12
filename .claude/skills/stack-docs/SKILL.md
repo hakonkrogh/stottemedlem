@@ -1,6 +1,6 @@
 ---
 name: stack-docs
-description: Verified platform facts for the stottemedlem stack (Astro on Cloudflare Workers, WorkOS on Workers). Load before scaffolding or configuring apps/marketing or apps/backoffice, or assuming how the Astro Cloudflare adapter / WorkOS SDK behave on Workers.
+description: Verified platform facts for the stottemedlem stack (Astro on Cloudflare Workers, WorkOS on Workers, Vipps MobilePay test environment). Load before scaffolding or configuring apps/marketing or apps/backoffice, assuming how the Astro Cloudflare adapter / WorkOS SDK behave on Workers, or starting Vipps API work.
 ---
 # Stack facts (verified 2026-07-03, in-repo)
 
@@ -178,6 +178,52 @@ Two load-bearing facts the scaffold proved (2026-07-08), both easy to get wrong:
     **flattened build** (so the env is chosen by `CLOUDFLARE_ENV` at build, not `--env`).
     Secrets attach to the running Worker immediately (no redeploy); the Worker must exist
     first (deploy once, or let the `secret put` prompt create it).
+
+## Vipps MobilePay test environment (verified 2026-07-29)
+
+Full merchant test env exists — build everything against it before touching the
+real account. Source: developer.vippsmobilepay.com/docs/knowledge-base/test-environment/
+
+- **Base URL `https://apitest.vipps.no`** — same API surface as prod (Recurring
+  v3, Webhooks: `https://apitest.vipps.no/webhooks`), separate keys. No real
+  money, **no settlements**, push notifications may be flaky, no gender in
+  profile-sharing data.
+- **Test sales unit + test keys appear automatically "when you order a Vipps
+  MobilePay product that includes an API"** — i.e. at Faste betalinger order
+  submission, apparently NOT gated on approval (unverified whether submission
+  alone suffices — check portal *For utviklere* right after submitting; the
+  walkthrough log records the answer once observed).
+- **Test users:** portal → *For utviklere* → *Test users* — auto-generates
+  phone number + test NIN; usable on multiple devices simultaneously.
+- **MT (Merchant Test) app:** iOS via TestFlight / Android via Google Play
+  (join their Google Group first) — real-app mirror; approve test recurring
+  agreements on a phone with a test user for true end-to-end.
+
+### Vipps API mechanics (verified 2026-08-10, implemented in `packages/vipps`)
+
+- **Access token:** `POST /accesstoken/get` with the keys as *headers*
+  (`client_id`, `client_secret`, `Ocp-Apim-Subscription-Key`,
+  `Merchant-Serial-Number`). Response fields are **numbers** (`expires_in`,
+  `expires_on` epoch seconds) + `access_token` JWT. Lifetime **1 h in test,
+  24 h in prod** — cache per sales unit (we use KV, TTL `expires_in − 300`).
+  A newer `POST /miami/v1/token` (Basic auth, form-encoded
+  `grant_type=client_credentials`, no subscription key, 15-min tokens) exists;
+  we use the classic endpoint.
+- **Webhook HMAC:** signed string is
+  `POST\n<pathAndQuery>\n<x-ms-date>;<host>;<x-ms-content-sha256>`; the key is
+  the registration `secret` string **used as raw UTF-8 bytes** (NOT
+  base64-decoded — confirmed by the official JS sample:
+  `crypto.createHmac('sha256', secret)`), signature base64 in
+  `Authorization: HMAC-SHA256 SignedHeaders=…&Signature=…`. Docs publish a
+  testable body→`x-ms-content-sha256` example pair (used as a fixture in
+  `packages/vipps/src/webhook-verification.test.ts`). Verify with
+  `crypto.subtle.verify` (constant-time) — works on workerd and Node alike.
+- **Env selection is pure config:** `VIPPS_API_BASE_URL` var —
+  `https://apitest.vipps.no` in `.dev.vars` + wrangler `env.staging`,
+  `https://api.vipps.no` only in top-level (production) vars. Secrets:
+  `VIPPS_CLIENT_SECRET`, `VIPPS_SUBSCRIPTION_KEY` via `wrangler secret put`.
+  Read-only credential check: `pnpm --filter @stottemedlem/vipps run smoke`
+  (refuses to run against prod).
 
 ## Forward references (not captured yet)
 

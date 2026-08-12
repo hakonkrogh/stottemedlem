@@ -1,4 +1,6 @@
+import { ensureOrganization } from "@stottemedlem/db";
 import type { APIRoute } from "astro";
+import { getDb } from "../../lib/db";
 import { env, getWorkOS, orgPath, SESSION_COOKIE, sessionCookieOptions } from "../../lib/workos";
 
 // The org selector posts an organizationId here. Verify the user really is a
@@ -36,5 +38,6 @@ export const POST: APIRoute = async ({ request, url, locals, cookies, redirect }
     cookies.set(SESSION_COOKIE, refreshed.sealedSession, sessionCookieOptions(url));
   }
 
-  return redirect(orgPath(membership.organizationName));
+  const org = await ensureOrganization(getDb(), organizationId, membership.organizationName);
+  return redirect(orgPath(org.slug));
 };

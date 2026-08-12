@@ -1,4 +1,5 @@
 ---
+import { ensureOrganization } from "@stottemedlem/db";
 import Button from "@stottemedlem/ui/components/Button.astro";
 import CardFooter from "@stottemedlem/ui/components/CardFooter.astro";
 import Heading from "@stottemedlem/ui/components/Heading.astro";
@@ -6,7 +7,8 @@ import Stack from "@stottemedlem/ui/components/Stack.astro";
 import Text from "@stottemedlem/ui/components/Text.astro";
 import TextLink from "@stottemedlem/ui/components/TextLink.astro";
 import Shell from "../../layouts/Shell.astro";
-import { getWorkOS, orgSlug } from "../../lib/workos";
+import { getDb } from "../../lib/db";
+import { getWorkOS, orgPath } from "../../lib/workos";
 
 // Org selector — shown when the signed-in admin belongs to more than one
 // organization. Zero/one collapse to the create/auto-redirect paths so a direct
@@ -22,7 +24,10 @@ const { data: memberships } = await workos.userManagement.listOrganizationMember
 
 const [firstOrg] = memberships;
 if (!firstOrg) return Astro.redirect("/orgs/new");
-if (memberships.length === 1) return Astro.redirect(`/o/${orgSlug(firstOrg.organizationName)}`);
+if (memberships.length === 1) {
+  const org = await ensureOrganization(getDb(), firstOrg.organizationId, firstOrg.organizationName);
+  return Astro.redirect(orgPath(org.slug));
+}
 ---
 
 <Shell title="Velg organisasjon">

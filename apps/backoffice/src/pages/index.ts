@@ -1,4 +1,5 @@
 import type { APIRoute } from "astro";
+import { getDb } from "../lib/db";
 import { getWorkOS, resolveLanding } from "../lib/workos";
 
 // Root routes an authenticated admin to the right place: their org's dashboard,
@@ -7,6 +8,6 @@ import { getWorkOS, resolveLanding } from "../lib/workos";
 export const GET: APIRoute = async ({ locals, redirect }) => {
   const session = locals.session;
   if (!session) return redirect("/login");
-  const { path } = await resolveLanding(getWorkOS(), session.userId);
+  const { path } = await resolveLanding(getWorkOS(), getDb(), session.userId);
   return redirect(path);
 };

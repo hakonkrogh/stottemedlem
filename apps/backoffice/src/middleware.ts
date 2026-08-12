@@ -3,10 +3,17 @@ import { env, getWorkOS, SESSION_COOKIE, sessionCookieOptions, toSessionInfo } f
 
 // Paths reachable without a session. Everything else requires an authenticated
 // WorkOS session; unauthenticated requests are sent to /login.
-const PUBLIC_EXACT = new Set(["/login", "/callback", "/logout", "/healthz"]);
+// /favicon.ico is here because browsers and crawlers request it unprompted on
+// the public pages — without it they get bounced into the login flow.
+const PUBLIC_EXACT = new Set(["/login", "/callback", "/logout", "/healthz", "/favicon.ico"]);
 function isPublic(pathname: string): boolean {
   // /api/qr/* is the public QR embed contract (see docs/qr-codes.md).
-  return PUBLIC_EXACT.has(pathname) || pathname.startsWith("/api/qr/");
+  // /org/* is the public org landing page + salgsvilkår
+  // (specs/concepts/org-landing-page.md) — Vipps' website verification and
+  // prospective supporters reach them without any session.
+  return (
+    PUBLIC_EXACT.has(pathname) || pathname.startsWith("/api/qr/") || pathname.startsWith("/org/")
+  );
 }
 
 export const onRequest = defineMiddleware(async (context, next) => {

@@ -38,6 +38,10 @@ sharing it (link, QR code, embed) pointing at the same single destination.
 - Is where [joining as a supporting member](../use-cases/join-as-supporting-member.md)
   begins.
 - Is what the [QR code card](../use-cases/promote-with-qr-card.md) encodes.
+- The [organization landing page](org-landing-page.md) links to it as its call
+  to action. The landing page is a separate, parallel surface — the entry
+  point itself still hands off directly to payment, never via the landing
+  page.
 
 ## Referenced by
 - [Use case: Set up a supporting membership](../use-cases/set-up-supporting-membership.md)

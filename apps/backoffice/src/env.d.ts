@@ -8,6 +8,8 @@
 // against the full generated Env via tsconfig.worker.json instead. Extend this
 // as more bindings (D1, KV) get consumed by app code in later scaffolding steps.
 interface Env {
+  /** D1 system-of-record database (schema/queries in @stottemedlem/db). */
+  DB: import("@cloudflare/workers-types").D1Database;
   /** WorkOS API key (secret; from .dev.vars locally, `wrangler secret` in cloud). */
   WORKOS_API_KEY: string;
   /** WorkOS AuthKit client id (per environment). */
@@ -16,6 +18,18 @@ interface Env {
   WORKOS_COOKIE_PASSWORD: string;
   /** Registered AuthKit redirect URI for this environment's /callback. */
   WORKOS_REDIRECT_URI: string;
+  /** Vipps environment: https://apitest.vipps.no everywhere except production. */
+  VIPPS_API_BASE_URL: string;
+  /** Vipps sales-unit client id (per environment). */
+  VIPPS_CLIENT_ID: string;
+  /** Vipps sales-unit client secret (secret; .dev.vars / `wrangler secret`). */
+  VIPPS_CLIENT_SECRET: string;
+  /** Ocp-Apim-Subscription-Key for the sales unit (secret). */
+  VIPPS_SUBSCRIPTION_KEY: string;
+  /** Merchant Serial Number of the sales unit carrying Faste betalinger. */
+  VIPPS_MSN: string;
+  /** KV cache for Vipps access tokens (1 h test / 24 h prod lifetime). */
+  VIPPS_TOKENS: import("@cloudflare/workers-types").KVNamespace;
 }
 
 // Astro v6+ removed `Astro.locals.runtime.env`; the Cloudflare adapter now

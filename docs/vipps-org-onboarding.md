@@ -52,7 +52,18 @@ charges.
          - Org only takes Vipps in person (Vippsnummer): order **Faste
            betalinger** as a new product on the agreement — this creates a new
            sales unit for it.
-3. - [ ] Answer the extra compliance questions the recurring product requires
+3. - [ ] Provide the **website and sales-terms links** the order form requires
+         (verified 2026-07-28 in the
+         [portal walkthrough, step 4](vipps-portal-walkthrough/README.md)). The
+         form asks for (a) a live web page with company name, org.nr, contact
+         information, and products/prices, and (b) a sales-terms page covering
+         at minimum payment, angrerett, returns, and complaint handling — each
+         behind a "Verifiser nettstedet" check. **støttemedlem hosts both for
+         the organization:** paste the org's public landing page URL and its
+         salgsvilkår URL (shown in the org's back office; see
+         [`specs/concepts/org-landing-page.md`](../specs/concepts/org-landing-page.md)).
+         Answer "Ja, den er live".
+4. - [ ] Answer the extra compliance questions the recurring product requires
          (mandated by financial regulators, on top of the checks the org
          already passed). Suggested answers for a supporting membership:
          - *expected turnover*: estimated yearly membership income
@@ -60,8 +71,8 @@ charges.
          - *share of recurring payments*: 100 % on this sales unit;
          - *agreement length*: ongoing until cancelled;
          - *billing interval*: yearly.
-4. - [ ] Sign with BankID if prompted (the registered signer from step A).
-5. - [ ] Wait for Vipps' approval of the product. Since the org already passed
+5. - [ ] Sign with BankID if prompted (the registered signer from step A).
+6. - [ ] Wait for Vipps' approval of the product. Since the org already passed
          KYC, this is usually quick; Vipps follows up by email if anything is
          missing.
 

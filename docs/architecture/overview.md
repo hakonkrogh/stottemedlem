@@ -230,9 +230,13 @@ Ordered so each step lands green and deployable:
    organization. Admin shell now gated.
 4. **`packages/db`** — Drizzle + D1 migrations for the data model above;
    local dev via platform proxy/Miniflare.
-5. **`packages/vipps`** — access token handling (KV cache), Recurring v3
-   agreements/charges, webhook registration + HMAC verification, against the
-   Vipps **test** environment. Vitest against recorded fixtures.
+5. **`packages/vipps`** — ✅ done (2026-08-10) — access token handling (KV
+   cache), Recurring v3 agreements/charges, webhook registration + HMAC
+   verification, pointed at the Vipps **test** environment everywhere except
+   production (`VIPPS_API_BASE_URL`). Vitest against recorded fixtures incl.
+   the official docs' HMAC example. Live-key validation is a read-only smoke:
+   `pnpm --filter @stottemedlem/vipps run smoke` — blocked until test keys
+   appear in the portal (Faste betalinger order not yet submitted).
 6. **Webhook path end-to-end** — `/webhooks/vipps` → `webhook_events` → Queue
    → consumer updates `agreements`/`charges`. Verified with Vipps test events.
 7. **Signup flow** — `/join`: tier pick → agreement + initial charge →

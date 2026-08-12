@@ -1,4 +1,7 @@
 ---
+import { joinEntryPointUrl, orgLandingPageUrl, orgTermsUrl } from "@stottemedlem/core";
+import { ensureOrganization, getOrganizationBySlug, isProfileComplete } from "@stottemedlem/db";
+import Alert from "@stottemedlem/ui/components/Alert.astro";
 import Button from "@stottemedlem/ui/components/Button.astro";
 import CardFooter from "@stottemedlem/ui/components/CardFooter.astro";
 import Heading from "@stottemedlem/ui/components/Heading.astro";
@@ -6,28 +9,48 @@ import Stack from "@stottemedlem/ui/components/Stack.astro";
 import Text from "@stottemedlem/ui/components/Text.astro";
 import TextLink from "@stottemedlem/ui/components/TextLink.astro";
 import Shell from "../../../layouts/Shell.astro";
-import { env, getWorkOS, orgSlug, SESSION_COOKIE, sessionCookieOptions } from "../../../lib/workos";
+import { getDb } from "../../../lib/db";
+import {
+  env,
+  getWorkOS,
+  orgPath,
+  orgSlug,
+  SESSION_COOKIE,
+  sessionCookieOptions,
+} from "../../../lib/workos";
 
-// Org dashboard — placeholder for scaffolding step 3. The real member list,
-// period history and tier editor land in step 9. Its job today: prove the
-// session is org-scoped and the slug resolves to an org the user administers.
-//
-// Slug caveat (until the D1 org table in step 4 persists a unique slug): the
-// slug is derived from the WorkOS org name, so two equal-slugifying names would
-// collide — accepted for now; `find` picks the first match.
+// Org dashboard. Resolves the persisted slug to the org row (backfilling rows
+// for orgs that predate persisted slugs), verifies the signed-in user is a
+// member, and surfaces the org's public URLs — the landing page + salgsvilkår
+// links the admin pastes into the Vipps portal — plus a prompt to complete the
+// public profile when required fields are missing.
 const session = Astro.locals.session;
 if (!session) return Astro.redirect("/login");
 const slug = Astro.params.slug;
 if (!slug) return Astro.redirect("/orgs");
 
 const workos = getWorkOS();
+const db = getDb();
 const { data: memberships } = await workos.userManagement.listOrganizationMemberships({
   userId: session.userId,
   statuses: ["active"],
   limit: 100,
 });
-const membership = memberships.find((m) => orgSlug(m.organizationName) === slug);
-if (!membership) return Astro.redirect("/orgs");
+
+let org = await getOrganizationBySlug(db, slug);
+let membership: (typeof memberships)[number] | undefined;
+if (org) {
+  const workosOrgId = org.workosOrgId;
+  membership = memberships.find((m) => m.organizationId === workosOrgId);
+  if (!membership) return Astro.redirect("/orgs");
+} else {
+  // Legacy URL from before slugs were persisted: match on the name-derived
+  // slug, backfill the row, and settle on its (possibly different) stored slug.
+  membership = memberships.find((m) => orgSlug(m.organizationName) === slug);
+  if (!membership) return Astro.redirect("/orgs");
+  org = await ensureOrganization(db, membership.organizationId, membership.organizationName);
+  if (org.slug !== slug) return Astro.redirect(orgPath(org.slug));
+}
 
 // Make the URL authoritative: if the session is scoped to a different org, switch
 // into this one so the dashboard is bookmarkable and self-correcting.
@@ -51,20 +74,63 @@ if (session.organizationId !== membership.organizationId) {
 const displayName =
   [session.firstName, session.lastName].filter(Boolean).join(" ") || session.email;
 const canSwitch = memberships.length > 1;
+const complete = isProfileComplete(org);
+const landingUrl = orgLandingPageUrl(org.slug);
+const termsUrl = orgTermsUrl(org.slug);
+const joinUrl = joinEntryPointUrl(org.slug);
 ---
 
-<Shell title={membership.organizationName}>
+<Shell title={org.name}>
   <Stack gap="lg">
     <Stack gap="sm">
-      <Heading>{membership.organizationName}</Heading>
+      <Heading>{org.name}</Heading>
       <Text variant="lead">
-        Innlogget som {displayName}. Dette er foreløpig et skall — medlemslisten og resten av
-        administrasjonen kommer senere.
+        Innlogget som {displayName}. Medlemslisten og resten av administrasjonen kommer senere.
       </Text>
     </Stack>
+    {
+      !complete && (
+        <Alert variant="info">
+          Den offentlige siden mangler informasjon Vipps krever (organisasjonsnummer,
+          kontakt-e-post og årlig medlemsavgift).{" "}
+          <TextLink href={`${orgPath(org.slug)}/innstillinger`}>Fyll inn nå</TextLink>
+        </Alert>
+      )
+    }
+    <Stack gap="sm">
+      <Heading level={2}>Offentlige lenker</Heading>
+      <div class="links">
+        <Text variant="small">
+          Organisasjonens side: <TextLink href={landingUrl}>{landingUrl}</TextLink>
+        </Text>
+        <Text variant="small">
+          Salgsvilkår: <TextLink href={termsUrl}>{termsUrl}</TextLink>
+        </Text>
+        <Text variant="small">
+          Innmeldingslenke: <TextLink href={joinUrl}>{joinUrl}</TextLink>
+        </Text>
+      </div>
+      <Text variant="small">
+        Når du bestiller Faste betalinger i Vipps-portalen, limer du inn lenken til organisasjonens
+        side som «nettsted» og lenken til salgsvilkårene som «salgsvilkår».
+      </Text>
+    </Stack>
+    <Button variant="secondary" href={`${orgPath(org.slug)}/innstillinger`} block>
+      Innstillinger
+    </Button>
     {canSwitch && <Button variant="secondary" href="/orgs" block>Bytt organisasjon</Button>}
     <CardFooter>
       <TextLink href="/logout">Logg ut</TextLink>
     </CardFooter>
   </Stack>
 </Shell>
+
+<style>
+  .links {
+    display: grid;
+    gap: 0.35rem;
+  }
+  .links :global(a) {
+    word-break: break-all;
+  }
+</style>

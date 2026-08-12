@@ -6,12 +6,15 @@
   // Custom worker entry: re-exports Astro's fetch handler and adds the
   // scheduled (cron) and queue (webhook consumer) handlers.
   "main": "./src/worker.ts",
+  // Custom domain (app.støttemedlem.no in punycode) — wrangler manages DNS +
+  // certs on deploy; the CI token needs zone-level permission (same as marketing).
+  "routes": [{ "pattern": "app.xn--stttemedlem-hgb.no", "custom_domain": true }],
   "assets": {
     "binding": "ASSETS",
-    "directory": "./dist",
+    "directory": "./dist"
   },
   "observability": {
-    "enabled": true,
+    "enabled": true
   },
   // ── WorkOS AuthKit (production) ───────────────────────────────────────
   // Non-secret config lives here (per-env, non-inheritable — repeat under
@@ -24,94 +27,124 @@
   "vars": {
     "WORKOS_CLIENT_ID": "",
     "WORKOS_REDIRECT_URI": "https://app.xn--stttemedlem-hgb.no/callback",
+    // ── Vipps MobilePay (production sales unit) ─────────────────────────
+    // Only production talks to api.vipps.no; staging + local use the test
+    // environment. Client id + MSN are filled in from the portal
+    // (For utviklere) once the Faste betalinger order is approved. The two
+    // secrets are set out-of-band per environment:
+    //   wrangler secret put VIPPS_CLIENT_SECRET      (+ --env staging)
+    //   wrangler secret put VIPPS_SUBSCRIPTION_KEY   (+ --env staging)
+    "VIPPS_API_BASE_URL": "https://api.vipps.no",
+    "VIPPS_CLIENT_ID": "",
+    "VIPPS_MSN": ""
   },
   // ── Bindings ──────────────────────────────────────────────────────────
-  // The ids below are placeholders: create the real resources before the
-  // first deploy (`wrangler d1 create`, `wrangler kv namespace create`,
-  // `wrangler queues create`) and paste their ids here. Local dev does not
-  // need real ids — `astro dev` runs against local Miniflare resources.
+  // Real resource ids (provisioned 2026-08-12 via `wrangler d1 create`,
+  // `wrangler kv namespace create`, `wrangler queues create`). Local dev does
+  // not touch them — `astro dev` runs against local Miniflare resources.
   "d1_databases": [
     {
       "binding": "DB",
       "database_name": "stottemedlem",
-      "database_id": "00000000-0000-0000-0000-000000000000",
-    },
+      "database_id": "d7d2afff-7d1e-4df5-987b-9974676550df",
+      "migrations_dir": "../../packages/db/migrations"
+    }
   ],
   "kv_namespaces": [
     {
       "binding": "VIPPS_TOKENS",
-      "id": "0000000000000000000000000000000000",
+      "id": "6c00a9db7bf3426e8fb2df05a4d24f71"
     },
+    // Astro's session store. Declared explicitly (namespace "sessions") so the
+    // adapter's auto-injected SESSION binding resolves to a known namespace
+    // instead of relying on deploy-time auto-provisioning.
+    {
+      "binding": "SESSION",
+      "id": "00b21f6f734b4d4cb673c78159cd4b60"
+    }
   ],
   "queues": {
     "producers": [
       {
         "binding": "VIPPS_EVENTS",
-        "queue": "vipps-events",
-      },
+        "queue": "vipps-events"
+      }
     ],
     "consumers": [
       {
         "queue": "vipps-events",
         "max_batch_size": 10,
-        "max_retries": 5,
-      },
-    ],
+        "max_retries": 5
+      }
+    ]
   },
   // Cron Triggers — handled in src/worker.ts `scheduled` (switch on
   // controller.cron): 04:00 renewal-charge job, 02:00 nightly reconciliation.
   "triggers": {
-    "crons": ["0 4 * * *", "0 2 * * *"],
+    "crons": ["0 4 * * *", "0 2 * * *"]
   },
   // ── Environments ──────────────────────────────────────────────────────
   // Top-level config is production. `staging` mirrors it against the Vipps
   // test environment; bindings are non-inheritable so they repeat here.
   "env": {
     "staging": {
+      "routes": [
+        { "pattern": "staging.app.xn--stttemedlem-hgb.no", "custom_domain": true }
+      ],
       "assets": {
         "binding": "ASSETS",
-        "directory": "./dist",
+        "directory": "./dist"
       },
       "observability": {
-        "enabled": true,
+        "enabled": true
       },
       // WorkOS AuthKit (staging). Uses a separate WorkOS environment's
       // client id; secrets set with `wrangler secret put <NAME> --env staging`.
       "vars": {
         "WORKOS_CLIENT_ID": "client_01KX0YS8HXEWRF32JBT371231A",
         "WORKOS_REDIRECT_URI": "https://staging.app.xn--stttemedlem-hgb.no/callback",
+        // Vipps TEST environment (test sales unit keys from the portal's
+        // For utviklere page; same MSN header mechanics as production).
+        "VIPPS_API_BASE_URL": "https://apitest.vipps.no",
+        "VIPPS_CLIENT_ID": "",
+        "VIPPS_MSN": ""
       },
       "d1_databases": [
         {
           "binding": "DB",
           "database_name": "stottemedlem-staging",
-          "database_id": "00000000-0000-0000-0000-000000000000",
-        },
+          "database_id": "0da9883a-7f06-4234-b5d8-3c3f5e9473ac",
+          "migrations_dir": "../../packages/db/migrations"
+        }
       ],
       "kv_namespaces": [
         {
           "binding": "VIPPS_TOKENS",
-          "id": "0000000000000000000000000000000000",
+          "id": "ece345d0f22d4298a6def93ce9b503fe"
         },
+        {
+          "binding": "SESSION",
+          "id": "1d6aa5e34e6d4977b47c1ffa97ca9e71"
+        }
       ],
       "queues": {
         "producers": [
           {
             "binding": "VIPPS_EVENTS",
-            "queue": "vipps-events-staging",
-          },
+            "queue": "vipps-events-staging"
+          }
         ],
         "consumers": [
           {
             "queue": "vipps-events-staging",
             "max_batch_size": 10,
-            "max_retries": 5,
-          },
-        ],
+            "max_retries": 5
+          }
+        ]
       },
       "triggers": {
-        "crons": ["0 4 * * *", "0 2 * * *"],
-      },
-    },
-  },
+        "crons": ["0 4 * * *", "0 2 * * *"]
+      }
+    }
+  }
 }

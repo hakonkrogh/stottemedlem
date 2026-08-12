@@ -1,0 +1,102 @@
+---
+import { formatOrganisasjonsnummer, orgLandingPageUrl } from "@stottemedlem/core";
+import { getOrganizationBySlug } from "@stottemedlem/db";
+import Heading from "@stottemedlem/ui/components/Heading.astro";
+import Stack from "@stottemedlem/ui/components/Stack.astro";
+import Text from "@stottemedlem/ui/components/Text.astro";
+import TextLink from "@stottemedlem/ui/components/TextLink.astro";
+import PublicShell from "../../../layouts/PublicShell.astro";
+import { getDb } from "../../../lib/db";
+
+// PUBLIC standard sales terms (salgsvilkår) for an organization's supporting
+// membership — the second URL the Vipps portal requires when ordering Faste
+// betalinger. Covers the mandated minimum: payment, right of withdrawal
+// (angrerett), returns, and complaint handling, populated with the org's
+// public profile. One standard template for every org, by design.
+const slug = Astro.params.slug;
+const org = slug ? await getOrganizationBySlug(getDb(), slug) : null;
+if (!org) return new Response("Fant ikke organisasjonen", { status: 404 });
+
+const contact = org.contactEmail ?? null;
+const fee = org.annualFeeNok;
+---
+
+<PublicShell title={`Salgsvilkår — ${org.name}`}>
+  <Stack gap="lg">
+    <Stack gap="sm">
+      <Heading>Salgsvilkår</Heading>
+      <Text variant="lead">
+        Vilkår for kjøp av støttemedlemskap i {org.name}
+        {org.orgnr && ` (org.nr. ${formatOrganisasjonsnummer(org.orgnr)})`}.
+      </Text>
+    </Stack>
+
+    <section>
+      <Heading level={2}>Avtalen</Heading>
+      <Text>
+        Avtalen inngås mellom deg som støttemedlem og {org.name}
+        {org.orgnr && ` (org.nr. ${formatOrganisasjonsnummer(org.orgnr)})`}, heretter
+        «organisasjonen». Et støttemedlemskap er et frivillig, årlig bidrag som støtter
+        organisasjonens arbeid. Kjøpet gjennomføres via betalingsplattformen støttemedlem.no.
+      </Text>
+    </section>
+
+    <section>
+      <Heading level={2}>Pris og betaling</Heading>
+      <Text>
+        Støttemedlemskapet koster{" "}
+        {fee !== null ? `${fee} kr per år` : "et årlig beløp per år fastsatt av organisasjonen"}.
+        Betalingen skjer med Vipps: første betaling trekkes når du melder deg inn, og
+        deretter fornyes medlemskapet automatisk én gang i året. Du får varsel i Vipps-appen før
+        hver fornyelse, og du kan når som helst stoppe avtalen i Vipps-appen.
+      </Text>
+    </section>
+
+    <section>
+      <Heading level={2}>Angrerett</Heading>
+      <Text>
+        Etter angrerettloven har du 14 dagers angrerett fra innmeldingen. Vil du bruke
+        angreretten, {contact ? "kontakter du organisasjonen på " : "kontakter du organisasjonen"}
+        {contact && <a href={`mailto:${contact}`}>{contact}</a>}, så tilbakebetales innbetalt
+        beløp.
+      </Text>
+    </section>
+
+    <section>
+      <Heading level={2}>Retur og oppsigelse</Heading>
+      <Text>
+        Støttemedlemskapet er en tjeneste, ikke en fysisk vare — det er derfor ingenting å
+        returnere. Du kan når som helst si opp medlemskapet ved å stoppe avtalen i Vipps-appen
+        eller kontakte organisasjonen. Medlemskapet løper da ut den betalte årsperioden, og det
+        trekkes ingen flere betalinger.
+      </Text>
+    </section>
+
+    <section>
+      <Heading level={2}>Klagehåndtering</Heading>
+      <Text>
+        Har du en klage på kjøpet eller medlemskapet, kontakter du organisasjonen
+        {contact && (
+          <>
+            {" "}på <a href={`mailto:${contact}`}>{contact}</a>
+          </>
+        )}, som besvarer henvendelser fortløpende. Kommer dere ikke til enighet, kan du ta
+        klagen videre til Forbrukertilsynet (forbrukertilsynet.no).
+      </Text>
+    </section>
+
+    <Text variant="small">
+      <TextLink href={orgLandingPageUrl(org.slug)}>Tilbake til {org.name}</TextLink>
+    </Text>
+  </Stack>
+</PublicShell>
+
+<style>
+  section {
+    display: grid;
+    gap: 0.5rem;
+  }
+  section a {
+    color: inherit;
+  }
+</style>

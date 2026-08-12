@@ -17,19 +17,34 @@ supporting members and their annual fee.
 From the organization's point of view:
 
 1. The administrator gives the organization a public-facing name (what supporters
-   will recognize) and basic identity.
+   will recognize) and its **public profile**: organisasjonsnummer and contact
+   information. These are required — the organization's
+   [landing page](../concepts/org-landing-page.md) must show them for a payment
+   provider to approve recurring payments.
 2. The administrator sets the [annual fee](../concepts/annual-fee.md) — the amount
    a supporter pays for one year of supporting membership.
-3. The organization is given a shareable
-   [join entry point](../concepts/join-entry-point.md) (e.g. a link the
+3. The organization is given a stable slug and, from it, its public addresses: a
+   shareable [join entry point](../concepts/join-entry-point.md) (e.g. a link the
    organization can put on its site or social media, or a
-   [QR code card](promote-with-qr-card.md) for posters and external websites).
+   [QR code card](promote-with-qr-card.md) for posters and external websites)
+   and its [landing page](../concepts/org-landing-page.md) with the sales-terms
+   page — the two URLs the payment-provider order form asks for.
 4. Once configured, the organization is ready to receive supporting members; no
    further setup is required to take the first payment.
 
+An organization created before a profile field was required (or before this
+behaviour existed) is **prompted in the back office** to complete the missing
+fields, and can edit its profile there at any time.
+
 ## Acceptance criteria
-- [ ] An administrator can set the organization's public name and annual fee.
-- [ ] After setup the organization has a shareable join entry point.
+- [ ] An administrator can set the organization's public name, public profile
+      (organisasjonsnummer, contact information), and annual fee; the profile
+      fields are required during setup.
+- [ ] After setup the organization has a shareable join entry point and a live
+      landing page + sales-terms page at stable addresses.
+- [ ] An organization missing required profile fields sees a prompt in the back
+      office and can complete them; the landing page reflects the change
+      immediately.
 - [ ] A supporter using that entry point can complete
       [joining](join-as-supporting-member.md) without further admin action.
 - [ ] The annual fee can be changed later; the change applies to future joins and
@@ -44,4 +59,5 @@ From the organization's point of view:
 - [Concept: Organization](../concepts/organization.md)
 - [Concept: Annual fee](../concepts/annual-fee.md)
 - [Concept: Join entry point](../concepts/join-entry-point.md)
+- [Concept: Organization landing page](../concepts/org-landing-page.md)
 - [Use case: Promote membership with a QR code card](promote-with-qr-card.md)
