@@ -83,6 +83,14 @@ tsconfig.worker.json`. Don't add `@cloudflare/workers-types` — generated types
   `pnpm exec biome check <changed paths>` — don't "fix" the false positives by
   removing template-used imports (breaks the build).
 
+Zone routes vs custom domains (verified live 2026-08-12): a zone route
+(`{ pattern: "xn--stttemedlem-hgb.no/org/*", zone_name: … }`) on one Worker
+**takes precedence over another Worker's custom domain** on the same hostname —
+this is how the SSR backoffice serves the canonical public org pages on the
+apex while the assets-only marketing Worker keeps everything else. Reuse the
+same pattern for future public paths (`/bli-med/*`, `/api/qr/*`). Wrangler
+warns "routes will attempt to serve Assets on a configured path" — harmless.
+
 Webhook pattern: route `POST /webhooks/vipps` in `worker.ts` *before* delegating to
 `handle()` — the webhook path is then plain Worker code (raw `Request` for HMAC over
 the raw body; no framework body parsing). Astro endpoints also pass the raw `Request`
