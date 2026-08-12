@@ -144,14 +144,17 @@ lives in `specs/`, kept in sync with code by a mandatory `Stop`-hook harness.
   the `WORKOS_API_KEY`/`WORKOS_COOKIE_PASSWORD` secrets set per env
   (`wrangler secret put … [--env staging]`). turbo.json declares `CLOUDFLARE_ENV`
   as a build cache input so a staging build can't restore a cached prod `dist/`.
-  **Status 2026-08-12: backoffice has NEVER deployed successfully.** Last run
-  (2026-07-28) died on `Authentication error [code: 10000]` against
-  `/storage/kv/namespaces` — the CI `CLOUDFLARE_API_TOKEN` lacks Workers KV
-  Storage edit (needs D1 + Queues edit too; only the user can amend the token).
-  Also missing before first green deploy: a real SESSION KV namespace (adapter
-  auto-injects the binding), backoffice `routes` in wrangler.jsonc (currently
-  none — would land on workers.dev; marketing shows the custom-domain pattern),
-  and a check that the account has Workers Paid (Queues requirement).
+  **Status 2026-08-12: both backoffice envs ARE deployed** (manually, from a
+  local wrangler OAuth session — `stottemedlem-backoffice` at
+  `app.xn--stttemedlem-hgb.no`, `-staging` at `staging.app.…`; real D1/KV/Queue
+  ids in wrangler.jsonc, remote migrations applied, SESSION KV declared
+  explicitly). **CI deploy is still broken**: the `CLOUDFLARE_API_TOKEN` repo
+  secret lacks Workers KV/D1/Queues edit (auth error 10000; only the user can
+  amend it) — until fixed, deploy manually: `CLOUDFLARE_ENV=<env> turbo build`
+  then `wrangler deploy` from apps/backoffice. Account has Workers Paid
+  (Queues work). Still unset on prod: WorkOS client id var + secrets, Vipps
+  keys. Fresh custom domains take minutes for DNS/TLS to propagate — curl
+  exit 6/35 right after deploy is propagation, not breakage.
 
 **Vipps research gotcha:** for ground truth on Vipps MobilePay API capabilities, fetch
 the OpenAPI specs (`developer.vippsmobilepay.com/redocusaurus/<api>-swagger-id.yaml`,
