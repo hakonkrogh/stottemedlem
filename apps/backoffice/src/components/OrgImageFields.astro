@@ -1,0 +1,129 @@
+---
+// Upload fields for the org's visual identity (logo + banner) on the settings
+// page: current image preview, file picker, and a remove checkbox. The POST is
+// handled by the settings page via lib/orgImages.ts.
+import type { Organization } from "@stottemedlem/db";
+import { orgImageUrl } from "../lib/orgImages";
+
+interface Props {
+  org: Organization;
+  errors?: { logo?: string; banner?: string };
+}
+const { org, errors = {} } = Astro.props;
+
+const fields = [
+  {
+    kind: "logo" as const,
+    label: "Logo",
+    hint: "PNG, JPEG eller WebP, maks 2 MB. Vises over navnet på den offentlige siden.",
+    removeLabel: "Fjern logoen",
+    key: org.logoKey,
+    error: errors.logo,
+  },
+  {
+    kind: "banner" as const,
+    label: "Bannerbilde",
+    hint: "PNG, JPEG eller WebP, maks 5 MB. Vises som et bredt bakteppe øverst på siden — bruk gjerne et bilde i liggende format.",
+    removeLabel: "Fjern bannerbildet",
+    key: org.bannerKey,
+    error: errors.banner,
+  },
+];
+---
+
+{
+  fields.map((field) => (
+    <div class="field">
+      <label for={field.kind}>{field.label}</label>
+      {field.key && (
+        <img
+          class:list={["preview", field.kind]}
+          src={orgImageUrl(org.slug, field.kind, field.key)}
+          alt=""
+        />
+      )}
+      <input
+        type="file"
+        id={field.kind}
+        name={field.kind}
+        accept="image/png,image/jpeg,image/webp"
+        aria-invalid={field.error ? "true" : undefined}
+        aria-describedby={field.error ? `${field.kind}-error` : undefined}
+      />
+      <p class="hint">{field.hint}</p>
+      {field.key && (
+        <label class="remove">
+          <input type="checkbox" name={`${field.kind}Remove`} value="1" />
+          {field.removeLabel}
+        </label>
+      )}
+      {field.error && (
+        <p class="error" id={`${field.kind}-error`}>
+          {field.error}
+        </p>
+      )}
+    </div>
+  ))
+}
+
+<style>
+  .field {
+    display: grid;
+    gap: 0.4rem;
+  }
+  label {
+    font-size: 0.9rem;
+    font-weight: 600;
+  }
+  .preview {
+    justify-self: start;
+    background: var(--sm-surface);
+    border: 1px solid var(--sm-border);
+    border-radius: var(--sm-radius-md);
+  }
+  .preview.logo {
+    width: 4rem;
+    height: 4rem;
+    object-fit: contain;
+    padding: 0.25rem;
+  }
+  .preview.banner {
+    width: 100%;
+    aspect-ratio: 4 / 1;
+    object-fit: cover;
+  }
+  input[type="file"] {
+    font: inherit;
+    font-size: 0.9rem;
+    color: var(--sm-ink);
+  }
+  input[type="file"]::file-selector-button {
+    margin-right: 0.6rem;
+    padding: 0.45rem 0.8rem;
+    font: inherit;
+    font-size: 0.9rem;
+    color: var(--sm-ink);
+    background: var(--sm-surface);
+    border: 1px solid var(--sm-border-strong);
+    border-radius: var(--sm-radius-md);
+    cursor: pointer;
+  }
+  .hint {
+    margin: 0;
+    font-size: 0.85rem;
+    color: var(--sm-muted);
+  }
+  .remove {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.85rem;
+    font-weight: 400;
+    color: var(--sm-muted);
+  }
+  .error {
+    margin: 0;
+    font-size: 0.85rem;
+    color: var(--sm-danger);
+  }
+</style>

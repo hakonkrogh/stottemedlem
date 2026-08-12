@@ -1,15 +1,24 @@
 ---
-import { getOrganizationBySlug, updateOrganizationProfile } from "@stottemedlem/db";
+import { env } from "cloudflare:workers";
+import {
+  getOrganizationBySlug,
+  type OrganizationImages,
+  type OrganizationProfile,
+  updateOrganizationProfile,
+} from "@stottemedlem/db";
 import Alert from "@stottemedlem/ui/components/Alert.astro";
 import Button from "@stottemedlem/ui/components/Button.astro";
 import CardFooter from "@stottemedlem/ui/components/CardFooter.astro";
 import Heading from "@stottemedlem/ui/components/Heading.astro";
 import Stack from "@stottemedlem/ui/components/Stack.astro";
 import Text from "@stottemedlem/ui/components/Text.astro";
+import TextField from "@stottemedlem/ui/components/TextField.astro";
 import TextLink from "@stottemedlem/ui/components/TextLink.astro";
+import OrgImageFields from "../../../components/OrgImageFields.astro";
 import OrgProfileFields from "../../../components/OrgProfileFields.astro";
 import Shell from "../../../layouts/Shell.astro";
 import { getDb } from "../../../lib/db";
+import { applyImageField } from "../../../lib/orgImages";
 import {
   type ProfileFieldErrors,
   parseProfileForm,
@@ -17,10 +26,10 @@ import {
 } from "../../../lib/orgProfile";
 import { getWorkOS, orgPath } from "../../../lib/workos";
 
-// Org settings — today that means the public profile: the fields the org
-// landing page and salgsvilkår show (specs/concepts/org-landing-page.md).
-// Orgs created before a field was required complete it here, prompted by the
-// dashboard banner.
+// Org settings — the org's public details: the profile fields the landing page
+// and salgsvilkår show (specs/concepts/org-landing-page.md), the name, and the
+// optional visual identity (logo + banner image). Orgs created before a field
+// was required complete it here, prompted by the dashboard banner.
 const session = Astro.locals.session;
 if (!session) return Astro.redirect("/login");
 const slug = Astro.params.slug;
@@ -42,16 +51,37 @@ if (!memberships.some((m) => m.organizationId === workosOrgId)) {
 
 let values = profileFormValues(org);
 let fieldErrors: ProfileFieldErrors = {};
+let name = org.name;
+let nameError: string | undefined;
+let imageErrors: { logo?: string; banner?: string } = {};
 let saved = false;
 
 if (Astro.request.method === "POST") {
-  const parsed = parseProfileForm(await Astro.request.formData());
+  const form = await Astro.request.formData();
+  const parsed = parseProfileForm(form);
   values = parsed.values;
   fieldErrors = parsed.fieldErrors;
-  if (parsed.profile) {
-    org = (await updateOrganizationProfile(db, workosOrgId, parsed.profile)) ?? org;
-    saved = true;
+  name = String(form.get("name") ?? "").trim();
+  if (!name) nameError = "Skriv inn et navn på organisasjonen.";
+
+  const logo = await applyImageField(env.MEDIA, org, "logo", form);
+  const banner = await applyImageField(env.MEDIA, org, "banner", form);
+  imageErrors = { logo: logo.error, banner: banner.error };
+
+  const patch: Partial<OrganizationProfile> & { name?: string } & Partial<OrganizationImages> = {};
+  if (parsed.profile) Object.assign(patch, parsed.profile);
+  if (!nameError && name !== org.name) {
+    // The WorkOS org is the identity source; keep its name mirrored.
+    await getWorkOS().organizations.updateOrganization({ organization: workosOrgId, name });
+    patch.name = name;
   }
+  if (logo.key !== undefined) patch.logoKey = logo.key;
+  if (banner.key !== undefined) patch.bannerKey = banner.key;
+
+  if (Object.keys(patch).length > 0) {
+    org = (await updateOrganizationProfile(db, workosOrgId, patch)) ?? org;
+  }
+  saved = Object.keys(fieldErrors).length === 0 && !nameError && !logo.error && !banner.error;
 }
 ---
 
@@ -61,13 +91,15 @@ if (Astro.request.method === "POST") {
       <Heading>Innstillinger</Heading>
       <Text variant="lead">
         Dette vises på den offentlige siden til {org.name} og i salgsvilkårene — Vipps krever at
-        alt er fylt ut.
+        organisasjonsnummer, kontakt og pris er fylt ut. Logo og bannerbilde er valgfritt.
       </Text>
     </Stack>
     {saved && <Alert variant="info">Lagret. Den offentlige siden er oppdatert.</Alert>}
-    <form method="post">
+    <form method="post" enctype="multipart/form-data">
       <Stack gap="lg">
+        <TextField label="Navn" name="name" value={name} required error={nameError} />
         <OrgProfileFields values={values} fieldErrors={fieldErrors} />
+        <OrgImageFields org={org} errors={imageErrors} />
         <Button block>Lagre</Button>
       </Stack>
     </form>

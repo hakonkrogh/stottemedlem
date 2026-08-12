@@ -48,6 +48,15 @@ description: Render any local URL (marketing/backoffice dev or preview server) t
   `apps/backoffice`, shares `.wrangler/state` with astro dev):
   `pnpm exec wrangler d1 migrations apply DB --local`, then seed with
   `pnpm exec wrangler d1 execute DB --local --command "INSERT INTO ..."`.
+  Local R2 shares the same `.wrangler/state`: seed org media with
+  `pnpm exec wrangler r2 object put "stottemedlem-media/<key>" --file <img>
+  --content-type image/jpeg --local` where `<key>` matches the row's
+  `logo_key`/`banner_key` (format `org/<id>/<kind>-<sha256-first-16-hex>.<ext>`
+  — compute with `shasum -a 256 <img> | cut -c1-16`; verified end-to-end
+  2026-08-12). Seed only FICTITIOUS org names/orgnr — screenshots must never
+  show real org data. Exercising the auth-gated settings POST (uploads) end-to-
+  end still needs real WorkOS keys in `.dev.vars` — rendering-only checks go
+  via Storybook as above.
 - **Dark full-page "An error occurred" overlay in an astro-dev screenshot may
   not be about the URL you shot.** Vite broadcasts any SSR error to every
   connected page over the HMR websocket as a full-screen overlay — e.g. a

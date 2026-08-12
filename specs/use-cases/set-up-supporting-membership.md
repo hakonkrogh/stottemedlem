@@ -40,6 +40,13 @@ An organization created before a profile field was required (or before this
 behaviour existed) is **prompted in the back office** to complete the missing
 fields, and can edit its profile there at any time.
 
+The organization can also give its landing page a **visual identity**: in the
+back-office settings it can edit its details (name and profile) and upload a
+**logo** and a **banner image**, shown on the
+[landing page](../concepts/org-landing-page.md). Both images are optional, can
+be replaced or removed at any time, and changes show on the public page
+immediately. A name change never changes the slug or the public addresses.
+
 ## Acceptance criteria
 - [ ] An administrator can create the organization with its public name and
       profile (organisasjonsnummer, contact information); those fields are
@@ -56,10 +63,15 @@ fields, and can edit its profile there at any time.
       [joining](join-as-supporting-member.md) without further admin action.
 - [ ] The annual fee can be changed later; the change applies to future joins and
       renewals, not retroactively to fees already paid.
+- [ ] An administrator can edit the organization's name and profile, and upload,
+      replace, or remove a logo and a banner image in the back office; the
+      landing page reflects the change immediately, and a name change never
+      changes the slug.
 
 ## Out of scope
 - Multiple membership tiers or variable pricing (single annual fee only for now).
-- Branding/theming beyond a name and basic identity.
+- Theming beyond the name, logo, and banner image (no custom colors, fonts, or
+  page layouts).
 - Tax/receipt configuration.
 
 ## Related

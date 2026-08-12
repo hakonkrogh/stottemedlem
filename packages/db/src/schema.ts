@@ -25,6 +25,10 @@ export const organizations = sqliteTable("organizations", {
   contactEmail: text("contact_email"),
   /** The annual fee in whole NOK (specs/concepts/annual-fee.md). */
   annualFeeNok: integer("annual_fee_nok"),
+  /** R2 object key for the uploaded logo; null when none uploaded. */
+  logoKey: text("logo_key"),
+  /** R2 object key for the uploaded banner image; null when none uploaded. */
+  bannerKey: text("banner_key"),
   createdAt: text("created_at").notNull().default(sql`(datetime('now'))`),
 });
 
