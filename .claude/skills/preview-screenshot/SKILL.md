@@ -22,10 +22,14 @@ description: Render any local URL (marketing/backoffice dev or preview server) t
 - Responsive checks: `... 375 812` (iPhone 12 mini), `... 390 844` (iPhone 14),
   `... 768 1024` (tablet), default desktop. Verify mobile PNGs' pixelWidth
   matches the requested width before judging the layout.
-- Typical loop (marketing, static): `pnpm --filter @stottemedlem/marketing build
+- Typical loop (marketing, static): `pnpm turbo build --filter=@stottemedlem/marketing
   && pnpm --filter @stottemedlem/marketing preview --port 4399 &` → shot → Read →
   iterate. (astro preview serves `dist/` live, so rebuild + reload is enough;
-  kill via `lsof -ti:4399 | xargs kill` when done.)
+  kill via `lsof -ti:4399 | xargs kill` when done.) Build via **turbo**, not a
+  bare `--filter … build`: marketing imports workspace pkg `@stottemedlem/core`,
+  which must build first — bare filter fails with "Rolldown failed to resolve
+  import @stottemedlem/core". Fresh worktrees also need `pnpm install` first
+  (node_modules is not shared across worktrees).
 - Backoffice/UI loop (SSR app is auth-gated): don't fight the login wall — use
   Storybook in packages/ui. `pnpm --filter @stottemedlem/ui run storybook --ci`
   (port 6006, ready in seconds, hot-reloads), then shoot a story's iframe URL
