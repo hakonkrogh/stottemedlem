@@ -99,14 +99,6 @@
 		{
 			"binding": "MEDIA",
 			"bucket_name": "stottemedlem-media"
-		},
-		{
-			"bucket_name": "stottemedlem-media",
-			"binding": "stottemedlem_media"
-		},
-		{
-			"bucket_name": "stottemedlem-media-staging",
-			"binding": "stottemedlem_media_staging"
 		}
 	],
 	// Cron Triggers — handled in src/worker.ts `scheduled` (switch on
