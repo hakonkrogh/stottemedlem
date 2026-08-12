@@ -38,3 +38,15 @@ description: Render any local URL (marketing/backoffice dev or preview server) t
   serving old code; `pnpm --filter @stottemedlem/backoffice exec astro dev stop`
   then restart, and stop it the same way when done. The dark pill at the bottom
   of astro-dev screenshots is Astro's dev toolbar, not the page.
+- **PUBLIC backoffice pages** (`/org/<slug>`, `/org/<slug>/vilkar`, `/api/qr/*`)
+  need no login and no `.dev.vars` — screenshoot them against `astro dev`
+  directly. Pages that read D1 need the local DB prepared first (from
+  `apps/backoffice`, shares `.wrangler/state` with astro dev):
+  `pnpm exec wrangler d1 migrations apply DB --local`, then seed with
+  `pnpm exec wrangler d1 execute DB --local --command "INSERT INTO ..."`.
+- **Dark full-page "An error occurred" overlay in an astro-dev screenshot may
+  not be about the URL you shot.** Vite broadcasts any SSR error to every
+  connected page over the HMR websocket as a full-screen overlay — e.g. a
+  browser's automatic `/favicon.ico` request 500ing paints the overlay onto a
+  page that itself returned 200 (curl the URL to see the real response). Check
+  `astro dev logs` for which request actually threw before debugging the page.

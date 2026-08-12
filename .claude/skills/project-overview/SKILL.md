@@ -30,7 +30,35 @@ lives in `specs/`, kept in sync with code by a mandatory `Stop`-hook harness.
   locally. Real sign-in needs `.dev.vars` filled + AuthKit redirect URIs registered.
   See `docs/architecture/overview.md` + `stack-docs` (env access + per-env build gotchas).
 - `packages/core/` — `@stottemedlem/core`, shared domain types/logic (incl. org
-  slugs + the canonical join entry point URL).
+  slugs, canonical join/landing/salgsvilkår URLs, orgnr MOD11 validation).
+- `packages/db/` — `@stottemedlem/db` (added 2026-07-28, scaffolding step 4):
+  Drizzle schema + query helpers over the backoffice `DB` (D1) binding.
+  `organizations` table = system of record for the **persisted, never-changing
+  org slug** + public profile (orgnr, contact email, annual fee). Migrations are
+  HAND-WRITTEN SQL in `packages/db/migrations/` (no drizzle-kit), applied via
+  `wrangler d1 migrations apply DB --local` from `apps/backoffice`
+  (`migrations_dir` points there; local state shared with `astro dev`). Slug is
+  assigned once by `ensureOrganization` (also backfills orgs that predate the
+  table; `/o/[slug]` still resolves legacy name-derived slugs and redirects).
+  **Public org pages** (added 2026-07-28, spec
+  `specs/concepts/org-landing-page.md`): `/org/[slug]` landing page +
+  `/org/[slug]/vilkar` standard salgsvilkår — the two URLs Vipps' Faste
+  betalinger order form requires; public in middleware (with `/favicon.ico` —
+  else crawlers get bounced into the login flow), rendered by
+  `PublicShell.astro` (indexable, brand attribution; admin `Shell.astro` stays
+  noindex). Astro template gotcha found here twice: text + `{expr}` separated
+  by a newline collapses the space ("arbeidet iNordnes") — join with `{" "}`.
+- `packages/vipps/` — `@stottemedlem/vipps` (added 2026-08-10, scaffolding
+  step 5): typed Vipps MobilePay client — access token (pluggable cache, KV in
+  the Worker via `apps/backoffice/src/lib/vipps.ts`), Recurring v3
+  agreements/charges, Webhooks v1 registration + delivery HMAC verification.
+  Web-standard APIs only (fetch + Web Crypto), runs on workerd and Node.
+  `VIPPS_API_BASE_URL` picks the environment: **apitest.vipps.no everywhere
+  except production**. Read-only credential smoke:
+  `pnpm --filter @stottemedlem/vipps run smoke` (needs test keys from
+  portal → For utviklere; refuses prod). API behaviour ground truth:
+  `docs/research/vipps-recurring-payments.md` + stack-docs "Vipps API
+  mechanics".
 - `packages/qr/` — `@stottemedlem/qr`, shared QR code/card generation, split
   isomorphic/node/browser (see qr-codes.md before touching QR anything).
 - `packages/ui/` — `@stottemedlem/ui` (added 2026-07-28), the shared UI
@@ -72,6 +100,10 @@ lives in `specs/`, kept in sync with code by a mandatory `Stop`-hook harness.
   (Turbo builds deps first) or build the packages before the app. `astro preview`
   serves `dist/` live, so the visual loop is: turbo build → preview → screenshot.
 - Conventions: ESM everywhere; never use the `any` type; use `ast-grep` for structural search.
+- Tooling gotchas: `astro check` emits false ts(6133) "declared but never read"
+  *hints* for symbols used only after a frontmatter early-`return` (0 errors =
+  still green — don't chase them). A new package with `"test": "vitest run"`
+  and zero test files FAILS `pnpm test` — add a first test with the package.
 - **Brand attribution (rule, 2026-07-28):** every public-facing surface carries a
   subtle "støttemedlem.no" (ø in visible text, punycode in hrefs; admin-only
   backoffice screens exempt; bare QR images exempt — the card around them carries
@@ -112,6 +144,14 @@ lives in `specs/`, kept in sync with code by a mandatory `Stop`-hook harness.
   the `WORKOS_API_KEY`/`WORKOS_COOKIE_PASSWORD` secrets set per env
   (`wrangler secret put … [--env staging]`). turbo.json declares `CLOUDFLARE_ENV`
   as a build cache input so a staging build can't restore a cached prod `dist/`.
+  **Status 2026-08-12: backoffice has NEVER deployed successfully.** Last run
+  (2026-07-28) died on `Authentication error [code: 10000]` against
+  `/storage/kv/namespaces` — the CI `CLOUDFLARE_API_TOKEN` lacks Workers KV
+  Storage edit (needs D1 + Queues edit too; only the user can amend the token).
+  Also missing before first green deploy: a real SESSION KV namespace (adapter
+  auto-injects the binding), backoffice `routes` in wrangler.jsonc (currently
+  none — would land on workers.dev; marketing shows the custom-domain pattern),
+  and a check that the account has Workers Paid (Queues requirement).
 
 **Vipps research gotcha:** for ground truth on Vipps MobilePay API capabilities, fetch
 the OpenAPI specs (`developer.vippsmobilepay.com/redocusaurus/<api>-swagger-id.yaml`,
@@ -133,4 +173,5 @@ the Donations `Schedule.interval` enum is `[MONTHLY]` only, found nowhere in pro
 | (skill) `spec-lint` | `node .claude/skills/spec-lint/check.mjs` — validates spec links + INDEX registration after any specs/ edit |
 | (skill) `preview-screenshot` | headless-Chrome screenshot of any local URL → Read the PNG; the visual validation loop for UI work |
 | (canonical) `docs/research/vipps-recurring-payments.md` | verified Vipps Recurring API v3 research (yearly agreements, tiers via LEGACY pricing PATCH, 10 webhook events, local DB as system of record, NO onboarding/retention rules); Appendix A rules out Vipps Donasjoner definitively (monthly-only enum, no API amount control) — read before any payment work; not yet fed into `specs/` |
+| (canonical) `docs/vipps-portal-walkthrough/README.md` | IN-PROGRESS (started 2026-07-28) recorded click-through of portal.vippsmobilepay.com with user-supplied screenshots (→ `images/`) — verifies onboarding checklist open question 6 and collects MSN + test API keys; session log is empty until the first screenshot lands — continue the recording there, one numbered entry per screen |
 | (canonical) `docs/vipps-org-onboarding.md` | iterable checklist of what an org must do to get Vipps live — baseline assumes an EXISTING standard Vipps business account; steps = add Faste betalinger to the agreement, approval, then org pastes its own MSN + API keys (DECIDED 2026-07-28: no Vipps platform-partner model to begin with) — in two forms: detailed post-org-creation instructions + 3-step marketing-site headlines — the source for future onboarding UI/marketing copy; not yet fed into `specs/` |

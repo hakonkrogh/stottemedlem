@@ -31,9 +31,12 @@ Distinct from the *member's personal referral* QR (`specs/use-cases/earn-stars-a
 
 ## Open item — domain routing (decided intent, not wired)
 The embed snippet + QR payloads use `https://xn--stttemedlem-hgb.no` paths
-(`/bli-med/<slug>`, `/api/qr/<slug>`), but that zone currently serves only the static
+(`/bli-med/<slug>`, `/api/qr/<slug>` — and since 2026-07-28 also the public org
+landing pages `/org/<slug>` + `/org/<slug>/vilkar`, which MUST resolve on the
+canonical domain before any org pastes them into the Vipps portal), but that
+zone currently serves only the static
 marketing Worker → these 404 in production today. Intended wiring: zone routes
-(`.../bli-med/*`, `.../api/*`) → the backoffice Worker; routes coexist with the
+(`.../bli-med/*`, `.../api/*`, `.../org/*`) → the backoffice Worker; routes coexist with the
 marketing custom domain and win by specificity. `/bli-med/<slug>` itself lands with
 the Vipps integration as a create-payment-and-redirect hand-off (**decided
 2026-07-08: scanning must open Vipps directly** — identity via Vipps profile
