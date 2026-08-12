@@ -30,6 +30,14 @@ import { getWorkOS, orgPath } from "../../../lib/workos";
 // and salgsvilkår show (specs/concepts/org-landing-page.md), the name, and the
 // optional visual identity (logo + banner image). Orgs created before a field
 // was required complete it here, prompted by the dashboard banner.
+/** Parse a focal-point percentage from the form; null when absent/invalid. */
+function parseFocusPercent(value: FormDataEntryValue | null): number | null {
+  if (typeof value !== "string" || value.trim() === "") return null;
+  const n = Number(value);
+  if (!Number.isFinite(n)) return null;
+  return Math.min(100, Math.max(0, Math.round(n)));
+}
+
 const session = Astro.locals.session;
 if (!session) return Astro.redirect("/login");
 const slug = Astro.params.slug;
@@ -77,6 +85,21 @@ if (Astro.request.method === "POST") {
   }
   if (logo.key !== undefined) patch.logoKey = logo.key;
   if (banner.key !== undefined) patch.bannerKey = banner.key;
+
+  // Banner focal point from the settings picker. Cleared with the banner;
+  // otherwise saved whenever the form carries it (the picker always does when
+  // a banner is shown).
+  if (banner.key === null) {
+    patch.bannerFocusX = null;
+    patch.bannerFocusY = null;
+  } else if (org.bannerKey || banner.key) {
+    const focusX = parseFocusPercent(form.get("bannerFocusX"));
+    const focusY = parseFocusPercent(form.get("bannerFocusY"));
+    if (focusX !== null && focusY !== null) {
+      patch.bannerFocusX = focusX;
+      patch.bannerFocusY = focusY;
+    }
+  }
 
   if (Object.keys(patch).length > 0) {
     org = (await updateOrganizationProfile(db, workosOrgId, patch)) ?? org;

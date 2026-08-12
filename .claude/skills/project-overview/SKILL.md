@@ -59,8 +59,15 @@ lives in `specs/`, kept in sync with code by a mandatory `Stop`-hook harness.
   `o/[slug]/innstillinger` (multipart form POST, same-page handling; that page
   also edits the org NAME, mirrored to WorkOS via
   `organizations.updateOrganization` — slug never changes). Landing page shows
-  banner as a compact 4:1 backdrop (max ~8.5rem tall) with the logo overlapping
-  its bottom edge, LinkedIn-style (spec: `specs/concepts/org-landing-page.md`).
+  the identity Facebook-style (restyled 2026-08-12, branch logo-banner-styling):
+  banner as a 3:1 backdrop (max 12rem tall), logo ALWAYS in a circle with a
+  subtle outline (white disc + `object-fit: contain` — the circle rule applies
+  everywhere a logo is shown, incl. the settings preview), name beside the logo
+  which overlaps the banner's bottom edge. Banner focal point:
+  `banner_focus_x/y` columns (migration `0003_banner_focus.sql`,
+  object-position percentages, NULL = center) chosen via a drag-the-visible-
+  frame picker in `OrgImageFields.astro`, applied as `object-position` on the
+  landing page (spec: `specs/concepts/org-landing-page.md`).
 - `packages/vipps/` — `@stottemedlem/vipps` (added 2026-08-10, scaffolding
   step 5): typed Vipps MobilePay client — access token (pluggable cache, KV in
   the Worker via `apps/backoffice/src/lib/vipps.ts`), Recurring v3

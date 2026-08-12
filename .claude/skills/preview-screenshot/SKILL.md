@@ -56,7 +56,19 @@ description: Render any local URL (marketing/backoffice dev or preview server) t
   2026-08-12). Seed only FICTITIOUS org names/orgnr — screenshots must never
   show real org data. Exercising the auth-gated settings POST (uploads) end-to-
   end still needs real WorkOS keys in `.dev.vars` — rendering-only checks go
-  via Storybook as above.
+  via Storybook as above. For an auth-gated page's CLIENT-SIDE `<script>`
+  (e.g. the banner focal-point picker in `OrgImageFields.astro`), a workable
+  fallback is a scratchpad HTML harness: copy the component's markup + CSS +
+  script (TS generics stripped) into one file with a local test image, shoot
+  it via `file://` — validates geometry/fade visually, but it's a COPY, so
+  re-copy after editing the component (verified 2026-08-12).
+- **Fresh-worktree wrangler ordering:** run `pnpm install` BEFORE any
+  `npx wrangler … --local`. In a worktree without node_modules, npx fetches
+  the LATEST wrangler, whose workerd writes a `.wrangler/state` schema the
+  workspace-pinned wrangler then can't open (fatal
+  `table _cf_ALARM has 3 columns but 2 values` on every later local command).
+  Fix: `rm -rf apps/backoffice/.wrangler` and redo migrations/seeding with the
+  workspace wrangler (hit 2026-08-12).
 - **Dark full-page "An error occurred" overlay in an astro-dev screenshot may
   not be about the URL you shot.** Vite broadcasts any SSR error to every
   connected page over the HMR websocket as a full-screen overlay — e.g. a

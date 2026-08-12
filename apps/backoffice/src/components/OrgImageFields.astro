@@ -2,6 +2,12 @@
 // Upload fields for the org's visual identity (logo + banner) on the settings
 // page: current image preview, file picker, and a remove checkbox. The POST is
 // handled by the settings page via lib/orgImages.ts.
+//
+// The banner gets a focal-point picker instead of a plain preview: the full
+// image with everything outside a draggable 3:1 frame faded out, showing which
+// part survives the crop to the public page's wide backdrop. The chosen point
+// travels as hidden bannerFocusX/bannerFocusY fields (object-position
+// percentages, 0–100).
 import type { Organization } from "@stottemedlem/db";
 import { orgImageUrl } from "../lib/orgImages";
 
@@ -15,7 +21,7 @@ const fields = [
   {
     kind: "logo" as const,
     label: "Logo",
-    hint: "PNG, JPEG eller WebP, maks 2 MB. Vises over navnet på den offentlige siden.",
+    hint: "PNG, JPEG eller WebP, maks 2 MB. Vises i en sirkel ved siden av navnet på den offentlige siden.",
     removeLabel: "Fjern logoen",
     key: org.logoKey,
     error: errors.logo,
@@ -23,7 +29,7 @@ const fields = [
   {
     kind: "banner" as const,
     label: "Bannerbilde",
-    hint: "PNG, JPEG eller WebP, maks 5 MB. Vises som et bredt bakteppe øverst på siden — bruk gjerne et bilde i liggende format.",
+    hint: "PNG, JPEG eller WebP, maks 5 MB. Vises som et bredt bakteppe øverst på siden. Dra rammen i forhåndsvisningen for å velge hvilken del av bildet som vises.",
     removeLabel: "Fjern bannerbildet",
     key: org.bannerKey,
     error: errors.banner,
@@ -35,12 +41,31 @@ const fields = [
   fields.map((field) => (
     <div class="field">
       <label for={field.kind}>{field.label}</label>
-      {field.key && (
-        <img
-          class:list={["preview", field.kind]}
-          src={orgImageUrl(org.slug, field.kind, field.key)}
-          alt=""
-        />
+      {field.kind === "banner" ? (
+        <div
+          class="focus-picker"
+          data-banner-picker
+          data-focus-x={org.bannerFocusX ?? 50}
+          data-focus-y={org.bannerFocusY ?? 50}
+          hidden={!field.key}
+        >
+          <img
+            data-picker-image
+            src={field.key ? orgImageUrl(org.slug, field.kind, field.key) : undefined}
+            alt=""
+          />
+          <div class="focus-frame" data-picker-frame />
+          <input type="hidden" name="bannerFocusX" value={org.bannerFocusX ?? 50} />
+          <input type="hidden" name="bannerFocusY" value={org.bannerFocusY ?? 50} />
+        </div>
+      ) : (
+        field.key && (
+          <img
+            class:list={["preview", field.kind]}
+            src={orgImageUrl(org.slug, field.kind, field.key)}
+            alt=""
+          />
+        )
       )}
       <input
         type="file"
@@ -66,6 +91,87 @@ const fields = [
   ))
 }
 
+<script>
+  // Focal-point picker for the banner: drag (or tap) to place the visible-crop
+  // frame; the position is written to the hidden bannerFocusX/Y inputs as
+  // object-position percentages. Selecting a new file previews it immediately
+  // and recentres the frame.
+  const ASPECT = 3;
+
+  const picker = document.querySelector("[data-banner-picker]");
+  const fileInput = document.getElementById("banner");
+  const img = picker?.querySelector("[data-picker-image]");
+  const frame = picker?.querySelector("[data-picker-frame]");
+  const inputX = picker?.querySelector<HTMLInputElement>('input[name="bannerFocusX"]');
+  const inputY = picker?.querySelector<HTMLInputElement>('input[name="bannerFocusY"]');
+
+  if (
+    picker instanceof HTMLElement &&
+    img instanceof HTMLImageElement &&
+    frame instanceof HTMLElement &&
+    inputX &&
+    inputY
+  ) {
+    let focusX = Number(picker.dataset.focusX) || 50;
+    let focusY = Number(picker.dataset.focusY) || 50;
+
+    const frameSize = (w: number, h: number) =>
+      w / h >= ASPECT ? { w: h * ASPECT, h } : { w, h: w / ASPECT };
+
+    const layout = () => {
+      const w = picker.clientWidth;
+      const h = picker.clientHeight;
+      if (!w || !h) return;
+      const size = frameSize(w, h);
+      frame.style.width = `${size.w}px`;
+      frame.style.height = `${size.h}px`;
+      frame.style.left = `${((w - size.w) * focusX) / 100}px`;
+      frame.style.top = `${((h - size.h) * focusY) / 100}px`;
+    };
+
+    const setFocus = (x: number, y: number) => {
+      focusX = Math.min(100, Math.max(0, Math.round(x)));
+      focusY = Math.min(100, Math.max(0, Math.round(y)));
+      inputX.value = String(focusX);
+      inputY.value = String(focusY);
+      layout();
+    };
+
+    const centerFrameAt = (clientX: number, clientY: number) => {
+      const bounds = picker.getBoundingClientRect();
+      const size = frameSize(bounds.width, bounds.height);
+      const slackX = bounds.width - size.w;
+      const slackY = bounds.height - size.h;
+      const left = clientX - bounds.left - size.w / 2;
+      const top = clientY - bounds.top - size.h / 2;
+      setFocus(slackX > 0 ? (left / slackX) * 100 : 50, slackY > 0 ? (top / slackY) * 100 : 50);
+    };
+
+    picker.addEventListener("pointerdown", (event) => {
+      event.preventDefault();
+      picker.setPointerCapture(event.pointerId);
+      centerFrameAt(event.clientX, event.clientY);
+    });
+    picker.addEventListener("pointermove", (event) => {
+      if (picker.hasPointerCapture(event.pointerId)) centerFrameAt(event.clientX, event.clientY);
+    });
+
+    img.addEventListener("load", layout);
+    window.addEventListener("resize", layout);
+    layout();
+
+    if (fileInput instanceof HTMLInputElement) {
+      fileInput.addEventListener("change", () => {
+        const file = fileInput.files?.[0];
+        if (!file) return;
+        img.src = URL.createObjectURL(file);
+        picker.hidden = false;
+        setFocus(50, 50);
+      });
+    }
+  }
+</script>
+
 <style>
   .field {
     display: grid;
@@ -81,16 +187,39 @@ const fields = [
     border: 1px solid var(--sm-border);
     border-radius: var(--sm-radius-md);
   }
+  /* The logo preview matches the public page: always a circle with a subtle
+     outline. */
   .preview.logo {
-    width: 4rem;
-    height: 4rem;
+    width: 4.5rem;
+    height: 4.5rem;
     object-fit: contain;
-    padding: 0.25rem;
+    padding: 0.35rem;
+    border-radius: 50%;
   }
-  .preview.banner {
+  .focus-picker {
+    position: relative;
+    overflow: hidden;
+    border: 1px solid var(--sm-border);
+    border-radius: var(--sm-radius-md);
+    cursor: move;
+    touch-action: none;
+    user-select: none;
+  }
+  .focus-picker img {
+    display: block;
     width: 100%;
-    aspect-ratio: 4 / 1;
-    object-fit: cover;
+    height: auto;
+  }
+  /* The visible-crop frame: everything outside it fades, the giant spread
+     box-shadow does the fading without a second overlay element. */
+  .focus-frame {
+    position: absolute;
+    box-sizing: border-box;
+    border: 2px solid var(--sm-surface);
+    box-shadow:
+      0 0 0 1px rgba(0, 0, 0, 0.25),
+      0 0 0 999rem rgba(255, 255, 255, 0.7);
+    pointer-events: none;
   }
   input[type="file"] {
     font: inherit;
