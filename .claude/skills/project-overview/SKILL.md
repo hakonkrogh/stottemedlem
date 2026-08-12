@@ -172,11 +172,19 @@ lives in `specs/`, kept in sync with code by a mandatory `Stop`-hook harness.
   placeholder ids — with explicit ids the token's permissions suffice. Manual
   deploy when needed: `CLOUDFLARE_ENV=<env> turbo build` then `wrangler deploy`
   from apps/backoffice. Account has Workers Paid (Queues work). Still unset on
-  prod: WorkOS client id var + secrets, Vipps keys. Also still unprovisioned
-  (as of 2026-08-12): the org-media R2 buckets — `wrangler r2 bucket create
-  stottemedlem-media` (+ `stottemedlem-media-staging`) must run once per env
-  before deploying the MEDIA binding, and migration 0002 needs
-  `wrangler d1 migrations apply DB --remote [--env staging]`. Fresh custom domains take
+  prod: WorkOS client id var + secrets, Vipps keys. Org-media R2 buckets
+  (`stottemedlem-media`, `-staging`) ARE provisioned and migration 0002 applied
+  remotely on both envs (2026-08-12). Two wrangler gotchas found provisioning
+  them: (1) **`wrangler r2 bucket create` AUTO-EDITS wrangler.jsonc** — appends
+  a snake_case binding entry to the top-level env and reformats the file to
+  tabs; a later `git add -A` swept these into PR #18 (cleaned up in PR #19) —
+  after any `wrangler <resource> create`, diff wrangler.jsonc before
+  committing. (2) `wrangler deploy` VALIDATES r2_buckets bindings against the
+  R2 API, so the CI deploy token needs Account → Workers R2 Storage → Edit
+  (dashboard-only edit; token value survives) — without it deploy fails with
+  the familiar `Authentication error [code: 10000]`, this time on
+  `/r2/buckets/...` (pending user action as of 2026-08-12, deploy red until
+  then). Fresh custom domains take
   minutes for DNS/TLS to propagate — curl exit 6/35 right after deploy is
   propagation (possibly negative-cached locally: verify via `dig @1.1.1.1`
   before suspecting the deploy).
