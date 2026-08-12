@@ -119,6 +119,27 @@ ever outgrows Astro's basic routing, mount Hono in the same `worker.ts` before
   filename label under each, composite column-major onto one canvas. Filenames
   with spaces/parens are fragile as Vite asset URLs — rename to `NN-slug.ext`;
   the numeric prefix doubles as composition order for globbed collages.
+- **Sourcing backdrop/stock photos (verified 2026-08-12):** Unsplash's internal
+  search API works unauthenticated via curl:
+  `curl -s "https://unsplash.com/napi/search/photos?query=<urlencoded>&per_page=6"`
+  — but returns **401 with a Mozilla User-Agent** (python urllib fails; curl's
+  default UA works). Skip results whose `urls.raw` is on `plus.unsplash.com`
+  (Unsplash+ premium, restricted license); only `images.unsplash.com` is the
+  standard free license. Download to match the existing backdrop assets
+  (EXIF-stripped ~640px progressive JPEG) with `{urls.raw}?w=640&q=75&fm=jpg&fit=max`.
+  Record photo ids in `apps/marketing/src/assets/backdrop/README.md` (Sources
+  table) for license provenance. New files continue the `NN-slug.jpeg` sequence;
+  off-center subjects get a `focalPoints` entry in `HeroBackdrop.astro`.
+  CSS multi-column fills column-by-column, so appended images cluster in the
+  right-most columns — fine for variety, renumber only if composition demands it.
+  User-supplied photo drops (e.g. ~/Downloads): re-encode to the convention with
+  sharp — `.rotate()` (bake EXIF orientation) + `.resize(640,640,{fit:'inside',
+  withoutEnlargement:true})` + `.jpeg({quality:75,progressive:true})` (sharp
+  strips metadata by default). Dedupe BEFORE adding: md5 catches nothing when
+  files were re-downloaded at different sizes — the real dupes are
+  same-photo-different-encode and same-shoot-different-frame, found only by a
+  side-by-side contact sheet against the existing backdrop images with the same
+  theme (verified 2026-08-12: 4 of 10 user downloads duplicated existing assets).
 
 ## WorkOS on Cloudflare Workers
 
