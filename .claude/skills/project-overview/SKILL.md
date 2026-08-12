@@ -60,7 +60,7 @@ lives in `specs/`, kept in sync with code by a mandatory `Stop`-hook harness.
   also edits the org NAME, mirrored to WorkOS via
   `organizations.updateOrganization` — slug never changes). Landing page shows
   the identity Facebook-style (restyled 2026-08-12, branch logo-banner-styling):
-  banner as a 3:1 backdrop (max 12rem tall), logo ALWAYS in a circle with a
+  banner as a 12:5 backdrop (max 15rem tall), logo ALWAYS in a circle with a
   subtle outline (white disc + `object-fit: contain` — the circle rule applies
   everywhere a logo is shown, incl. the settings preview), name beside the logo
   which overlaps the banner's bottom edge. Banner focal point:
