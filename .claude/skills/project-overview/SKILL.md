@@ -148,13 +148,15 @@ lives in `specs/`, kept in sync with code by a mandatory `Stop`-hook harness.
   local wrangler OAuth session — `stottemedlem-backoffice` at
   `app.xn--stttemedlem-hgb.no`, `-staging` at `staging.app.…`; real D1/KV/Queue
   ids in wrangler.jsonc, remote migrations applied, SESSION KV declared
-  explicitly). **CI deploy is still broken**: the `CLOUDFLARE_API_TOKEN` repo
-  secret lacks Workers KV/D1/Queues edit (auth error 10000; only the user can
-  amend it) — until fixed, deploy manually: `CLOUDFLARE_ENV=<env> turbo build`
-  then `wrangler deploy` from apps/backoffice. Account has Workers Paid
-  (Queues work). Still unset on prod: WorkOS client id var + secrets, Vipps
-  keys. Fresh custom domains take minutes for DNS/TLS to propagate — curl
-  exit 6/35 right after deploy is propagation, not breakage.
+  explicitly). **CI deploy-on-merge is GREEN again** (PR #14 run, 2026-08-12):
+  the old auth-error-10000 failure was wrangler auto-provisioning KV with
+  placeholder ids — with explicit ids the token's permissions suffice. Manual
+  deploy when needed: `CLOUDFLARE_ENV=<env> turbo build` then `wrangler deploy`
+  from apps/backoffice. Account has Workers Paid (Queues work). Still unset on
+  prod: WorkOS client id var + secrets, Vipps keys. Fresh custom domains take
+  minutes for DNS/TLS to propagate — curl exit 6/35 right after deploy is
+  propagation (possibly negative-cached locally: verify via `dig @1.1.1.1`
+  before suspecting the deploy).
 
 **Vipps research gotcha:** for ground truth on Vipps MobilePay API capabilities, fetch
 the OpenAPI specs (`developer.vippsmobilepay.com/redocusaurus/<api>-swagger-id.yaml`,

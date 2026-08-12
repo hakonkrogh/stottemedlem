@@ -83,6 +83,14 @@ tsconfig.worker.json`. Don't add `@cloudflare/workers-types` — generated types
   `pnpm exec biome check <changed paths>` — don't "fix" the false positives by
   removing template-used imports (breaks the build).
 
+Zone routes vs custom domains (verified live 2026-08-12): a zone route
+(`{ pattern: "xn--stttemedlem-hgb.no/org/*", zone_name: … }`) on one Worker
+**takes precedence over another Worker's custom domain** on the same hostname —
+this is how the SSR backoffice serves the canonical public org pages on the
+apex while the assets-only marketing Worker keeps everything else. Reuse the
+same pattern for future public paths (`/bli-med/*`, `/api/qr/*`). Wrangler
+warns "routes will attempt to serve Assets on a configured path" — harmless.
+
 Webhook pattern: route `POST /webhooks/vipps` in `worker.ts` *before* delegating to
 `handle()` — the webhook path is then plain Worker code (raw `Request` for HMAC over
 the raw body; no framework body parsing). Astro endpoints also pass the raw `Request`
@@ -143,6 +151,14 @@ Verified 2026-07-08 (backoffice AuthKit login, scaffolding step 3):
   selector needs no extra `organizations.get` call. Working example: `apps/backoffice`
   (`src/middleware.ts` gate + `src/lib/workos.ts` + `src/pages/{login,callback,logout}.ts`
   and `orgs/`).
+- **Redirect URIs must be registered in punycode** (bit prod login wiring,
+  2026-08-12): the app sends `redirect_uri=https://app.xn--stttemedlem-hgb.no/callback`;
+  registering the visible-ø form (`https://app.støttemedlem.no/callback`) in the
+  WorkOS dashboard does NOT match — WorkOS 302s to
+  `error.workos.com/redirect-uri-invalid`. Headless check: `curl -sD-` the
+  `api.workos.com/user_management/authorize?...` URL our /login redirects to —
+  a Location on `error.workos.com` means registration mismatch; an
+  `authkit.workos.com` URL means the pair is valid.
 
 ## Astro 7 + adapter v14: env access and per-environment deploys
 

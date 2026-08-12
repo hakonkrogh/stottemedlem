@@ -8,7 +8,16 @@
   "main": "./src/worker.ts",
   // Custom domain (app.støttemedlem.no in punycode) — wrangler manages DNS +
   // certs on deploy; the CI token needs zone-level permission (same as marketing).
-  "routes": [{ "pattern": "app.xn--stttemedlem-hgb.no", "custom_domain": true }],
+  // The apex /org/* zone route serves the canonical public org pages
+  // (packages/core orgLandingPageUrl → https://støttemedlem.no/org/<slug>);
+  // zone routes take precedence over the marketing Worker's apex custom domain.
+  "routes": [
+    { "pattern": "app.xn--stttemedlem-hgb.no", "custom_domain": true },
+    {
+      "pattern": "xn--stttemedlem-hgb.no/org/*",
+      "zone_name": "xn--stttemedlem-hgb.no"
+    }
+  ],
   "assets": {
     "binding": "ASSETS",
     "directory": "./dist"
@@ -25,7 +34,7 @@
   //   wrangler secret put WORKOS_COOKIE_PASSWORD    (+ --env staging)
   // Locally, all four come from .dev.vars (see .dev.vars.example).
   "vars": {
-    "WORKOS_CLIENT_ID": "",
+    "WORKOS_CLIENT_ID": "client_01KX0YS9099GNV5GP0A6B2KVDD",
     "WORKOS_REDIRECT_URI": "https://app.xn--stttemedlem-hgb.no/callback",
     // ── Vipps MobilePay (production sales unit) ─────────────────────────
     // Only production talks to api.vipps.no; staging + local use the test
