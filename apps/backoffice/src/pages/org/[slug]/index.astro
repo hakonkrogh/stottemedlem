@@ -1,0 +1,117 @@
+---
+import { formatOrganisasjonsnummer, joinEntryPointUrl, orgTermsUrl } from "@stottemedlem/core";
+import { getOrganizationBySlug } from "@stottemedlem/db";
+import Button from "@stottemedlem/ui/components/Button.astro";
+import Card from "@stottemedlem/ui/components/Card.astro";
+import Heading from "@stottemedlem/ui/components/Heading.astro";
+import Stack from "@stottemedlem/ui/components/Stack.astro";
+import Text from "@stottemedlem/ui/components/Text.astro";
+import TextLink from "@stottemedlem/ui/components/TextLink.astro";
+import PublicShell from "../../../layouts/PublicShell.astro";
+import { getDb } from "../../../lib/db";
+
+// PUBLIC org landing page (specs/concepts/org-landing-page.md): the page an
+// admin registers as the organization's website in the Vipps portal, so it
+// must show org name, org.nr, contact info, and the membership offer with its
+// price — and link the salgsvilkår. It is also the org's shareable home for
+// prospective supporters; the CTA hands off to the join entry point.
+const slug = Astro.params.slug;
+const org = slug ? await getOrganizationBySlug(getDb(), slug) : null;
+if (!org) return new Response("Fant ikke organisasjonen", { status: 404 });
+
+const title = `${org.name} — bli støttemedlem`;
+const description = `Bli støttemedlem i ${org.name} og støtt arbeidet med et fast årlig bidrag.`;
+---
+
+<PublicShell title={title} description={description}>
+  <Stack gap="xl">
+    <Stack gap="sm">
+      <Heading>{org.name}</Heading>
+      <Text variant="lead">
+        Som støttemedlem bidrar du med et fast årlig beløp som går direkte til arbeidet i{" "}
+        {org.name}.
+      </Text>
+    </Stack>
+
+    <Card>
+      <Stack gap="md">
+        <Heading level={2}>Støttemedlemskap</Heading>
+        {
+          org.annualFeeNok !== null && (
+            <p class="price">
+              {org.annualFeeNok} kr <span class="per">per år</span>
+            </p>
+          )
+        }
+        <Text variant="muted">
+          Medlemskapet betales med Vipps og fornyes automatisk hvert år til du sier opp. Du får
+          varsel i Vipps-appen før hver fornyelse.
+        </Text>
+        <Button href={joinEntryPointUrl(org.slug)} block>Bli støttemedlem med Vipps</Button>
+        <Text variant="small">
+          <TextLink href={orgTermsUrl(org.slug)}>Salgsvilkår</TextLink>
+        </Text>
+      </Stack>
+    </Card>
+
+    <Stack gap="sm">
+      <Heading level={3}>Om organisasjonen</Heading>
+      <dl>
+        <dt>Navn</dt>
+        <dd>{org.name}</dd>
+        {
+          org.orgnr && (
+            <>
+              <dt>Organisasjonsnummer</dt>
+              <dd>{formatOrganisasjonsnummer(org.orgnr)}</dd>
+            </>
+          )
+        }
+        {
+          org.contactEmail && (
+            <>
+              <dt>Kontakt</dt>
+              <dd>
+                <a href={`mailto:${org.contactEmail}`}>{org.contactEmail}</a>
+              </dd>
+            </>
+          )
+        }
+      </dl>
+    </Stack>
+  </Stack>
+</PublicShell>
+
+<style>
+  .price {
+    margin: 0;
+    font-family: var(--sm-font-display);
+    font-weight: var(--sm-font-display-weight, 600);
+    font-variation-settings: var(--sm-font-display-variation, normal);
+    font-size: 2rem;
+    line-height: 1.1;
+  }
+  .price .per {
+    font-family: var(--sm-font-sans);
+    font-weight: 400;
+    font-size: 1rem;
+    color: var(--sm-muted);
+  }
+  dl {
+    margin: 0;
+    display: grid;
+    grid-template-columns: max-content 1fr;
+    gap: 0.35rem 1.25rem;
+    font-size: 0.95rem;
+  }
+  dt {
+    color: var(--sm-muted);
+  }
+  dd {
+    margin: 0;
+    overflow-wrap: anywhere;
+  }
+  dd a {
+    color: inherit;
+  }
+</style>

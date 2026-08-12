@@ -1,8 +1,8 @@
 ---
-// Prominent inline message. Only the error variant exists today; add variants
-// (success, info) here rather than styling ad-hoc boxes in screens.
+// Prominent inline message. Add variants (e.g. success) here rather than
+// styling ad-hoc boxes in screens.
 interface Props {
-  variant?: "error";
+  variant?: "error" | "info";
 }
 const { variant = "error" } = Astro.props;
 ---
@@ -22,5 +22,10 @@ const { variant = "error" } = Astro.props;
     color: var(--sm-danger);
     background: var(--sm-danger-bg);
     border: 1px solid var(--sm-danger-border);
+  }
+  .info {
+    color: var(--sm-accent-ink);
+    background: var(--sm-accent-soft);
+    border: 1px solid var(--sm-border-strong);
   }
 </style>

@@ -1,5 +1,6 @@
 import { env } from "cloudflare:workers";
 import { slugifyOrganizationName } from "@stottemedlem/core";
+import { type Db, ensureOrganization } from "@stottemedlem/db";
 import { WorkOS } from "@workos-inc/node";
 
 /** Name of the httpOnly cookie holding the WorkOS sealed session. */
@@ -45,14 +46,19 @@ export function sessionCookieOptions(url: URL) {
   };
 }
 
-/** URL-safe slug for an organization, derived from its WorkOS display name. */
+/**
+ * Slug derived from an organization's display name. LEGACY: only used to
+ * resolve dashboard URLs minted before slugs were persisted (see
+ * `ensureOrganization` in @stottemedlem/db) — everything else uses the stored,
+ * never-changing `organizations.slug`.
+ */
 export function orgSlug(organizationName: string): string {
   return slugifyOrganizationName(organizationName);
 }
 
-/** Path of an organization's back-office dashboard. */
-export function orgPath(organizationName: string): string {
-  return `/o/${orgSlug(organizationName)}`;
+/** Path of an organization's back-office dashboard, from its persisted slug. */
+export function orgPath(slug: string): string {
+  return `/o/${slug}`;
 }
 
 /** Narrow a WorkOS session success response into our `SessionInfo`. */
@@ -76,6 +82,7 @@ export function toSessionInfo(r: SessionSuccess): SessionInfo {
  */
 export async function resolveLanding(
   workos: WorkOS,
+  db: Db,
   userId: string,
 ): Promise<{ path: string; organizationId?: string }> {
   const { data: memberships } = await workos.userManagement.listOrganizationMemberships({
@@ -86,7 +93,8 @@ export async function resolveLanding(
   const [only] = memberships;
   if (!only) return { path: "/orgs/new" };
   if (memberships.length === 1) {
-    return { path: orgPath(only.organizationName), organizationId: only.organizationId };
+    const org = await ensureOrganization(db, only.organizationId, only.organizationName);
+    return { path: orgPath(org.slug), organizationId: only.organizationId };
   }
   return { path: "/orgs" };
 }

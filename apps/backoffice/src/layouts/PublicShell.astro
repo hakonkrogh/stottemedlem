@@ -1,0 +1,53 @@
+---
+// Frame for the PUBLIC org pages (/org/<slug>…): indexable (no robots noindex —
+// Vipps' website verification must be able to read them), a single readable
+// column on the warm brand background, and the mandatory subtle støttemedlem.no
+// attribution (specs/concepts/brand-attribution.md: ø in visible text, punycode
+// in the href).
+import "@stottemedlem/ui/tokens.css";
+import "@stottemedlem/ui/base.css";
+import { CANONICAL_ORIGIN } from "@stottemedlem/core";
+
+interface Props {
+  title: string;
+  description?: string;
+}
+const { title, description } = Astro.props;
+---
+
+<html lang="no">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    {description && <meta name="description" content={description} />}
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <title>{title}</title>
+  </head>
+  <body>
+    <main>
+      <slot />
+    </main>
+    <footer>
+      Medlemssiden leveres av <a href={CANONICAL_ORIGIN}>støttemedlem.no</a>
+    </footer>
+  </body>
+</html>
+
+<style>
+  main {
+    width: 100%;
+    max-width: 38rem;
+    margin-inline: auto;
+    padding: 3rem 1.25rem 2rem;
+  }
+  footer {
+    max-width: 38rem;
+    margin-inline: auto;
+    padding: 1rem 1.25rem 2.5rem;
+    font-size: 0.85rem;
+    color: var(--sm-muted);
+  }
+  footer a {
+    color: inherit;
+  }
+</style>

@@ -65,3 +65,39 @@ export function slugifyOrganizationName(name: string): string {
 export function joinEntryPointUrl(slug: string): string {
   return `${CANONICAL_ORIGIN}/bli-med/${slug}`;
 }
+
+/**
+ * The organization's public landing page (see specs/concepts/org-landing-page.md) —
+ * the address an admin pastes into forms that require "your website" (e.g. the
+ * Vipps Faste betalinger order). Stable once the slug is assigned.
+ */
+export function orgLandingPageUrl(slug: string): string {
+  return `${CANONICAL_ORIGIN}/org/${slug}`;
+}
+
+/** The organization's standard sales-terms (salgsvilkår) page, linked from the landing page. */
+export function orgTermsUrl(slug: string): string {
+  return `${CANONICAL_ORIGIN}/org/${slug}/vilkar`;
+}
+
+/**
+ * Validate a Norwegian organisasjonsnummer: 9 digits with a MOD11 check digit
+ * (weights 3,2,7,6,5,4,3,2). Accepts digits with optional spaces.
+ */
+/** Display form of an organisasjonsnummer: "923609016" → "923 609 016". */
+export function formatOrganisasjonsnummer(orgnr: string): string {
+  const digits = orgnr.replaceAll(" ", "");
+  if (!/^\d{9}$/.test(digits)) return orgnr;
+  return `${digits.slice(0, 3)} ${digits.slice(3, 6)} ${digits.slice(6)}`;
+}
+
+export function isValidOrganisasjonsnummer(input: string): boolean {
+  const digits = input.replaceAll(" ", "");
+  if (!/^\d{9}$/.test(digits)) return false;
+  const weights = [3, 2, 7, 6, 5, 4, 3, 2];
+  const sum = weights.reduce((acc, w, i) => acc + w * Number(digits[i]), 0);
+  const remainder = sum % 11;
+  const control = remainder === 0 ? 0 : 11 - remainder;
+  if (control === 10) return false;
+  return control === Number(digits[8]);
+}

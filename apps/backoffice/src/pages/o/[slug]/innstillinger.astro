@@ -1,0 +1,78 @@
+---
+import { getOrganizationBySlug, updateOrganizationProfile } from "@stottemedlem/db";
+import Alert from "@stottemedlem/ui/components/Alert.astro";
+import Button from "@stottemedlem/ui/components/Button.astro";
+import CardFooter from "@stottemedlem/ui/components/CardFooter.astro";
+import Heading from "@stottemedlem/ui/components/Heading.astro";
+import Stack from "@stottemedlem/ui/components/Stack.astro";
+import Text from "@stottemedlem/ui/components/Text.astro";
+import TextLink from "@stottemedlem/ui/components/TextLink.astro";
+import OrgProfileFields from "../../../components/OrgProfileFields.astro";
+import Shell from "../../../layouts/Shell.astro";
+import { getDb } from "../../../lib/db";
+import {
+  type ProfileFieldErrors,
+  parseProfileForm,
+  profileFormValues,
+} from "../../../lib/orgProfile";
+import { getWorkOS, orgPath } from "../../../lib/workos";
+
+// Org settings — today that means the public profile: the fields the org
+// landing page and salgsvilkår show (specs/concepts/org-landing-page.md).
+// Orgs created before a field was required complete it here, prompted by the
+// dashboard banner.
+const session = Astro.locals.session;
+if (!session) return Astro.redirect("/login");
+const slug = Astro.params.slug;
+if (!slug) return Astro.redirect("/orgs");
+
+const db = getDb();
+let org = await getOrganizationBySlug(db, slug);
+if (!org) return Astro.redirect("/orgs");
+const workosOrgId = org.workosOrgId;
+
+const { data: memberships } = await getWorkOS().userManagement.listOrganizationMemberships({
+  userId: session.userId,
+  statuses: ["active"],
+  limit: 100,
+});
+if (!memberships.some((m) => m.organizationId === workosOrgId)) {
+  return Astro.redirect("/orgs");
+}
+
+let values = profileFormValues(org);
+let fieldErrors: ProfileFieldErrors = {};
+let saved = false;
+
+if (Astro.request.method === "POST") {
+  const parsed = parseProfileForm(await Astro.request.formData());
+  values = parsed.values;
+  fieldErrors = parsed.fieldErrors;
+  if (parsed.profile) {
+    org = (await updateOrganizationProfile(db, workosOrgId, parsed.profile)) ?? org;
+    saved = true;
+  }
+}
+---
+
+<Shell title={`Innstillinger — ${org.name}`}>
+  <Stack gap="lg">
+    <Stack gap="sm">
+      <Heading>Innstillinger</Heading>
+      <Text variant="lead">
+        Dette vises på den offentlige siden til {org.name} og i salgsvilkårene — Vipps krever at
+        alt er fylt ut.
+      </Text>
+    </Stack>
+    {saved && <Alert variant="info">Lagret. Den offentlige siden er oppdatert.</Alert>}
+    <form method="post">
+      <Stack gap="lg">
+        <OrgProfileFields values={values} fieldErrors={fieldErrors} />
+        <Button block>Lagre</Button>
+      </Stack>
+    </form>
+    <CardFooter>
+      <TextLink href={orgPath(org.slug)}>Tilbake til oversikten</TextLink>
+    </CardFooter>
+  </Stack>
+</Shell>

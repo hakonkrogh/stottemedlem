@@ -1,4 +1,5 @@
 import type { APIRoute } from "astro";
+import { getDb } from "../lib/db";
 import {
   env,
   getWorkOS,
@@ -31,7 +32,7 @@ export const GET: APIRoute = async ({ url, cookies, redirect }) => {
     cookies.set(SESSION_COOKIE, auth.sealedSession, sessionCookieOptions(url));
   }
 
-  const landing = await resolveLanding(workos, auth.user.id);
+  const landing = await resolveLanding(workos, getDb(), auth.user.id);
 
   // Single-org users go straight in — scope the session to that org first so the
   // session's active organizationId matches the dashboard they land on.
