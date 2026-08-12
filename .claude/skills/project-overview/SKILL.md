@@ -48,6 +48,19 @@ lives in `specs/`, kept in sync with code by a mandatory `Stop`-hook harness.
   `PublicShell.astro` (indexable, brand attribution; admin `Shell.astro` stays
   noindex). Astro template gotcha found here twice: text + `{expr}` separated
   by a newline collapses the space ("arbeidet iNordnes") — join with `{" "}`.
+  **Org visual identity** (added 2026-08-12, branch org-image-editing):
+  `logo_key`/`banner_key` columns (migration `0002_org_images.sql`) hold R2
+  object keys in the backoffice `MEDIA` bucket binding; upload/validate/serve
+  logic in `apps/backoffice/src/lib/orgImages.ts` (magic-byte sniff, PNG/JPEG/
+  WebP only — SVG rejected on purpose: stored SVGs served same-origin can carry
+  scripts; content-hashed keys → `?v=` cache busting + immutable caching).
+  Public endpoints `/org/[slug]/logo|banner` (already public via the `/org/*`
+  middleware rule — no `isPublic()` change needed); uploads happen on
+  `o/[slug]/innstillinger` (multipart form POST, same-page handling; that page
+  also edits the org NAME, mirrored to WorkOS via
+  `organizations.updateOrganization` — slug never changes). Landing page shows
+  banner as a compact 4:1 backdrop (max ~8.5rem tall) with the logo overlapping
+  its bottom edge, LinkedIn-style (spec: `specs/concepts/org-landing-page.md`).
 - `packages/vipps/` — `@stottemedlem/vipps` (added 2026-08-10, scaffolding
   step 5): typed Vipps MobilePay client — access token (pluggable cache, KV in
   the Worker via `apps/backoffice/src/lib/vipps.ts`), Recurring v3
@@ -159,7 +172,11 @@ lives in `specs/`, kept in sync with code by a mandatory `Stop`-hook harness.
   placeholder ids — with explicit ids the token's permissions suffice. Manual
   deploy when needed: `CLOUDFLARE_ENV=<env> turbo build` then `wrangler deploy`
   from apps/backoffice. Account has Workers Paid (Queues work). Still unset on
-  prod: WorkOS client id var + secrets, Vipps keys. Fresh custom domains take
+  prod: WorkOS client id var + secrets, Vipps keys. Also still unprovisioned
+  (as of 2026-08-12): the org-media R2 buckets — `wrangler r2 bucket create
+  stottemedlem-media` (+ `stottemedlem-media-staging`) must run once per env
+  before deploying the MEDIA binding, and migration 0002 needs
+  `wrangler d1 migrations apply DB --remote [--env staging]`. Fresh custom domains take
   minutes for DNS/TLS to propagate — curl exit 6/35 right after deploy is
   propagation (possibly negative-cached locally: verify via `dig @1.1.1.1`
   before suspecting the deploy).

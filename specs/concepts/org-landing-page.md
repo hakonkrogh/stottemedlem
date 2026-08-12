@@ -37,6 +37,14 @@ shareable public home for prospective supporting members.
   [Set up a supporting membership](../use-cases/set-up-supporting-membership.md));
   a field the organization has not yet provided is omitted rather than shown
   empty.
+- The page presents the organization's **visual identity** when uploaded: the
+  banner image as a low, wide **backdrop** above the organization's name, with
+  the logo overlapping the banner's bottom edge (as LinkedIn profiles do). The
+  banner is decoration, not a hero — it must stay compact so the membership
+  offer remains near the top of the page. Either image is optional and simply
+  omitted when absent (logo alone sits above the name; no reserved empty
+  space). The organization's imagery never displaces the verification-required
+  profile fields.
 - The sales-terms page is **one standard template for every organization**,
   populated with the organization's profile. It covers at minimum: payment
   (Vipps, charged on joining and renewed yearly with prior notice), the

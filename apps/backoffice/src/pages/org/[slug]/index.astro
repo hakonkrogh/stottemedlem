@@ -9,6 +9,7 @@ import Text from "@stottemedlem/ui/components/Text.astro";
 import TextLink from "@stottemedlem/ui/components/TextLink.astro";
 import PublicShell from "../../../layouts/PublicShell.astro";
 import { getDb } from "../../../lib/db";
+import { orgImageUrl } from "../../../lib/orgImages";
 
 // PUBLIC org landing page (specs/concepts/org-landing-page.md): the page an
 // admin registers as the organization's website in the Vipps portal, so it
@@ -21,11 +22,26 @@ if (!org) return new Response("Fant ikke organisasjonen", { status: 404 });
 
 const title = `${org.name} — bli støttemedlem`;
 const description = `Bli støttemedlem i ${org.name} og støtt arbeidet med et fast årlig bidrag.`;
+
+// The org's uploaded visual identity: a low, wide banner as a backdrop with
+// the logo overlapping its bottom edge (LinkedIn-style), so the imagery never
+// pushes the membership offer far down the page. Either image is simply
+// omitted when the org has not uploaded it.
+const logoUrl = org.logoKey ? orgImageUrl(org.slug, "logo", org.logoKey) : null;
+const bannerUrl = org.bannerKey ? orgImageUrl(org.slug, "banner", org.bannerKey) : null;
 ---
 
 <PublicShell title={title} description={description}>
   <Stack gap="xl">
     <Stack gap="sm">
+      {
+        (logoUrl || bannerUrl) && (
+          <div class:list={["identity", { "has-banner": bannerUrl }]}>
+            {bannerUrl && <img class="banner" src={bannerUrl} alt="" />}
+            {logoUrl && <img class="logo" src={logoUrl} alt="" />}
+          </div>
+        )
+      }
       <Heading>{org.name}</Heading>
       <Text variant="lead">
         Som støttemedlem bidrar du med et fast årlig beløp som går direkte til arbeidet i{" "}
@@ -83,6 +99,36 @@ const description = `Bli støttemedlem i ${org.name} og støtt arbeidet med et f
 </PublicShell>
 
 <style>
+  .identity {
+    margin-bottom: 0.5rem;
+  }
+  .banner {
+    display: block;
+    width: 100%;
+    /* Low and wide — a backdrop, not a hero: never taller than ~8.5rem. */
+    aspect-ratio: 4 / 1;
+    min-height: 5.5rem;
+    max-height: 8.5rem;
+    object-fit: cover;
+    border-radius: var(--sm-radius-lg);
+  }
+  .logo {
+    display: block;
+    width: 5.25rem;
+    height: 5.25rem;
+    object-fit: contain;
+    padding: 0.4rem;
+    background: var(--sm-surface);
+    border: 1px solid var(--sm-border);
+    border-radius: var(--sm-radius-md);
+    box-shadow: var(--sm-shadow-card);
+  }
+  /* With a banner, the logo overlaps its bottom edge instead of adding to the
+     page height. */
+  .has-banner .logo {
+    margin-top: -2.6rem;
+    margin-left: 1.1rem;
+  }
   .price {
     margin: 0;
     font-family: var(--sm-font-display);

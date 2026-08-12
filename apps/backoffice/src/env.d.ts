@@ -30,6 +30,8 @@ interface Env {
   VIPPS_MSN: string;
   /** KV cache for Vipps access tokens (1 h test / 24 h prod lifetime). */
   VIPPS_TOKENS: import("@cloudflare/workers-types").KVNamespace;
+  /** R2 bucket for uploaded org media (logo/banner images). */
+  MEDIA: import("@cloudflare/workers-types").R2Bucket;
 }
 
 // Astro v6+ removed `Astro.locals.runtime.env`; the Cloudflare adapter now

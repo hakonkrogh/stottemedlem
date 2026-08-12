@@ -105,11 +105,21 @@ export async function ensureOrganization(
   return row;
 }
 
+/**
+ * The organization's uploaded visual identity (specs/concepts/org-landing-page.md):
+ * R2 object keys for the logo and banner. Unlike the profile fields these are
+ * optional — the landing page omits what is absent.
+ */
+export interface OrganizationImages {
+  logoKey: string | null;
+  bannerKey: string | null;
+}
+
 /** Update the public profile (and optionally the mirrored name). Slug never changes. */
 export async function updateOrganizationProfile(
   db: Db,
   workosOrgId: string,
-  profile: Partial<OrganizationProfile> & { name?: string },
+  profile: Partial<OrganizationProfile> & { name?: string } & Partial<OrganizationImages>,
 ): Promise<Organization | null> {
   const [row] = await db
     .update(organizations)

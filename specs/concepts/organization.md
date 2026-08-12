@@ -28,6 +28,12 @@ support.
   requires these fields (payment-provider approval depends on them); an
   organization missing any of them is prompted to complete its profile in the
   back office.
+- An organization may add a **visual identity** — a logo and a banner image —
+  shown on its [landing page](org-landing-page.md). Unlike the profile fields
+  these are **optional**: the page simply omits what has not been uploaded.
+- An administrator can edit the organization's details — name, public profile,
+  and visual identity — in the back office at any time; the public pages
+  reflect changes immediately. A name change never changes the slug.
 - An organization sets exactly one current [annual fee](annual-fee.md).
 - All supporting members and memberships belong to one organization; there is no
   sharing of members across organizations.
