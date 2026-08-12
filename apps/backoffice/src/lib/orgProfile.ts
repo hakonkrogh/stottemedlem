@@ -2,8 +2,9 @@ import { isValidOrganisasjonsnummer } from "@stottemedlem/core";
 import type { OrganizationProfile } from "@stottemedlem/db";
 
 // Shared parsing/validation for the public-profile fields the org landing page
-// needs (specs/concepts/org-landing-page.md): collected at org creation and
-// editable/completable later on the settings page.
+// needs (specs/concepts/org-landing-page.md). Creation collects the identity
+// fields only (`withFee: false`); the annual fee is set afterwards on the
+// settings page, prompted by the dashboard's fill-in banner.
 
 export interface ProfileFormValues {
   orgnr: string;
@@ -20,11 +21,14 @@ export interface ParsedProfileForm {
   profile?: OrganizationProfile;
 }
 
-export function parseProfileForm(form: FormData): ParsedProfileForm {
+export function parseProfileForm(
+  form: FormData,
+  { withFee = true }: { withFee?: boolean } = {},
+): ParsedProfileForm {
   const values: ProfileFormValues = {
     orgnr: String(form.get("orgnr") ?? "").trim(),
     contactEmail: String(form.get("contactEmail") ?? "").trim(),
-    annualFee: String(form.get("annualFee") ?? "").trim(),
+    annualFee: withFee ? String(form.get("annualFee") ?? "").trim() : "",
   };
   const fieldErrors: ProfileFieldErrors = {};
 
@@ -34,9 +38,14 @@ export function parseProfileForm(form: FormData): ParsedProfileForm {
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(values.contactEmail)) {
     fieldErrors.contactEmail = "Oppgi en gyldig e-postadresse.";
   }
-  const fee = Number(values.annualFee.replace(",", "."));
-  if (!Number.isInteger(fee) || fee < 1) {
-    fieldErrors.annualFee = "Oppgi årsbeløpet i hele kroner.";
+  let annualFeeNok: number | null = null;
+  if (withFee) {
+    const fee = Number(values.annualFee.replace(",", "."));
+    if (!Number.isInteger(fee) || fee < 1) {
+      fieldErrors.annualFee = "Oppgi årsbeløpet i hele kroner.";
+    } else {
+      annualFeeNok = fee;
+    }
   }
 
   if (Object.keys(fieldErrors).length > 0) return { values, fieldErrors };
@@ -46,7 +55,7 @@ export function parseProfileForm(form: FormData): ParsedProfileForm {
     profile: {
       orgnr: values.orgnr.replaceAll(" ", ""),
       contactEmail: values.contactEmail,
-      annualFeeNok: fee,
+      annualFeeNok,
     },
   };
 }

@@ -7,10 +7,11 @@ import { type ProfileFieldErrors, parseProfileForm } from "../../lib/orgProfile"
 import { env, getWorkOS, orgPath, SESSION_COOKIE, sessionCookieOptions } from "../../lib/workos";
 
 // Create-organization page — shown when a signed-in admin has no organization
-// yet (or chooses to add another). Collects the name plus the public profile
-// the org landing page must show (specs/concepts/org-landing-page.md). Handles
-// its own POST: create the WorkOS organization, add the user as a member,
-// persist the org row (stable slug + profile), scope the session, land on it.
+// yet (or chooses to add another). Collects the name plus the identity part of
+// the public profile (specs/concepts/org-landing-page.md); the annual fee is
+// deferred to settings, prompted by the dashboard banner. Handles its own
+// POST: create the WorkOS organization, add the user as a member, persist the
+// org row (stable slug + profile), scope the session, land on it.
 const session = Astro.locals.session;
 if (!session) return Astro.redirect("/login");
 
@@ -21,7 +22,7 @@ let fieldErrors: ProfileFieldErrors & { name?: string } = {};
 if (Astro.request.method === "POST") {
   const form = await Astro.request.formData();
   name = String(form.get("name") ?? "").trim();
-  const parsed = parseProfileForm(form);
+  const parsed = parseProfileForm(form, { withFee: false });
   values = parsed.values;
   fieldErrors = { ...parsed.fieldErrors };
   if (!name) fieldErrors.name = "Skriv inn et navn på organisasjonen.";

@@ -11,7 +11,7 @@ export default {
 interface ScreenProps {
   name?: string;
   values?: { orgnr: string; contactEmail: string; annualFee: string };
-  fieldErrors?: Partial<Record<"name" | "orgnr" | "contactEmail" | "annualFee", string>>;
+  fieldErrors?: Partial<Record<"name" | "orgnr" | "contactEmail", string>>;
   error?: string;
 }
 
@@ -24,18 +24,17 @@ export const Default = { args: inFrame({}) };
 export const Filled = {
   args: inFrame({
     name: "Nordnes Skolekorps",
-    values: { orgnr: "923 609 016", contactEmail: "post@nordnesskolekorps.no", annualFee: "300" },
+    values: { orgnr: "923 609 016", contactEmail: "post@nordnesskolekorps.no", annualFee: "" },
   }),
 };
 
 export const WithErrors = {
   args: inFrame({
     name: "Nordnes Skolekorps",
-    values: { orgnr: "123", contactEmail: "post@", annualFee: "gratis" },
+    values: { orgnr: "123", contactEmail: "post@", annualFee: "" },
     fieldErrors: {
       orgnr: "Oppgi et gyldig organisasjonsnummer (9 siffer).",
       contactEmail: "Oppgi en gyldig e-postadresse.",
-      annualFee: "Oppgi årsbeløpet i hele kroner.",
     },
   }),
 };

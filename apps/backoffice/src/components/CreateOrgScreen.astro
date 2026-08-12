@@ -2,8 +2,9 @@
 // Presentational create-organization screen, composed from @stottemedlem/ui
 // primitives. Shared by the real route (pages/orgs/new.astro, which owns the
 // POST handling) and its story, so the look can be iterated on without
-// touching WorkOS logic. Besides the name it collects the public profile the
-// org landing page needs (see OrgProfileFields).
+// touching WorkOS logic. Besides the name it collects the identity part of the
+// public profile (see OrgProfileFields); the annual fee is deliberately not
+// asked for here — it is set later from the dashboard's fill-in prompt.
 import Alert from "@stottemedlem/ui/components/Alert.astro";
 import Button from "@stottemedlem/ui/components/Button.astro";
 import CardFooter from "@stottemedlem/ui/components/CardFooter.astro";
@@ -49,7 +50,7 @@ const {
         autofocus
         error={fieldErrors.name}
       />
-      <OrgProfileFields values={values} fieldErrors={fieldErrors} />
+      <OrgProfileFields values={values} fieldErrors={fieldErrors} withFee={false} />
       <Button block>Opprett og fortsett</Button>
     </Stack>
   </form>
