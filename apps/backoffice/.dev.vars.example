@@ -15,3 +15,19 @@ WORKOS_API_KEY="sk_test_..."
 # 32+ random characters used to encrypt the session cookie. Generate with:
 #   node -e "console.log(crypto.randomBytes(32).toString('base64url'))"
 WORKOS_COOKIE_PASSWORD="change-me-to-32+-random-characters"
+
+# ── Vipps MobilePay ─────────────────────────────────────────────────────
+# Local dev always talks to the TEST environment (apitest.vipps.no) — never
+# put production keys here. Test keys + MSN live in
+# portal.vippsmobilepay.com → For utviklere (they appear once the Faste
+# betalinger order is submitted). Validate them with:
+#   pnpm --filter @stottemedlem/vipps run smoke
+
+# Non-secret (mirror wrangler.jsonc `vars` for staging/production):
+VIPPS_API_BASE_URL="https://apitest.vipps.no"
+VIPPS_CLIENT_ID="00000000-0000-0000-0000-000000000000"
+VIPPS_MSN="123456"
+
+# Secret (set via `wrangler secret put` for staging/production):
+VIPPS_CLIENT_SECRET="..."
+VIPPS_SUBSCRIPTION_KEY="..."
