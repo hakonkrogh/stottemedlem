@@ -43,7 +43,10 @@ fields, and can edit its profile there at any time.
 The organization can also give its landing page a **visual identity**: in the
 back-office settings it can edit its details (name and profile) and upload a
 **logo** and a **banner image**, shown on the
-[landing page](../concepts/org-landing-page.md). Both images are optional, can
+[landing page](../concepts/org-landing-page.md). For the banner the
+organization can also pick the **focal point** — which part of the image stays
+in view where the page crops it — with a preview that fades the cropped-away
+parts around a draggable visible-area frame. Both images are optional, can
 be replaced or removed at any time, and changes show on the public page
 immediately. A name change never changes the slug or the public addresses.
 
@@ -67,6 +70,9 @@ immediately. A name change never changes the slug or the public addresses.
       replace, or remove a logo and a banner image in the back office; the
       landing page reflects the change immediately, and a name change never
       changes the slug.
+- [ ] An administrator can choose the banner's focal point by dragging the
+      visible-area frame in the settings preview; the landing page crops the
+      banner around that point.
 
 ## Out of scope
 - Multiple membership tiers or variable pricing (single annual fee only for now).

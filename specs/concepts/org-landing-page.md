@@ -37,14 +37,21 @@ shareable public home for prospective supporting members.
   [Set up a supporting membership](../use-cases/set-up-supporting-membership.md));
   a field the organization has not yet provided is omitted rather than shown
   empty.
-- The page presents the organization's **visual identity** when uploaded: the
-  banner image as a low, wide **backdrop** above the organization's name, with
-  the logo overlapping the banner's bottom edge (as LinkedIn profiles do). The
-  banner is decoration, not a hero — it must stay compact so the membership
-  offer remains near the top of the page. Either image is optional and simply
-  omitted when absent (logo alone sits above the name; no reserved empty
-  space). The organization's imagery never displaces the verification-required
-  profile fields.
+- The page presents the organization's **visual identity** when uploaded, in
+  the familiar social-page arrangement (as Facebook pages do): the banner image
+  as a wide **backdrop** at the top, with the logo overlapping the banner's
+  bottom edge and the organization's name beside it. The logo is always framed
+  in a **circle with a subtle outline** — everywhere the product shows a logo,
+  it shows it in that circle, so differently shaped logos still read as one
+  consistent mark. The banner is decoration, not a hero — it stays bounded in
+  height so the membership offer remains near the top of the page. Because the
+  backdrop crops the banner, the organization can choose the banner's **focal
+  point** — which part of the image stays in view — with a picker that fades
+  the cropped-away parts and lets the visible-area frame be dragged; unset
+  means centered. Either image is optional and simply omitted when absent
+  (logo alone sits beside the name; no reserved empty space). The
+  organization's imagery never displaces the verification-required profile
+  fields.
 - The sales-terms page is **one standard template for every organization**,
   populated with the organization's profile. It covers at minimum: payment
   (Vipps, charged on joining and renewed yearly with prior notice), the

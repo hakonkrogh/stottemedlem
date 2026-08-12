@@ -23,26 +23,30 @@ if (!org) return new Response("Fant ikke organisasjonen", { status: 404 });
 const title = `${org.name} — bli støttemedlem`;
 const description = `Bli støttemedlem i ${org.name} og støtt arbeidet med et fast årlig bidrag.`;
 
-// The org's uploaded visual identity: a low, wide banner as a backdrop with
-// the logo overlapping its bottom edge (LinkedIn-style), so the imagery never
-// pushes the membership offer far down the page. Either image is simply
-// omitted when the org has not uploaded it.
+// The org's uploaded visual identity, Facebook-style: a wide banner backdrop
+// with the circular logo overlapping its bottom edge and the org name beside
+// it. The banner stays bounded in height so the membership offer is never
+// pushed far down the page. Either image is simply omitted when the org has
+// not uploaded it.
 const logoUrl = org.logoKey ? orgImageUrl(org.slug, "logo", org.logoKey) : null;
 const bannerUrl = org.bannerKey ? orgImageUrl(org.slug, "banner", org.bannerKey) : null;
+// The admin-chosen focal point decides which part of the banner survives the
+// crop to the wide backdrop (settings page picker); center when unset.
+const bannerFocus = `${org.bannerFocusX ?? 50}% ${org.bannerFocusY ?? 50}%`;
 ---
 
 <PublicShell title={title} description={description}>
   <Stack gap="xl">
     <Stack gap="sm">
-      {
-        (logoUrl || bannerUrl) && (
-          <div class:list={["identity", { "has-banner": bannerUrl }]}>
-            {bannerUrl && <img class="banner" src={bannerUrl} alt="" />}
-            {logoUrl && <img class="logo" src={logoUrl} alt="" />}
-          </div>
-        )
-      }
-      <Heading>{org.name}</Heading>
+      <header class:list={["identity", { "has-banner": bannerUrl }]}>
+        {bannerUrl && (
+          <img class="banner" src={bannerUrl} alt="" style={`object-position: ${bannerFocus}`} />
+        )}
+        <div class="head">
+          {logoUrl && <img class="logo" src={logoUrl} alt="" />}
+          <Heading>{org.name}</Heading>
+        </div>
+      </header>
       <Text variant="lead">
         Som støttemedlem bidrar du med et fast årlig beløp som går direkte til arbeidet i{" "}
         {org.name}.
@@ -105,29 +109,38 @@ const bannerUrl = org.bannerKey ? orgImageUrl(org.slug, "banner", org.bannerKey)
   .banner {
     display: block;
     width: 100%;
-    /* Low and wide — a backdrop, not a hero: never taller than ~8.5rem. */
-    aspect-ratio: 4 / 1;
-    min-height: 5.5rem;
-    max-height: 8.5rem;
+    /* A wide backdrop, not a hero — bounded so the offer stays near the top. */
+    aspect-ratio: 3 / 1;
+    min-height: 6rem;
+    max-height: 12rem;
     object-fit: cover;
     border-radius: var(--sm-radius-lg);
   }
+  .head {
+    display: flex;
+    align-items: flex-end;
+    gap: 1.1rem;
+  }
+  /* Logos are always framed in a circle with a subtle outline, so mixed logo
+     shapes still read as one consistent identity mark. */
   .logo {
     display: block;
-    width: 5.25rem;
-    height: 5.25rem;
+    flex-shrink: 0;
+    width: 6.5rem;
+    height: 6.5rem;
     object-fit: contain;
-    padding: 0.4rem;
+    padding: 0.5rem;
     background: var(--sm-surface);
-    border: 1px solid var(--sm-border);
-    border-radius: var(--sm-radius-md);
-    box-shadow: var(--sm-shadow-card);
+    border-radius: 50%;
+    box-shadow:
+      0 0 0 1px var(--sm-border),
+      var(--sm-shadow-card);
   }
-  /* With a banner, the logo overlaps its bottom edge instead of adding to the
-     page height. */
+  /* With a banner, the circle overlaps its bottom edge (Facebook-style) with
+     the name sitting beside it below the banner. */
   .has-banner .logo {
-    margin-top: -2.6rem;
-    margin-left: 1.1rem;
+    margin-top: -3.25rem;
+    margin-left: 1rem;
   }
   .price {
     margin: 0;

@@ -29,6 +29,12 @@ export const organizations = sqliteTable("organizations", {
   logoKey: text("logo_key"),
   /** R2 object key for the uploaded banner image; null when none uploaded. */
   bannerKey: text("banner_key"),
+  /**
+   * Banner focal point as object-position percentages (0–100): which part of
+   * the image stays in view when cropped to the wide backdrop. Null = center.
+   */
+  bannerFocusX: integer("banner_focus_x"),
+  bannerFocusY: integer("banner_focus_y"),
   createdAt: text("created_at").notNull().default(sql`(datetime('now'))`),
 });
 

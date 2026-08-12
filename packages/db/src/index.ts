@@ -113,6 +113,9 @@ export async function ensureOrganization(
 export interface OrganizationImages {
   logoKey: string | null;
   bannerKey: string | null;
+  /** Banner focal point (object-position percentages, 0–100). Null = center. */
+  bannerFocusX: number | null;
+  bannerFocusY: number | null;
 }
 
 /** Update the public profile (and optionally the mirrored name). Slug never changes. */
