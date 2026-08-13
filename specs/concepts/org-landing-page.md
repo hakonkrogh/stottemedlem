@@ -30,6 +30,15 @@ shareable public home for prospective supporting members.
   [organization](organization.md)) and are **stable**: once registered with a
   payment provider or shared, they keep working — a name change never moves
   them.
+- The landing page opens with an **invitation, not a brochure**: a headline
+  asking the visitor to become a supporting member ("Bli støttemedlem") and a
+  subheadline that explains in plain words what the page is for and restates
+  the product's promise — a membership that renews year by year, puts the
+  supporter on the organization's member list, and makes their support count
+  over time. The subheadline outlines the membership offer(s) the organization
+  has: with a single offer (all an organization can have today) it simply
+  describes that one membership and its [annual fee](annual-fee.md); it never
+  enumerates options that don't exist.
 - The landing page shows what payment-provider verification requires: the
   organization's public name, organisasjonsnummer, contact information, and
   the supporting membership with its current [annual fee](annual-fee.md).
