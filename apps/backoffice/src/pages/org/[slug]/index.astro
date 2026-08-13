@@ -23,6 +23,19 @@ if (!org) return new Response("Fant ikke organisasjonen", { status: 404 });
 const title = `${org.name} — bli støttemedlem`;
 const description = `Bli støttemedlem i ${org.name} og støtt arbeidet med et fast årlig bidrag.`;
 
+// The hero copy invites the visitor to become a supporting member and explains
+// the offer in plain words. The org offers a single membership today, so the
+// subheadline describes that one option (with the fee when it is set) and
+// restates the product's promise: an annual membership that renews year by
+// year, puts you on the org's member list, and makes your support count.
+const feePhrase =
+  org.annualFeeNok !== null
+    ? `en fast årlig kontingent på ${org.annualFeeNok} kr`
+    : "en fast årlig kontingent";
+const subheadIntro = `Dette er støttemedlemssiden til ${org.name}. Her tegner du et støttemedlemskap — ${feePhrase} som går direkte til arbeidet i organisasjonen.`;
+const subheadPromise =
+  "Medlemskapet fornyes år for år så lenge du vil være med: du står på organisasjonens liste over støttemedlemmer, hører fra dem gjennom året, og støtten din teller for hvert år som går.";
+
 // The org's uploaded visual identity, Facebook-style: a wide banner backdrop
 // with the circular logo overlapping its bottom edge and the org name beside
 // it. The banner stays bounded in height so the membership offer is never
@@ -37,20 +50,21 @@ const bannerFocus = `${org.bannerFocusX ?? 50}% ${org.bannerFocusY ?? 50}%`;
 
 <PublicShell title={title} description={description}>
   <Stack gap="xl">
-    <Stack gap="sm">
+    <Stack gap="md">
       <header class:list={["identity", { "has-banner": bannerUrl }]}>
         {bannerUrl && (
           <img class="banner" src={bannerUrl} alt="" style={`object-position: ${bannerFocus}`} />
         )}
         <div class="head">
           {logoUrl && <img class="logo" src={logoUrl} alt="" />}
-          <Heading>{org.name}</Heading>
+          <p class="org-name">{org.name}</p>
         </div>
       </header>
-      <Text variant="lead">
-        Som støttemedlem bidrar du med et fast årlig beløp som går direkte til arbeidet i{" "}
-        {org.name}.
-      </Text>
+      <Stack gap="sm">
+        <Heading>Bli støttemedlem</Heading>
+        <Text variant="lead">{subheadIntro}</Text>
+        <Text variant="lead">{subheadPromise}</Text>
+      </Stack>
     </Stack>
 
     <Card>
@@ -120,6 +134,37 @@ const bannerFocus = `${org.bannerFocusX ?? 50}% ${org.bannerFocusY ?? 50}%`;
     display: flex;
     align-items: flex-end;
     gap: 1.1rem;
+  }
+  /* The org name is the identity mark beside the logo, not the page headline —
+     the h1 is the "Bli støttemedlem" invitation below. Styled like a display
+     heading so the identity header keeps its weight. */
+  .org-name {
+    margin: 0;
+    font-family: var(--sm-font-display);
+    font-weight: var(--sm-font-display-weight, 600);
+    font-variation-settings: var(--sm-font-display-variation, normal);
+    letter-spacing: -0.01em;
+    line-height: 1.2;
+    font-size: 1.75rem;
+    /* Long single-word org names can't wrap at spaces; allow shrinking below
+       content width with mid-word wrapping as the extreme backstop. */
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+  /* On narrow screens the whole identity row scales down so a typical
+     compound org name still fits on one line beside the logo. */
+  @media (max-width: 480px) {
+    .logo {
+      width: 4.5rem;
+      height: 4.5rem;
+      padding: 0.35rem;
+    }
+    .has-banner .logo {
+      margin-top: -2.25rem;
+    }
+    .org-name {
+      font-size: 1.3rem;
+    }
   }
   /* Logos are always framed in a circle with a subtle outline, so mixed logo
      shapes still read as one consistent identity mark. */

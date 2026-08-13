@@ -11,7 +11,12 @@ description: Render any local URL (marketing/backoffice dev or preview server) t
 - Widths ≥ 500: uses `/Applications/Google Chrome.app` with `--headless=new` —
   zero setup, no npm dependency. The PNG is the viewport, so pass a height
   taller than the page (e.g. 2600) for a full-page capture; excess height shows
-  as body-background padding below the content.
+  as body-background padding below the content. **If shot.sh hangs >120s**
+  (headless Chrome can wedge on launch even when the URL curls fine, seen
+  2026-08-13): `pkill -f Chrome-headless`, then use the playwright path
+  directly at ANY width — it works for desktop too:
+  `npx playwright screenshot --channel=chrome --viewport-size=1440,900
+  --full-page <url> <out.png>`.
 - Widths < 500 (mobile): macOS clamps Chrome windows to ≥500px even headless,
   so the script switches to `npx playwright screenshot --channel=chrome`
   (drives the installed Chrome; no browser download, npm package cached after
@@ -48,6 +53,16 @@ description: Render any local URL (marketing/backoffice dev or preview server) t
   `apps/backoffice`, shares `.wrangler/state` with astro dev):
   `pnpm exec wrangler d1 migrations apply DB --local`, then seed with
   `pnpm exec wrangler d1 execute DB --local --command "INSERT INTO ..."`.
+  Working minimal org seed (note `workos_org_id` is NOT NULL UNIQUE — omitting
+  it makes the INSERT fail with no visible error in the tail'd output, so
+  append a `; SELECT ...` to the same --command to prove the row landed):
+  `INSERT INTO organizations (id, workos_org_id, slug, name, orgnr,
+  contact_email, annual_fee_nok) VALUES ('org_test_1', 'workos_org_test_1',
+  'eksempelkorpset', 'Eksempelkorpset', '999999999',
+  'post@eksempelkorpset.no', 300); SELECT slug FROM organizations`.
+  Astro dev may come up on a DIFFERENT port than 4322 (another worktree's
+  daemon holds it; vite logs "Port 4322 is in use, trying another one") — read
+  the port from the start/logs output before shooting.
   Local R2 shares the same `.wrangler/state`: seed org media with
   `pnpm exec wrangler r2 object put "stottemedlem-media/<key>" --file <img>
   --content-type image/jpeg --local` where `<key>` matches the row's
