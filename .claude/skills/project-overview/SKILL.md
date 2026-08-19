@@ -37,7 +37,14 @@ lives in `specs/`, kept in sync with code by a mandatory `Stop`-hook harness.
   org slug** + public profile (orgnr, contact email, annual fee). Migrations are
   HAND-WRITTEN SQL in `packages/db/migrations/` (no drizzle-kit), applied via
   `wrangler d1 migrations apply DB --local` from `apps/backoffice`
-  (`migrations_dir` points there; local state shared with `astro dev`). Slug is
+  (`migrations_dir` points there; local state shared with `astro dev`).
+  **Every fresh worktree starts with an EMPTY local D1** (Miniflare state is
+  per-worktree in `apps/backoffice/.wrangler/`) — symptom: login /callback
+  dies with `Failed query: select … from "organizations"`. Since 2026-08-18
+  the backoffice `dev` script self-heals this (it runs
+  `wrangler d1 migrations apply DB --local` before `astro dev`); a dev server
+  started BEFORE a new migration landed still needs the apply run manually
+  (no restart needed — state is shared live). Slug is
   assigned once by `ensureOrganization` (also backfills orgs that predate the
   table; `/o/[slug]` still resolves legacy name-derived slugs and redirects).
   **Public org pages** (added 2026-07-28, spec
@@ -74,11 +81,17 @@ lives in `specs/`, kept in sync with code by a mandatory `Stop`-hook harness.
   agreements/charges, Webhooks v1 registration + delivery HMAC verification.
   Web-standard APIs only (fetch + Web Crypto), runs on workerd and Node.
   `VIPPS_API_BASE_URL` picks the environment: **apitest.vipps.no everywhere
-  except production**. Read-only credential smoke:
-  `pnpm --filter @stottemedlem/vipps run smoke` (needs test keys from
-  portal → For utviklere; refuses prod). API behaviour ground truth:
-  `docs/research/vipps-recurring-payments.md` + stack-docs "Vipps API
-  mechanics".
+  except production**, and since 2026-08-18 it is the only Vipps env config —
+  **each org's own sales-unit keys** are added by its admin at
+  `/o/[slug]/vipps` (validated live against Vipps before storing; spec
+  `specs/concepts/vipps-api-keys.md`), stored per org in **WorkOS Vault**
+  (`apps/backoffice/src/lib/vippsKeys.ts`; client factory `getVippsForOrg`
+  in `src/lib/vipps.ts`). Vault enablement smoke:
+  `pnpm --filter @stottemedlem/backoffice run vault-smoke`. Read-only
+  credential smoke (keys via env vars):
+  `pnpm --filter @stottemedlem/vipps run smoke` (refuses prod). API
+  behaviour ground truth: `docs/research/vipps-recurring-payments.md` +
+  stack-docs "Vipps API mechanics" + "WorkOS Vault".
 - `packages/qr/` — `@stottemedlem/qr`, shared QR code/card generation, split
   isomorphic/node/browser (see qr-codes.md before touching QR anything).
 - `packages/ui/` — `@stottemedlem/ui` (added 2026-07-28), the shared UI
@@ -160,7 +173,14 @@ lives in `specs/`, kept in sync with code by a mandatory `Stop`-hook harness.
   (dash.cloudflare.com/profile/api-tokens).
 - Backoffice auto-deploys on push to `main` via
   `.github/workflows/deploy-backoffice.yml` (added 2026-07-08): a `staging` job
-  then a `production` job (`needs: staging`), so main ships to both. Env is chosen
+  then a `production` job (`needs: staging`), so main ships to both. Since
+  2026-08-18 each job applies remote D1 migrations BEFORE its deploy
+  (`wrangler d1 migrations apply DB --remote [--env staging]` — the --env
+  split-brain from stack-docs applies; wrangler auto-confirms when
+  non-interactive; keep migrations additive so the still-running old code
+  stays compatible). If the migration step 401s in CI, the API token lacks
+  Account → D1 → Edit — add it in the dashboard (token value survives
+  permission edits). Env is chosen
   at BUILD time (`CLOUDFLARE_ENV=staging` for the staging job; default for prod) —
   the deploy step is a plain `wrangler deploy`; `cancel-in-progress: false` so a
   running staging→prod deploy isn't interrupted. Uses the same repo secrets as
@@ -179,7 +199,8 @@ lives in `specs/`, kept in sync with code by a mandatory `Stop`-hook harness.
   placeholder ids — with explicit ids the token's permissions suffice. Manual
   deploy when needed: `CLOUDFLARE_ENV=<env> turbo build` then `wrangler deploy`
   from apps/backoffice. Account has Workers Paid (Queues work). Still unset on
-  prod: WorkOS client id var + secrets, Vipps keys. Org-media R2 buckets
+  prod: WorkOS client id var + secrets (Vipps keys are per-org via the
+  backoffice UI since 2026-08-18, not Worker secrets). Org-media R2 buckets
   (`stottemedlem-media`, `-staging`) ARE provisioned and migration 0002 applied
   remotely on both envs (2026-08-12). Two wrangler gotchas found provisioning
   them: (1) **`wrangler r2 bucket create` AUTO-EDITS wrangler.jsonc** — appends
@@ -215,6 +236,7 @@ the Donations `Schedule.interval` enum is `[MONTHLY]` only, found nowhere in pro
 | (skill) `stack-docs` | verified platform gotchas: Astro CF adapter custom worker entry, WorkOS SDK on Workers |
 | (skill) `spec-lint` | `node .claude/skills/spec-lint/check.mjs` — validates spec links + INDEX registration after any specs/ edit |
 | (skill) `preview-screenshot` | headless-Chrome screenshot of any local URL → Read the PNG; the visual validation loop for UI work |
+| (skill) `dev-logs` | `bash .claude/skills/dev-logs/devlog.sh start\|tail\|grep` — read the dev server's stdout (console.log/error, request lines, SSR stack traces) via `astro dev --background` + `.astro/dev.log`; foreground `pnpm dev` output is unreadable to agents |
 | (canonical) `docs/research/vipps-recurring-payments.md` | verified Vipps Recurring API v3 research (yearly agreements, tiers via LEGACY pricing PATCH, 10 webhook events, local DB as system of record, NO onboarding/retention rules); Appendix A rules out Vipps Donasjoner definitively (monthly-only enum, no API amount control) — read before any payment work; not yet fed into `specs/` |
 | (canonical) `docs/vipps-portal-walkthrough/README.md` | IN-PROGRESS (started 2026-07-28) recorded click-through of portal.vippsmobilepay.com with user-supplied screenshots (→ `images/`) — verifies onboarding checklist open question 6 and collects MSN + test API keys; session log is empty until the first screenshot lands — continue the recording there, one numbered entry per screen |
 | (canonical) `docs/vipps-org-onboarding.md` | iterable checklist of what an org must do to get Vipps live — baseline assumes an EXISTING standard Vipps business account; steps = add Faste betalinger to the agreement, approval, then org pastes its own MSN + API keys (DECIDED 2026-07-28: no Vipps platform-partner model to begin with) — in two forms: detailed post-org-creation instructions + 3-step marketing-site headlines — the source for future onboarding UI/marketing copy; not yet fed into `specs/` |

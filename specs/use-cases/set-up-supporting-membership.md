@@ -33,7 +33,11 @@ From the organization's point of view:
    [QR code card](promote-with-qr-card.md) for posters and external websites)
    and its [landing page](../concepts/org-landing-page.md) with the sales-terms
    page — the two URLs the payment-provider order form asks for.
-4. Once configured, the organization is ready to receive supporting members; no
+4. The administrator connects the organization's own Vipps agreement by adding
+   its [Vipps API keys](../concepts/vipps-api-keys.md). The product proves the
+   keys work with a live check against Vipps before keeping them; until they
+   are added, the back office prompts for them.
+5. Once configured, the organization is ready to receive supporting members; no
    further setup is required to take the first payment.
 
 An organization created before a profile field was required (or before this
@@ -62,6 +66,10 @@ immediately. A name change never changes the slug or the public addresses.
 - [ ] An organization missing required profile fields sees a prompt in the back
       office and can complete them; the landing page reflects the change
       immediately.
+- [ ] An administrator can add the organization's
+      [Vipps API keys](../concepts/vipps-api-keys.md); a set Vipps rejects is
+      not stored, and the administrator is told why. Stored secrets are only
+      ever shown masked.
 - [ ] A supporter using that entry point can complete
       [joining](join-as-supporting-member.md) without further admin action.
 - [ ] The annual fee can be changed later; the change applies to future joins and
@@ -83,6 +91,7 @@ immediately. A name change never changes the slug or the public addresses.
 ## Related
 - [Concept: Organization](../concepts/organization.md)
 - [Concept: Annual fee](../concepts/annual-fee.md)
+- [Concept: Vipps API keys](../concepts/vipps-api-keys.md)
 - [Concept: Join entry point](../concepts/join-entry-point.md)
 - [Concept: Organization landing page](../concepts/org-landing-page.md)
 - [Use case: Promote membership with a QR code card](promote-with-qr-card.md)

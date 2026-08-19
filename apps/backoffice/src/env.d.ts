@@ -18,16 +18,12 @@ interface Env {
   WORKOS_COOKIE_PASSWORD: string;
   /** Registered AuthKit redirect URI for this environment's /callback. */
   WORKOS_REDIRECT_URI: string;
-  /** Vipps environment: https://apitest.vipps.no everywhere except production. */
+  /**
+   * Vipps environment: https://apitest.vipps.no everywhere except production.
+   * The only per-environment Vipps config — each org brings its own sales-unit
+   * keys (stored in WorkOS Vault; see src/lib/vippsKeys.ts).
+   */
   VIPPS_API_BASE_URL: string;
-  /** Vipps sales-unit client id (per environment). */
-  VIPPS_CLIENT_ID: string;
-  /** Vipps sales-unit client secret (secret; .dev.vars / `wrangler secret`). */
-  VIPPS_CLIENT_SECRET: string;
-  /** Ocp-Apim-Subscription-Key for the sales unit (secret). */
-  VIPPS_SUBSCRIPTION_KEY: string;
-  /** Merchant Serial Number of the sales unit carrying Faste betalinger. */
-  VIPPS_MSN: string;
   /** KV cache for Vipps access tokens (1 h test / 24 h prod lifetime). */
   VIPPS_TOKENS: import("@cloudflare/workers-types").KVNamespace;
   /** R2 bucket for uploaded org media (logo/banner images). */
