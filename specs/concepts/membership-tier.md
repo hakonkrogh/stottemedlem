@@ -58,6 +58,13 @@ organization sees in the Vipps portal — always names the tier.
   membership has nothing to approve.
 - Where tiers are presented (landing page, back office), they are ordered by
   annual fee, cheapest first.
+- The back office offers **standard templates** for common tiers (a basic
+  supporting membership and a VIP level) so an administrator doesn't have to
+  invent the wording: picking one prefills the new tier's name and a standard
+  description, while the **price is always the administrator's own** (a
+  suggested amount is shown, never preset). A template is only a starting
+  point — the created tier is an ordinary tier, fully editable, and nothing
+  ties it to the template afterwards.
 
 ## Relationships
 - Belongs to one [organization](organization.md).

@@ -19,7 +19,9 @@ import TextLink from "@stottemedlem/ui/components/TextLink.astro";
 import Shell from "../../../layouts/Shell.astro";
 import { getDb } from "../../../lib/db";
 import {
+  getTierTemplate,
   parseTierForm,
+  TIER_TEMPLATES,
   type TierFieldErrors,
   type TierFormValues,
   tierFormValues,
@@ -53,6 +55,15 @@ if (!memberships.some((m) => m.organizationId === org.workosOrgId)) {
 const emptyValues: TierFormValues = { name: "", description: "", annualFee: "" };
 let createValues = emptyValues;
 let createErrors: TierFieldErrors = {};
+// A `?mal=<key>` link prefills the add-form from a standard template — name
+// and description only; the price is always the administrator's own, so the
+// template's suggested amount appears as the fee placeholder, never a value.
+const template =
+  Astro.request.method === "POST" ? null : getTierTemplate(Astro.url.searchParams.get("mal"));
+if (template) {
+  createValues = { name: template.name, description: template.description, annualFee: "" };
+}
+const feePlaceholder = String(template?.suggestedFeeNok ?? 300);
 // When an edit fails validation, that tier's form re-renders with the
 // submitted values and errors; every other tier shows its stored state.
 let editedTierId: string | null = null;
@@ -181,9 +192,19 @@ const tiers = await listMembershipTiers(db, org.id);
       })
     }
     <Card>
-      <form method="post">
+      <form method="post" id="legg-til">
         <Stack gap="md">
           <Heading level={2}>Legg til medlemskap</Heading>
+          <div class="templates">
+            <Text variant="small">
+              Start fra en mal — fyller ut navn og standardtekst, prisen setter du selv:
+            </Text>
+            <div class="template-buttons">
+              {TIER_TEMPLATES.map((t) => (
+                <Button variant="secondary" href={`?mal=${t.key}#legg-til`}>{t.name}</Button>
+              ))}
+            </div>
+          </div>
           <TextField
             label="Navn"
             name="name"
@@ -206,7 +227,7 @@ const tiers = await listMembershipTiers(db, org.id);
             name="annualFee"
             id="new-annualFee"
             value={createValues.annualFee}
-            placeholder="300"
+            placeholder={feePlaceholder}
             required
             error={createErrors.annualFee}
           />
@@ -223,6 +244,15 @@ const tiers = await listMembershipTiers(db, org.id);
 <style>
   .actions {
     display: flex;
+    gap: 0.75rem;
+  }
+  .templates {
+    display: grid;
+    gap: 0.5rem;
+  }
+  .template-buttons {
+    display: flex;
+    flex-wrap: wrap;
     gap: 0.75rem;
   }
 </style>

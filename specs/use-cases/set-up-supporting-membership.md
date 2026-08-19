@@ -30,7 +30,11 @@ From the organization's point of view:
    started, and everything about it can be changed later.
 3. The administrator refines the membership offer in the back office as one
    or more tiers, each with a name, an optional short description, and its
-   annual fee. Each tier gets a stable identifier at creation (its **key**),
+   annual fee. Standard **templates** (a basic supporting membership and a
+   VIP level) prefill the name and a standard description so the wording
+   doesn't have to be invented; the administrator always sets the price
+   (a suggested amount is shown). Each tier gets a stable identifier at
+   creation (its **key**),
    usable in join links and stamped onto the tier's payment agreements in
    Vipps, so agreements there can always be traced back to the tier. Tiers
    can be renamed, repriced, and archived — never deleted — a rename never
@@ -73,6 +77,10 @@ immediately. A name change never changes the slug or the public addresses.
       administrator can add a tier (name, optional description, annual fee),
       edit it, and archive it — except the last active tier, which cannot be
       archived, so the organization always offers at least one membership.
+- [ ] When adding a tier, the administrator can start from a standard
+      template (basic or VIP) that prefills name and description with
+      standard texts; the price field stays empty with a suggested amount,
+      and everything prefilled remains editable before and after creation.
 - [ ] A tier's key is assigned at creation, shown to the administrator, and
       never changes — not even when the tier is renamed.
 - [ ] After setup the organization has a shareable join entry point and a live

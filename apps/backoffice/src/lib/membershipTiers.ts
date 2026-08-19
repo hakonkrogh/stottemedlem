@@ -1,4 +1,5 @@
 import {
+  DEFAULT_MEMBERSHIP_TIER_NAME,
   VIPPS_PRODUCT_DESCRIPTION_MAX_LENGTH,
   VIPPS_PRODUCT_NAME_MAX_LENGTH,
 } from "@stottemedlem/core";
@@ -63,6 +64,44 @@ export function parseTierForm(form: FormData): ParsedTierForm {
       annualFeeNok: fee,
     },
   };
+}
+
+/**
+ * Standard templates for common tiers (specs/concepts/membership-tier.md):
+ * picking one prefills the add-form's name and description with standard
+ * texts so the wording doesn't have to be invented. The price is always the
+ * administrator's own — templates only carry a *suggested* amount, shown as
+ * the fee field's placeholder, never as a value. Texts must stay within the
+ * Vipps productName/productDescription limits enforced by parseTierForm.
+ */
+export interface MembershipTierTemplate {
+  /** Selects the template via the medlemskap page's `?mal=<key>` link. */
+  key: string;
+  name: string;
+  description: string;
+  /** Suggested annual fee, shown as placeholder only. */
+  suggestedFeeNok: number;
+}
+
+export const TIER_TEMPLATES: MembershipTierTemplate[] = [
+  {
+    key: "stottemedlem",
+    name: DEFAULT_MEMBERSHIP_TIER_NAME,
+    description:
+      "Et fast årlig bidrag som går direkte til arbeidet vårt. Du står på medlemslisten år for år.",
+    suggestedFeeNok: 300,
+  },
+  {
+    key: "vip",
+    name: "VIP-medlemskap",
+    description:
+      "For deg som vil gi litt ekstra: samme medlemskap, større bidrag og en ekstra stor takk fra oss.",
+    suggestedFeeNok: 1000,
+  },
+];
+
+export function getTierTemplate(key: string | null): MembershipTierTemplate | null {
+  return TIER_TEMPLATES.find((t) => t.key === key) ?? null;
 }
 
 /** Prefill values for a tier's edit form from its stored row. */
