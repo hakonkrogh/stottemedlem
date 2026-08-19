@@ -89,4 +89,6 @@ description: Render any local URL (marketing/backoffice dev or preview server) t
   connected page over the HMR websocket as a full-screen overlay — e.g. a
   browser's automatic `/favicon.ico` request 500ing paints the overlay onto a
   page that itself returned 200 (curl the URL to see the real response). Check
-  `astro dev logs` for which request actually threw before debugging the page.
+  `astro dev logs` for which request actually threw before debugging the page
+  (the `dev-logs` skill wraps this: `bash .claude/skills/dev-logs/devlog.sh
+  tail|grep` — and its `start` makes a foreground server's logs readable).

@@ -144,3 +144,40 @@ committing. These images feed the public-facing onboarding guide.
   (turnover, share of recurring, agreement length, interval) — the
   website/terms URLs are an additional, blocking requirement. Added as its own
   sub-step in `vipps-org-onboarding.md`.
+
+### Step 5 — Order form 2/4: "Slik vil dere vises i Vipps-appen" (recorded 2026-08-12)
+
+*(no committed screenshot — the live session showed the real org; log is anonymized)*
+
+- **What the portal shows (verbatim):** **"Salgsstedets navn"** — *"Bedriftsnavnet
+  som kundene deres ser i Vipps når de betaler dere"* (short text field with a
+  character counter); **"Logo (valgfritt)"** — drag-and-drop upload, *"kan dere
+  alltid laste opp en senere"*; **"Forhåndsvisning"** — a live preview card of the
+  app's payment view: logo placeholder, sales-unit name, `#<MSN> · <ORG NAME>`.
+- **Findings:**
+  - The sales-unit name is what every member sees on every payment screen — the
+    onboarding guide must tell admins to enter the org's *recognizable* public
+    name (the form prefills something derived from the legal name, e.g. with an
+    "AS"-style suffix glued on — fix it here).
+  - Logo is optional and can be added later; not a blocker.
+
+### Step 6 — Order form 3/4 + 4/4: "Bankkonto og omsetning", "Tjenester og produkter" (recorded 2026-08-12)
+
+- **What the portal shows (verbatim):** **"Kontonummer"** (settlement account —
+  payouts go directly to the org's own bank account); **"Hva er den estimerte
+  årlige omsetningen for bedriften?"** — *"Anslå hvor mye dere gjennomsnittlig
+  omsetter for i løpet av et kalenderår (ikke bare via Vipps, men alle steder
+  dere får betaling gjennom). Hvis det er vanskelig å vite, prøv å gi et anslag
+  likevel."* (NOK amount); **"Omtrent hvor mye av dette vil tjenes inn fra dette
+  Vipps-salgsstedet?"** (percentage dropdown); **"Kategori for tjenester og
+  produkter"** — searchable category list (*Bil og kjøretøy…*, *Bygg og
+  håndverk*, *Detaljhandel*, *Digitale varer*, *Helse og velvære*, …).
+- **Findings:**
+  - The turnover questions are the KYB/compliance layer the research predicted
+    (finding 11): estimates only, whole-org turnover + this-unit share. Guide
+    copy: rough honest numbers are fine; membership share is typically small.
+  - Category list is generic retail-flavoured; guide should point admins toward
+    the organizations/associations-type category rather than Detaljhandel.
+  - Recurring-specific compliance questions (share of recurring, agreement
+    length, interval) had NOT appeared as of 4/4 — either later in the flow or
+    post-submission; record when observed.

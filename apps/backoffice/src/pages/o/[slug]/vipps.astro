@@ -1,0 +1,185 @@
+---
+import { getOrganizationBySlug } from "@stottemedlem/db";
+import Alert from "@stottemedlem/ui/components/Alert.astro";
+import Button from "@stottemedlem/ui/components/Button.astro";
+import CardFooter from "@stottemedlem/ui/components/CardFooter.astro";
+import Heading from "@stottemedlem/ui/components/Heading.astro";
+import Stack from "@stottemedlem/ui/components/Stack.astro";
+import Text from "@stottemedlem/ui/components/Text.astro";
+import TextField from "@stottemedlem/ui/components/TextField.astro";
+import TextLink from "@stottemedlem/ui/components/TextLink.astro";
+import Shell from "../../../layouts/Shell.astro";
+import { getDb } from "../../../lib/db";
+import {
+  maskSecret,
+  type OrgVippsKeys,
+  parseVippsKeysForm,
+  readOrgVippsKeys,
+  saveOrgVippsKeys,
+  validateVippsKeys,
+  type VippsKeysFieldErrors,
+  type VippsKeysFormValues,
+  vippsEnvironmentLabel,
+} from "../../../lib/vippsKeys";
+import { getWorkOS, orgPath } from "../../../lib/workos";
+
+// The org's own Vipps API keys (specs/concepts/vipps-api-keys.md). An
+// administrator pastes the sales unit's four credentials from
+// portal.vippsmobilepay.com → For utviklere; we prove they work with a live,
+// read-only call to Vipps before storing them encrypted per org in WorkOS
+// Vault. One set of keys per org — which Vipps environment they must belong
+// to follows from where this app runs (test everywhere except production).
+const session = Astro.locals.session;
+if (!session) return Astro.redirect("/login");
+const slug = Astro.params.slug;
+if (!slug) return Astro.redirect("/orgs");
+
+const db = getDb();
+const org = await getOrganizationBySlug(db, slug);
+if (!org) return Astro.redirect("/orgs");
+const workosOrgId = org.workosOrgId;
+
+const workos = getWorkOS();
+const { data: memberships } = await workos.userManagement.listOrganizationMemberships({
+  userId: session.userId,
+  statuses: ["active"],
+  limit: 100,
+});
+if (!memberships.some((m) => m.organizationId === workosOrgId)) {
+  return Astro.redirect("/orgs");
+}
+
+let stored: OrgVippsKeys | null = await readOrgVippsKeys(workos, workosOrgId);
+let values: VippsKeysFormValues = {
+  clientId: "",
+  clientSecret: "",
+  subscriptionKey: "",
+  merchantSerialNumber: "",
+};
+let fieldErrors: VippsKeysFieldErrors = {};
+let saved = false;
+let retested = false;
+let validationError: string | null = null;
+
+if (Astro.request.method === "POST") {
+  const form = await Astro.request.formData();
+  if (form.get("intent") === "test" && stored) {
+    // Re-run the live check against the keys already in Vault.
+    const result = await validateVippsKeys(stored);
+    if (result.ok) {
+      stored = { ...stored, validatedAt: new Date().toISOString() };
+      await saveOrgVippsKeys(workos, workosOrgId, stored);
+      retested = true;
+    } else {
+      validationError = result.message;
+    }
+  } else {
+    const parsed = parseVippsKeysForm(form);
+    values = parsed.values;
+    fieldErrors = parsed.fieldErrors;
+    if (parsed.keys) {
+      const result = await validateVippsKeys(parsed.keys);
+      if (result.ok) {
+        stored = { ...parsed.keys, validatedAt: new Date().toISOString() };
+        await saveOrgVippsKeys(workos, workosOrgId, stored);
+        saved = true;
+        values = { clientId: "", clientSecret: "", subscriptionKey: "", merchantSerialNumber: "" };
+      } else {
+        validationError = result.message;
+      }
+    }
+  }
+}
+
+const envLabel = vippsEnvironmentLabel();
+const validatedDate = stored ? new Date(stored.validatedAt).toLocaleDateString("nb-NO") : null;
+---
+
+<Shell title={`Vipps-nøkler — ${org.name}`}>
+  <Stack gap="lg">
+    <Stack gap="sm">
+      <Heading>Vipps-nøkler</Heading>
+      <Text variant="lead">
+        API-nøklene til salgsenheten {org.name} bruker for Faste betalinger. Du finner dem i
+        Vipps-portalen under «For utviklere». Nøklene må høre til {envLabel}.
+      </Text>
+    </Stack>
+
+    {saved && <Alert variant="info">Nøklene virker og er lagret. Vipps er koblet til.</Alert>}
+    {retested && <Alert variant="info">Nøklene virker fortsatt.</Alert>}
+    {validationError && <Alert variant="error">{validationError}</Alert>}
+
+    {
+      stored && (
+        <Stack gap="sm">
+          <Heading level={2}>Lagrede nøkler</Heading>
+          <div class="keys">
+            <Text variant="small">MSN (salgsenhet): {stored.merchantSerialNumber}</Text>
+            <Text variant="small">client_id: {stored.clientId}</Text>
+            <Text variant="small">client_secret: {maskSecret(stored.clientSecret)}</Text>
+            <Text variant="small">Subscription key: {maskSecret(stored.subscriptionKey)}</Text>
+            <Text variant="small">Sist bekreftet mot Vipps: {validatedDate}</Text>
+          </div>
+          <form method="post">
+            <Button variant="secondary" name="intent" value="test" block>
+              Test nøklene på nytt
+            </Button>
+          </form>
+        </Stack>
+      )
+    }
+
+    <Stack gap="sm">
+      <Heading level={2}>{stored ? "Bytt nøkler" : "Legg inn nøkler"}</Heading>
+      <Text variant="small">
+        Vi tester nøklene mot Vipps før de lagres — ingenting lagres hvis de ikke virker.
+        {stored && " Nye nøkler erstatter de lagrede."}
+      </Text>
+      <form method="post">
+        <Stack gap="lg">
+          <TextField
+            label="client_id"
+            name="clientId"
+            value={values.clientId}
+            error={fieldErrors.clientId}
+            required
+          />
+          <TextField
+            label="client_secret"
+            name="clientSecret"
+            value={values.clientSecret}
+            error={fieldErrors.clientSecret}
+            required
+          />
+          <TextField
+            label="Subscription key (Ocp-Apim-Subscription-Key)"
+            name="subscriptionKey"
+            value={values.subscriptionKey}
+            error={fieldErrors.subscriptionKey}
+            required
+          />
+          <TextField
+            label="MSN (Merchant Serial Number)"
+            name="merchantSerialNumber"
+            value={values.merchantSerialNumber}
+            error={fieldErrors.merchantSerialNumber}
+            required
+          />
+          <Button block>Test og lagre</Button>
+        </Stack>
+      </form>
+    </Stack>
+
+    <CardFooter>
+      <TextLink href={orgPath(org.slug)}>Tilbake til oversikten</TextLink>
+    </CardFooter>
+  </Stack>
+</Shell>
+
+<style>
+  .keys {
+    display: grid;
+    gap: 0.35rem;
+    word-break: break-all;
+  }
+</style>

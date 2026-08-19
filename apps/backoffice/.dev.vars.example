@@ -17,17 +17,11 @@ WORKOS_API_KEY="sk_test_..."
 WORKOS_COOKIE_PASSWORD="change-me-to-32+-random-characters"
 
 # ── Vipps MobilePay ─────────────────────────────────────────────────────
-# Local dev always talks to the TEST environment (apitest.vipps.no) — never
-# put production keys here. Test keys + MSN live in
-# portal.vippsmobilepay.com → For utviklere (they appear once the Faste
-# betalinger order is submitted). Validate them with:
+# Local dev always talks to the TEST environment (apitest.vipps.no). This is
+# the only Vipps config the app itself needs: each org adds its own
+# sales-unit keys in the backoffice (/o/[slug]/vipps; test keys locally,
+# production keys in production), stored per org in WorkOS Vault. Test keys +
+# MSN live in portal.vippsmobilepay.com → For utviklere. To sanity-check a
+# key set from the CLI instead, pass them as env vars to:
 #   pnpm --filter @stottemedlem/vipps run smoke
-
-# Non-secret (mirror wrangler.jsonc `vars` for staging/production):
 VIPPS_API_BASE_URL="https://apitest.vipps.no"
-VIPPS_CLIENT_ID="00000000-0000-0000-0000-000000000000"
-VIPPS_MSN="123456"
-
-# Secret (set via `wrangler secret put` for staging/production):
-VIPPS_CLIENT_SECRET="..."
-VIPPS_SUBSCRIPTION_KEY="..."

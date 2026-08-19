@@ -41,16 +41,12 @@
 	"vars": {
 		"WORKOS_CLIENT_ID": "client_01KX0YS9099GNV5GP0A6B2KVDD",
 		"WORKOS_REDIRECT_URI": "https://app.xn--stttemedlem-hgb.no/callback",
-		// ── Vipps MobilePay (production sales unit) ─────────────────────────
+		// ── Vipps MobilePay ─────────────────────────────────────────────────
 		// Only production talks to api.vipps.no; staging + local use the test
-		// environment. Client id + MSN are filled in from the portal
-		// (For utviklere) once the Faste betalinger order is approved. The two
-		// secrets are set out-of-band per environment:
-		//   wrangler secret put VIPPS_CLIENT_SECRET      (+ --env staging)
-		//   wrangler secret put VIPPS_SUBSCRIPTION_KEY   (+ --env staging)
-		"VIPPS_API_BASE_URL": "https://api.vipps.no",
-		"VIPPS_CLIENT_ID": "",
-		"VIPPS_MSN": ""
+		// environment. This base URL is the ONLY per-environment Vipps config:
+		// each org adds its own sales-unit keys in the backoffice
+		// (/o/[slug]/vipps), stored per org in WorkOS Vault.
+		"VIPPS_API_BASE_URL": "https://api.vipps.no"
 	},
 	// ── Bindings ──────────────────────────────────────────────────────────
 	// Real resource ids (provisioned 2026-08-12 via `wrangler d1 create`,
@@ -132,11 +128,9 @@
 			"vars": {
 				"WORKOS_CLIENT_ID": "client_01KX0YS8HXEWRF32JBT371231A",
 				"WORKOS_REDIRECT_URI": "https://staging.app.xn--stttemedlem-hgb.no/callback",
-				// Vipps TEST environment (test sales unit keys from the portal's
-				// For utviklere page; same MSN header mechanics as production).
-				"VIPPS_API_BASE_URL": "https://apitest.vipps.no",
-				"VIPPS_CLIENT_ID": "",
-				"VIPPS_MSN": ""
+				// Vipps TEST environment — orgs add their own test sales-unit keys
+				// through the backoffice, so only the base URL differs from prod.
+				"VIPPS_API_BASE_URL": "https://apitest.vipps.no"
 			},
 			"d1_databases": [
 				{

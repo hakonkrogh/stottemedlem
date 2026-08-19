@@ -67,6 +67,7 @@ scope.
 | [Annual fee](concepts/annual-fee.md) | Draft |
 | [Join entry point](concepts/join-entry-point.md) | Draft |
 | [Organization landing page](concepts/org-landing-page.md) | Draft |
+| [Vipps API keys](concepts/vipps-api-keys.md) | Draft |
 | [Brand attribution](concepts/brand-attribution.md) | Active |
 | [Scorecard](concepts/scorecard.md) | Draft |
 

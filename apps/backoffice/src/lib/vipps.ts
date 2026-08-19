@@ -1,19 +1,27 @@
 import { env } from "cloudflare:workers";
 import { createVippsClient, type TokenCache, type VippsClient } from "@stottemedlem/vipps";
+import type { WorkOS } from "@workos-inc/node";
+import { readOrgVippsKeys } from "./vippsKeys";
 
 /**
- * Vipps client for this environment's platform sales unit. `VIPPS_API_BASE_URL`
- * selects the environment: apitest.vipps.no everywhere except production
- * (wrangler.jsonc / .dev.vars). v1 uses one credential set per environment;
- * per-org sales-unit keys (encrypted in D1) come with org onboarding.
+ * Vipps client for one organization's own sales unit, using the keys its
+ * administrator added on /o/[slug]/vipps (stored per org in WorkOS Vault —
+ * see lib/vippsKeys.ts). `VIPPS_API_BASE_URL` selects the environment:
+ * apitest.vipps.no everywhere except production (wrangler.jsonc / .dev.vars).
+ * Null when the org hasn't connected Vipps yet.
  */
-export function getVipps(): VippsClient {
+export async function getVippsForOrg(
+  workos: WorkOS,
+  workosOrgId: string,
+): Promise<VippsClient | null> {
+  const keys = await readOrgVippsKeys(workos, workosOrgId);
+  if (!keys) return null;
   return createVippsClient({
     baseUrl: env.VIPPS_API_BASE_URL,
-    clientId: env.VIPPS_CLIENT_ID,
-    clientSecret: env.VIPPS_CLIENT_SECRET,
-    subscriptionKey: env.VIPPS_SUBSCRIPTION_KEY,
-    merchantSerialNumber: env.VIPPS_MSN,
+    clientId: keys.clientId,
+    clientSecret: keys.clientSecret,
+    subscriptionKey: keys.subscriptionKey,
+    merchantSerialNumber: keys.merchantSerialNumber,
     tokenCache: kvTokenCache(),
   });
 }

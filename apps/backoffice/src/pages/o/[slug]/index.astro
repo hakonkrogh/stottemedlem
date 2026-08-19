@@ -10,6 +10,7 @@ import Text from "@stottemedlem/ui/components/Text.astro";
 import TextLink from "@stottemedlem/ui/components/TextLink.astro";
 import Shell from "../../../layouts/Shell.astro";
 import { getDb } from "../../../lib/db";
+import { readOrgVippsKeys } from "../../../lib/vippsKeys";
 import {
   env,
   getWorkOS,
@@ -75,6 +76,7 @@ const displayName =
   [session.firstName, session.lastName].filter(Boolean).join(" ") || session.email;
 const canSwitch = memberships.length > 1;
 const complete = isProfileComplete(org);
+const vippsKeys = await readOrgVippsKeys(workos, org.workosOrgId);
 const landingUrl = orgLandingPageUrl(org.slug);
 const termsUrl = orgTermsUrl(org.slug);
 const joinUrl = joinEntryPointUrl(org.slug);
@@ -94,6 +96,15 @@ const joinUrl = joinEntryPointUrl(org.slug);
           Den offentlige siden mangler informasjon Vipps krever (organisasjonsnummer,
           kontakt-e-post og årlig medlemsavgift).{" "}
           <TextLink href={`${orgPath(org.slug)}/innstillinger`}>Fyll inn nå</TextLink>
+        </Alert>
+      )
+    }
+    {
+      !vippsKeys && (
+        <Alert variant="info">
+          Vipps er ikke koblet til ennå — legg inn salgsenhetens API-nøkler for å kunne ta
+          betalt.{" "}
+          <TextLink href={`${orgPath(org.slug)}/vipps`}>Legg inn Vipps-nøkler</TextLink>
         </Alert>
       )
     }
@@ -117,6 +128,9 @@ const joinUrl = joinEntryPointUrl(org.slug);
     </Stack>
     <Button variant="secondary" href={`${orgPath(org.slug)}/innstillinger`} block>
       Innstillinger
+    </Button>
+    <Button variant="secondary" href={`${orgPath(org.slug)}/vipps`} block>
+      Vipps-nøkler{vippsKeys ? ` (MSN ${vippsKeys.merchantSerialNumber})` : ""}
     </Button>
     {canSwitch && <Button variant="secondary" href="/orgs" block>Bytt organisasjon</Button>}
     <CardFooter>
