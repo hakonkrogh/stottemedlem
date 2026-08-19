@@ -6,31 +6,61 @@
  * protocol. Add more shared packages (e.g. `ui`, `utils`) alongside this one.
  */
 
-export type MembershipTier = "supporter" | "standard" | "patron";
+// --- Membership tiers (specs/concepts/membership-tier.md) -------------------
+//
+// The product hosts the tier catalogue (Vipps has no product-catalogue API);
+// each tier is projected onto every Vipps agreement created for it. The Vipps
+// Recurring v3 limits below are from the OpenAPI spec and cap what a tier may
+// carry, so a tier always projects losslessly.
 
-export interface Member {
-  id: string;
-  name: string;
-  email: string;
-  tier: MembershipTier;
-  joinedAt: Date;
+/** Vipps Recurring v3: max length of an agreement's `productName`. */
+export const VIPPS_PRODUCT_NAME_MAX_LENGTH = 45;
+/** Vipps Recurring v3: max length of an agreement's `productDescription`. */
+export const VIPPS_PRODUCT_DESCRIPTION_MAX_LENGTH = 100;
+/** Vipps Recurring v3: max length of an agreement's `externalId`. */
+export const VIPPS_EXTERNAL_ID_MAX_LENGTH = 64;
+
+/**
+ * Max length of a membership tier key. Chosen so the agreement externalId
+ * convention (`<tierKey>:<membershipId>` with a UUID membership id) always
+ * fits Vipps' 64-char `externalId` limit: 24 + 1 + 36 = 61.
+ */
+export const MEMBERSHIP_TIER_KEY_MAX_LENGTH = 24;
+
+/**
+ * The name of the minimal first membership every organization states at
+ * creation (specs/concepts/membership-tier.md) — renameable afterwards.
+ */
+export const DEFAULT_MEMBERSHIP_TIER_NAME = "Støttemedlemskap";
+
+/**
+ * A membership tier's stable key, derived from its name when the tier is
+ * created and never changed afterwards (renames change the name, not the key).
+ * Unique within the organization — callers add a `-2`/`-3` suffix on collision.
+ */
+export function membershipTierKey(name: string): string {
+  const key = slugify(name).slice(0, MEMBERSHIP_TIER_KEY_MAX_LENGTH).replace(/-+$/, "");
+  return key || "medlemskap";
 }
 
-/** Human-friendly label for a membership tier. */
-export function tierLabel(tier: MembershipTier): string {
-  switch (tier) {
-    case "supporter":
-      return "Støttemedlem";
-    case "standard":
-      return "Medlem";
-    case "patron":
-      return "Æresmedlem";
+/**
+ * The agreement `externalId` convention that ties a Vipps agreement back to
+ * the tier it was created for (and the local membership record): the tier key,
+ * a colon, then the membership id. Guaranteed to fit Vipps' 64-char limit for
+ * UUID membership ids.
+ */
+export function tierAgreementExternalId(tierKey: string, membershipId: string): string {
+  const externalId = `${tierKey}:${membershipId}`;
+  if (externalId.length > VIPPS_EXTERNAL_ID_MAX_LENGTH) {
+    throw new Error(`agreement externalId exceeds ${VIPPS_EXTERNAL_ID_MAX_LENGTH} chars`);
   }
+  return externalId;
 }
 
-/** Greet a member by name. */
-export function greetMember(member: Member): string {
-  return `Velkommen, ${member.name}! (${tierLabel(member.tier)})`;
+/** Recover the tier key from an agreement `externalId` written by the convention above. */
+export function tierKeyFromAgreementExternalId(externalId: string): string | null {
+  const colon = externalId.indexOf(":");
+  return colon > 0 ? externalId.slice(0, colon) : null;
 }
 
 /**
@@ -43,27 +73,34 @@ export const CANONICAL_ORIGIN = "https://xn--stttemedlem-hgb.no";
 /** Display form of the canonical origin, for UI copy only. */
 export const CANONICAL_ORIGIN_DISPLAY = "https://støttemedlem.no";
 
-/** URL-safe slug from an organization's public name (Norwegian-aware). */
-export function slugifyOrganizationName(name: string): string {
-  const slug = name
+/** URL-safe slug from Norwegian text: lowercase ASCII words joined by hyphens. */
+function slugify(text: string): string {
+  return text
     .toLowerCase()
     .replaceAll("æ", "ae")
     .replaceAll("ø", "o")
     .replaceAll("å", "a")
     .normalize("NFKD")
     .replaceAll(/[^a-z0-9]+/g, "-")
-    .replaceAll(/^-+|-+$/g, "")
-    .slice(0, 63);
+    .replaceAll(/^-+|-+$/g, "");
+}
+
+/** URL-safe slug from an organization's public name (Norwegian-aware). */
+export function slugifyOrganizationName(name: string): string {
+  const slug = slugify(name).slice(0, 63);
   return slug || "min-organisasjon";
 }
 
 /**
  * The organization's join entry point (see specs/concepts/join-entry-point.md) —
  * the stable URL QR codes and shared links carry. Must never change once
- * printed; the destination behind it can.
+ * printed; the destination behind it can. A link may point at a specific
+ * membership tier by its stable key (`?medlemskap=<tierKey>`); without it, the
+ * supporter chooses a tier when the organization has several.
  */
-export function joinEntryPointUrl(slug: string): string {
-  return `${CANONICAL_ORIGIN}/bli-med/${slug}`;
+export function joinEntryPointUrl(slug: string, tierKey?: string): string {
+  const url = `${CANONICAL_ORIGIN}/bli-med/${slug}`;
+  return tierKey ? `${url}?medlemskap=${encodeURIComponent(tierKey)}` : url;
 }
 
 /**

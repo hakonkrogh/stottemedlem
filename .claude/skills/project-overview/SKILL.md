@@ -28,6 +28,10 @@ lives in `specs/`, kept in sync with code by a mandatory `Stop`-hook harness.
   "cloudflare:workers"` (NOT `Astro.locals.runtime.env` — removed in Astro v6+);
   per-env WorkOS config (`WORKOS_*`) is in `wrangler.jsonc` vars/secrets + `.dev.vars`
   locally. Real sign-in needs `.dev.vars` filled + AuthKit redirect URIs registered.
+  `.dev.vars` is untracked, so a FRESH WORKTREE lacks it — auth-gated pages 302
+  to /login there; copy it from the main checkout
+  (`~/code/private/stottemedlem/apps/backoffice/.dev.vars`) when a session must
+  exercise logged-in flows (public `/org/*` pages need no auth).
   See `docs/architecture/overview.md` + `stack-docs` (env access + per-env build gotchas).
 - `packages/core/` — `@stottemedlem/core`, shared domain types/logic (incl. org
   slugs, canonical join/landing/salgsvilkår URLs, orgnr MOD11 validation).
@@ -75,6 +79,34 @@ lives in `specs/`, kept in sync with code by a mandatory `Stop`-hook harness.
   object-position percentages, NULL = center) chosen via a drag-the-visible-
   frame picker in `OrgImageFields.astro`, applied as `object-position` on the
   landing page (spec: `specs/concepts/org-landing-page.md`).
+  **Membership tiers** (added 2026-08-19, branch vips-membership-tiering, spec
+  `specs/concepts/membership-tier.md`): `membership_tiers` table (migration
+  `0004_membership_tiers.sql`; backfills the old single
+  `organizations.annual_fee_nok` — column now LEGACY/unused — into one tier)
+  is the org's catalogue of membership levels, CRUD'd at
+  `/o/[slug]/medlemskap` (archive-not-delete). **Vipps has NO product-catalogue
+  API** (verified against the Recurring v3 OpenAPI spec 2026-08-19: agreements
+  + charges only) — our D1 is the catalogue; each tier projects onto future
+  agreements via `productName` (≤45)/`productDescription` (≤100)/`externalId`
+  (≤64) with helpers + limits in `@stottemedlem/core` (`membershipTierKey`,
+  `tierAgreementExternalId` = `<tierKey ≤24>:<membershipId>`; tier `key` is
+  stable/immutable, unique per org). Landing page + vilkår enumerate tiers
+  cheapest-first with per-tier join links (`?medlemskap=<key>`). **Minimum
+  one tier** (decided 2026-08-19, replacing an earlier placeholder-offer
+  idea): org creation collects the first membership's annual fee (default
+  name `DEFAULT_MEMBERSHIP_TIER_NAME` from core, changeable later) and the
+  last active tier can't be archived (`archiveMembershipTier` returns null) —
+  Vipps evaluates the page against a real priced product. Zero tiers exists
+  only for legacy orgs (dashboard prompts; public pages degrade gracefully).
+  **Public org pages are stale-while-revalidate cached** in
+  `worker.ts` (named cache `public-org-pages`, key = origin+path, no query/
+  trailing slash; `x-sm-cache: hit|miss` header; every visit revalidates in
+  the background via `ctx.waitUntil`, 7-day s-maxage backstop; only 200s
+  without Set-Cookie are stored) — cache is per-datacenter, so back-office
+  saves do a best-effort same-POP purge (`src/lib/publicPageCache.ts`; keep
+  cache name/key shape in sync with worker.ts). Verified in dev: the custom
+  `worker.ts` fetch handler DOES run under `astro dev` (workerd), so
+  miss→hit→stale-then-fresh is testable with curl.
 - `packages/vipps/` — `@stottemedlem/vipps` (added 2026-08-10, scaffolding
   step 5): typed Vipps MobilePay client — access token (pluggable cache, KV in
   the Worker via `apps/backoffice/src/lib/vipps.ts`), Recurring v3

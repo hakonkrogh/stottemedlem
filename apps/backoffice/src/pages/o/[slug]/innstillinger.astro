@@ -24,6 +24,7 @@ import {
   parseProfileForm,
   profileFormValues,
 } from "../../../lib/orgProfile";
+import { purgeOrgPublicPages } from "../../../lib/publicPageCache";
 import { getWorkOS, orgPath } from "../../../lib/workos";
 
 // Org settings — the org's public details: the profile fields the landing page
@@ -105,6 +106,9 @@ if (Astro.request.method === "POST") {
     org = (await updateOrganizationProfile(db, workosOrgId, patch)) ?? org;
   }
   saved = Object.keys(fieldErrors).length === 0 && !nameError && !logo.error && !banner.error;
+  // The public pages serve a cached copy; clear this datacenter's copy so the
+  // admin sees the change on their next look (visitors self-heal on traffic).
+  if (saved) await purgeOrgPublicPages(org.slug, Astro.url.origin);
 }
 ---
 
@@ -114,10 +118,12 @@ if (Astro.request.method === "POST") {
       <Heading>Innstillinger</Heading>
       <Text variant="lead">
         Dette vises på den offentlige siden til {org.name} og i salgsvilkårene — Vipps krever at
-        organisasjonsnummer, kontakt og pris er fylt ut. Logo og bannerbilde er valgfritt.
+        organisasjonsnummer og kontakt er fylt ut. Logo og bannerbilde er valgfritt. Medlemskap
+        og priser setter du opp under{" "}
+        <TextLink href={`${orgPath(org.slug)}/medlemskap`}>Medlemskap</TextLink>.
       </Text>
     </Stack>
-    {saved && <Alert variant="info">Lagret. Den offentlige siden er oppdatert.</Alert>}
+    {saved && <Alert variant="info">Lagret. Den offentlige siden oppdateres ved neste besøk.</Alert>}
     <form method="post" enctype="multipart/form-data">
       <Stack gap="lg">
         <TextField label="Navn" name="name" value={name} required error={nameError} />

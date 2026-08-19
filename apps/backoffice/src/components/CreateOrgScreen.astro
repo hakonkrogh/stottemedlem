@@ -3,8 +3,11 @@
 // primitives. Shared by the real route (pages/orgs/new.astro, which owns the
 // POST handling) and its story, so the look can be iterated on without
 // touching WorkOS logic. Besides the name it collects the identity part of the
-// public profile (see OrgProfileFields); the annual fee is deliberately not
-// asked for here — it is set later from the dashboard's fill-in prompt.
+// public profile (see OrgProfileFields) and the FIRST membership's annual fee:
+// every organization states a minimal membership at creation — the default
+// membership name at this fee — because Vipps evaluates the public page
+// against a real, priced product. Everything about it can be changed later on
+// the medlemskap page (specs/concepts/membership-tier.md).
 import Alert from "@stottemedlem/ui/components/Alert.astro";
 import Button from "@stottemedlem/ui/components/Button.astro";
 import CardFooter from "@stottemedlem/ui/components/CardFooter.astro";
@@ -19,12 +22,14 @@ import OrgProfileFields from "./OrgProfileFields.astro";
 interface Props {
   name?: string;
   values?: ProfileFormValues;
-  fieldErrors?: ProfileFieldErrors & { name?: string };
+  annualFee?: string;
+  fieldErrors?: ProfileFieldErrors & { name?: string; annualFee?: string };
   error?: string | null;
 }
 const {
   name = "",
-  values = { orgnr: "", contactEmail: "", annualFee: "" },
+  values = { orgnr: "", contactEmail: "" },
+  annualFee = "",
   fieldErrors = {},
   error = null,
 } = Astro.props;
@@ -50,7 +55,19 @@ const {
         autofocus
         error={fieldErrors.name}
       />
-      <OrgProfileFields values={values} fieldErrors={fieldErrors} withFee={false} />
+      <OrgProfileFields values={values} fieldErrors={fieldErrors} />
+      <TextField
+        label="Årlig kontingent for støttemedlemskapet (kr)"
+        name="annualFee"
+        value={annualFee}
+        placeholder="300"
+        required
+        error={fieldErrors.annualFee}
+      />
+      <Text variant="small">
+        Dette blir prisen på det første medlemskapet. Du kan endre navn og pris — og legge til
+        flere typer medlemskap — når som helst etterpå.
+      </Text>
       <Button block>Opprett og fortsett</Button>
     </Stack>
   </form>

@@ -1,40 +1,55 @@
 ---
-import { ensureOrganization } from "@stottemedlem/db";
+import { DEFAULT_MEMBERSHIP_TIER_NAME } from "@stottemedlem/core";
+import { createMembershipTier, ensureOrganization } from "@stottemedlem/db";
 import CreateOrgScreen from "../../components/CreateOrgScreen.astro";
 import Shell from "../../layouts/Shell.astro";
 import { getDb } from "../../lib/db";
+import { parseAnnualFee } from "../../lib/membershipTiers";
 import { type ProfileFieldErrors, parseProfileForm } from "../../lib/orgProfile";
 import { env, getWorkOS, orgPath, SESSION_COOKIE, sessionCookieOptions } from "../../lib/workos";
 
 // Create-organization page — shown when a signed-in admin has no organization
-// yet (or chooses to add another). Collects the name plus the identity part of
-// the public profile (specs/concepts/org-landing-page.md); the annual fee is
-// deferred to settings, prompted by the dashboard banner. Handles its own
+// yet (or chooses to add another). Collects the name, the identity part of
+// the public profile (specs/concepts/org-landing-page.md), and the first
+// membership's annual fee — every organization states a minimal membership at
+// creation (specs/concepts/membership-tier.md), refined later on the
+// medlemskap page. Handles its own
 // POST: create the WorkOS organization, add the user as a member, persist the
-// org row (stable slug + profile), scope the session, land on it.
+// org row (stable slug + profile) with its first tier, scope the session,
+// land on it.
 const session = Astro.locals.session;
 if (!session) return Astro.redirect("/login");
 
 let name = "";
-let values = { orgnr: "", contactEmail: "", annualFee: "" };
-let fieldErrors: ProfileFieldErrors & { name?: string } = {};
+let values = { orgnr: "", contactEmail: "" };
+let annualFee = "";
+let fieldErrors: ProfileFieldErrors & { name?: string; annualFee?: string } = {};
 
 if (Astro.request.method === "POST") {
   const form = await Astro.request.formData();
   name = String(form.get("name") ?? "").trim();
-  const parsed = parseProfileForm(form, { withFee: false });
+  const parsed = parseProfileForm(form);
   values = parsed.values;
   fieldErrors = { ...parsed.fieldErrors };
   if (!name) fieldErrors.name = "Skriv inn et navn på organisasjonen.";
+  annualFee = String(form.get("annualFee") ?? "").trim();
+  const parsedFee = parseAnnualFee(annualFee);
+  if ("error" in parsedFee) fieldErrors.annualFee = parsedFee.error;
 
-  if (Object.keys(fieldErrors).length === 0 && parsed.profile) {
+  if (Object.keys(fieldErrors).length === 0 && parsed.profile && "fee" in parsedFee) {
     const workos = getWorkOS();
     const org = await workos.organizations.createOrganization({ name });
     await workos.userManagement.createOrganizationMembership({
       organizationId: org.id,
       userId: session.userId,
     });
-    const row = await ensureOrganization(getDb(), org.id, org.name, parsed.profile);
+    const db = getDb();
+    const row = await ensureOrganization(db, org.id, org.name, parsed.profile);
+    await createMembershipTier(db, row.id, {
+      name: DEFAULT_MEMBERSHIP_TIER_NAME,
+      description: null,
+      annualFeeNok: parsedFee.fee,
+    });
 
     const sealed = Astro.cookies.get(SESSION_COOKIE)?.value;
     if (sealed) {
@@ -57,5 +72,5 @@ if (Astro.request.method === "POST") {
 ---
 
 <Shell title="Opprett organisasjon">
-  <CreateOrgScreen name={name} values={values} fieldErrors={fieldErrors} />
+  <CreateOrgScreen name={name} values={values} annualFee={annualFee} fieldErrors={fieldErrors} />
 </Shell>

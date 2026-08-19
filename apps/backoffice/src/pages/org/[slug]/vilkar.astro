@@ -1,6 +1,6 @@
 ---
 import { formatOrganisasjonsnummer, orgLandingPageUrl } from "@stottemedlem/core";
-import { getOrganizationBySlug } from "@stottemedlem/db";
+import { getOrganizationBySlug, listMembershipTiers } from "@stottemedlem/db";
 import Heading from "@stottemedlem/ui/components/Heading.astro";
 import Stack from "@stottemedlem/ui/components/Stack.astro";
 import Text from "@stottemedlem/ui/components/Text.astro";
@@ -14,11 +14,17 @@ import { getDb } from "../../../lib/db";
 // (angrerett), returns, and complaint handling, populated with the org's
 // public profile. One standard template for every org, by design.
 const slug = Astro.params.slug;
-const org = slug ? await getOrganizationBySlug(getDb(), slug) : null;
+const db = getDb();
+const org = slug ? await getOrganizationBySlug(db, slug) : null;
 if (!org) return new Response("Fant ikke organisasjonen", { status: 404 });
 
 const contact = org.contactEmail ?? null;
-const fee = org.annualFeeNok;
+// The membership offer the terms price section enumerates: the org's active
+// tiers (specs/concepts/membership-tier.md). Always at least one (stated at
+// org creation); zero happens only for organizations predating tiers, where
+// the terms fall back to a generic price sentence.
+const tiers = await listMembershipTiers(db, org.id);
+const singleTier = tiers.length === 1 ? tiers[0] : undefined;
 ---
 
 <PublicShell title={`Salgsvilkår — ${org.name}`}>
@@ -43,12 +49,33 @@ const fee = org.annualFeeNok;
 
     <section>
       <Heading level={2}>Pris og betaling</Heading>
+      {singleTier && <Text>Støttemedlemskapet koster {singleTier.annualFeeNok} kr per år.</Text>}
+      {
+        tiers.length > 1 && (
+          <>
+            <Text>Organisasjonen tilbyr følgende støttemedlemskap:</Text>
+            <ul>
+              {tiers.map((tier) => (
+                <li>
+                  {tier.name} — {tier.annualFeeNok} kr per år
+                </li>
+              ))}
+            </ul>
+          </>
+        )
+      }
+      {
+        tiers.length === 0 && (
+          <Text>
+            Støttemedlemskapet koster et årlig beløp fastsatt av organisasjonen; gjeldende pris
+            vises på organisasjonens side.
+          </Text>
+        )
+      }
       <Text>
-        Støttemedlemskapet koster{" "}
-        {fee !== null ? `${fee} kr per år` : "et årlig beløp per år fastsatt av organisasjonen"}.
-        Betalingen skjer med Vipps: første betaling trekkes når du melder deg inn, og
-        deretter fornyes medlemskapet automatisk én gang i året. Du får varsel i Vipps-appen før
-        hver fornyelse, og du kan når som helst stoppe avtalen i Vipps-appen.
+        Betalingen skjer med Vipps: første betaling trekkes når du melder deg inn, og deretter
+        fornyes medlemskapet automatisk én gang i året. Du får varsel i Vipps-appen før hver
+        fornyelse, og du kan når som helst stoppe avtalen i Vipps-appen.
       </Text>
     </section>
 
@@ -95,6 +122,12 @@ const fee = org.annualFeeNok;
   section {
     display: grid;
     gap: 0.5rem;
+  }
+  section ul {
+    margin: 0;
+    padding-left: 1.4rem;
+    display: grid;
+    gap: 0.25rem;
   }
   section a {
     color: inherit;

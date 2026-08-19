@@ -1,6 +1,6 @@
 ---
 import { joinEntryPointUrl, orgLandingPageUrl, orgTermsUrl } from "@stottemedlem/core";
-import { ensureOrganization, getOrganizationBySlug, isProfileComplete } from "@stottemedlem/db";
+import { ensureOrganization, getOrganizationBySlug, listMembershipTiers } from "@stottemedlem/db";
 import Alert from "@stottemedlem/ui/components/Alert.astro";
 import Button from "@stottemedlem/ui/components/Button.astro";
 import CardFooter from "@stottemedlem/ui/components/CardFooter.astro";
@@ -75,7 +75,8 @@ if (session.organizationId !== membership.organizationId) {
 const displayName =
   [session.firstName, session.lastName].filter(Boolean).join(" ") || session.email;
 const canSwitch = memberships.length > 1;
-const complete = isProfileComplete(org);
+const tiers = await listMembershipTiers(db, org.id);
+const profileComplete = org.orgnr !== null && org.contactEmail !== null;
 const vippsKeys = await readOrgVippsKeys(workos, org.workosOrgId);
 const landingUrl = orgLandingPageUrl(org.slug);
 const termsUrl = orgTermsUrl(org.slug);
@@ -91,11 +92,20 @@ const joinUrl = joinEntryPointUrl(org.slug);
       </Text>
     </Stack>
     {
-      !complete && (
+      !profileComplete && (
         <Alert variant="info">
-          Den offentlige siden mangler informasjon Vipps krever (organisasjonsnummer,
-          kontakt-e-post og årlig medlemsavgift).{" "}
+          Den offentlige siden mangler informasjon Vipps krever (organisasjonsnummer og
+          kontakt-e-post).{" "}
           <TextLink href={`${orgPath(org.slug)}/innstillinger`}>Fyll inn nå</TextLink>
+        </Alert>
+      )
+    }
+    {
+      tiers.length === 0 && (
+        <Alert variant="info">
+          Organisasjonen har ingen medlemskap ennå — legg til minst ett med pris, så viser den
+          offentlige siden tilbudet Vipps skal godkjenne.{" "}
+          <TextLink href={`${orgPath(org.slug)}/medlemskap`}>Sett opp medlemskap</TextLink>
         </Alert>
       )
     }
@@ -126,6 +136,9 @@ const joinUrl = joinEntryPointUrl(org.slug);
         side som «nettsted» og lenken til salgsvilkårene som «salgsvilkår».
       </Text>
     </Stack>
+    <Button variant="secondary" href={`${orgPath(org.slug)}/medlemskap`} block>
+      Medlemskap{tiers.length > 0 ? ` (${tiers.length})` : ""}
+    </Button>
     <Button variant="secondary" href={`${orgPath(org.slug)}/innstillinger`} block>
       Innstillinger
     </Button>
