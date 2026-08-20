@@ -8,6 +8,7 @@ import Heading from "@stottemedlem/ui/components/Heading.astro";
 import Stack from "@stottemedlem/ui/components/Stack.astro";
 import Text from "@stottemedlem/ui/components/Text.astro";
 import TextLink from "@stottemedlem/ui/components/TextLink.astro";
+import MembershipTierCard from "../../../components/MembershipTierCard.astro";
 import Shell from "../../../layouts/Shell.astro";
 import { getDb } from "../../../lib/db";
 import { readOrgVippsKeys } from "../../../lib/vippsKeys";
@@ -105,10 +106,38 @@ const joinUrl = joinEntryPointUrl(org.slug);
         <Alert variant="info">
           Organisasjonen har ingen medlemskap ennå — legg til minst ett med pris, så viser den
           offentlige siden tilbudet Vipps skal godkjenne.{" "}
-          <TextLink href={`${orgPath(org.slug)}/medlemskap`}>Sett opp medlemskap</TextLink>
+          <TextLink href={`${orgPath(org.slug)}/medlemskap/ny`}>Sett opp medlemskap</TextLink>
         </Alert>
       )
     }
+    <Stack gap="sm">
+      <Heading level={2}>Medlemskap</Heading>
+      {
+        tiers.length > 0 && (
+          <Text variant="small">
+            Slik vises medlemskapene på den offentlige siden. Trykk på et medlemskap for å endre
+            det.
+          </Text>
+        )
+      }
+      {
+        tiers.map((tier) => (
+          <a class="tier-link" href={`${orgPath(org.slug)}/medlemskap/${tier.id}`}>
+            <MembershipTierCard
+              name={tier.name}
+              annualFeeNok={tier.annualFeeNok}
+              description={tier.description}
+              headingLevel={3}
+            >
+              <Text variant="small">Endre medlemskapet →</Text>
+            </MembershipTierCard>
+          </a>
+        ))
+      }
+      <Button variant="secondary" href={`${orgPath(org.slug)}/medlemskap/ny`} block>
+        Legg til medlemskap
+      </Button>
+    </Stack>
     {
       !vippsKeys && (
         <Alert variant="info">
@@ -136,9 +165,6 @@ const joinUrl = joinEntryPointUrl(org.slug);
         side som «nettsted» og lenken til salgsvilkårene som «salgsvilkår».
       </Text>
     </Stack>
-    <Button variant="secondary" href={`${orgPath(org.slug)}/medlemskap`} block>
-      Medlemskap{tiers.length > 0 ? ` (${tiers.length})` : ""}
-    </Button>
     <Button variant="secondary" href={`${orgPath(org.slug)}/innstillinger`} block>
       Innstillinger
     </Button>
@@ -159,5 +185,20 @@ const joinUrl = joinEntryPointUrl(org.slug);
   }
   .links :global(a) {
     word-break: break-all;
+  }
+  /* The whole membership card is the link to its edit page. */
+  .tier-link {
+    display: block;
+    color: inherit;
+    text-decoration: none;
+    border-radius: var(--sm-radius-lg);
+  }
+  .tier-link:hover :global(.card),
+  .tier-link:focus-visible :global(.card) {
+    border-color: var(--sm-accent);
+  }
+  .tier-link:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px var(--sm-focus-ring);
   }
 </style>

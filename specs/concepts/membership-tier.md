@@ -58,6 +58,12 @@ organization sees in the Vipps portal — always names the tier.
   membership has nothing to approve.
 - Where tiers are presented (landing page, back office), they are ordered by
   annual fee, cheapest first.
+- **One presentation everywhere:** a tier is always shown the same way — the
+  same membership card with its name, annual fee, and description — on the
+  public [landing page](org-landing-page.md) and in the back office alike, so
+  the membership has one clear, recognizable identity across every surface of
+  the product. What the administrator sees when reviewing their offer is what
+  the supporter sees when choosing it.
 - The back office offers **standard templates** for common tiers (a basic
   supporting membership and a VIP level) so an administrator doesn't have to
   invent the wording: picking one prefills the new tier's name and a standard

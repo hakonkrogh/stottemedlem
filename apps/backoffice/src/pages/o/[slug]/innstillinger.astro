@@ -119,8 +119,8 @@ if (Astro.request.method === "POST") {
       <Text variant="lead">
         Dette vises på den offentlige siden til {org.name} og i salgsvilkårene — Vipps krever at
         organisasjonsnummer og kontakt er fylt ut. Logo og bannerbilde er valgfritt. Medlemskap
-        og priser setter du opp under{" "}
-        <TextLink href={`${orgPath(org.slug)}/medlemskap`}>Medlemskap</TextLink>.
+        og priser administrerer du fra{" "}
+        <TextLink href={orgPath(org.slug)}>oversikten</TextLink>.
       </Text>
     </Stack>
     {saved && <Alert variant="info">Lagret. Den offentlige siden oppdateres ved neste besøk.</Alert>}

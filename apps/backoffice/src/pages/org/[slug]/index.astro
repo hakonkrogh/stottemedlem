@@ -2,11 +2,11 @@
 import { formatOrganisasjonsnummer, joinEntryPointUrl, orgTermsUrl } from "@stottemedlem/core";
 import { getOrganizationBySlug, listMembershipTiers } from "@stottemedlem/db";
 import Button from "@stottemedlem/ui/components/Button.astro";
-import Card from "@stottemedlem/ui/components/Card.astro";
 import Heading from "@stottemedlem/ui/components/Heading.astro";
 import Stack from "@stottemedlem/ui/components/Stack.astro";
 import Text from "@stottemedlem/ui/components/Text.astro";
 import TextLink from "@stottemedlem/ui/components/TextLink.astro";
+import MembershipTierCard from "../../../components/MembershipTierCard.astro";
 import PublicShell from "../../../layouts/PublicShell.astro";
 import { getDb } from "../../../lib/db";
 import { orgImageUrl } from "../../../lib/orgImages";
@@ -80,21 +80,18 @@ const bannerFocus = `${org.bannerFocusX ?? 50}% ${org.bannerFocusY ?? 50}%`;
 
     {
       tiers.map((tier) => (
-        <Card>
-          <Stack gap="md">
-            <Heading level={2}>{tier.name}</Heading>
-            <p class="price">
-              {tier.annualFeeNok} kr <span class="per">per år</span>
-            </p>
-            {tier.description && <Text variant="muted">{tier.description}</Text>}
-            <Button
-              href={tiers.length > 1 ? joinEntryPointUrl(org.slug, tier.key) : joinEntryPointUrl(org.slug)}
-              block
-            >
-              Bli støttemedlem med Vipps
-            </Button>
-          </Stack>
-        </Card>
+        <MembershipTierCard
+          name={tier.name}
+          annualFeeNok={tier.annualFeeNok}
+          description={tier.description}
+        >
+          <Button
+            href={tiers.length > 1 ? joinEntryPointUrl(org.slug, tier.key) : joinEntryPointUrl(org.slug)}
+            block
+          >
+            Bli støttemedlem med Vipps
+          </Button>
+        </MembershipTierCard>
       ))
     }
     <Stack gap="sm">
@@ -209,20 +206,6 @@ const bannerFocus = `${org.bannerFocusX ?? 50}% ${org.bannerFocusY ?? 50}%`;
   .has-banner .logo {
     margin-top: -3.25rem;
     margin-left: 1rem;
-  }
-  .price {
-    margin: 0;
-    font-family: var(--sm-font-display);
-    font-weight: var(--sm-font-display-weight, 600);
-    font-variation-settings: var(--sm-font-display-variation, normal);
-    font-size: 2rem;
-    line-height: 1.1;
-  }
-  .price .per {
-    font-family: var(--sm-font-sans);
-    font-weight: 400;
-    font-size: 1rem;
-    color: var(--sm-muted);
   }
   dl {
     margin: 0;

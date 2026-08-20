@@ -28,13 +28,19 @@ From the organization's point of view:
    provider evaluates the public page against a real, priced product; the
    creation step keeps it to a single amount so it doesn't stall getting
    started, and everything about it can be changed later.
-3. The administrator refines the membership offer in the back office as one
-   or more tiers, each with a name, an optional short description, and its
-   annual fee. Standard **templates** (a basic supporting membership and a
-   VIP level) prefill the name and a standard description so the wording
-   doesn't have to be invented; the administrator always sets the price
-   (a suggested amount is shown). Each tier gets a stable identifier at
-   creation (its **key**),
+3. The administrator refines the membership offer in the back office. The
+   organization's **overview page lists all its memberships**, presented as
+   the very same membership cards the public landing page shows (see the
+   one-presentation rule in [membership tier](../concepts/membership-tier.md))
+   — reviewing the offer *is* seeing what supporters see. Selecting a
+   membership opens it for **editing on its own page**; after the list, an
+   **add button** opens the same page for creating a new one — creating and
+   editing a membership are one mechanism, kept apart from the overview so
+   the stored offer is never confused with a half-filled form. Standard
+   **templates** (a basic supporting membership and a VIP level) prefill the
+   name and a standard description so the wording doesn't have to be
+   invented; the administrator always sets the price (a suggested amount is
+   shown). Each tier gets a stable identifier at creation (its **key**),
    usable in join links and stamped onto the tier's payment agreements in
    Vipps, so agreements there can always be traced back to the tier. Tiers
    can be renamed, repriced, and archived — never deleted — a rename never
@@ -77,6 +83,10 @@ immediately. A name change never changes the slug or the public addresses.
       administrator can add a tier (name, optional description, annual fee),
       edit it, and archive it — except the last active tier, which cannot be
       archived, so the organization always offers at least one membership.
+- [ ] The organization's overview lists every active membership as the same
+      membership card the public landing page shows; selecting one opens it
+      for editing on its own page, and an add button after the list opens the
+      same page for creating a new one.
 - [ ] When adding a tier, the administrator can start from a standard
       template (basic or VIP) that prefills name and description with
       standard texts; the price field stays empty with a suggested amount,
