@@ -14,6 +14,10 @@ This skill decodes the actual pixels.
     cd .claude/skills/verify-qr && npm i --no-audit --no-fund
 
 ## Usage
+Run **from the repo root** — the path below is repo-root-relative, so running it
+from inside the skill folder (where the `cd` in Setup leaves you) fails with
+`Cannot find module .../.claude/skills/verify-qr/.claude/skills/...`:
+
     node .claude/skills/verify-qr/decode.mjs <png-path-or-url> [--expect <payload>]
 
 Prints the decoded payload; exits non-zero if nothing decodes or `--expect` mismatches.
@@ -26,7 +30,7 @@ Prints the decoded payload; exits non-zero if nothing decodes or `--expect` mism
 
        node .claude/skills/verify-qr/decode.mjs \
          "http://localhost:4322/api/qr/<slug>?variant=qr&format=png" \
-         --expect "https://xn--stttemedlem-hgb.no/bli-med/<slug>"
+         --expect "https://xn--stttemedlem-hgb.no/bli-medlem/<slug>"
 
 The card (`variant=card`) is SVG and shares the same encoder + payload as the plain
 QR, so decoding the PNG variant covers it. To eyeball the card itself on macOS:

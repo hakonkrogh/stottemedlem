@@ -2,12 +2,12 @@ import { describe, expect, it } from "vitest";
 import {
   formatOrganisasjonsnummer,
   isValidOrganisasjonsnummer,
-  joinEntryPointUrl,
+  joinPagePath,
+  joinPageTermsUrl,
+  joinPageUrl,
   MEMBERSHIP_TIER_KEY_MAX_LENGTH,
   membershipTierKey,
   normalizeMembershipTierDescription,
-  orgLandingPageUrl,
-  orgTermsUrl,
   slugifyOrganizationName,
   tierAgreementExternalId,
   tierKeyFromAgreementExternalId,
@@ -104,28 +104,27 @@ describe("slugifyOrganizationName", () => {
   });
 });
 
-describe("joinEntryPointUrl", () => {
-  it("builds the stable entry point on the canonical punycode origin", () => {
-    expect(joinEntryPointUrl("nordnes-skolekorps")).toBe(
-      "https://xn--stttemedlem-hgb.no/bli-med/nordnes-skolekorps",
+describe("joinPageUrl / joinPageTermsUrl", () => {
+  it("builds the one stable public address on the canonical punycode origin", () => {
+    expect(joinPageUrl("nordnes-skolekorps")).toBe(
+      "https://xn--stttemedlem-hgb.no/bli-medlem/nordnes-skolekorps",
     );
   });
 
-  it("can point at a specific membership tier by key", () => {
-    expect(joinEntryPointUrl("nordnes-skolekorps", "gullmedlem")).toBe(
-      "https://xn--stttemedlem-hgb.no/bli-med/nordnes-skolekorps?medlemskap=gullmedlem",
+  it("can carry a picked membership tier onward by key", () => {
+    expect(joinPageUrl("nordnes-skolekorps", "gullmedlem")).toBe(
+      "https://xn--stttemedlem-hgb.no/bli-medlem/nordnes-skolekorps?medlemskap=gullmedlem",
     );
   });
-});
 
-describe("orgLandingPageUrl / orgTermsUrl", () => {
-  it("builds the public landing page and salgsvilkår URLs on the canonical origin", () => {
-    expect(orgLandingPageUrl("nordnes-skolekorps")).toBe(
-      "https://xn--stttemedlem-hgb.no/org/nordnes-skolekorps",
+  it("puts the salgsvilkår beneath the same address", () => {
+    expect(joinPageTermsUrl("nordnes-skolekorps")).toBe(
+      "https://xn--stttemedlem-hgb.no/bli-medlem/nordnes-skolekorps/vilkar",
     );
-    expect(orgTermsUrl("nordnes-skolekorps")).toBe(
-      "https://xn--stttemedlem-hgb.no/org/nordnes-skolekorps/vilkar",
-    );
+  });
+
+  it("exposes the bare path for same-origin links and route matching", () => {
+    expect(joinPagePath("nordnes-skolekorps")).toBe("/bli-medlem/nordnes-skolekorps");
   });
 });
 

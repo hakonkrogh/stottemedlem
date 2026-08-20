@@ -57,7 +57,7 @@ organization sees in the Vipps portal — always names the tier.
   change reaches existing members' agreements at their next renewal.
 - Tiers are **archived, never deleted**: existing memberships may reference
   them. An archived tier disappears from the
-  [landing page](org-landing-page.md) and can no longer be joined, but keeps
+  [join page](join-page.md) and can no longer be joined, but keeps
   its identity for history.
 - **Minimum one:** an organization always has at least one active tier.
   Creating the organization includes stating its first membership — a minimal
@@ -66,11 +66,11 @@ organization sees in the Vipps portal — always names the tier.
   exists because the payment provider evaluates the organization's public
   page against a real product with a real price — a page without a priced
   membership has nothing to approve.
-- Where tiers are presented (landing page, back office), they are ordered by
+- Where tiers are presented (join page, back office), they are ordered by
   annual fee, cheapest first.
 - **One presentation everywhere:** a tier is always shown the same way — the
   same membership card with its name, annual fee, and description — on the
-  public [landing page](org-landing-page.md) and in the back office alike, so
+  public [join page](join-page.md) and in the back office alike, so
   the membership has one clear, recognizable identity across every surface of
   the product. What the administrator sees when reviewing their offer is what
   the supporter sees when choosing it.
@@ -87,13 +87,13 @@ organization sees in the Vipps portal — always names the tier.
 - Carries one current [annual fee](annual-fee.md).
 - A [membership](membership.md) is a membership *of one tier* — the tier (and
   its fee at the time) is recorded on the membership.
-- Enumerated on the [organization landing page](org-landing-page.md), where
+- Enumerated on the [join page](join-page.md), where
   choosing a tier carries it into joining. The organization is never handed a
-  separate [join entry point](join-entry-point.md) per tier.
+  separate [join page](join-page.md) per tier.
 
 ## Referenced by
 - [Use case: Set up a supporting membership](../use-cases/set-up-supporting-membership.md)
 - [Use case: Join as a supporting member](../use-cases/join-as-supporting-member.md)
 - [Concept: Annual fee](annual-fee.md)
 - [Concept: Membership](membership.md)
-- [Concept: Organization landing page](org-landing-page.md)
+- [Concept: Join page](join-page.md)

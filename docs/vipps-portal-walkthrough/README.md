@@ -138,7 +138,7 @@ committing. These images feed the public-facing onboarding guide.
     returns, and complaint handling.
   - Small orgs (school bands, choirs) often have no such page → **støttemedlem
     hosts one per organization** (public landing page + standard salgsvilkår,
-    see `specs/concepts/org-landing-page.md`); the admin pastes those two URLs
+    see `specs/concepts/join-page.md`); the admin pastes those two URLs
     here.
 - **Checklist delta:** checklist step B listed only compliance questions
   (turnover, share of recurring, agreement length, interval) — the

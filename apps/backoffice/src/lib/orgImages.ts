@@ -1,4 +1,5 @@
 import type { R2Bucket } from "@cloudflare/workers-types";
+import { joinPagePath } from "@stottemedlem/core";
 import type { Organization } from "@stottemedlem/db";
 
 // Uploaded org media (logo + banner) in the MEDIA R2 bucket. Object keys are
@@ -102,14 +103,14 @@ export async function applyImageField(
 /**
  * Public URL for an org image, versioned by the content hash embedded in the
  * object key so replaced images bust caches. Relative — the same Worker serves
- * both the back office host and the public /org/* pages.
+ * both the back office host and the public /bli-medlem/* pages.
  */
 export function orgImageUrl(slug: string, kind: OrgImageKind, key: string): string {
   const version = key.slice(key.lastIndexOf("/") + 1).replace(`${kind}-`, "");
-  return `/org/${slug}/${kind}?v=${encodeURIComponent(version)}`;
+  return `${joinPagePath(slug)}/${kind}?v=${encodeURIComponent(version)}`;
 }
 
-/** Serve a stored org image from R2 (the GET handler for /org/<slug>/<kind>). */
+/** Serve a stored org image from R2 (the GET handler for /bli-medlem/<slug>/<kind>). */
 export async function serveOrgImage(media: R2Bucket, key: string | null): Promise<Response> {
   if (!key) return new Response("Ikke funnet", { status: 404 });
   const object = await media.get(key);

@@ -1,8 +1,8 @@
-import { CANONICAL_ORIGIN } from "@stottemedlem/core";
+import { CANONICAL_ORIGIN, joinPagePath } from "@stottemedlem/core";
 
-// The public org pages (/org/[slug] + /org/[slug]/vilkar) are served from the
+// The public org pages (/bli-medlem/[slug] + /bli-medlem/[slug]/vilkar) are served from the
 // Worker cache and revalidated in the background on every visit (see
-// src/worker.ts and specs/concepts/org-landing-page.md). The cache is
+// src/worker.ts and specs/concepts/join-page.md). The cache is
 // per-datacenter, so it cannot be purged globally from here — visits handle
 // that. This best-effort purge only clears the copies in the datacenter the
 // saving administrator hits, so *their* next look at the public page shows the
@@ -21,8 +21,8 @@ function publicPageCacheKeys(slug: string, requestOrigin: string): string[] {
   // dev or on the app host may look at the same pages on the request origin.
   const origins = new Set([CANONICAL_ORIGIN, requestOrigin]);
   return [...origins].flatMap((origin) => [
-    `${origin}/org/${slug}`,
-    `${origin}/org/${slug}/vilkar`,
+    `${origin}${joinPagePath(slug)}`,
+    `${origin}${joinPagePath(slug)}/vilkar`,
   ]);
 }
 

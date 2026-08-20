@@ -1,5 +1,5 @@
 ---
-import { formatOrganisasjonsnummer, joinEntryPointUrl, orgTermsUrl } from "@stottemedlem/core";
+import { formatOrganisasjonsnummer, joinPageTermsUrl, joinPageUrl } from "@stottemedlem/core";
 import { getOrganizationBySlug, listMembershipTiers } from "@stottemedlem/db";
 import Button from "@stottemedlem/ui/components/Button.astro";
 import Heading from "@stottemedlem/ui/components/Heading.astro";
@@ -11,11 +11,11 @@ import PublicShell from "../../../layouts/PublicShell.astro";
 import { getDb } from "../../../lib/db";
 import { orgImageUrl } from "../../../lib/orgImages";
 
-// PUBLIC org landing page (specs/concepts/org-landing-page.md): the page an
+// PUBLIC join page (specs/concepts/join-page.md): the page an
 // admin registers as the organization's website in the Vipps portal, so it
 // must show org name, org.nr, contact info, and the membership offer with its
 // price — and link the salgsvilkår. It is also the org's shareable home for
-// prospective supporters; the CTA hands off to the join entry point.
+// prospective supporters; the CTA hands off to the join page.
 const slug = Astro.params.slug;
 const db = getDb();
 const org = slug ? await getOrganizationBySlug(db, slug) : null;
@@ -86,7 +86,7 @@ const bannerFocus = `${org.bannerFocusX ?? 50}% ${org.bannerFocusY ?? 50}%`;
           description={tier.description}
         >
           <Button
-            href={tiers.length > 1 ? joinEntryPointUrl(org.slug, tier.key) : joinEntryPointUrl(org.slug)}
+            href={tiers.length > 1 ? joinPageUrl(org.slug, tier.key) : joinPageUrl(org.slug)}
             block
           >
             Bli støttemedlem med Vipps
@@ -104,7 +104,7 @@ const bannerFocus = `${org.bannerFocusX ?? 50}% ${org.bannerFocusY ?? 50}%`;
         )
       }
       <Text variant="small">
-        <TextLink href={orgTermsUrl(org.slug)}>Salgsvilkår</TextLink>
+        <TextLink href={joinPageTermsUrl(org.slug)}>Salgsvilkår</TextLink>
       </Text>
     </Stack>
 

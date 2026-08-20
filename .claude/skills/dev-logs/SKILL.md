@@ -22,7 +22,7 @@ description: Read the backend's stdout locally — console.log/error, request li
   away).
 - `astro dev --port <p> --background` daemonizes and writes **everything** to
   `apps/<app>/.astro/dev.log`: astro/vite lines, request lines
-  (`[200] /org/x 4ms`), and `console.log`/`console.error` from SSR code
+  (`[200] /bli-medlem/x 4ms`), and `console.log`/`console.error` from SSR code
   **including full stack traces and inspected objects**. Verified end-to-end by
   triggering `callback.ts`'s `console.error` with a bogus OAuth code.
 - The log is **truncated on each background start** — grep counts are per-run,

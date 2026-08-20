@@ -1,6 +1,6 @@
 # QR codes — @stottemedlem/qr + endpoint + demo page
 
-Spec: `specs/use-cases/promote-with-qr-card.md` + `specs/concepts/join-entry-point.md`.
+Spec: `specs/use-cases/promote-with-qr-card.md` + `specs/concepts/join-page.md`.
 Distinct from the *member's personal referral* QR (`specs/use-cases/earn-stars-and-recruit.md`).
 
 ## Package split (`packages/qr`) — respect it
@@ -13,14 +13,14 @@ Distinct from the *member's personal referral* QR (`specs/use-cases/earn-stars-a
 - Do NOT re-merge these entries: `qrcode`'s package.json `browser` field swaps in a
   build without `toBuffer`, so an isomorphic entry importing it breaks browser bundles.
 - Related helpers live in `@stottemedlem/core`: `slugifyOrganizationName`,
-  `joinEntryPointUrl(slug)`, `CANONICAL_ORIGIN` (punycode!) — single source for what
+  `joinPageUrl(slug)`, `CANONICAL_ORIGIN` (punycode!) — single source for what
   QR codes encode. QR payloads must always use the punycode origin, never raw ø.
 
 ## Surfaces
 - **Backoffice** `GET /api/qr/[slug]` (`apps/backoffice/src/pages/api/qr/[slug].ts`):
   card SVG by default; `?variant=qr&format=png|svg`; `?download=1`; `?name=` display
   name (until organizations are persisted — then look it up; keep the URL shape
-  stable, embeds depend on it). QR payload is `joinEntryPointUrl(slug)`, never the
+  stable, embeds depend on it). QR payload is `joinPageUrl(slug)`, never the
   request origin — printed codes must survive worker moves.
 - **Marketing** front page (`apps/marketing/src/pages/index.astro`): a static
   QR-card *preview* for prospective orgs — `qrCardSvg(...)` is called in the Astro
@@ -31,17 +31,20 @@ Distinct from the *member's personal referral* QR (`specs/use-cases/earn-stars-a
 
 ## Open item — domain routing (decided intent, not wired)
 The embed snippet + QR payloads use `https://xn--stttemedlem-hgb.no` paths
-(`/bli-med/<slug>`, `/api/qr/<slug>` — and since 2026-07-28 also the public org
-landing pages `/org/<slug>` + `/org/<slug>/vilkar`, which MUST resolve on the
-canonical domain before any org pastes them into the Vipps portal), but that
-zone currently serves only the static
-marketing Worker → these 404 in production today. Intended wiring: zone routes
-(`.../bli-med/*`, `.../api/*`, `.../org/*`) → the backoffice Worker; routes coexist with the
-marketing custom domain and win by specificity. `/bli-med/<slug>` itself lands with
-the Vipps integration as a create-payment-and-redirect hand-off (**decided
-2026-07-08: scanning must open Vipps directly** — identity via Vipps profile
-sharing, no landing page; a static `vipps://` link can't work since each payment is
-its own transaction and the fee can change).
+(`/bli-medlem/<slug>`, `/api/qr/<slug>` — the join page and its
+`/bli-medlem/<slug>/vilkar` MUST resolve on the canonical domain before any org
+pastes them into the Vipps portal), but that zone currently serves only the
+static marketing Worker → `/api/qr/*` 404s in production today. Intended
+wiring: zone routes (`.../api/*`) → the backoffice Worker alongside the
+`/bli-medlem/*` + legacy `/org/*` routes already declared; routes coexist with
+the marketing custom domain and win by specificity. **Superseded 2026-08-20:**
+the QR payload no longer hands off straight to Vipps. Since membership tiers
+landed, a supporter must SEE and PICK a tier first, so `/bli-medlem/<slug>` is
+a real page that shows the offer and carries the picked tier onward
+(`?medlemskap=<key>`) into Vipps — one address, one page (the earlier
+2026-07-08 "scanning opens Vipps directly, no landing page" decision is dead).
+A static `vipps://` link still can't work: each payment is its own transaction
+and the fee can change.
 
 ## `qrcode` library gotchas (v1.5.x)
 - Named CJS imports work, **but** Biome rejects importing `toString` (restricted

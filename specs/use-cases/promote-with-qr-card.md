@@ -4,7 +4,7 @@
 **Solves:** [Problem: Collecting annual support is manual and leaky](../problems/collecting-annual-support.md)
 
 ## Goal
-An organization turns its [join entry point](../concepts/join-entry-point.md)
+An organization turns its [join page](../concepts/join-page.md)
 into something physical and visual — a QR code card it can print, hand out, and
 put on external websites — so supporters standing in front of a poster or
 browsing the organization's own site can join in seconds.
@@ -24,7 +24,7 @@ browsing the organization's own site can join in seconds.
    at the bottom. (For now the card carries just the QR code and this framing;
    richer content may come later.)
 2. The QR code encodes the organization's
-   [join entry point](../concepts/join-entry-point.md): scanning it with a phone
+   [join page](../concepts/join-page.md): scanning it with a phone
    opens **Vipps directly** — the supporter lands in the payment for that
    organization's [join flow](join-as-supporting-member.md) with no page in
    between, no typing, no searching.
@@ -41,7 +41,7 @@ browsing the organization's own site can join in seconds.
    organization's real card once it has signed up.
 
 ## Acceptance criteria
-- [ ] Every organization with a join entry point can get its QR code card
+- [ ] Every organization with a join page can get its QR code card
       without any extra setup.
 - [ ] Scanning the QR code on a phone lands the supporter directly in Vipps,
       paying that organization's annual fee — with no intermediate page of ours.
@@ -55,12 +55,12 @@ browsing the organization's own site can join in seconds.
 ## Out of scope
 - Customizing the card's look (colors, logos, layout) beyond the organization's
   name.
-- Cards for anything other than the join entry point (e.g. renewal-specific or
+- Cards for anything other than the join page (e.g. renewal-specific or
   campaign-specific codes).
 - Tracking/analytics on scans and embeds.
 
 ## Related
-- [Concept: Join entry point](../concepts/join-entry-point.md)
+- [Concept: Join page](../concepts/join-page.md)
 - [Concept: Organization](../concepts/organization.md)
 - [Use case: Set up a supporting membership](set-up-supporting-membership.md)
 - [Use case: Join as a supporting member](join-as-supporting-member.md)

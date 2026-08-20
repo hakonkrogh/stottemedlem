@@ -1,4 +1,5 @@
 import { defineMiddleware } from "astro:middleware";
+import { JOIN_PAGE_PATH_SEGMENT } from "@stottemedlem/core";
 import { env, getWorkOS, SESSION_COOKIE, sessionCookieOptions, toSessionInfo } from "./lib/workos";
 
 // Paths reachable without a session. Everything else requires an authenticated
@@ -8,11 +9,15 @@ import { env, getWorkOS, SESSION_COOKIE, sessionCookieOptions, toSessionInfo } f
 const PUBLIC_EXACT = new Set(["/login", "/callback", "/logout", "/healthz", "/favicon.ico"]);
 function isPublic(pathname: string): boolean {
   // /api/qr/* is the public QR embed contract (see docs/qr-codes.md).
-  // /org/* is the public org landing page + salgsvilkår
-  // (specs/concepts/org-landing-page.md) — Vipps' website verification and
-  // prospective supporters reach them without any session.
+  // /bli-medlem/* is the org's public join page + salgsvilkår
+  // (specs/concepts/join-page.md) — Vipps' website verification and
+  // prospective supporters reach them without any session. /org/* is the
+  // page's former address, kept alive as a redirect (see worker.ts).
   return (
-    PUBLIC_EXACT.has(pathname) || pathname.startsWith("/api/qr/") || pathname.startsWith("/org/")
+    PUBLIC_EXACT.has(pathname) ||
+    pathname.startsWith("/api/qr/") ||
+    pathname.startsWith(`/${JOIN_PAGE_PATH_SEGMENT}/`) ||
+    pathname.startsWith("/org/")
   );
 }
 

@@ -1,7 +1,7 @@
 /**
  * @stottemedlem/qr — shared QR code generation.
  *
- * Turns an organization's join entry point URL into scannable artifacts:
+ * Turns an organization's join page URL into scannable artifacts:
  * a plain QR code (SVG) and a presentable "QR code card" (SVG) that
  * organizations can print, download, and embed on external websites.
  *
@@ -30,7 +30,7 @@ export async function qrSvg(url: string, options: QrOptions = {}): Promise<strin
 }
 
 export interface QrCardOptions {
-  /** The organization's join entry point — what the QR code encodes. */
+  /** The organization's join page — what the QR code encodes. */
   joinUrl: string;
   /** The organization's public-facing name, shown on the card. */
   organizationName: string;

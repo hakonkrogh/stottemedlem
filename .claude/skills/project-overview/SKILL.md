@@ -27,7 +27,7 @@ lives in `specs/`, kept in sync with code by a mandatory `Stop`-hook harness.
   create, 1 → straight in, many → pick). **Route map — two parallel `[slug]`
   trees, easy to confuse:** `src/pages/o/[slug]/**` is the AUTHED admin back
   office (dashboard `index.astro`, `medlemskap/[tierId].astro` = the one
-  add/edit membership form where `ny` means create); `src/pages/org/[slug]/**`
+  add/edit membership form where `ny` means create); `src/pages/bli-medlem/[slug]/**`
   is the PUBLIC surface (landing `index.astro`, `vilkar.astro`, `banner.ts`,
   `logo.ts`), plus `src/pages/api/qr/[slug].ts`. Admin edits call
   `purgeOrgPublicPages` so the public copy refreshes. Env/secrets come from `import { env } from
@@ -37,7 +37,7 @@ lives in `specs/`, kept in sync with code by a mandatory `Stop`-hook harness.
   `.dev.vars` is untracked, so a FRESH WORKTREE lacks it — auth-gated pages 302
   to /login there; copy it from the main checkout
   (`~/code/private/stottemedlem/apps/backoffice/.dev.vars`) when a session must
-  exercise logged-in flows (public `/org/*` pages need no auth).
+  exercise logged-in flows (public `/bli-medlem/*` pages need no auth).
   See `docs/architecture/overview.md` + `stack-docs` (env access + per-env build gotchas).
 - `packages/core/` — `@stottemedlem/core`, shared domain types/logic (incl. org
   slugs, canonical join/landing/salgsvilkår URLs, orgnr MOD11 validation).
@@ -57,10 +57,16 @@ lives in `specs/`, kept in sync with code by a mandatory `Stop`-hook harness.
   (no restart needed — state is shared live). Slug is
   assigned once by `ensureOrganization` (also backfills orgs that predate the
   table; `/o/[slug]` still resolves legacy name-derived slugs and redirects).
-  **Public org pages** (added 2026-07-28, spec
-  `specs/concepts/org-landing-page.md`): `/org/[slug]` landing page +
-  `/org/[slug]/vilkar` standard salgsvilkår — the two URLs Vipps' Faste
-  betalinger order form requires; public in middleware (with `/favicon.ico` —
+  **Public org pages** (added 2026-07-28; renamed `/org/*` → `/bli-medlem/*`
+  2026-08-20, spec `specs/concepts/join-page.md` — the former landing-page and
+  join-entry-point concepts MERGED into one address): `/bli-medlem/[slug]` join
+  page + `/bli-medlem/[slug]/vilkar` standard salgsvilkår — the two URLs Vipps'
+  Faste betalinger order form requires. `/org/*` stays ROUTED in
+  wrangler.jsonc purely so `worker.ts` can 301 it to the new path (printed QR
+  codes / registered Vipps URLs must never break) — don't drop that route.
+  Path segment lives in ONE place: `JOIN_PAGE_PATH_SEGMENT` /
+  `joinPagePath()` in `@stottemedlem/core` (also `joinPageUrl`,
+  `joinPageTermsUrl`); public in middleware (with `/favicon.ico` —
   else crawlers get bounced into the login flow), rendered by
   `PublicShell.astro` (indexable, brand attribution; admin `Shell.astro` stays
   noindex). Astro template gotcha found here twice: text + `{expr}` separated
@@ -71,8 +77,8 @@ lives in `specs/`, kept in sync with code by a mandatory `Stop`-hook harness.
   logic in `apps/backoffice/src/lib/orgImages.ts` (magic-byte sniff, PNG/JPEG/
   WebP only — SVG rejected on purpose: stored SVGs served same-origin can carry
   scripts; content-hashed keys → `?v=` cache busting + immutable caching).
-  Public endpoints `/org/[slug]/logo|banner` (already public via the `/org/*`
-  middleware rule — no `isPublic()` change needed); uploads happen on
+  Public endpoints `/bli-medlem/[slug]/logo|banner` (already public via the
+  `/bli-medlem/*` middleware rule — no `isPublic()` change needed); uploads happen on
   `o/[slug]/innstillinger` (multipart form POST, same-page handling; that page
   also edits the org NAME, mirrored to WorkOS via
   `organizations.updateOrganization` — slug never changes). Landing page shows
@@ -84,7 +90,7 @@ lives in `specs/`, kept in sync with code by a mandatory `Stop`-hook harness.
   `banner_focus_x/y` columns (migration `0003_banner_focus.sql`,
   object-position percentages, NULL = center) chosen via a drag-the-visible-
   frame picker in `OrgImageFields.astro`, applied as `object-position` on the
-  landing page (spec: `specs/concepts/org-landing-page.md`).
+  join page (spec: `specs/concepts/join-page.md`).
   **Membership tiers** (added 2026-08-19, branch vips-membership-tiering, spec
   `specs/concepts/membership-tier.md`): `membership_tiers` table (migration
   `0004_membership_tiers.sql`; backfills the old single
@@ -186,6 +192,10 @@ lives in `specs/`, kept in sync with code by a mandatory `Stop`-hook harness.
   *hints* for symbols used only after a frontmatter early-`return` (0 errors =
   still green — don't chase them). A new package with `"test": "vitest run"`
   and zero test files FAILS `pnpm test` — add a first test with the package.
+  **`git stash` KILLS a running `astro dev` server** (hit 2026-08-20 while
+  stashing to get a Biome baseline): swapping files under the daemon takes it
+  down silently, and every later curl returns `000` — looks like a routing bug
+  you just introduced, isn't. Restart via `devlog.sh start` and re-verify.
   `pnpm lint` (Biome) is RED even on a clean tree (verified 2026-08-12): Biome
   only parses `.astro` frontmatter, so imports/props used solely in the
   template trip noUnusedImports/noUnusedVariables (Shell, PublicShell,
@@ -281,6 +291,7 @@ the Donations `Schedule.interval` enum is `[MONTHLY]` only, found nowhere in pro
 | stop-hooks.md | how the two Stop hooks compose + how to test a hook locally |
 | qr-codes.md | @stottemedlem/qr package split, the /api/qr/[slug] embed contract (backoffice), the front-page card preview (marketing), qrcode-lib gotchas, open domain-routing item |
 | (skill) `verify-qr` | decode a generated QR PNG (file or URL) + assert payload — real scan-level proof |
+| (skill) `verify-public-routes` | assert the public join pages over real HTTP (status, `/org/*` 301s, `x-sm-cache` miss→hit, brand attribution) + `seed.sh`, the tier-aware local D1 seed |
 | (canonical) `docs/architecture/overview.md` | proposed architecture: 2 deployables (Astro static marketing + one Astro-SSR Worker for backoffice/API/webhooks/cron/queues), D1 as system of record, WorkOS org-gated admin, Vipps Login for members, 11-step scaffolding plan |
 | (skill) `stack-docs` | verified platform gotchas: Astro CF adapter custom worker entry, WorkOS SDK on Workers |
 | (skill) `spec-lint` | `node .claude/skills/spec-lint/check.mjs` — validates spec links + INDEX registration after any specs/ edit |

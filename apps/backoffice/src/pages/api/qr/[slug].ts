@@ -1,4 +1,4 @@
-import { joinEntryPointUrl } from "@stottemedlem/core";
+import { joinPageUrl } from "@stottemedlem/core";
 import { qrCardSvg, qrSvg } from "@stottemedlem/qr";
 import { qrPngBuffer } from "@stottemedlem/qr/node";
 import type { APIRoute } from "astro";
@@ -16,7 +16,7 @@ import type { APIRoute } from "astro";
  *                the name travels in the URL; the slug is the fallback)
  *   ?download=1  serve as attachment
  *
- * The QR code always encodes the canonical join entry point, never a local or
+ * The QR code always encodes the canonical join page, never a local or
  * per-deploy origin — printed codes must survive any move of this Worker.
  */
 
@@ -41,7 +41,7 @@ export const GET: APIRoute = async ({ params, url }) => {
   const format = url.searchParams.get("format") ?? (variant === "qr" ? "png" : "svg");
   const name = url.searchParams.get("name")?.trim() || nameFromSlug(slug);
   const download = url.searchParams.get("download") === "1";
-  const joinUrl = joinEntryPointUrl(slug);
+  const joinUrl = joinPageUrl(slug);
 
   const headers = new Headers({ "Cache-Control": CACHE_HEADER });
   const attach = (filename: string) => {

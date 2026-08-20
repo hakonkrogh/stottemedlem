@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { QR_CARD_HEIGHT, QR_CARD_WIDTH, qrCardSvg, qrSvg } from "./index.js";
 import { qrPngBuffer } from "./node.js";
 
-const JOIN_URL = "https://stottemedlem.no/bli-med/eksempel-musikkorps";
+const JOIN_URL = "https://stottemedlem.no/bli-medlem/eksempel-musikkorps";
 
 describe("qrSvg", () => {
   it("produces a standalone SVG document", async () => {

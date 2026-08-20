@@ -4,8 +4,8 @@ import { integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
 /**
  * Organizations — 1:1 with a WorkOS organization (the identity/tenancy source),
  * this table is the system of record for everything product-side: the stable
- * public slug and the public profile the org landing page shows
- * (specs/concepts/org-landing-page.md). Vipps sales-unit config (MSN, keys)
+ * public slug and the public profile the join page shows
+ * (specs/concepts/join-page.md). Vipps sales-unit config (MSN, keys)
  * lands here in a later scaffolding step.
  *
  * Migrations are hand-written SQL in packages/db/migrations/, applied with
@@ -19,9 +19,9 @@ export const organizations = sqliteTable("organizations", {
   name: text("name").notNull(),
   /** Stable, unique, URL-safe identifier. Never changes once assigned. */
   slug: text("slug").notNull().unique(),
-  /** Norwegian organisasjonsnummer (9 digits), required on the landing page. */
+  /** Norwegian organisasjonsnummer (9 digits), required on the join page. */
   orgnr: text("orgnr"),
-  /** Public contact address shown on the landing page and in sales terms. */
+  /** Public contact address shown on the join page and in sales terms. */
   contactEmail: text("contact_email"),
   /**
    * LEGACY single annual fee in whole NOK. Superseded by membership tiers
