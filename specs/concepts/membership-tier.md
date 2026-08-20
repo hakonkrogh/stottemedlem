@@ -43,7 +43,9 @@ organization sees in the Vipps portal — always names the tier.
 - Each tier has a stable **key**: a short URL-safe identifier derived from its
   name when the tier is created, unique within the organization, and **never
   changed afterwards** — renaming a tier changes its name, not its key. The
-  key is the "predefined identifier" outside systems can rely on.
+  key is the "predefined identifier" the payment provider's agreements carry;
+  it is **internal**, not shown to administrators and not published as an
+  address anyone is asked to share.
 - **Projection into Vipps:** every payment agreement created for a tier
   carries the tier's name as the agreement's product name, the shortened
   single-line form of its description as the product description, and an
@@ -85,8 +87,9 @@ organization sees in the Vipps portal — always names the tier.
 - Carries one current [annual fee](annual-fee.md).
 - A [membership](membership.md) is a membership *of one tier* — the tier (and
   its fee at the time) is recorded on the membership.
-- Enumerated on the [organization landing page](org-landing-page.md); a
-  [join entry point](join-entry-point.md) may point at a specific tier.
+- Enumerated on the [organization landing page](org-landing-page.md), where
+  choosing a tier carries it into joining. The organization is never handed a
+  separate [join entry point](join-entry-point.md) per tier.
 
 ## Referenced by
 - [Use case: Set up a supporting membership](../use-cases/set-up-supporting-membership.md)

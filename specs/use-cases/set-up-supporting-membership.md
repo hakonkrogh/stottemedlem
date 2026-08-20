@@ -41,8 +41,10 @@ From the organization's point of view:
    name and a standard description so the wording doesn't have to be
    invented; the administrator always sets the price (a suggested amount is
    shown). Each tier gets a stable identifier at creation (its **key**),
-   usable in join links and stamped onto the tier's payment agreements in
-   Vipps, so agreements there can always be traced back to the tier. Tiers
+   stamped onto the tier's payment agreements in Vipps so agreements there
+   can always be traced back to the tier. The key is internal plumbing — the
+   administrator never sees it and is never given a link to an individual
+   membership; what the organization shares is the one join entry point. Tiers
    can be renamed, repriced, and archived — never deleted — a rename never
    changes the key, and the **last active tier cannot be archived** (the
    organization always offers at least one membership).
@@ -94,8 +96,9 @@ immediately. A name change never changes the slug or the public addresses.
 - [ ] The description is written in a multi-line field that shows the whole
       text at once, accepts up to 200 characters including line breaks, and
       the landing page shows it as written.
-- [ ] A tier's key is assigned at creation, shown to the administrator, and
-      never changes — not even when the tier is renamed.
+- [ ] A tier's key is assigned at creation and never changes — not even when
+      the tier is renamed. It is not shown to the administrator, and the back
+      office offers no link to an individual membership.
 - [ ] After setup the organization has a shareable join entry point and a live
       landing page + sales-terms page at stable addresses.
 - [ ] An organization missing required profile fields sees a prompt in the back

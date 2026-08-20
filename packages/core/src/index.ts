@@ -135,9 +135,10 @@ export function slugifyOrganizationName(name: string): string {
 /**
  * The organization's join entry point (see specs/concepts/join-entry-point.md) —
  * the stable URL QR codes and shared links carry. Must never change once
- * printed; the destination behind it can. A link may point at a specific
- * membership tier by its stable key (`?medlemskap=<tierKey>`); without it, the
- * supporter chooses a tier when the organization has several.
+ * printed; the destination behind it can. The shareable entry point is always
+ * the bare URL — the product offers no per-membership link. The optional tier
+ * key (`?medlemskap=<tierKey>`) only carries the choice a supporter already
+ * made on the landing page onward into joining.
  */
 export function joinEntryPointUrl(slug: string, tierKey?: string): string {
   const url = `${CANONICAL_ORIGIN}/bli-med/${slug}`;
