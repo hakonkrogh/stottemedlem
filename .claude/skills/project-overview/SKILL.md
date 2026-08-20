@@ -169,6 +169,10 @@ lives in `specs/`, kept in sync with code by a mandatory `Stop`-hook harness.
   command not found` / `turbo: command not found`, which is a missing install,
   not a broken tree. Run `pnpm install` once per worktree first (~seconds, the
   store is shared).
+- **The local `main` ref in a worktree is stale**, so `git log main..HEAD` lists
+  commits that are already merged and makes a one-commit branch look like ten.
+  Scope a branch/PR against `origin/main` (`git log --oneline origin/main..HEAD`)
+  before writing the PR body.
 - Single package: `pnpm turbo run <task> --filter=@stottemedlem/<name>`.
 - Build-order gotcha: the apps consume `@stottemedlem/core` / `@stottemedlem/qr`
   from their built `dist/`, so an app build needs those packages built first.
