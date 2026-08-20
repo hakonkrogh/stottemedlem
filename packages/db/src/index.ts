@@ -32,14 +32,14 @@ export function createDb(d1: D1Database) {
   return drizzle(d1, { schema: { organizations, membershipTiers } });
 }
 
-/** The profile fields the Vipps order form requires the landing page to show. */
+/** The profile fields the Vipps order form requires the join page to show. */
 export interface OrganizationProfile {
   orgnr: string | null;
   contactEmail: string | null;
 }
 
 /**
- * Whether the organization has everything its public landing page must show to
+ * Whether the organization has everything its public join page must show to
  * pass Vipps' website verification: org.nr, contact info, and at least one
  * membership tier with its price. Incomplete orgs get fill-in prompts in the
  * back office.
@@ -68,7 +68,7 @@ export async function getOrganizationByWorkosId(
 /**
  * First free slug for a name: the slugified name, or `-2`, `-3`, … when taken.
  * The slug is assigned once and never changes afterwards (printed QR codes and
- * the Vipps-registered landing page URL depend on it).
+ * the Vipps-registered join page URL depend on it).
  */
 async function availableSlug(db: Db, name: string): Promise<string> {
   const base = slugifyOrganizationName(name);
@@ -117,9 +117,9 @@ export async function ensureOrganization(
 }
 
 /**
- * The organization's uploaded visual identity (specs/concepts/org-landing-page.md):
+ * The organization's uploaded visual identity (specs/concepts/join-page.md):
  * R2 object keys for the logo and banner. Unlike the profile fields these are
- * optional — the landing page omits what is absent.
+ * optional — the join page omits what is absent.
  */
 export interface OrganizationImages {
   logoKey: string | null;

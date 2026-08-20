@@ -20,16 +20,16 @@ support.
 - An organization has a **slug**: a unique, URL-safe identifier automatically
   derived from its name when the organization is created. The slug is
   **stable** — it never changes afterwards, even if the name does — because the
-  addresses built from it (the [join entry point](join-entry-point.md), the
-  [landing page](org-landing-page.md)) end up printed on posters and registered
+  the address built from it (the [join page](join-page.md)) ends up printed on
+  posters and registered
   with payment providers.
 - An organization has a **public profile** — organisasjonsnummer and contact
-  information — shown on its [landing page](org-landing-page.md). The product
+  information — shown on its [join page](join-page.md). The product
   requires these fields (payment-provider approval depends on them); an
   organization missing any of them is prompted to complete its profile in the
   back office.
 - An organization may add a **visual identity** — a logo and a banner image —
-  shown on its [landing page](org-landing-page.md). Unlike the profile fields
+  shown on its [join page](join-page.md). Unlike the profile fields
   these are **optional**: the page simply omits what has not been uploaded.
 - An administrator can edit the organization's details — name, public profile,
   and visual identity — in the back office at any time; the public pages
@@ -42,7 +42,7 @@ support.
   [access the back office](../use-cases/access-the-back-office.md) without one.
 
 ## Relationships
-- Has one public [landing page](org-landing-page.md), addressed by its slug.
+- Has one public [join page](join-page.md), addressed by its slug.
 - Has many [memberships](membership.md), one per supporting member per annual period.
 - Has many [supporting members](supporting-member.md).
 - Has one or more [administrators](administrator.md) who act on its behalf.

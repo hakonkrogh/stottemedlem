@@ -36,7 +36,7 @@ export const DEFAULT_MEMBERSHIP_TIER_NAME = "Støttemedlemskap";
 /**
  * Max length of a tier's own description. Deliberately LONGER than Vipps'
  * `productDescription` (and multi-line): the description is written for the
- * organization's landing page, and `vippsProductDescription` derives the
+ * organization's join page, and `vippsProductDescription` derives the
  * shorter single-line form the payment provider's field can hold.
  */
 export const MEMBERSHIP_TIER_DESCRIPTION_MAX_LENGTH = 200;
@@ -62,7 +62,7 @@ export function normalizeMembershipTierDescription(input: string): string {
  * The single-line form of a tier description that fits a Vipps agreement's
  * `productDescription`: line breaks and runs of whitespace collapse to single
  * spaces, and anything longer than the limit is cut at a word boundary with
- * an ellipsis. The full description stays on the landing page.
+ * an ellipsis. The full description stays on the join page.
  */
 export function vippsProductDescription(description: string): string {
   const singleLine = description.replaceAll(/\s+/g, " ").trim();
@@ -133,30 +133,38 @@ export function slugifyOrganizationName(name: string): string {
 }
 
 /**
- * The organization's join entry point (see specs/concepts/join-entry-point.md) —
- * the stable URL QR codes and shared links carry. Must never change once
- * printed; the destination behind it can. The shareable entry point is always
- * the bare URL — the product offers no per-membership link. The optional tier
- * key (`?medlemskap=<tierKey>`) only carries the choice a supporter already
- * made on the landing page onward into joining.
+ * The path segment every public organization page lives under
+ * (specs/concepts/join-page.md). Norwegian "bli medlem" — the address reads as
+ * a sentence with the slug appended: /bli-medlem/nordnes-skolekorps.
+ * Route matching in the Worker and the middleware derive from this.
  */
-export function joinEntryPointUrl(slug: string, tierKey?: string): string {
-  const url = `${CANONICAL_ORIGIN}/bli-med/${slug}`;
+export const JOIN_PAGE_PATH_SEGMENT = "bli-medlem";
+
+/** The join page's path on the canonical origin, e.g. `/bli-medlem/<slug>`. */
+export function joinPagePath(slug: string): string {
+  return `/${JOIN_PAGE_PATH_SEGMENT}/${slug}`;
+}
+
+/**
+ * The organization's join page (see specs/concepts/join-page.md) — the single
+ * public address an organization has: what it spreads as a link and as a
+ * QR code, and what an administrator pastes into forms that ask for "your
+ * website". Must never change once printed; what the page shows behind it can.
+ * The shareable address is always the bare URL — the product offers no
+ * per-membership link. The optional tier key (`?medlemskap=<tierKey>`) only
+ * carries the choice a supporter already made on the page onward into joining.
+ */
+export function joinPageUrl(slug: string, tierKey?: string): string {
+  const url = `${CANONICAL_ORIGIN}${joinPagePath(slug)}`;
   return tierKey ? `${url}?medlemskap=${encodeURIComponent(tierKey)}` : url;
 }
 
 /**
- * The organization's public landing page (see specs/concepts/org-landing-page.md) —
- * the address an admin pastes into forms that require "your website" (e.g. the
- * Vipps Faste betalinger order). Stable once the slug is assigned.
+ * The organization's standard sales-terms (salgsvilkår) page, linked from the
+ * join page. The second URL the payment provider verifies.
  */
-export function orgLandingPageUrl(slug: string): string {
-  return `${CANONICAL_ORIGIN}/org/${slug}`;
-}
-
-/** The organization's standard sales-terms (salgsvilkår) page, linked from the landing page. */
-export function orgTermsUrl(slug: string): string {
-  return `${CANONICAL_ORIGIN}/org/${slug}/vilkar`;
+export function joinPageTermsUrl(slug: string): string {
+  return `${CANONICAL_ORIGIN}${joinPagePath(slug)}/vilkar`;
 }
 
 /**

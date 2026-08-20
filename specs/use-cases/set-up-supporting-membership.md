@@ -19,7 +19,7 @@ From the organization's point of view:
 1. The administrator gives the organization a public-facing name (what supporters
    will recognize) and its **public profile**: organisasjonsnummer and contact
    information. These are required — the organization's
-   [landing page](../concepts/org-landing-page.md) must show them for a payment
+   [join page](../concepts/join-page.md) must show them for a payment
    provider to approve recurring payments.
 2. Creating the organization includes stating its **first membership**: a
    minimal [membership tier](../concepts/membership-tier.md) — the default
@@ -30,7 +30,7 @@ From the organization's point of view:
    started, and everything about it can be changed later.
 3. The administrator refines the membership offer in the back office. The
    organization's **overview page lists all its memberships**, presented as
-   the very same membership cards the public landing page shows (see the
+   the very same membership cards the public join page shows (see the
    one-presentation rule in [membership tier](../concepts/membership-tier.md))
    — reviewing the offer *is* seeing what supporters see. Selecting a
    membership opens it for **editing on its own page**; after the list, an
@@ -44,16 +44,16 @@ From the organization's point of view:
    stamped onto the tier's payment agreements in Vipps so agreements there
    can always be traced back to the tier. The key is internal plumbing — the
    administrator never sees it and is never given a link to an individual
-   membership; what the organization shares is the one join entry point. Tiers
+   membership; what the organization shares is the one join page. Tiers
    can be renamed, repriced, and archived — never deleted — a rename never
    changes the key, and the **last active tier cannot be archived** (the
    organization always offers at least one membership).
-4. The organization is given a stable slug and, from it, its public addresses: a
-   shareable [join entry point](../concepts/join-entry-point.md) (e.g. a link the
-   organization can put on its site or social media, or a
-   [QR code card](promote-with-qr-card.md) for posters and external websites)
-   and its [landing page](../concepts/org-landing-page.md) with the sales-terms
-   page — the two URLs the payment-provider order form asks for.
+4. The organization is given a stable slug and, from it, its one public
+   address: a shareable [join page](../concepts/join-page.md) — a link the
+   organization can put on its site or social media, or turn into a
+   [QR code card](promote-with-qr-card.md) for posters and external websites —
+   with its sales-terms page beneath the same address. Those two URLs are what
+   the payment-provider order form asks for.
 5. The administrator connects the organization's own Vipps agreement by adding
    its [Vipps API keys](../concepts/vipps-api-keys.md). The product proves the
    keys work with a live check against Vipps before keeping them; until they
@@ -65,10 +65,10 @@ An organization created before a profile field was required (or before this
 behaviour existed) is **prompted in the back office** to complete the missing
 fields, and can edit its profile there at any time.
 
-The organization can also give its landing page a **visual identity**: in the
+The organization can also give its join page a **visual identity**: in the
 back-office settings it can edit its details (name and profile) and upload a
 **logo** and a **banner image**, shown on the
-[landing page](../concepts/org-landing-page.md). For the banner the
+[join page](../concepts/join-page.md). For the banner the
 organization can also pick the **focal point** — which part of the image stays
 in view where the page crops it — with a preview that fades the cropped-away
 parts around a draggable visible-area frame. Both images are optional, can
@@ -86,7 +86,7 @@ immediately. A name change never changes the slug or the public addresses.
       edit it, and archive it — except the last active tier, which cannot be
       archived, so the organization always offers at least one membership.
 - [ ] The organization's overview lists every active membership as the same
-      membership card the public landing page shows; selecting one opens it
+      membership card the public join page shows; selecting one opens it
       for editing on its own page, and an add button after the list opens the
       same page for creating a new one.
 - [ ] When adding a tier, the administrator can start from a standard
@@ -95,30 +95,30 @@ immediately. A name change never changes the slug or the public addresses.
       and everything prefilled remains editable before and after creation.
 - [ ] The description is written in a multi-line field that shows the whole
       text at once, accepts up to 200 characters including line breaks, and
-      the landing page shows it as written.
+      the join page shows it as written.
 - [ ] A tier's key is assigned at creation and never changes — not even when
       the tier is renamed. It is not shown to the administrator, and the back
       office offers no link to an individual membership.
-- [ ] After setup the organization has a shareable join entry point and a live
-      landing page + sales-terms page at stable addresses.
+- [ ] After setup the organization has one shareable, live join page with its
+      sales-terms page, both at stable addresses.
 - [ ] An organization missing required profile fields sees a prompt in the back
-      office and can complete them; the landing page reflects the change
+      office and can complete them; the join page reflects the change
       immediately.
 - [ ] An administrator can add the organization's
       [Vipps API keys](../concepts/vipps-api-keys.md); a set Vipps rejects is
       not stored, and the administrator is told why. Stored secrets are only
       ever shown masked.
-- [ ] A supporter using that entry point can complete
+- [ ] A supporter using that address can complete
       [joining](join-as-supporting-member.md) without further admin action.
 - [ ] A tier's annual fee can be changed later; the change applies to future
       joins and renewals, not retroactively to fees already paid.
 - [ ] An administrator can edit the organization's name and profile, and upload,
       replace, or remove a logo and a banner image in the back office; the
-      landing page picks the change up on its own (at the latest from the next
-      visit — see [landing page](../concepts/org-landing-page.md) freshness),
+      join page picks the change up on its own (at the latest from the next
+      visit — see [join page](../concepts/join-page.md) freshness),
       and a name change never changes the slug.
 - [ ] An administrator can choose the banner's focal point by dragging the
-      visible-area frame in the settings preview; the landing page crops the
+      visible-area frame in the settings preview; the join page crops the
       banner around that point.
 
 ## Out of scope
@@ -133,6 +133,5 @@ immediately. A name change never changes the slug or the public addresses.
 - [Concept: Membership tier](../concepts/membership-tier.md)
 - [Concept: Annual fee](../concepts/annual-fee.md)
 - [Concept: Vipps API keys](../concepts/vipps-api-keys.md)
-- [Concept: Join entry point](../concepts/join-entry-point.md)
-- [Concept: Organization landing page](../concepts/org-landing-page.md)
+- [Concept: Join page](../concepts/join-page.md)
 - [Use case: Promote membership with a QR code card](promote-with-qr-card.md)

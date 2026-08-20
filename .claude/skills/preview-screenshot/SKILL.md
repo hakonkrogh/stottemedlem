@@ -47,19 +47,20 @@ description: Render any local URL (marketing/backoffice dev or preview server) t
   serving old code; `pnpm --filter @stottemedlem/backoffice exec astro dev stop`
   then restart, and stop it the same way when done. The dark pill at the bottom
   of astro-dev screenshots is Astro's dev toolbar, not the page.
-- **PUBLIC backoffice pages** (`/org/<slug>`, `/org/<slug>/vilkar`, `/api/qr/*`)
+- **PUBLIC backoffice pages** (`/bli-medlem/<slug>`, `/bli-medlem/<slug>/vilkar`, `/api/qr/*`)
   need no login and no `.dev.vars` — screenshoot them against `astro dev`
   directly. Pages that read D1 need the local DB prepared first (from
   `apps/backoffice`, shares `.wrangler/state` with astro dev):
-  `pnpm exec wrangler d1 migrations apply DB --local`, then seed with
-  `pnpm exec wrangler d1 execute DB --local --command "INSERT INTO ..."`.
-  Working minimal org seed (note `workos_org_id` is NOT NULL UNIQUE — omitting
-  it makes the INSERT fail with no visible error in the tail'd output, so
-  append a `; SELECT ...` to the same --command to prove the row landed):
-  `INSERT INTO organizations (id, workos_org_id, slug, name, orgnr,
-  contact_email, annual_fee_nok) VALUES ('org_test_1', 'workos_org_test_1',
-  'eksempelkorpset', 'Eksempelkorpset', '999999999',
-  'post@eksempelkorpset.no', 300); SELECT slug FROM organizations`.
+  `pnpm exec wrangler d1 migrations apply DB --local`. **Use
+  `bash .claude/skills/verify-public-routes/seed.sh [slug]` to seed** — it
+  writes the org AND its `membership_tiers` rows. Seeding by hand from an
+  `organizations` INSERT alone gives a *zero-tier degraded* page (since
+  2026-08-19 `organizations.annual_fee_nok` is LEGACY/unused and the offer
+  comes from `membership_tiers`), so the screenshot silently shows the wrong
+  baseline — this doc's old hand-rolled seed had exactly that bug.
+  Gotcha if you do seed by hand anyway: `workos_org_id` is NOT NULL UNIQUE, and
+  omitting it makes the INSERT fail with no visible error in the tail'd output
+  — append a `; SELECT ...` to the same --command to prove the row landed.
   Astro dev may come up on a DIFFERENT port than 4322 (another worktree's
   daemon holds it; vite logs "Port 4322 is in use, trying another one") — read
   the port from the start/logs output before shooting.

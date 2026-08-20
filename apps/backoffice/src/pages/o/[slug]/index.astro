@@ -1,5 +1,5 @@
 ---
-import { joinEntryPointUrl, orgLandingPageUrl, orgTermsUrl } from "@stottemedlem/core";
+import { joinPageTermsUrl, joinPageUrl } from "@stottemedlem/core";
 import { ensureOrganization, getOrganizationBySlug, listMembershipTiers } from "@stottemedlem/db";
 import Alert from "@stottemedlem/ui/components/Alert.astro";
 import Button from "@stottemedlem/ui/components/Button.astro";
@@ -23,7 +23,7 @@ import {
 
 // Org dashboard. Resolves the persisted slug to the org row (backfilling rows
 // for orgs that predate persisted slugs), verifies the signed-in user is a
-// member, and surfaces the org's public URLs — the landing page + salgsvilkår
+// member, and surfaces the org's public URLs — the join page + salgsvilkår
 // links the admin pastes into the Vipps portal — plus a prompt to complete the
 // public profile when required fields are missing.
 const session = Astro.locals.session;
@@ -79,9 +79,8 @@ const canSwitch = memberships.length > 1;
 const tiers = await listMembershipTiers(db, org.id);
 const profileComplete = org.orgnr !== null && org.contactEmail !== null;
 const vippsKeys = await readOrgVippsKeys(workos, org.workosOrgId);
-const landingUrl = orgLandingPageUrl(org.slug);
-const termsUrl = orgTermsUrl(org.slug);
-const joinUrl = joinEntryPointUrl(org.slug);
+const joinUrl = joinPageUrl(org.slug);
+const termsUrl = joinPageTermsUrl(org.slug);
 ---
 
 <Shell title={org.name}>
@@ -149,20 +148,21 @@ const joinUrl = joinEntryPointUrl(org.slug);
     }
     <Stack gap="sm">
       <Heading level={2}>Offentlige lenker</Heading>
+      <Text variant="small">
+        Innmeldingslenken er organisasjonens ene offentlige adresse — den du deler, og den QR-koden
+        peker på.
+      </Text>
       <div class="links">
         <Text variant="small">
-          Organisasjonens side: <TextLink href={landingUrl}>{landingUrl}</TextLink>
+          Innmeldingslenke: <TextLink href={joinUrl}>{joinUrl}</TextLink>
         </Text>
         <Text variant="small">
           Salgsvilkår: <TextLink href={termsUrl}>{termsUrl}</TextLink>
         </Text>
-        <Text variant="small">
-          Innmeldingslenke: <TextLink href={joinUrl}>{joinUrl}</TextLink>
-        </Text>
       </div>
       <Text variant="small">
-        Når du bestiller Faste betalinger i Vipps-portalen, limer du inn lenken til organisasjonens
-        side som «nettsted» og lenken til salgsvilkårene som «salgsvilkår».
+        Når du bestiller Faste betalinger i Vipps-portalen, limer du inn innmeldingslenken som
+        «nettsted» og lenken til salgsvilkårene som «salgsvilkår».
       </Text>
     </Stack>
     <Button variant="secondary" href={`${orgPath(org.slug)}/innstillinger`} block>

@@ -12,19 +12,19 @@ paying its annual fee, in one simple flow.
 
 ## Preconditions
 - The organization has [set up a supporting membership](set-up-supporting-membership.md)
-  and shared its [join entry point](../concepts/join-entry-point.md) (as a link
+  and shared its [join page](../concepts/join-page.md) (as a link
   or a [QR code card](promote-with-qr-card.md)).
 
 ## Behaviour
 From the supporter's point of view:
 
 1. The supporter opens the organization's
-   [join entry point](../concepts/join-entry-point.md) and lands directly in
+   [join page](../concepts/join-page.md) and lands directly in
    **Vipps**, seeing who they are supporting, the
    [membership tier](../concepts/membership-tier.md) they are joining (by
    name), and its [annual fee](../concepts/annual-fee.md). A join link or QR
    code may point at a specific tier; when the organization has several tiers
-   and the entry point names none, the supporter chooses one first.
+   and the address names none, the supporter chooses one first.
 2. The minimum identity needed to be listed as a
    [supporting member](../concepts/supporting-member.md) (e.g. name and a contact
    such as email) comes from the supporter's Vipps profile, with their consent —

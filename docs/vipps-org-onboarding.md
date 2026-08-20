@@ -61,7 +61,7 @@ charges.
          behind a "Verifiser nettstedet" check. **støttemedlem hosts both for
          the organization:** paste the org's public landing page URL and its
          salgsvilkår URL (shown in the org's back office; see
-         [`specs/concepts/org-landing-page.md`](../specs/concepts/org-landing-page.md)).
+         [`specs/concepts/join-page.md`](../specs/concepts/join-page.md)).
          Answer "Ja, den er live".
 4. - [ ] Answer the extra compliance questions the recurring product requires
          (mandated by financial regulators, on top of the checks the org
@@ -95,7 +95,7 @@ charges.
 - [ ] Set the [annual fee](../specs/concepts/annual-fee.md) and confirm the
       organization's public name — see
       [Set up a supporting membership](../specs/use-cases/set-up-supporting-membership.md).
-- [ ] Get the [join entry point](../specs/concepts/join-entry-point.md) (link /
+- [ ] Get the [join page](../specs/concepts/join-page.md) (link /
       QR code card) and share it. First payment can happen immediately — no
       further setup.
 

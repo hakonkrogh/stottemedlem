@@ -97,11 +97,11 @@ judging a change invisible.
   removing template-used imports (breaks the build).
 
 Zone routes vs custom domains (verified live 2026-08-12): a zone route
-(`{ pattern: "xn--stttemedlem-hgb.no/org/*", zone_name: … }`) on one Worker
+(`{ pattern: "xn--stttemedlem-hgb.no/bli-medlem/*", zone_name: … }`) on one Worker
 **takes precedence over another Worker's custom domain** on the same hostname —
 this is how the SSR backoffice serves the canonical public org pages on the
 apex while the assets-only marketing Worker keeps everything else. Reuse the
-same pattern for future public paths (`/bli-med/*`, `/api/qr/*`). Wrangler
+same pattern for future public paths (`/api/qr/*`). Wrangler
 warns "routes will attempt to serve Assets on a configured path" — harmless.
 
 Webhook pattern: route `POST /webhooks/vipps` in `worker.ts` *before* delegating to

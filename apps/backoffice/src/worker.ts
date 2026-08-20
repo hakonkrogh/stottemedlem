@@ -1,12 +1,19 @@
 import { handle } from "@astrojs/cloudflare/handler";
+import { JOIN_PAGE_PATH_SEGMENT } from "@stottemedlem/core";
 
-// Public org pages (specs/concepts/org-landing-page.md): the landing page and
+// Public org pages (specs/concepts/join-page.md): the join page and its
 // salgsvilkår are served stale-while-revalidate — a visit gets the cached copy
 // instantly and refreshes it in the background, so a change on the org's side
 // is visible at the latest from the next visit. The cache is per-datacenter;
 // the back office additionally purges its own datacenter's copy on save
 // (src/lib/publicPageCache.ts — keep the cache name and key shape in sync).
-const PUBLIC_ORG_PAGE = /^\/org\/[a-z0-9-]+(?:\/vilkar)?\/?$/;
+const PUBLIC_ORG_PAGE = new RegExp(`^/${JOIN_PAGE_PATH_SEGMENT}/[a-z0-9-]+(?:/vilkar)?/?$`);
+
+// The join page's former address. A join page's address must never break once
+// printed or registered with a payment provider (specs/concepts/join-page.md),
+// and /org/<slug> was live and registrable, so every path beneath it — pages
+// and image endpoints alike — is redirected permanently rather than dropped.
+const FORMER_ORG_PAGE_PREFIX = "/org/";
 const PUBLIC_ORG_PAGE_CACHE = "public-org-pages";
 // Backstop for how long an unvisited copy may keep serving; every visit
 // refreshes it long before this matters.
@@ -43,6 +50,11 @@ async function renderAndCache(
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
+    if (url.pathname.startsWith(FORMER_ORG_PAGE_PREFIX)) {
+      const moved = new URL(url);
+      moved.pathname = `/${JOIN_PAGE_PATH_SEGMENT}/${url.pathname.slice(FORMER_ORG_PAGE_PREFIX.length)}`;
+      return Response.redirect(moved.toString(), 301);
+    }
     if (request.method === "GET" && PUBLIC_ORG_PAGE.test(url.pathname)) {
       // Normalized key: no query, no trailing slash — one copy per page.
       const cacheKey = url.origin + url.pathname.replace(/\/+$/, "");

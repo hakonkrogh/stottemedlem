@@ -1,8 +1,8 @@
 import { isValidOrganisasjonsnummer } from "@stottemedlem/core";
 import type { OrganizationProfile } from "@stottemedlem/db";
 
-// Shared parsing/validation for the public-profile fields the org landing page
-// needs (specs/concepts/org-landing-page.md). The membership offer itself
+// Shared parsing/validation for the public-profile fields the join page
+// needs (specs/concepts/join-page.md). The membership offer itself
 // (tiers with prices) is managed separately on the back office's medlemskap
 // page (specs/concepts/membership-tier.md).
 

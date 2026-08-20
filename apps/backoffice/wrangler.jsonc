@@ -10,13 +10,19 @@
 	"main": "./src/worker.ts",
 	// Custom domain (app.støttemedlem.no in punycode) — wrangler manages DNS +
 	// certs on deploy; the CI token needs zone-level permission (same as marketing).
-	// The apex /org/* zone route serves the canonical public org pages
-	// (packages/core orgLandingPageUrl → https://støttemedlem.no/org/<slug>);
+	// The apex /bli-medlem/* zone route serves the canonical public join pages
+	// (packages/core joinPageUrl → https://støttemedlem.no/bli-medlem/<slug>);
 	// zone routes take precedence over the marketing Worker's apex custom domain.
+	// /org/* is the join page's former address and MUST stay routed here — the
+	// 301 in src/worker.ts only fires on requests this Worker actually receives.
 	"routes": [
 		{
 			"pattern": "app.xn--stttemedlem-hgb.no",
 			"custom_domain": true
+		},
+		{
+			"pattern": "xn--stttemedlem-hgb.no/bli-medlem/*",
+			"zone_name": "xn--stttemedlem-hgb.no"
 		},
 		{
 			"pattern": "xn--stttemedlem-hgb.no/org/*",
