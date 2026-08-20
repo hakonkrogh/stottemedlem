@@ -30,18 +30,26 @@ organization sees in the Vipps portal — always names the tier.
 ## Rules & invariants
 - Each tier belongs to exactly one organization and has a **name** (at most
   45 characters — it is shown as the product name in the Vipps app), an
-  optional **description** (at most 100 characters — shown as the product
-  description in Vipps and on the landing page), and exactly one current
+  optional **description**, and exactly one current
   [annual fee](annual-fee.md).
+- The **description is written for the organization's own page**: up to 200
+  characters, written as free text — **line breaks are kept and shown as
+  written**, and any ordinary writing is accepted (Norwegian letters,
+  punctuation, symbols). It is deliberately allowed to be longer and richer
+  than the payment provider's product-description field: when a payment
+  agreement is created, a **shortened single-line version** is derived for
+  it (line breaks flattened, cut at a word boundary). The organization writes
+  one description; each surface shows as much of it as it can.
 - Each tier has a stable **key**: a short URL-safe identifier derived from its
   name when the tier is created, unique within the organization, and **never
   changed afterwards** — renaming a tier changes its name, not its key. The
   key is the "predefined identifier" outside systems can rely on.
 - **Projection into Vipps:** every payment agreement created for a tier
-  carries the tier's name as the agreement's product name, its description as
-  the product description, and an external identifier that embeds the tier
-  key — so any agreement seen in Vipps can be traced back to its tier by
-  convention, without consulting the product first.
+  carries the tier's name as the agreement's product name, the shortened
+  single-line form of its description as the product description, and an
+  external identifier that embeds the tier key — so any agreement seen in
+  Vipps can be traced back to its tier by convention, without consulting the
+  product first.
 - Tier changes (name, description, fee) apply to **future** joins and
   renewals; they never retroactively alter what was already paid. A fee
   change reaches existing members' agreements at their next renewal.

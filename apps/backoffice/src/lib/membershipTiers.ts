@@ -1,14 +1,17 @@
 import {
   DEFAULT_MEMBERSHIP_TIER_NAME,
-  VIPPS_PRODUCT_DESCRIPTION_MAX_LENGTH,
+  MEMBERSHIP_TIER_DESCRIPTION_MAX_LENGTH,
+  normalizeMembershipTierDescription,
   VIPPS_PRODUCT_NAME_MAX_LENGTH,
 } from "@stottemedlem/core";
 import type { MembershipTierInput } from "@stottemedlem/db";
 
-// Parsing/validation for the membership-tier forms on the medlemskap page
-// (specs/concepts/membership-tier.md). The length limits are Vipps' agreement
-// productName/productDescription limits — a tier must always project onto a
-// Vipps agreement losslessly, so they are enforced at input time.
+// Parsing/validation for the membership-tier forms
+// (specs/concepts/membership-tier.md). The NAME is capped at Vipps'
+// productName limit because it is shown verbatim on the agreement in the
+// Vipps app. The DESCRIPTION is the organization's own landing-page text —
+// longer and multi-line — and `vippsProductDescription` derives the shorter
+// single-line form when an agreement is created.
 
 export interface TierFormValues {
   name: string;
@@ -35,7 +38,7 @@ export function parseAnnualFee(value: string): { fee: number } | { error: string
 export function parseTierForm(form: FormData): ParsedTierForm {
   const values: TierFormValues = {
     name: String(form.get("name") ?? "").trim(),
-    description: String(form.get("description") ?? "").trim(),
+    description: normalizeMembershipTierDescription(String(form.get("description") ?? "")),
     annualFee: String(form.get("annualFee") ?? "").trim(),
   };
   const fieldErrors: TierFieldErrors = {};
@@ -45,8 +48,8 @@ export function parseTierForm(form: FormData): ParsedTierForm {
   } else if (values.name.length > VIPPS_PRODUCT_NAME_MAX_LENGTH) {
     fieldErrors.name = `Navnet kan være maks ${VIPPS_PRODUCT_NAME_MAX_LENGTH} tegn (det vises i Vipps-appen).`;
   }
-  if (values.description.length > VIPPS_PRODUCT_DESCRIPTION_MAX_LENGTH) {
-    fieldErrors.description = `Beskrivelsen kan være maks ${VIPPS_PRODUCT_DESCRIPTION_MAX_LENGTH} tegn (den vises i Vipps-appen).`;
+  if (values.description.length > MEMBERSHIP_TIER_DESCRIPTION_MAX_LENGTH) {
+    fieldErrors.description = `Beskrivelsen kan være maks ${MEMBERSHIP_TIER_DESCRIPTION_MAX_LENGTH} tegn.`;
   }
   const parsedFee = parseAnnualFee(values.annualFee);
   const fee = "fee" in parsedFee ? parsedFee.fee : Number.NaN;
@@ -72,7 +75,7 @@ export function parseTierForm(form: FormData): ParsedTierForm {
  * texts so the wording doesn't have to be invented. The price is always the
  * administrator's own — templates only carry a *suggested* amount, shown as
  * the fee field's placeholder, never as a value. Texts must stay within the
- * Vipps productName/productDescription limits enforced by parseTierForm.
+ * limits parseTierForm enforces.
  */
 export interface MembershipTierTemplate {
   /** Selects the template via the medlemskap page's `?mal=<key>` link. */

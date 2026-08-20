@@ -1,5 +1,5 @@
 ---
-import { joinEntryPointUrl } from "@stottemedlem/core";
+import { joinEntryPointUrl, MEMBERSHIP_TIER_DESCRIPTION_MAX_LENGTH } from "@stottemedlem/core";
 import {
   archiveMembershipTier,
   createMembershipTier,
@@ -13,6 +13,7 @@ import CardFooter from "@stottemedlem/ui/components/CardFooter.astro";
 import Heading from "@stottemedlem/ui/components/Heading.astro";
 import Stack from "@stottemedlem/ui/components/Stack.astro";
 import Text from "@stottemedlem/ui/components/Text.astro";
+import TextArea from "@stottemedlem/ui/components/TextArea.astro";
 import TextField from "@stottemedlem/ui/components/TextField.astro";
 import TextLink from "@stottemedlem/ui/components/TextLink.astro";
 import Shell from "../../../../layouts/Shell.astro";
@@ -140,11 +141,13 @@ const title = isNew ? "Legg til medlemskap" : `Endre ${tier?.name}`;
     <form method="post">
       <Stack gap="lg">
         <TextField label="Navn" name="name" value={values.name} required error={fieldErrors.name} />
-        <TextField
+        <TextArea
           label="Beskrivelse (valgfritt)"
           name="description"
           value={values.description}
           placeholder="F.eks. hva medlemskapet betyr for organisasjonen"
+          maxlength={MEMBERSHIP_TIER_DESCRIPTION_MAX_LENGTH}
+          hint={`Maks ${MEMBERSHIP_TIER_DESCRIPTION_MAX_LENGTH} tegn. Linjeskift er lov — teksten vises slik du skriver den på den offentlige siden, og forkortes til én linje på avtalen i Vipps-appen.`}
           error={fieldErrors.description}
         />
         <TextField

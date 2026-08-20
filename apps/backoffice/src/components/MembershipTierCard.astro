@@ -25,7 +25,13 @@ const { name, annualFeeNok, description, headingLevel = 2 } = Astro.props;
     <p class="price">
       {annualFeeNok} kr <span class="per">per år</span>
     </p>
-    {description && <Text variant="muted">{description}</Text>}
+    {
+      description && (
+        <div class="description">
+          <Text variant="muted">{description}</Text>
+        </div>
+      )
+    }
     <slot />
   </Stack>
 </Card>
@@ -44,5 +50,10 @@ const { name, annualFeeNok, description, headingLevel = 2 } = Astro.props;
     font-weight: 400;
     font-size: 1rem;
     color: var(--sm-muted);
+  }
+  /* The organization writes the description with line breaks; show it as
+     written. `white-space` inherits, so this reaches the slotted Text. */
+  .description {
+    white-space: pre-line;
   }
 </style>

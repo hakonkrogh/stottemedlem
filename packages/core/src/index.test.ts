@@ -5,13 +5,55 @@ import {
   joinEntryPointUrl,
   MEMBERSHIP_TIER_KEY_MAX_LENGTH,
   membershipTierKey,
+  normalizeMembershipTierDescription,
   orgLandingPageUrl,
   orgTermsUrl,
   slugifyOrganizationName,
   tierAgreementExternalId,
   tierKeyFromAgreementExternalId,
   VIPPS_EXTERNAL_ID_MAX_LENGTH,
+  VIPPS_PRODUCT_DESCRIPTION_MAX_LENGTH,
+  vippsProductDescription,
 } from "./index.js";
+
+describe("normalizeMembershipTierDescription", () => {
+  it("normalizes line endings and keeps intentional line breaks", () => {
+    expect(normalizeMembershipTierDescription("Første linje\r\nAndre linje")).toBe(
+      "Første linje\nAndre linje",
+    );
+    expect(normalizeMembershipTierDescription("A\n\n\n\nB")).toBe("A\n\nB");
+  });
+
+  it("keeps Norwegian letters, punctuation and emoji, drops control characters", () => {
+    expect(normalizeMembershipTierDescription("Æ, ø & å — «sitat» 100 % 🎺")).toBe(
+      "Æ, ø & å — «sitat» 100 % 🎺",
+    );
+    expect(normalizeMembershipTierDescription("ren\u0000tekst\u0007")).toBe("rentekst");
+  });
+
+  it("trims trailing spaces before line breaks and around the text", () => {
+    expect(normalizeMembershipTierDescription("  A   \nB  ")).toBe("A\nB");
+    expect(normalizeMembershipTierDescription("A\tB")).toBe("A B");
+  });
+});
+
+describe("vippsProductDescription", () => {
+  it("flattens line breaks into a single line", () => {
+    expect(vippsProductDescription("Første linje\nAndre linje")).toBe("Første linje Andre linje");
+  });
+
+  it("shortens an over-long description at a word boundary within the Vipps limit", () => {
+    const long = "Et fast årlig bidrag som går rett til korpset ".repeat(5);
+    const result = vippsProductDescription(long);
+    expect(result.length).toBeLessThanOrEqual(VIPPS_PRODUCT_DESCRIPTION_MAX_LENGTH);
+    expect(result.endsWith("…")).toBe(true);
+    expect(result).not.toContain("  ");
+  });
+
+  it("leaves a description that already fits untouched", () => {
+    expect(vippsProductDescription("Kort og godt.")).toBe("Kort og godt.");
+  });
+});
 
 describe("membershipTierKey", () => {
   it("derives a stable URL-safe key from the tier name", () => {

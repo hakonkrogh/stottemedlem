@@ -1,0 +1,94 @@
+---
+// Labeled multi-line text input with optional inline error and character
+// counter. Mirrors TextField's label/error/aria wiring; use it wherever the
+// text can run to several lines and the writer should see the whole thing.
+interface Props {
+  label: string;
+  name: string;
+  id?: string;
+  value?: string;
+  placeholder?: string;
+  rows?: number;
+  maxlength?: number;
+  required?: boolean;
+  /** Help text under the field (e.g. what the text is used for). */
+  hint?: string;
+  error?: string | null;
+}
+const {
+  label,
+  name,
+  id = name,
+  value,
+  placeholder,
+  rows = 4,
+  maxlength,
+  required,
+  hint,
+  error,
+} = Astro.props;
+const errorId = `${id}-error`;
+const hintId = `${id}-hint`;
+const describedBy = [error ? errorId : null, hint ? hintId : null].filter(Boolean).join(" ");
+---
+
+<div class="field">
+  <label for={id}>{label}</label>
+  <textarea
+    id={id}
+    name={name}
+    rows={rows}
+    maxlength={maxlength}
+    placeholder={placeholder}
+    required={required}
+    aria-invalid={error ? "true" : undefined}
+    aria-describedby={describedBy || undefined}>{value}</textarea>
+  {hint && <p class="hint" id={hintId}>{hint}</p>}
+  {error && <p class="error" id={errorId}>{error}</p>}
+</div>
+
+<style>
+  .field {
+    display: grid;
+    gap: 0.4rem;
+  }
+  label {
+    font-size: 0.9rem;
+    font-weight: 600;
+  }
+  textarea {
+    width: 100%;
+    padding: 0.65rem 0.8rem;
+    font: inherit;
+    line-height: 1.5;
+    color: var(--sm-ink);
+    background: var(--sm-surface);
+    border: 1px solid var(--sm-border-strong);
+    border-radius: var(--sm-radius-md);
+    /* Vertical only: horizontal resizing would break the card layout. */
+    resize: vertical;
+    min-height: 6rem;
+    transition: border-color 120ms ease;
+  }
+  textarea::placeholder {
+    color: color-mix(in srgb, var(--sm-muted) 60%, transparent);
+  }
+  textarea:focus-visible {
+    outline: none;
+    border-color: var(--sm-accent);
+    box-shadow: 0 0 0 3px var(--sm-focus-ring);
+  }
+  textarea[aria-invalid="true"] {
+    border-color: var(--sm-danger);
+  }
+  .hint {
+    margin: 0;
+    font-size: 0.85rem;
+    color: var(--sm-muted);
+  }
+  .error {
+    margin: 0;
+    font-size: 0.85rem;
+    color: var(--sm-danger);
+  }
+</style>

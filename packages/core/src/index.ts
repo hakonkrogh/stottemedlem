@@ -34,6 +34,47 @@ export const MEMBERSHIP_TIER_KEY_MAX_LENGTH = 24;
 export const DEFAULT_MEMBERSHIP_TIER_NAME = "Støttemedlemskap";
 
 /**
+ * Max length of a tier's own description. Deliberately LONGER than Vipps'
+ * `productDescription` (and multi-line): the description is written for the
+ * organization's landing page, and `vippsProductDescription` derives the
+ * shorter single-line form the payment provider's field can hold.
+ */
+export const MEMBERSHIP_TIER_DESCRIPTION_MAX_LENGTH = 200;
+
+/**
+ * Clean up a pasted/typed tier description without narrowing what may be
+ * written: any printable text is kept (Norwegian letters, punctuation, emoji);
+ * only line endings are normalized, tabs become spaces, other control
+ * characters are dropped, and runs of blank lines collapse to one.
+ */
+export function normalizeMembershipTierDescription(input: string): string {
+  return input
+    .replaceAll("\r\n", "\n")
+    .replaceAll("\r", "\n")
+    .replaceAll("\t", " ")
+    .replaceAll(/[\u0000-\u0008\u000B-\u001F\u007F]/g, "")
+    .replaceAll(/ +\n/g, "\n")
+    .replaceAll(/\n{3,}/g, "\n\n")
+    .trim();
+}
+
+/**
+ * The single-line form of a tier description that fits a Vipps agreement's
+ * `productDescription`: line breaks and runs of whitespace collapse to single
+ * spaces, and anything longer than the limit is cut at a word boundary with
+ * an ellipsis. The full description stays on the landing page.
+ */
+export function vippsProductDescription(description: string): string {
+  const singleLine = description.replaceAll(/\s+/g, " ").trim();
+  if (singleLine.length <= VIPPS_PRODUCT_DESCRIPTION_MAX_LENGTH) return singleLine;
+  const cut = singleLine.slice(0, VIPPS_PRODUCT_DESCRIPTION_MAX_LENGTH - 1);
+  const lastSpace = cut.lastIndexOf(" ");
+  const trimmed =
+    lastSpace > VIPPS_PRODUCT_DESCRIPTION_MAX_LENGTH / 2 ? cut.slice(0, lastSpace) : cut;
+  return `${trimmed.trimEnd()}…`;
+}
+
+/**
  * A membership tier's stable key, derived from its name when the tier is
  * created and never changed afterwards (renames change the name, not the key).
  * Unique within the organization — callers add a `-2`/`-3` suffix on collision.

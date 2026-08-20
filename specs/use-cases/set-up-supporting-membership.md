@@ -91,6 +91,9 @@ immediately. A name change never changes the slug or the public addresses.
       template (basic or VIP) that prefills name and description with
       standard texts; the price field stays empty with a suggested amount,
       and everything prefilled remains editable before and after creation.
+- [ ] The description is written in a multi-line field that shows the whole
+      text at once, accepts up to 200 characters including line breaks, and
+      the landing page shows it as written.
 - [ ] A tier's key is assigned at creation, shown to the administrator, and
       never changes — not even when the tier is renamed.
 - [ ] After setup the organization has a shareable join entry point and a live
