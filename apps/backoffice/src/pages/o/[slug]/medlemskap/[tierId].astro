@@ -1,5 +1,5 @@
 ---
-import { joinEntryPointUrl, MEMBERSHIP_TIER_DESCRIPTION_MAX_LENGTH } from "@stottemedlem/core";
+import { MEMBERSHIP_TIER_DESCRIPTION_MAX_LENGTH } from "@stottemedlem/core";
 import {
   archiveMembershipTier,
   createMembershipTier,
@@ -161,21 +161,6 @@ const title = isNew ? "Legg til medlemskap" : `Endre ${tier?.name}`;
         <Button name="action" value="save" block>{isNew ? "Legg til" : "Lagre"}</Button>
       </Stack>
     </form>
-    {
-      tier && (
-        <Stack gap="sm">
-          <Text variant="small">
-            Innmeldingslenke for dette medlemskapet:{" "}
-            <TextLink href={joinEntryPointUrl(org.slug, tier.key)}>
-              {joinEntryPointUrl(org.slug, tier.key)}
-            </TextLink>
-          </Text>
-          <Text variant="small">
-            Identifikatoren «{tier.key}» er fast og følger Vipps-avtalene til medlemskapet.
-          </Text>
-        </Stack>
-      )
-    }
     {
       canArchive && (
         <form method="post">

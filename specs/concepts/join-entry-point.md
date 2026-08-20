@@ -24,6 +24,11 @@ sharing it (link, QR code, embed) pointing at the same single destination.
   [annual fee](annual-fee.md).
 - Anyone with the entry point can start joining — it requires no login or
   invitation.
+- There is **one** entry point per organization, never one per
+  [membership tier](membership-tier.md). The product does not offer a
+  shareable link to an individual membership: the organization spreads the
+  single entry point, and a supporter picks the membership they want along
+  the way.
 - Opening it takes the supporter **directly into Vipps** to pay. The entry
   point is a hand-off, not a destination: no page of ours stands between the
   scan/click and the payment unless something genuinely cannot be obtained

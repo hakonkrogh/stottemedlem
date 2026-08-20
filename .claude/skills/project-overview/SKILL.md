@@ -23,8 +23,14 @@ lives in `specs/`, kept in sync with code by a mandatory `Stop`-hook harness.
   placeholders until first deploy. **WorkOS AuthKit login exists (step 3, done
   2026-07-08):** `src/middleware.ts` gates every route on a sealed-session cookie;
   `src/lib/workos.ts` + `src/pages/{login,callback,logout}.ts` + `orgs/` (selector,
-  create) + `o/[slug]/` (org dashboard placeholder) implement the org rule (0 orgs →
-  create, 1 → straight in, many → pick). Env/secrets come from `import { env } from
+  create) + `o/[slug]/` (org dashboard) implement the org rule (0 orgs →
+  create, 1 → straight in, many → pick). **Route map — two parallel `[slug]`
+  trees, easy to confuse:** `src/pages/o/[slug]/**` is the AUTHED admin back
+  office (dashboard `index.astro`, `medlemskap/[tierId].astro` = the one
+  add/edit membership form where `ny` means create); `src/pages/org/[slug]/**`
+  is the PUBLIC surface (landing `index.astro`, `vilkar.astro`, `banner.ts`,
+  `logo.ts`), plus `src/pages/api/qr/[slug].ts`. Admin edits call
+  `purgeOrgPublicPages` so the public copy refreshes. Env/secrets come from `import { env } from
   "cloudflare:workers"` (NOT `Astro.locals.runtime.env` — removed in Astro v6+);
   per-env WorkOS config (`WORKOS_*`) is in `wrangler.jsonc` vars/secrets + `.dev.vars`
   locally. Real sign-in needs `.dev.vars` filled + AuthKit redirect URIs registered.
@@ -90,8 +96,10 @@ lives in `specs/`, kept in sync with code by a mandatory `Stop`-hook harness.
   agreements via `productName` (≤45)/`productDescription` (≤100)/`externalId`
   (≤64) with helpers + limits in `@stottemedlem/core` (`membershipTierKey`,
   `tierAgreementExternalId` = `<tierKey ≤24>:<membershipId>`; tier `key` is
-  stable/immutable, unique per org). Landing page + vilkår enumerate tiers
-  cheapest-first with per-tier join links (`?medlemskap=<key>`). **Minimum
+  stable/immutable, unique per org; internal — never shown to admins, and the
+  back office offers no per-membership link). Landing page + vilkår enumerate
+  tiers cheapest-first; a card's own button carries the picked tier onward
+  (`?medlemskap=<key>`) — internal navigation, not a shareable address. **Minimum
   one tier** (decided 2026-08-19, replacing an earlier placeholder-offer
   idea): org creation collects the first membership's annual fee (default
   name `DEFAULT_MEMBERSHIP_TIER_NAME` from core, changeable later) and the
@@ -156,6 +164,11 @@ lives in `specs/`, kept in sync with code by a mandatory `Stop`-hook harness.
 
 ## Run / build / test
 - `pnpm install` · `pnpm dev` · `pnpm build` · `pnpm test` (vitest) · `pnpm typecheck` · `pnpm lint` (Biome) · `pnpm format`.
+- **A fresh worktree has NO `node_modules`** (nothing is shared with the main
+  checkout): `pnpm lint`/`typecheck`/`test` fail up front with `sh: biome:
+  command not found` / `turbo: command not found`, which is a missing install,
+  not a broken tree. Run `pnpm install` once per worktree first (~seconds, the
+  store is shared).
 - Single package: `pnpm turbo run <task> --filter=@stottemedlem/<name>`.
 - Build-order gotcha: the apps consume `@stottemedlem/core` / `@stottemedlem/qr`
   from their built `dist/`, so an app build needs those packages built first.
