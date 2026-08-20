@@ -1,0 +1,210 @@
+---
+import { joinEntryPointUrl, MEMBERSHIP_TIER_DESCRIPTION_MAX_LENGTH } from "@stottemedlem/core";
+import {
+  archiveMembershipTier,
+  createMembershipTier,
+  getOrganizationBySlug,
+  listMembershipTiers,
+  updateMembershipTier,
+} from "@stottemedlem/db";
+import Alert from "@stottemedlem/ui/components/Alert.astro";
+import Button from "@stottemedlem/ui/components/Button.astro";
+import CardFooter from "@stottemedlem/ui/components/CardFooter.astro";
+import Heading from "@stottemedlem/ui/components/Heading.astro";
+import Stack from "@stottemedlem/ui/components/Stack.astro";
+import Text from "@stottemedlem/ui/components/Text.astro";
+import TextArea from "@stottemedlem/ui/components/TextArea.astro";
+import TextField from "@stottemedlem/ui/components/TextField.astro";
+import TextLink from "@stottemedlem/ui/components/TextLink.astro";
+import Shell from "../../../../layouts/Shell.astro";
+import { getDb } from "../../../../lib/db";
+import {
+  getTierTemplate,
+  parseTierForm,
+  TIER_TEMPLATES,
+  type TierFieldErrors,
+  type TierFormValues,
+  tierFormValues,
+} from "../../../../lib/membershipTiers";
+import { purgeOrgPublicPages } from "../../../../lib/publicPageCache";
+import { getWorkOS, orgPath } from "../../../../lib/workos";
+
+// Creating and editing a membership tier are ONE mechanism on this subpage
+// (specs/use-cases/set-up-supporting-membership.md): /medlemskap/ny creates,
+// /medlemskap/<id> edits. The org overview lists the stored tiers (as the
+// same membership cards the public page shows) and links here — keeping the
+// form apart from the list so the stored offer is never confused with a
+// half-filled form. Successful saves land back on the overview, where the
+// change is visible in the list.
+const session = Astro.locals.session;
+if (!session) return Astro.redirect("/login");
+const slug = Astro.params.slug;
+if (!slug) return Astro.redirect("/orgs");
+
+const db = getDb();
+const org = await getOrganizationBySlug(db, slug);
+if (!org) return Astro.redirect("/orgs");
+
+const { data: memberships } = await getWorkOS().userManagement.listOrganizationMemberships({
+  userId: session.userId,
+  statuses: ["active"],
+  limit: 100,
+});
+if (!memberships.some((m) => m.organizationId === org.workosOrgId)) {
+  return Astro.redirect("/orgs");
+}
+
+const tierId = Astro.params.tierId;
+const isNew = tierId === "ny";
+const tiers = await listMembershipTiers(db, org.id);
+const tier = isNew ? null : (tiers.find((t) => t.id === tierId) ?? null);
+if (!isNew && !tier) return Astro.redirect(orgPath(org.slug));
+
+let values: TierFormValues = tier
+  ? tierFormValues(tier)
+  : { name: "", description: "", annualFee: "" };
+let fieldErrors: TierFieldErrors = {};
+let archiveError: string | null = null;
+
+// A `?mal=<key>` link prefills the create form from a standard template —
+// name and description only; the price is always the administrator's own, so
+// the template's suggested amount appears as the fee placeholder, never a
+// value (specs/concepts/membership-tier.md).
+const template =
+  isNew && Astro.request.method !== "POST"
+    ? getTierTemplate(Astro.url.searchParams.get("mal"))
+    : null;
+if (template) {
+  values = { name: template.name, description: template.description, annualFee: "" };
+}
+const feePlaceholder = String(template?.suggestedFeeNok ?? 300);
+
+if (Astro.request.method === "POST") {
+  const form = await Astro.request.formData();
+  const action = String(form.get("action") ?? "save");
+
+  if (action === "archive" && tier) {
+    const archived = await archiveMembershipTier(db, org.id, tier.id);
+    if (archived) {
+      // The public pages serve a cached copy; clear this datacenter's copy so
+      // the admin sees the change straight away (visitors self-heal on traffic).
+      await purgeOrgPublicPages(org.slug, Astro.url.origin);
+      return Astro.redirect(orgPath(org.slug));
+    }
+    archiveError =
+      "Kunne ikke arkivere medlemskapet — organisasjonen må alltid tilby minst ett medlemskap.";
+  } else if (action === "save") {
+    const parsed = parseTierForm(form);
+    values = parsed.values;
+    fieldErrors = parsed.fieldErrors;
+    if (parsed.input) {
+      if (isNew) {
+        await createMembershipTier(db, org.id, parsed.input);
+      } else if (tier) {
+        await updateMembershipTier(db, org.id, tier.id, parsed.input);
+      }
+      await purgeOrgPublicPages(org.slug, Astro.url.origin);
+      return Astro.redirect(orgPath(org.slug));
+    }
+  }
+}
+
+const canArchive = !isNew && tiers.length > 1;
+const title = isNew ? "Legg til medlemskap" : `Endre ${tier?.name}`;
+---
+
+<Shell title={`${title} — ${org.name}`}>
+  <Stack gap="lg">
+    <Stack gap="sm">
+      <Heading>{title}</Heading>
+      <Text variant="lead">
+        Medlemskapet vises på den offentlige siden til {org.name}, og navnet er det
+        støttemedlemmet ser på avtalen i Vipps-appen. Prisendringer gjelder nye innmeldinger og
+        fremtidige fornyelser.
+      </Text>
+    </Stack>
+    {archiveError && <Alert variant="error">{archiveError}</Alert>}
+    {
+      isNew && (
+        <div class="templates">
+          <Text variant="small">
+            Start fra en mal — fyller ut navn og standardtekst, prisen setter du selv:
+          </Text>
+          <div class="template-buttons">
+            {TIER_TEMPLATES.map((t) => (
+              <Button variant="secondary" href={`?mal=${t.key}`}>{t.name}</Button>
+            ))}
+          </div>
+        </div>
+      )
+    }
+    <form method="post">
+      <Stack gap="lg">
+        <TextField label="Navn" name="name" value={values.name} required error={fieldErrors.name} />
+        <TextArea
+          label="Beskrivelse (valgfritt)"
+          name="description"
+          value={values.description}
+          placeholder="F.eks. hva medlemskapet betyr for organisasjonen"
+          maxlength={MEMBERSHIP_TIER_DESCRIPTION_MAX_LENGTH}
+          hint={`Maks ${MEMBERSHIP_TIER_DESCRIPTION_MAX_LENGTH} tegn. Linjeskift er lov — teksten vises slik du skriver den på den offentlige siden, og forkortes til én linje på avtalen i Vipps-appen.`}
+          error={fieldErrors.description}
+        />
+        <TextField
+          label="Årlig kontingent (kr)"
+          name="annualFee"
+          value={values.annualFee}
+          placeholder={feePlaceholder}
+          required
+          error={fieldErrors.annualFee}
+        />
+        <Button name="action" value="save" block>{isNew ? "Legg til" : "Lagre"}</Button>
+      </Stack>
+    </form>
+    {
+      tier && (
+        <Stack gap="sm">
+          <Text variant="small">
+            Innmeldingslenke for dette medlemskapet:{" "}
+            <TextLink href={joinEntryPointUrl(org.slug, tier.key)}>
+              {joinEntryPointUrl(org.slug, tier.key)}
+            </TextLink>
+          </Text>
+          <Text variant="small">
+            Identifikatoren «{tier.key}» er fast og følger Vipps-avtalene til medlemskapet.
+          </Text>
+        </Stack>
+      )
+    }
+    {
+      canArchive && (
+        <form method="post">
+          <Stack gap="sm">
+            <Button variant="secondary" name="action" value="archive" block>
+              Arkiver medlemskapet
+            </Button>
+            <Text variant="small">
+              Arkivering fjerner medlemskapet fra den offentlige siden — historikken og
+              eksisterende medlemmer beholdes.
+            </Text>
+          </Stack>
+        </form>
+      )
+    }
+    <CardFooter>
+      <TextLink href={orgPath(org.slug)}>Tilbake til oversikten</TextLink>
+    </CardFooter>
+  </Stack>
+</Shell>
+
+<style>
+  .templates {
+    display: grid;
+    gap: 0.5rem;
+  }
+  .template-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+  }
+</style>

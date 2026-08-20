@@ -5,8 +5,9 @@
 ## Definition
 A **membership** is the relationship between a [supporting member](supporting-member.md)
 and an [organization](organization.md) for one **annual period**, established by
-paying the [annual fee](annual-fee.md). It is the core record the product tracks:
-who supported whom, for which year.
+paying the [annual fee](annual-fee.md) of one
+[membership tier](membership-tier.md). It is the core record the product
+tracks: who supported whom, at which level, for which year.
 
 ## Why it exists
 Membership is what turns a payment into something the organization can see and
@@ -24,9 +25,13 @@ over year as a history of memberships.
 - At most one membership exists per supporting member per annual period.
 - A renewal creates the next period's membership for the same supporting member,
   rather than a new person.
+- A membership belongs to one [membership tier](membership-tier.md) and records
+  the tier (and its fee at the time of payment), so history stays accurate when
+  tiers are renamed, repriced, or archived.
 
 ## Relationships
 - Links one [supporting member](supporting-member.md) to one [organization](organization.md).
+- Is a membership of one [membership tier](membership-tier.md).
 - Is paid for by one [annual fee](annual-fee.md) (the amount current at the time
   of the payment).
 

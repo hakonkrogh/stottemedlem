@@ -49,6 +49,19 @@ globals **conflict with the DOM lib** that Astro's JSX types require. Pattern us
 those. Typecheck script chains: `wrangler types && astro check && tsc -p
 tsconfig.worker.json`. Don't add `@cloudflare/workers-types` — generated types replace it.
 
+Cache API across the split (verified 2026-08-19, SWR org-page caching):
+`caches.default` exists only in the Workers types, so app code under the DOM
+tsconfig can't use it. **Named caches — `await caches.open("name")` — typecheck
+in BOTH worlds** (DOM CacheStorage and Workers) and workerd/Miniflare support
+them in `astro dev`, so shared cache logic uses a named cache. Also verified:
+the custom `src/worker.ts` fetch handler DOES run under `astro dev` (not just
+built deploys) — worker-level caching/webhook interception is curl-testable in
+dev (`x-sm-cache: hit|miss` pattern in worker.ts). Gotcha: **the local Cache
+API persists in `.wrangler/state` across dev-server restarts** — after a code
+change + restart, the first visit to a cached page still serves the PRE-change
+copy (that's SWR working, not a broken build); curl twice, or purge, before
+judging a change invisible.
+
 ## Repo-specific install gotchas
 
 - `workerd` must be in `onlyBuiltDependencies` (pnpm-workspace.yaml) — its postinstall
@@ -238,6 +251,17 @@ real account. Source: developer.vippsmobilepay.com/docs/knowledge-base/test-envi
 
 ### Vipps API mechanics (verified 2026-08-10, implemented in `packages/vipps`)
 
+- **No product-catalogue API anywhere in Vipps** (verified 2026-08-19 against
+  the Recurring v3 + Management OpenAPI specs): the Recurring surface is
+  agreements + charges only — `productName` (≤45) / `productDescription`
+  (≤100) are free text per agreement, `externalId` (≤64, not filterable in
+  the list endpoint) is a merchant-side mapping key, and the Management API's
+  "product orders" are Vipps API-product orders (e.g. ordering Faste
+  betalinger), not merchandise. Membership tiers therefore live in OUR D1
+  (`membership_tiers`) and project onto agreements via the conventions in
+  `@stottemedlem/core` (`membershipTierKey`, `tierAgreementExternalId` =
+  `<tierKey ≤24>:<membershipId>` — always ≤64 for UUID ids). Spec:
+  `specs/concepts/membership-tier.md`.
 - **Access token:** `POST /accesstoken/get` with the keys as *headers*
   (`client_id`, `client_secret`, `Ocp-Apim-Subscription-Key`,
   `Merchant-Serial-Number`). Response fields are **numbers** (`expires_in`,

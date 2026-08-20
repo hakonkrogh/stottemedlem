@@ -64,6 +64,7 @@ scope.
 | [Administrator](concepts/administrator.md) | Draft |
 | [Supporting member](concepts/supporting-member.md) | Draft |
 | [Membership](concepts/membership.md) | Draft |
+| [Membership tier](concepts/membership-tier.md) | Draft |
 | [Annual fee](concepts/annual-fee.md) | Draft |
 | [Join entry point](concepts/join-entry-point.md) | Draft |
 | [Organization landing page](concepts/org-landing-page.md) | Draft |

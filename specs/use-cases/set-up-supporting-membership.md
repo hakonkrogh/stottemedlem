@@ -21,23 +21,42 @@ From the organization's point of view:
    information. These are required — the organization's
    [landing page](../concepts/org-landing-page.md) must show them for a payment
    provider to approve recurring payments.
-2. The administrator sets the [annual fee](../concepts/annual-fee.md) — the amount
-   a supporter pays for one year of supporting membership. This is deliberately
-   **not** asked for in the creation step (deciding a price is a bigger decision
-   than naming the organization, and would stall getting started): the fee is set
-   afterwards in the back office, and until it is set the organization is treated
-   as having an incomplete profile and is prompted to finish it.
-3. The organization is given a stable slug and, from it, its public addresses: a
+2. Creating the organization includes stating its **first membership**: a
+   minimal [membership tier](../concepts/membership-tier.md) — the default
+   membership name with the [annual fee](../concepts/annual-fee.md) the
+   administrator enters. This minimum is required because the payment
+   provider evaluates the public page against a real, priced product; the
+   creation step keeps it to a single amount so it doesn't stall getting
+   started, and everything about it can be changed later.
+3. The administrator refines the membership offer in the back office. The
+   organization's **overview page lists all its memberships**, presented as
+   the very same membership cards the public landing page shows (see the
+   one-presentation rule in [membership tier](../concepts/membership-tier.md))
+   — reviewing the offer *is* seeing what supporters see. Selecting a
+   membership opens it for **editing on its own page**; after the list, an
+   **add button** opens the same page for creating a new one — creating and
+   editing a membership are one mechanism, kept apart from the overview so
+   the stored offer is never confused with a half-filled form. Standard
+   **templates** (a basic supporting membership and a VIP level) prefill the
+   name and a standard description so the wording doesn't have to be
+   invented; the administrator always sets the price (a suggested amount is
+   shown). Each tier gets a stable identifier at creation (its **key**),
+   usable in join links and stamped onto the tier's payment agreements in
+   Vipps, so agreements there can always be traced back to the tier. Tiers
+   can be renamed, repriced, and archived — never deleted — a rename never
+   changes the key, and the **last active tier cannot be archived** (the
+   organization always offers at least one membership).
+4. The organization is given a stable slug and, from it, its public addresses: a
    shareable [join entry point](../concepts/join-entry-point.md) (e.g. a link the
    organization can put on its site or social media, or a
    [QR code card](promote-with-qr-card.md) for posters and external websites)
    and its [landing page](../concepts/org-landing-page.md) with the sales-terms
    page — the two URLs the payment-provider order form asks for.
-4. The administrator connects the organization's own Vipps agreement by adding
+5. The administrator connects the organization's own Vipps agreement by adding
    its [Vipps API keys](../concepts/vipps-api-keys.md). The product proves the
    keys work with a live check against Vipps before keeping them; until they
    are added, the back office prompts for them.
-5. Once configured, the organization is ready to receive supporting members; no
+6. Once configured, the organization is ready to receive supporting members; no
    further setup is required to take the first payment.
 
 An organization created before a profile field was required (or before this
@@ -55,12 +74,28 @@ be replaced or removed at any time, and changes show on the public page
 immediately. A name change never changes the slug or the public addresses.
 
 ## Acceptance criteria
-- [ ] An administrator can create the organization with its public name and
-      profile (organisasjonsnummer, contact information); those fields are
-      required at creation, while the annual fee is **not** asked for there.
-- [ ] The annual fee is set after creation in the back office; until it is set,
-      the organization counts as having an incomplete profile (and the landing
-      page shows no price).
+- [ ] An administrator can create the organization with its public name,
+      profile (organisasjonsnummer, contact information), and the first
+      membership's annual fee; all are required at creation, and the created
+      organization immediately offers one membership at that fee under the
+      default membership name.
+- [ ] Membership tiers are managed after creation in the back office: the
+      administrator can add a tier (name, optional description, annual fee),
+      edit it, and archive it — except the last active tier, which cannot be
+      archived, so the organization always offers at least one membership.
+- [ ] The organization's overview lists every active membership as the same
+      membership card the public landing page shows; selecting one opens it
+      for editing on its own page, and an add button after the list opens the
+      same page for creating a new one.
+- [ ] When adding a tier, the administrator can start from a standard
+      template (basic or VIP) that prefills name and description with
+      standard texts; the price field stays empty with a suggested amount,
+      and everything prefilled remains editable before and after creation.
+- [ ] The description is written in a multi-line field that shows the whole
+      text at once, accepts up to 200 characters including line breaks, and
+      the landing page shows it as written.
+- [ ] A tier's key is assigned at creation, shown to the administrator, and
+      never changes — not even when the tier is renamed.
 - [ ] After setup the organization has a shareable join entry point and a live
       landing page + sales-terms page at stable addresses.
 - [ ] An organization missing required profile fields sees a prompt in the back
@@ -72,24 +107,27 @@ immediately. A name change never changes the slug or the public addresses.
       ever shown masked.
 - [ ] A supporter using that entry point can complete
       [joining](join-as-supporting-member.md) without further admin action.
-- [ ] The annual fee can be changed later; the change applies to future joins and
-      renewals, not retroactively to fees already paid.
+- [ ] A tier's annual fee can be changed later; the change applies to future
+      joins and renewals, not retroactively to fees already paid.
 - [ ] An administrator can edit the organization's name and profile, and upload,
       replace, or remove a logo and a banner image in the back office; the
-      landing page reflects the change immediately, and a name change never
-      changes the slug.
+      landing page picks the change up on its own (at the latest from the next
+      visit — see [landing page](../concepts/org-landing-page.md) freshness),
+      and a name change never changes the slug.
 - [ ] An administrator can choose the banner's focal point by dragging the
       visible-area frame in the settings preview; the landing page crops the
       banner around that point.
 
 ## Out of scope
-- Multiple membership tiers or variable pricing (single annual fee only for now).
+- Variable or pay-what-you-want pricing (every tier has one fixed annual fee).
+- Reordering tiers by hand (they are presented cheapest first).
 - Theming beyond the name, logo, and banner image (no custom colors, fonts, or
   page layouts).
 - Tax/receipt configuration.
 
 ## Related
 - [Concept: Organization](../concepts/organization.md)
+- [Concept: Membership tier](../concepts/membership-tier.md)
 - [Concept: Annual fee](../concepts/annual-fee.md)
 - [Concept: Vipps API keys](../concepts/vipps-api-keys.md)
 - [Concept: Join entry point](../concepts/join-entry-point.md)

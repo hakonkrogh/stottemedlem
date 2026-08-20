@@ -1,34 +1,94 @@
 import { describe, expect, it } from "vitest";
 import {
   formatOrganisasjonsnummer,
-  greetMember,
   isValidOrganisasjonsnummer,
   joinEntryPointUrl,
-  type Member,
+  MEMBERSHIP_TIER_KEY_MAX_LENGTH,
+  membershipTierKey,
+  normalizeMembershipTierDescription,
   orgLandingPageUrl,
   orgTermsUrl,
   slugifyOrganizationName,
-  tierLabel,
+  tierAgreementExternalId,
+  tierKeyFromAgreementExternalId,
+  VIPPS_EXTERNAL_ID_MAX_LENGTH,
+  VIPPS_PRODUCT_DESCRIPTION_MAX_LENGTH,
+  vippsProductDescription,
 } from "./index.js";
 
-const member: Member = {
-  id: "1",
-  name: "Ada",
-  email: "ada@example.com",
-  tier: "patron",
-  joinedAt: new Date("2026-01-01"),
-};
+describe("normalizeMembershipTierDescription", () => {
+  it("normalizes line endings and keeps intentional line breaks", () => {
+    expect(normalizeMembershipTierDescription("Første linje\r\nAndre linje")).toBe(
+      "Første linje\nAndre linje",
+    );
+    expect(normalizeMembershipTierDescription("A\n\n\n\nB")).toBe("A\n\nB");
+  });
 
-describe("tierLabel", () => {
-  it("maps tiers to Norwegian labels", () => {
-    expect(tierLabel("supporter")).toBe("Støttemedlem");
-    expect(tierLabel("patron")).toBe("Æresmedlem");
+  it("keeps Norwegian letters, punctuation and emoji, drops control characters", () => {
+    expect(normalizeMembershipTierDescription("Æ, ø & å — «sitat» 100 % 🎺")).toBe(
+      "Æ, ø & å — «sitat» 100 % 🎺",
+    );
+    expect(normalizeMembershipTierDescription("ren\u0000tekst\u0007")).toBe("rentekst");
+  });
+
+  it("trims trailing spaces before line breaks and around the text", () => {
+    expect(normalizeMembershipTierDescription("  A   \nB  ")).toBe("A\nB");
+    expect(normalizeMembershipTierDescription("A\tB")).toBe("A B");
   });
 });
 
-describe("greetMember", () => {
-  it("greets a member by name and tier", () => {
-    expect(greetMember(member)).toBe("Velkommen, Ada! (Æresmedlem)");
+describe("vippsProductDescription", () => {
+  it("flattens line breaks into a single line", () => {
+    expect(vippsProductDescription("Første linje\nAndre linje")).toBe("Første linje Andre linje");
+  });
+
+  it("shortens an over-long description at a word boundary within the Vipps limit", () => {
+    const long = "Et fast årlig bidrag som går rett til korpset ".repeat(5);
+    const result = vippsProductDescription(long);
+    expect(result.length).toBeLessThanOrEqual(VIPPS_PRODUCT_DESCRIPTION_MAX_LENGTH);
+    expect(result.endsWith("…")).toBe(true);
+    expect(result).not.toContain("  ");
+  });
+
+  it("leaves a description that already fits untouched", () => {
+    expect(vippsProductDescription("Kort og godt.")).toBe("Kort og godt.");
+  });
+});
+
+describe("membershipTierKey", () => {
+  it("derives a stable URL-safe key from the tier name", () => {
+    expect(membershipTierKey("Støttemedlemskap")).toBe("stottemedlemskap");
+    expect(membershipTierKey("Gullmedlem — Æresrekke")).toBe("gullmedlem-aeresrekke");
+  });
+
+  it("caps the key length without leaving a trailing hyphen", () => {
+    const key = membershipTierKey("Et veldig langt navn på et medlemskapsnivå");
+    expect(key.length).toBeLessThanOrEqual(MEMBERSHIP_TIER_KEY_MAX_LENGTH);
+    expect(key.endsWith("-")).toBe(false);
+  });
+
+  it("falls back when nothing key-worthy remains", () => {
+    expect(membershipTierKey("!!!")).toBe("medlemskap");
+  });
+});
+
+describe("tierAgreementExternalId", () => {
+  it("joins tier key and membership id, and parses back", () => {
+    const membershipId = crypto.randomUUID();
+    const externalId = tierAgreementExternalId("gullmedlem", membershipId);
+    expect(externalId).toBe(`gullmedlem:${membershipId}`);
+    expect(tierKeyFromAgreementExternalId(externalId)).toBe("gullmedlem");
+  });
+
+  it("always fits Vipps' externalId limit for max-length keys and UUID ids", () => {
+    const key = "x".repeat(MEMBERSHIP_TIER_KEY_MAX_LENGTH);
+    const externalId = tierAgreementExternalId(key, crypto.randomUUID());
+    expect(externalId.length).toBeLessThanOrEqual(VIPPS_EXTERNAL_ID_MAX_LENGTH);
+  });
+
+  it("returns null for external ids not written by the convention", () => {
+    expect(tierKeyFromAgreementExternalId("no-colon-here")).toBeNull();
+    expect(tierKeyFromAgreementExternalId(":starts-with-colon")).toBeNull();
   });
 });
 
@@ -48,6 +108,12 @@ describe("joinEntryPointUrl", () => {
   it("builds the stable entry point on the canonical punycode origin", () => {
     expect(joinEntryPointUrl("nordnes-skolekorps")).toBe(
       "https://xn--stttemedlem-hgb.no/bli-med/nordnes-skolekorps",
+    );
+  });
+
+  it("can point at a specific membership tier by key", () => {
+    expect(joinEntryPointUrl("nordnes-skolekorps", "gullmedlem")).toBe(
+      "https://xn--stttemedlem-hgb.no/bli-med/nordnes-skolekorps?medlemskap=gullmedlem",
     );
   });
 });

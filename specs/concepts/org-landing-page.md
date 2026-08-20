@@ -7,7 +7,8 @@ The **organization landing page** is a public web page the product hosts for
 every [organization](organization.md), at a stable address derived from the
 organization's slug. It presents the organization's public profile — name,
 organisasjonsnummer, contact information — together with the supporting
-membership offer and its [annual fee](annual-fee.md), and links to a standard
+membership offer: the organization's [membership tiers](membership-tier.md)
+with their [annual fees](annual-fee.md), and links to a standard
 **sales-terms page** (salgsvilkår) for the membership. Both pages are reachable
 by anyone, with no login.
 
@@ -35,13 +36,22 @@ shareable public home for prospective supporting members.
   subheadline that explains in plain words what the page is for and restates
   the product's promise — a membership that renews year by year, puts the
   supporter on the organization's member list, and makes their support count
-  over time. The subheadline outlines the membership offer(s) the organization
-  has: with a single offer (all an organization can have today) it simply
-  describes that one membership and its [annual fee](annual-fee.md); it never
-  enumerates options that don't exist.
+  over time. The subheadline outlines the membership offer the organization
+  has: with a single [tier](membership-tier.md) it simply describes that one
+  membership and its [annual fee](annual-fee.md); with several tiers it says
+  the supporter can choose between them; it never enumerates options that
+  don't exist.
+- The page presents the organization's active
+  [membership tiers](membership-tier.md) as the offer, cheapest first — each
+  with its name, description (when set), annual fee, and a join call to
+  action for that tier. Archived tiers never appear. There is always at least
+  one tier to show (see [membership tier](membership-tier.md): the first is
+  stated when the organization is created), so the page always presents a
+  real, priced offer — which is exactly what payment-provider approval
+  evaluates it against.
 - The landing page shows what payment-provider verification requires: the
   organization's public name, organisasjonsnummer, contact information, and
-  the supporting membership with its current [annual fee](annual-fee.md).
+  the supporting membership(s) with current [annual fees](annual-fee.md).
   The product requires these fields of the organization (see
   [Set up a supporting membership](../use-cases/set-up-supporting-membership.md));
   a field the organization has not yet provided is omitted rather than shown
@@ -73,10 +83,17 @@ shareable public home for prospective supporting members.
   QR codes still hand off directly to payment, never via the landing page.
 - Both pages carry the [brand attribution](brand-attribution.md) and must be
   indexable (payment-provider verification must be able to read them).
+- Both pages are served **instantly from a saved copy** rather than assembled
+  on every request, so they stay fast and stay up even when the rest of the
+  product is busy. Every visit refreshes the saved copy in the background:
+  after the organization changes its profile, tiers, or imagery, one visit may
+  still see the previous version, and every visit after that sees the update.
+  Nothing an administrator must do — the page heals itself on traffic.
 
 ## Relationships
 - Belongs to one [organization](organization.md); shows its
-  [annual fee](annual-fee.md).
+  [membership tiers](membership-tier.md) and their
+  [annual fees](annual-fee.md).
 - Links to the [join entry point](join-entry-point.md) — a signpost to it, not
   a step within it.
 - Carries the [brand attribution](brand-attribution.md).

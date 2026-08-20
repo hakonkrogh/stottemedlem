@@ -14,10 +14,10 @@ const base: Organization = {
 };
 
 describe("isProfileComplete", () => {
-  it("is complete only when orgnr, contact email and annual fee are all set", () => {
-    expect(isProfileComplete(base)).toBe(true);
-    expect(isProfileComplete({ ...base, orgnr: null })).toBe(false);
-    expect(isProfileComplete({ ...base, contactEmail: null })).toBe(false);
-    expect(isProfileComplete({ ...base, annualFeeNok: null })).toBe(false);
+  it("is complete only when orgnr, contact email and at least one tier are set", () => {
+    expect(isProfileComplete(base, 1)).toBe(true);
+    expect(isProfileComplete({ ...base, orgnr: null }, 1)).toBe(false);
+    expect(isProfileComplete({ ...base, contactEmail: null }, 1)).toBe(false);
+    expect(isProfileComplete(base, 0)).toBe(false);
   });
 });

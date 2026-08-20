@@ -1,12 +1,12 @@
 ---
 import { formatOrganisasjonsnummer, joinEntryPointUrl, orgTermsUrl } from "@stottemedlem/core";
-import { getOrganizationBySlug } from "@stottemedlem/db";
+import { getOrganizationBySlug, listMembershipTiers } from "@stottemedlem/db";
 import Button from "@stottemedlem/ui/components/Button.astro";
-import Card from "@stottemedlem/ui/components/Card.astro";
 import Heading from "@stottemedlem/ui/components/Heading.astro";
 import Stack from "@stottemedlem/ui/components/Stack.astro";
 import Text from "@stottemedlem/ui/components/Text.astro";
 import TextLink from "@stottemedlem/ui/components/TextLink.astro";
+import MembershipTierCard from "../../../components/MembershipTierCard.astro";
 import PublicShell from "../../../layouts/PublicShell.astro";
 import { getDb } from "../../../lib/db";
 import { orgImageUrl } from "../../../lib/orgImages";
@@ -17,22 +17,33 @@ import { orgImageUrl } from "../../../lib/orgImages";
 // price — and link the salgsvilkår. It is also the org's shareable home for
 // prospective supporters; the CTA hands off to the join entry point.
 const slug = Astro.params.slug;
-const org = slug ? await getOrganizationBySlug(getDb(), slug) : null;
+const db = getDb();
+const org = slug ? await getOrganizationBySlug(db, slug) : null;
 if (!org) return new Response("Fant ikke organisasjonen", { status: 404 });
+// The organization's membership offer: its active tiers, cheapest first
+// (specs/concepts/membership-tier.md). Every organization states its first
+// membership at creation, so there is always at least one tier to show —
+// zero happens only for organizations predating tiers, which the back office
+// prompts to fix.
+const tiers = await listMembershipTiers(db, org.id);
 
 const title = `${org.name} — bli støttemedlem`;
 const description = `Bli støttemedlem i ${org.name} og støtt arbeidet med et fast årlig bidrag.`;
 
 // The hero copy invites the visitor to become a supporting member and explains
-// the offer in plain words. The org offers a single membership today, so the
-// subheadline describes that one option (with the fee when it is set) and
-// restates the product's promise: an annual membership that renews year by
-// year, puts you on the org's member list, and makes your support count.
-const feePhrase =
-  org.annualFeeNok !== null
-    ? `en fast årlig kontingent på ${org.annualFeeNok} kr`
-    : "en fast årlig kontingent";
-const subheadIntro = `Dette er støttemedlemssiden til ${org.name}. Her tegner du et støttemedlemskap — ${feePhrase} som går direkte til arbeidet i organisasjonen.`;
+// the offer in plain words: with one tier it describes that membership and its
+// fee, with several it says the visitor chooses between them, and it never
+// enumerates options that don't exist. It always restates the product's
+// promise: an annual membership that renews year by year, puts you on the
+// org's member list, and makes your support count.
+const singleTier = tiers.length === 1 ? tiers[0] : undefined;
+const feePhrase = singleTier
+  ? `en fast årlig kontingent på ${singleTier.annualFeeNok} kr`
+  : "en fast årlig kontingent";
+const subheadIntro =
+  tiers.length > 1
+    ? `Dette er støttemedlemssiden til ${org.name}. Her tegner du et støttemedlemskap — velg mellom ${tiers.length} typer medlemskap, hvert med en fast årlig kontingent som går direkte til arbeidet i organisasjonen.`
+    : `Dette er støttemedlemssiden til ${org.name}. Her tegner du et støttemedlemskap — ${feePhrase} som går direkte til arbeidet i organisasjonen.`;
 const subheadPromise =
   "Medlemskapet fornyes år for år så lenge du vil være med: du står på organisasjonens liste over støttemedlemmer, hører fra dem gjennom året, og støtten din teller for hvert år som går.";
 
@@ -67,26 +78,35 @@ const bannerFocus = `${org.bannerFocusX ?? 50}% ${org.bannerFocusY ?? 50}%`;
       </Stack>
     </Stack>
 
-    <Card>
-      <Stack gap="md">
-        <Heading level={2}>Støttemedlemskap</Heading>
-        {
-          org.annualFeeNok !== null && (
-            <p class="price">
-              {org.annualFeeNok} kr <span class="per">per år</span>
-            </p>
-          )
-        }
-        <Text variant="muted">
-          Medlemskapet betales med Vipps og fornyes automatisk hvert år til du sier opp. Du får
-          varsel i Vipps-appen før hver fornyelse.
-        </Text>
-        <Button href={joinEntryPointUrl(org.slug)} block>Bli støttemedlem med Vipps</Button>
-        <Text variant="small">
-          <TextLink href={orgTermsUrl(org.slug)}>Salgsvilkår</TextLink>
-        </Text>
-      </Stack>
-    </Card>
+    {
+      tiers.map((tier) => (
+        <MembershipTierCard
+          name={tier.name}
+          annualFeeNok={tier.annualFeeNok}
+          description={tier.description}
+        >
+          <Button
+            href={tiers.length > 1 ? joinEntryPointUrl(org.slug, tier.key) : joinEntryPointUrl(org.slug)}
+            block
+          >
+            Bli støttemedlem med Vipps
+          </Button>
+        </MembershipTierCard>
+      ))
+    }
+    <Stack gap="sm">
+      {
+        tiers.length > 0 && (
+          <Text variant="muted">
+            Medlemskapet betales med Vipps og fornyes automatisk hvert år til du sier opp. Du får
+            varsel i Vipps-appen før hver fornyelse.
+          </Text>
+        )
+      }
+      <Text variant="small">
+        <TextLink href={orgTermsUrl(org.slug)}>Salgsvilkår</TextLink>
+      </Text>
+    </Stack>
 
     <Stack gap="sm">
       <Heading level={3}>Om organisasjonen</Heading>
@@ -186,20 +206,6 @@ const bannerFocus = `${org.bannerFocusX ?? 50}% ${org.bannerFocusY ?? 50}%`;
   .has-banner .logo {
     margin-top: -3.25rem;
     margin-left: 1rem;
-  }
-  .price {
-    margin: 0;
-    font-family: var(--sm-font-display);
-    font-weight: var(--sm-font-display-weight, 600);
-    font-variation-settings: var(--sm-font-display-variation, normal);
-    font-size: 2rem;
-    line-height: 1.1;
-  }
-  .price .per {
-    font-family: var(--sm-font-sans);
-    font-weight: 400;
-    font-size: 1rem;
-    color: var(--sm-muted);
   }
   dl {
     margin: 0;

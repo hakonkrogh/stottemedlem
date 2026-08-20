@@ -1,0 +1,59 @@
+---
+// THE membership card (specs/concepts/membership-tier.md, one-presentation
+// rule): a tier is shown the same way on every surface — the public landing
+// page and the back office alike — so the membership has one recognizable
+// identity. Name, annual fee, optional description; surface-specific content
+// (the public join CTA, the back office's edit hint) comes via the slot.
+import Card from "@stottemedlem/ui/components/Card.astro";
+import Heading from "@stottemedlem/ui/components/Heading.astro";
+import Stack from "@stottemedlem/ui/components/Stack.astro";
+import Text from "@stottemedlem/ui/components/Text.astro";
+
+interface Props {
+  name: string;
+  annualFeeNok: number;
+  description?: string | null;
+  /** Heading level of the tier name, so it nests correctly per surface. */
+  headingLevel?: 2 | 3;
+}
+const { name, annualFeeNok, description, headingLevel = 2 } = Astro.props;
+---
+
+<Card>
+  <Stack gap="md">
+    <Heading level={headingLevel}>{name}</Heading>
+    <p class="price">
+      {annualFeeNok} kr <span class="per">per år</span>
+    </p>
+    {
+      description && (
+        <div class="description">
+          <Text variant="muted">{description}</Text>
+        </div>
+      )
+    }
+    <slot />
+  </Stack>
+</Card>
+
+<style>
+  .price {
+    margin: 0;
+    font-family: var(--sm-font-display);
+    font-weight: var(--sm-font-display-weight, 600);
+    font-variation-settings: var(--sm-font-display-variation, normal);
+    font-size: 2rem;
+    line-height: 1.1;
+  }
+  .price .per {
+    font-family: var(--sm-font-sans);
+    font-weight: 400;
+    font-size: 1rem;
+    color: var(--sm-muted);
+  }
+  /* The organization writes the description with line breaks; show it as
+     written. `white-space` inherits, so this reaches the slotted Text. */
+  .description {
+    white-space: pre-line;
+  }
+</style>

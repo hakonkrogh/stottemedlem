@@ -23,7 +23,11 @@ export const organizations = sqliteTable("organizations", {
   orgnr: text("orgnr"),
   /** Public contact address shown on the landing page and in sales terms. */
   contactEmail: text("contact_email"),
-  /** The annual fee in whole NOK (specs/concepts/annual-fee.md). */
+  /**
+   * LEGACY single annual fee in whole NOK. Superseded by membership tiers
+   * (migration 0004 backfilled it into a tier); kept because migrations are
+   * additive. New code reads/writes tiers, never this column.
+   */
   annualFeeNok: integer("annual_fee_nok"),
   /** R2 object key for the uploaded logo; null when none uploaded. */
   logoKey: text("logo_key"),
@@ -40,3 +44,32 @@ export const organizations = sqliteTable("organizations", {
 
 export type Organization = typeof organizations.$inferSelect;
 export type NewOrganization = typeof organizations.$inferInsert;
+
+/**
+ * Membership tiers (specs/concepts/membership-tier.md) — the organization's
+ * catalogue of supporting-membership levels. The product is the catalogue's
+ * system of record (Vipps has no product-catalogue API); each tier is
+ * projected onto the Vipps agreements created for it. `key` is the stable
+ * per-org identifier assigned at creation and never changed; tiers are
+ * archived, never deleted, because memberships reference them.
+ */
+export const membershipTiers = sqliteTable("membership_tiers", {
+  id: text("id").primaryKey(),
+  orgId: text("org_id")
+    .notNull()
+    .references(() => organizations.id),
+  /** Stable URL-safe identifier, unique within the org. Never changes. */
+  key: text("key").notNull(),
+  /** Tier name; ≤45 chars so it fits a Vipps agreement's productName. */
+  name: text("name").notNull(),
+  /** Optional description; ≤100 chars so it fits Vipps' productDescription. */
+  description: text("description"),
+  /** The tier's annual fee in whole NOK (specs/concepts/annual-fee.md). */
+  annualFeeNok: integer("annual_fee_nok").notNull(),
+  /** Set when the tier is archived; archived tiers are hidden, never deleted. */
+  archivedAt: text("archived_at"),
+  createdAt: text("created_at").notNull().default(sql`(datetime('now'))`),
+});
+
+export type MembershipTier = typeof membershipTiers.$inferSelect;
+export type NewMembershipTier = typeof membershipTiers.$inferInsert;

@@ -20,8 +20,11 @@ From the supporter's point of view:
 
 1. The supporter opens the organization's
    [join entry point](../concepts/join-entry-point.md) and lands directly in
-   **Vipps**, seeing who they are supporting and the
-   [annual fee](../concepts/annual-fee.md).
+   **Vipps**, seeing who they are supporting, the
+   [membership tier](../concepts/membership-tier.md) they are joining (by
+   name), and its [annual fee](../concepts/annual-fee.md). A join link or QR
+   code may point at a specific tier; when the organization has several tiers
+   and the entry point names none, the supporter chooses one first.
 2. The minimum identity needed to be listed as a
    [supporting member](../concepts/supporting-member.md) (e.g. name and a contact
    such as email) comes from the supporter's Vipps profile, with their consent —
@@ -37,7 +40,8 @@ From the supporter's point of view:
 - [ ] A supporter can complete joining and payment without the administrator
       doing anything in the moment.
 - [ ] A successful payment creates an active [membership](../concepts/membership.md)
-      for the current annual period, attributed to the named supporter.
+      of the chosen [tier](../concepts/membership-tier.md) for the current
+      annual period, attributed to the named supporter.
 - [ ] The supporter is told their membership is active and its valid-until date.
 - [ ] A failed or abandoned payment does not create an active membership.
 
