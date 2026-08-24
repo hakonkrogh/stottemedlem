@@ -43,11 +43,15 @@ From the supporting member's point of view:
 ## Out of scope
 - General-purpose newsletters/CRM campaigns, segmentation beyond membership
   status, and analytics — this is member communication, not a marketing tool.
-- Transactional payment/renewal notices (covered by
-  [Renew annual membership](renew-annual-membership.md)).
+- [Member notices](../concepts/member-notice.md) — what the product tells a
+  member about their own membership and money. Those are sent by the product,
+  not composed by an administrator, and cannot be declined; declining *these*
+  messages never stops them.
 
 ## Related
 - [Concept: Supporting member](../concepts/supporting-member.md)
+- [Concept: Member notice](../concepts/member-notice.md) — the deliberate
+  opposite of this use case, and where opting out stops applying
 - [Concept: Organization](../concepts/organization.md)
 - [Use case: Curate the member list](curate-member-list.md) — provides the
   register this use case acts on.
