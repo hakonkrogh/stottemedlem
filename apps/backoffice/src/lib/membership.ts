@@ -1,6 +1,7 @@
 import { env } from "cloudflare:workers";
 import {
   annualPeriodFor,
+  memberSelfServicePath,
   proratedJoinFeeNok,
   tierAgreementExternalId,
   VIPPS_PRODUCT_NAME_MAX_LENGTH,
@@ -83,7 +84,7 @@ export async function startJoin(
       merchantRedirectUrl: `${origin}/bli-medlem/${org.slug}/kvittering`,
       // The member's own page, reached from their Vipps app. The token is what
       // makes it theirs — see the manage_token column.
-      merchantAgreementUrl: `${origin}/bli-medlem/${org.slug}/min-side?n=${manageToken}`,
+      merchantAgreementUrl: `${origin}${memberSelfServicePath(org.slug, manageToken)}`,
       productName: `${tier.name} — ${org.name}`.slice(0, VIPPS_PRODUCT_NAME_MAX_LENGTH),
       productDescription: vippsProductDescription(
         tier.description ?? `Årlig støttemedlemskap i ${org.name}.`,
@@ -177,11 +178,7 @@ export async function syncAgreement(
  * receiver, the receipt page, or the nightly sweep that reads charges back
  * without waiting to be told (specs/concepts/payment-reconciliation.md).
  */
-export async function applyCharge(
-  db: Db,
-  vippsAgreementId: string,
-  charge: Charge,
-): Promise<void> {
+export async function applyCharge(db: Db, vippsAgreementId: string, charge: Charge): Promise<void> {
   const periodYear = Number(charge.due.slice(0, 4));
 
   await recordCharge(db, vippsAgreementId, {

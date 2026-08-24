@@ -168,6 +168,17 @@ export function joinPageTermsUrl(slug: string): string {
 }
 
 /**
+ * The member's own page for one membership (see
+ * specs/concepts/member-self-service.md) — where they see what they pay and
+ * can stop it. The token is the whole of its security: it stands in for a
+ * login, so this address only ever goes to the member, through their payment
+ * app or a notice addressed to them.
+ */
+export function memberSelfServicePath(slug: string, manageToken: string): string {
+  return `${joinPagePath(slug)}/min-side?n=${encodeURIComponent(manageToken)}`;
+}
+
+/**
  * Validate a Norwegian organisasjonsnummer: 9 digits with a MOD11 check digit
  * (weights 3,2,7,6,5,4,3,2). Accepts digits with optional spaces.
  */

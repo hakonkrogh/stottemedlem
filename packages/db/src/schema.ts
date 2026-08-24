@@ -220,3 +220,39 @@ export const membershipCharges = sqliteTable("membership_charges", {
 
 export type MembershipCharge = typeof membershipCharges.$inferSelect;
 export type NewMembershipCharge = typeof membershipCharges.$inferInsert;
+
+/**
+ * The kinds of thing the product tells a member about their own membership.
+ * Necessary notices, not the organization's own messages
+ * (specs/concepts/member-notice.md).
+ */
+export type MemberNoticeKind = "fee-change";
+
+/**
+ * Notices actually delivered to a supporting member.
+ *
+ * A row exists only for a message that went out, which is what makes it
+ * evidence: it answers "was this member told, and when?", and that answer
+ * decides what they may be charged at their next renewal
+ * (specs/use-cases/change-the-annual-fee.md). A failed send records nothing
+ * and is retried, rather than quietly counting as having told them.
+ */
+export const memberNotices = sqliteTable("member_notices", {
+  id: text("id").primaryKey(),
+  orgId: text("org_id")
+    .notNull()
+    .references(() => organizations.id),
+  memberId: text("member_id")
+    .notNull()
+    .references(() => supportingMembers.id),
+  agreementId: text("agreement_id").references(() => membershipAgreements.id),
+  kind: text("kind").$type<MemberNoticeKind>().notNull(),
+  tierId: text("tier_id").references(() => membershipTiers.id),
+  /** The annual fee announced, and the one the member knew before it. */
+  feeNok: integer("fee_nok"),
+  previousFeeNok: integer("previous_fee_nok"),
+  sentAt: text("sent_at").notNull().default(sql`(datetime('now'))`),
+});
+
+export type MemberNotice = typeof memberNotices.$inferSelect;
+export type NewMemberNotice = typeof memberNotices.$inferInsert;
