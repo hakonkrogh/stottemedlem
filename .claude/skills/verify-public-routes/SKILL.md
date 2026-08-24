@@ -24,9 +24,15 @@ holds rather than assuming it:
 
     d1.sh "SELECT count(*) AS n FROM memberships WHERE period_year = 2026"
 
-**Not seeded yet:** `seed.sh` writes an org + tiers but no members. Once the
-join flow lands, extend it with a supporting member, an ACTIVE agreement and a
-current-year membership, so member-list screens have a baseline.
+`seed.sh` also writes ONE supporting member with an ACTIVE agreement, a
+captured charge and a current-year membership, so member-list queries have a
+baseline. It is a single happy-path member — the member list's other states
+(lapsed, no name, approved-but-not-yet-paid) are covered by Storybook fixtures
+in `apps/backoffice/src/components/memberFixtures.ts`, not by the seed. Note
+the seeded org (`org-seed-1`/`wos-seed-1`) is fictitious and belongs to no
+WorkOS organization, so **no real login can open its back-office pages** — to
+click through an auth-gated screen with data, seed rows against your own org's
+id instead.
 
 ## Seed first (pages read D1)
 

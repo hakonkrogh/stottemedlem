@@ -1,0 +1,93 @@
+---
+// One line of the member list (specs/use-cases/curate-member-list.md). Status
+// is the loudest thing on the row, because "who is current" is the question
+// the list exists to answer; the whole row is the link to the member.
+import type { MemberOverview } from "@stottemedlem/db";
+
+interface Props {
+  entry: MemberOverview;
+  href: string;
+}
+const { entry, href } = Astro.props;
+const { member, latest, status, renewing } = entry;
+
+// A supporter may consent to a name and nothing else, or to no name at all.
+// Whatever we have, show something a person can recognize rather than an id.
+const displayName = member.name || member.email || member.phone || "Uten navn";
+const contact = member.name ? (member.email ?? member.phone) : member.phone;
+// Someone recorded but with no completed payment is not lapsed — they have
+// never been current. Calling that "Utløpt" would read as a member who left.
+const standing = latest ? status : "unpaid";
+const label = { active: "Aktiv", lapsed: "Utløpt", unpaid: "Ikke betalt" }[standing];
+const period = latest
+  ? status === "active"
+    ? `Betalt for ${latest.periodYear}`
+    : `Siste periode ${latest.periodYear}`
+  : "Ingen periode betalt ennå";
+---
+
+<a class="row" href={href}>
+  <span class="name">{displayName}</span>
+  {contact && <span class="contact">{contact}</span>}
+  <span class="meta">
+    <span class:list={["pill", standing]}>{label}</span>
+    <span class="period">{period}{renewing && latest ? " · fornyes" : ""}</span>
+  </span>
+</a>
+
+<style>
+  .row {
+    display: grid;
+    gap: 0.3rem;
+    padding: 0.75rem 1rem;
+    background: var(--sm-surface);
+    border: 1px solid var(--sm-border);
+    border-radius: var(--sm-radius-md);
+    color: inherit;
+    text-decoration: none;
+  }
+  .row:hover,
+  .row:focus-visible {
+    border-color: var(--sm-accent);
+  }
+  .row:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px var(--sm-focus-ring);
+  }
+  .name {
+    font-weight: 600;
+    overflow-wrap: anywhere;
+  }
+  .contact,
+  .period {
+    font-size: 0.85rem;
+    color: var(--sm-muted);
+    overflow-wrap: anywhere;
+  }
+  .meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.4rem;
+    margin-top: 0.15rem;
+  }
+  .pill {
+    padding: 0.15rem 0.5rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    border-radius: 999px;
+    border: 1px solid transparent;
+    white-space: nowrap;
+  }
+  .pill.active {
+    color: var(--sm-success);
+    background: var(--sm-success-bg);
+    border-color: var(--sm-success-border);
+  }
+  .pill.lapsed,
+  .pill.unpaid {
+    color: var(--sm-muted);
+    background: var(--sm-bg);
+    border-color: var(--sm-border-strong);
+  }
+</style>

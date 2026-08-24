@@ -1,0 +1,81 @@
+---
+// The member list (specs/use-cases/curate-member-list.md) — the one thing the
+// product exists to give an organization. Everything shown is derived: a member
+// is current because this year's fee was paid, never because somebody said so,
+// and this screen offers no way to change that.
+import { countMembersByStatus, matchesMemberSearch, type MemberOverview } from "@stottemedlem/db";
+import Button from "@stottemedlem/ui/components/Button.astro";
+import CardFooter from "@stottemedlem/ui/components/CardFooter.astro";
+import Heading from "@stottemedlem/ui/components/Heading.astro";
+import Stack from "@stottemedlem/ui/components/Stack.astro";
+import Text from "@stottemedlem/ui/components/Text.astro";
+import TextField from "@stottemedlem/ui/components/TextField.astro";
+import TextLink from "@stottemedlem/ui/components/TextLink.astro";
+import MemberRow from "./MemberRow.astro";
+
+interface Props {
+  members: MemberOverview[];
+  /** What the administrator typed; filtering happens here so counts don't move. */
+  search?: string;
+  membersPath: string;
+  backPath: string;
+  currentYear: number;
+}
+const { members, search = "", membersPath, backPath, currentYear } = Astro.props;
+
+const { active, lapsed } = countMembersByStatus(members);
+const shown = members.filter((entry) => matchesMemberSearch(entry, search));
+const summary =
+  members.length === 0
+    ? "Ingen støttemedlemmer ennå. Den første dukker opp her av seg selv når noen melder seg inn."
+    : `${active} ${active === 1 ? "aktivt medlem" : "aktive medlemmer"} i ${currentYear}` +
+      (lapsed > 0 ? `, ${lapsed} utløpt.` : ".");
+---
+
+<Stack gap="lg">
+  <Stack gap="sm">
+    <Heading>Medlemmer</Heading>
+    <Text variant="lead">{summary}</Text>
+  </Stack>
+
+  {
+    members.length > 0 && (
+      <form method="get">
+        <Stack gap="sm">
+          <TextField
+            label="Finn et medlem"
+            name="sok"
+            type="search"
+            value={search}
+            placeholder="Navn, e-post eller telefon"
+          />
+          <Button variant="secondary" block>
+            Søk
+          </Button>
+        </Stack>
+      </form>
+    )
+  }
+
+  {
+    search && shown.length === 0 && (
+      <Text variant="muted">
+        Ingen medlemmer passer «{search}». <TextLink href={membersPath}>Vis alle</TextLink>
+      </Text>
+    )
+  }
+
+  {
+    shown.length > 0 && (
+      <Stack gap="sm">
+        {shown.map((entry) => (
+          <MemberRow entry={entry} href={`${membersPath}/${entry.member.id}`} />
+        ))}
+      </Stack>
+    )
+  }
+
+  <CardFooter>
+    <TextLink href={backPath}>← Tilbake til oversikten</TextLink>
+  </CardFooter>
+</Stack>

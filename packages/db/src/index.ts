@@ -859,3 +859,147 @@ export async function listChargesForAgreement(
     .where(eq(membershipCharges.agreementId, agreementId))
     .orderBy(asc(membershipCharges.due));
 }
+
+// ── The member list (specs/use-cases/curate-member-list.md) ─────────────────
+
+/** One supporting member as the organization sees them in its list. */
+export interface MemberOverview {
+  member: SupportingMember;
+  /** The most recent period they have paid for; null if none ever completed. */
+  latest: Membership | null;
+  /** Derived from that period, never stored and never set by an administrator. */
+  status: "active" | "lapsed";
+  /** Their yearly arrangement is still live, so next period is already covered. */
+  renewing: boolean;
+}
+
+/**
+ * Every supporting member of an organization, each with the latest period they
+ * paid for and whether that makes them current.
+ *
+ * The whole list is loaded at once, and searching filters it in the page: an
+ * organization's supporters number in the hundreds, and a count that changed
+ * as you typed would be worse than useless. If that assumption ever breaks,
+ * this is the function to push the filtering into.
+ */
+export async function listOrganizationMembers(
+  db: Db,
+  orgId: string,
+  today: Date = new Date(),
+): Promise<MemberOverview[]> {
+  const rows = await db
+    .select({ member: supportingMembers, membership: memberships })
+    .from(supportingMembers)
+    .leftJoin(memberships, eq(memberships.memberId, supportingMembers.id))
+    .where(eq(supportingMembers.orgId, orgId))
+    .orderBy(asc(supportingMembers.name), asc(supportingMembers.createdAt));
+
+  const live = new Set(
+    (
+      await db
+        .select({ memberId: membershipAgreements.memberId })
+        .from(membershipAgreements)
+        .where(
+          and(eq(membershipAgreements.orgId, orgId), eq(membershipAgreements.status, "ACTIVE")),
+        )
+    ).flatMap((row) => (row.memberId ? [row.memberId] : [])),
+  );
+
+  const byMember = new Map<string, MemberOverview>();
+  for (const { member, membership } of rows) {
+    const seen = byMember.get(member.id);
+    const latest =
+      membership && (!seen?.latest || membership.periodYear > seen.latest.periodYear)
+        ? membership
+        : (seen?.latest ?? null);
+    byMember.set(member.id, {
+      member,
+      latest,
+      // No completed period at all reads as lapsed: nothing has been paid, so
+      // nothing is current. It is a brief state — a supporter is recorded on
+      // approval, seconds before the first payment lands.
+      status: latest ? membershipStatus(latest.periodYear, today) : "lapsed",
+      renewing: live.has(member.id),
+    });
+  }
+  return [...byMember.values()];
+}
+
+/** How many supporters are current and how many have lapsed. */
+export function countMembersByStatus(members: MemberOverview[]): {
+  active: number;
+  lapsed: number;
+} {
+  let active = 0;
+  for (const entry of members) if (entry.status === "active") active++;
+  return { active, lapsed: members.length - active };
+}
+
+/**
+ * Whether a member matches what the administrator typed. Name, email and phone,
+ * because those are the three ways anyone remembers a person.
+ */
+export function matchesMemberSearch(entry: MemberOverview, term: string): boolean {
+  const needle = term.trim().toLowerCase();
+  if (!needle) return true;
+  return [entry.member.name, entry.member.email, entry.member.phone].some((field) =>
+    field?.toLowerCase().includes(needle),
+  );
+}
+
+/** One member, with every period they have ever supported — newest first. */
+export async function getOrganizationMember(
+  db: Db,
+  orgId: string,
+  memberId: string,
+  today: Date = new Date(),
+): Promise<(MemberOverview & { history: Membership[] }) | null> {
+  const [member] = await db
+    .select()
+    .from(supportingMembers)
+    .where(and(eq(supportingMembers.orgId, orgId), eq(supportingMembers.id, memberId)));
+  if (!member) return null;
+
+  const history = await listMembershipHistory(db, member.id);
+  const latest = history[0] ?? null;
+  const [live] = await db
+    .select({ id: membershipAgreements.id })
+    .from(membershipAgreements)
+    .where(
+      and(eq(membershipAgreements.memberId, member.id), eq(membershipAgreements.status, "ACTIVE")),
+    );
+
+  return {
+    member,
+    latest,
+    status: latest ? membershipStatus(latest.periodYear, today) : "lapsed",
+    renewing: Boolean(live),
+    history,
+  };
+}
+
+/** What an administrator may correct about a member: how to reach them. */
+export interface MemberContactDetails {
+  name: string | null;
+  email: string | null;
+  phone: string | null;
+}
+
+/**
+ * Fix a member's recorded identity — a misspelt name, an address that bounces.
+ * It touches nothing about what they paid: status follows payment, and no
+ * correction here can make someone a member or stop them being one.
+ */
+export async function updateMemberContactDetails(
+  db: Db,
+  orgId: string,
+  memberId: string,
+  details: MemberContactDetails,
+): Promise<SupportingMember | null> {
+  const [row] = await db
+    .update(supportingMembers)
+    .set(details)
+    .where(and(eq(supportingMembers.orgId, orgId), eq(supportingMembers.id, memberId)))
+    .returning();
+  return row ?? null;
+}

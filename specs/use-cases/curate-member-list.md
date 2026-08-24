@@ -19,12 +19,26 @@ From the organization's point of view:
 
 1. The administrator views the list of [supporting members](../concepts/supporting-member.md),
    each showing identity, status (**active** or **lapsed**), and the period their
-   membership is valid for.
+   membership is valid for. A supporter who has been recorded but whose first
+   payment has not completed is shown as **not yet paid** rather than lapsed —
+   they have never been current, and calling them lapsed would read as someone
+   who left. They are not counted as active either.
 2. The administrator can tell at a glance how many members are currently active.
-3. The administrator can find a specific member and see their membership history
-   (which annual periods they have supported).
-4. The administrator can correct a member's recorded identity/contact details.
-5. The list reflects payments automatically — a new join or renewal appears
+   The counts describe the whole organization and do not move while the
+   administrator is looking for someone.
+3. The administrator can find a specific member — by name, or by whichever
+   contact detail they happen to remember — and see their membership history
+   (which annual periods they have supported, and what was paid each time).
+4. Whether a member's support **continues** is shown alongside whether it is
+   current, because they are different questions: someone who has ended the
+   arrangement stays a member until their paid period runs out
+   ([renew](renew-annual-membership.md)).
+5. A supporter is identified by whatever they consented to share. One who gave
+   a contact detail but no name is still listed, by something a person can
+   recognize — never by an internal id.
+6. The administrator can correct a member's recorded identity/contact details,
+   including clearing one: a wrong address is worse than none.
+7. The list reflects payments automatically — a new join or renewal appears
    without manual entry, and keeps doing so even when the product was never
    notified that the payment happened
    ([payment reconciliation](../concepts/payment-reconciliation.md)).
@@ -37,6 +51,11 @@ From the organization's point of view:
       period — the administrator never sets status by hand.
 - [ ] The administrator can correct a member's contact details without changing
       their payment/membership record.
+- [ ] A supporter with no completed payment is distinguishable from one whose
+      membership has lapsed, and is counted as neither active.
+- [ ] A supporter who consented to no name is still findable and recognizable in
+      the list.
+- [ ] Searching the list never changes the counts it reports.
 
 ## Out of scope
 - Manually marking someone as paid/active without an actual payment (kept out to
