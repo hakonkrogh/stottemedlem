@@ -188,3 +188,120 @@ export function isValidOrganisasjonsnummer(input: string): boolean {
   if (control === 10) return false;
   return control === Number(digits[8]);
 }
+
+// ── Annual period (specs/concepts/annual-period.md) ─────────────────────────
+
+/**
+ * The stretch of time one membership covers: the calendar year. Every
+ * membership in every organization ends 31 December, so "our supporting
+ * members in 2027" is a single answerable question.
+ */
+export interface AnnualPeriod {
+  /** The calendar year the membership belongs to. */
+  year: number;
+  /** First day covered, `YYYY-MM-DD`: the join date, or 1 January on renewal. */
+  start: string;
+  /** Always 31 December of `year`. */
+  end: string;
+}
+
+/** `YYYY-MM-DD` in UTC — periods are calendar dates, never instants. */
+function isoDate(date: Date): string {
+  return date.toISOString().slice(0, 10);
+}
+
+function isLeapYear(year: number): boolean {
+  return (year % 4 === 0 && year % 100 !== 0) || year % 400 === 0;
+}
+
+export function daysInYear(year: number): number {
+  return isLeapYear(year) ? 366 : 365;
+}
+
+/**
+ * The period a membership taken out on `on` belongs to: it runs from that day
+ * (the join) to 31 December. A renewal's period starts 1 January, which is
+ * what this returns for a 1 January date.
+ */
+export function annualPeriodFor(on: Date = new Date()): AnnualPeriod {
+  const year = on.getUTCFullYear();
+  return { year, start: isoDate(on), end: `${year}-12-31` };
+}
+
+/** The next period, whole and starting 1 January — what a renewal buys. */
+export function nextAnnualPeriod(period: AnnualPeriod): AnnualPeriod {
+  const year = period.year + 1;
+  return { year, start: `${year}-01-01`, end: `${year}-12-31` };
+}
+
+/** Whole days from `on` (counted) through 31 December of its year. */
+export function daysRemainingInYear(on: Date = new Date()): number {
+  const year = on.getUTCFullYear();
+  const startOfJoinDay = Date.UTC(year, on.getUTCMonth(), on.getUTCDate());
+  const startOfNextYear = Date.UTC(year + 1, 0, 1);
+  return (startOfNextYear - startOfJoinDay) / 86_400_000;
+}
+
+/**
+ * What joining on `on` costs: the share of the tier's annual fee matching the
+ * part of the calendar year that remains, so nobody pays a full year for a
+ * part of one (specs/concepts/annual-fee.md). Joining 1 January costs the full
+ * fee; the amount never rounds below 1 kr, because a payment of nothing cannot
+ * be collected.
+ *
+ * Renewals always cost the full fee — this is for the first, partial period.
+ */
+export function proratedJoinFeeNok(annualFeeNok: number, on: Date = new Date()): number {
+  const share = daysRemainingInYear(on) / daysInYear(on.getUTCFullYear());
+  const prorated = Math.round(annualFeeNok * share);
+  return Math.min(annualFeeNok, Math.max(1, prorated));
+}
+
+/**
+ * When next year's renewal payment is arranged. The payment provider shows a
+ * member an upcoming charge about 35 days ahead, so arranging renewals from
+ * the start of December gives them the full visibility window before New Year
+ * — and leaves the organization a month in which a fee change can still reach
+ * that renewal (specs/use-cases/change-the-annual-fee.md).
+ */
+export const RENEWAL_ARRANGED_FROM = { month: 12, day: 1 } as const;
+
+/** Whether renewals for the coming period should already have been arranged. */
+export function isRenewalWindow(today: Date = new Date()): boolean {
+  const month = today.getUTCMonth() + 1;
+  return (
+    month > RENEWAL_ARRANGED_FROM.month ||
+    (month === RENEWAL_ARRANGED_FROM.month && today.getUTCDate() >= RENEWAL_ARRANGED_FROM.day)
+  );
+}
+
+/** The period a renewal arranged today pays for: always the next calendar year. */
+export function renewalPeriodYear(today: Date = new Date()): number {
+  return today.getUTCFullYear() + 1;
+}
+
+/**
+ * A UUID that is always the same for the same seed — how a retry asks the
+ * payment provider for *that* payment again rather than for another one.
+ *
+ * A job that creates a payment and then fails to write it down would, on its
+ * next run, see no payment and create a second. Deriving the retry key from
+ * the thing being paid for (this agreement, this period) makes the second
+ * attempt land on the first payment instead of beside it.
+ */
+export async function stableUuid(seed: string): Promise<string> {
+  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(seed));
+  const bytes = Array.from(new Uint8Array(digest).slice(0, 16));
+  // RFC 4122 version and variant bits, so providers that validate the shape
+  // (Vipps does) accept it as a UUID.
+  bytes[6] = ((bytes[6] ?? 0) & 0x0f) | 0x40;
+  bytes[8] = ((bytes[8] ?? 0) & 0x3f) | 0x80;
+  const hex = bytes.map((byte) => byte.toString(16).padStart(2, "0")).join("");
+  return [
+    hex.slice(0, 8),
+    hex.slice(8, 12),
+    hex.slice(12, 16),
+    hex.slice(16, 20),
+    hex.slice(20, 32),
+  ].join("-");
+}

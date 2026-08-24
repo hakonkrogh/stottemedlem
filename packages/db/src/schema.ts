@@ -73,3 +73,150 @@ export const membershipTiers = sqliteTable("membership_tiers", {
 
 export type MembershipTier = typeof membershipTiers.$inferSelect;
 export type NewMembershipTier = typeof membershipTiers.$inferInsert;
+
+/**
+ * Supporting members (specs/concepts/supporting-member.md) — the person backing
+ * an organization, modelled separately from any single year's payment so their
+ * support accumulates across periods instead of creating a duplicate person
+ * each year. Identity is captured at joining, from the payment provider's
+ * profile with the supporter's consent, and never re-fetched.
+ */
+export const supportingMembers = sqliteTable("supporting_members", {
+  id: text("id").primaryKey(),
+  orgId: text("org_id")
+    .notNull()
+    .references(() => organizations.id),
+  name: text("name"),
+  email: text("email"),
+  phone: text("phone"),
+  /** Vipps' opaque per-user id — how a returning supporter is recognized. */
+  vippsSub: text("vipps_sub"),
+  createdAt: text("created_at").notNull().default(sql`(datetime('now'))`),
+});
+
+export type SupportingMember = typeof supportingMembers.$inferSelect;
+export type NewSupportingMember = typeof supportingMembers.$inferInsert;
+
+/** Mirrors Vipps' agreement statuses; the product never sets one by hand. */
+export type AgreementStatus = "PENDING" | "ACTIVE" | "STOPPED" | "EXPIRED";
+
+/**
+ * The standing arrangement a supporter agrees to once: a yearly payment that
+ * continues until they end it (specs/use-cases/renew-annual-membership.md).
+ * One agreement spans many annual periods.
+ */
+export const membershipAgreements = sqliteTable("membership_agreements", {
+  id: text("id").primaryKey(),
+  orgId: text("org_id")
+    .notNull()
+    .references(() => organizations.id),
+  /** Null between drafting and activation — before consent there is no person. */
+  memberId: text("member_id").references(() => supportingMembers.id),
+  tierId: text("tier_id")
+    .notNull()
+    .references(() => membershipTiers.id),
+  vippsAgreementId: text("vipps_agreement_id").notNull(),
+  /** Our key on the agreement, mirrored to Vipps' externalId. */
+  externalId: text("external_id").notNull(),
+  status: text("status").$type<AgreementStatus>().notNull().default("PENDING"),
+  /** The tier's annual fee when the agreement was made. */
+  annualFeeNok: integer("annual_fee_nok").notNull(),
+  vippsSub: text("vipps_sub"),
+  /**
+   * Unguessable token in the agreement's management URL, which the member
+   * opens from their Vipps app. It stands in for a login: whoever holds it is
+   * the member, so it must never appear anywhere the member did not put it.
+   */
+  manageToken: text("manage_token"),
+  createdAt: text("created_at").notNull().default(sql`(datetime('now'))`),
+  activatedAt: text("activated_at"),
+  stoppedAt: text("stopped_at"),
+  /**
+   * When this agreement was last read back from Vipps rather than merely heard
+   * about (specs/concepts/payment-reconciliation.md). Null = never; sorting on
+   * it is what makes the nightly sweep visit everyone in turn.
+   */
+  lastReconciledAt: text("last_reconciled_at"),
+});
+
+export type MembershipAgreement = typeof membershipAgreements.$inferSelect;
+export type NewMembershipAgreement = typeof membershipAgreements.$inferInsert;
+
+/**
+ * Memberships (specs/concepts/membership.md) — one supporter, one organization,
+ * one annual period (a calendar year, specs/concepts/annual-period.md). A row
+ * exists only because money for that year was captured; active vs lapsed is
+ * derived from `periodYear`, never stored.
+ */
+export const memberships = sqliteTable("memberships", {
+  id: text("id").primaryKey(),
+  orgId: text("org_id")
+    .notNull()
+    .references(() => organizations.id),
+  memberId: text("member_id")
+    .notNull()
+    .references(() => supportingMembers.id),
+  agreementId: text("agreement_id").references(() => membershipAgreements.id),
+  tierId: text("tier_id")
+    .notNull()
+    .references(() => membershipTiers.id),
+  /** The tier's name as it was when paid — renames never rewrite history. */
+  tierName: text("tier_name").notNull(),
+  periodYear: integer("period_year").notNull(),
+  /** Join date in the first (partial) year, 1 January on every renewal. */
+  periodStart: text("period_start").notNull(),
+  periodEnd: text("period_end").notNull(),
+  /** The tier's full annual fee for that year… */
+  annualFeeNok: integer("annual_fee_nok").notNull(),
+  /** …and what was actually paid: pro-rated for a mid-year join. */
+  paidNok: integer("paid_nok").notNull(),
+  createdAt: text("created_at").notNull().default(sql`(datetime('now'))`),
+});
+
+export type Membership = typeof memberships.$inferSelect;
+export type NewMembership = typeof memberships.$inferInsert;
+
+/** Vipps' charge statuses, as delivered on webhooks and charge lookups. */
+export type ChargeStatus =
+  | "PENDING"
+  | "DUE"
+  | "RESERVED"
+  | "CHARGED"
+  | "PARTIALLY_CAPTURED"
+  | "FAILED"
+  | "CANCELLED"
+  | "PARTIALLY_REFUNDED"
+  | "REFUNDED"
+  | "PROCESSING";
+
+/**
+ * Every payment attempted for an agreement, in whatever state it reached — the
+ * organization's books, and the reason a membership lapsed when one failed.
+ * The Vipps charge id is the idempotency key: webhook delivery is at-least-once.
+ */
+export const membershipCharges = sqliteTable("membership_charges", {
+  id: text("id").primaryKey(),
+  orgId: text("org_id")
+    .notNull()
+    .references(() => organizations.id),
+  agreementId: text("agreement_id")
+    .notNull()
+    .references(() => membershipAgreements.id),
+  /** Set once captured and the period it paid for exists. */
+  membershipId: text("membership_id").references(() => memberships.id),
+  vippsChargeId: text("vipps_charge_id").notNull(),
+  externalId: text("external_id"),
+  /** The calendar year this payment buys. */
+  periodYear: integer("period_year").notNull(),
+  type: text("type").$type<"INITIAL" | "RECURRING">().notNull(),
+  status: text("status").$type<ChargeStatus>().notNull(),
+  amountNok: integer("amount_nok").notNull(),
+  due: text("due").notNull(),
+  capturedAt: text("captured_at"),
+  failureReason: text("failure_reason"),
+  createdAt: text("created_at").notNull().default(sql`(datetime('now'))`),
+  updatedAt: text("updated_at").notNull().default(sql`(datetime('now'))`),
+});
+
+export type MembershipCharge = typeof membershipCharges.$inferSelect;
+export type NewMembershipCharge = typeof membershipCharges.$inferInsert;
