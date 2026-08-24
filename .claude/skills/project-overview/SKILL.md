@@ -54,7 +54,19 @@ lives in `specs/`, kept in sync with code by a mandatory `Stop`-hook harness.
   the backoffice `dev` script self-heals this (it runs
   `wrangler d1 migrations apply DB --local` before `astro dev`); a dev server
   started BEFORE a new migration landed still needs the apply run manually
-  (no restart needed — state is shared live). Slug is
+  (no restart needed — state is shared live). **The self-heal silently
+  DEADLOCKED until 2026-08-20:** `wrangler d1 migrations apply` prompts
+  `? About to apply N migration(s)`, turbo keeps a TTY on the task but
+  multiplexes every package's output, so nobody can answer it — backoffice's
+  `astro dev` never started and not one migration ran, while marketing's
+  `[vite] connected` line made `pnpm dev` look healthy. Fixed by prefixing
+  `CI=1` (wrangler skips the confirmation when non-interactive) — keep that
+  prefix on any wrangler command a dev/CI script chains. Check the real state
+  instead of trusting the log:
+  `sqlite3 apps/backoffice/.wrangler/state/v3/d1/miniflare-D1DatabaseObject/*.sqlite \
+  ".tables" "select * from d1_migrations;"` — a `d1_migrations` table with
+  ZERO rows and no app tables is the deadlock signature (apply creates the
+  bookkeeping table *before* it prompts). Slug is
   assigned once by `ensureOrganization` (also backfills orgs that predate the
   table; `/o/[slug]` still resolves legacy name-derived slugs and redirects).
   **Public org pages** (added 2026-07-28; renamed `/org/*` → `/bli-medlem/*`
@@ -112,6 +124,88 @@ lives in `specs/`, kept in sync with code by a mandatory `Stop`-hook harness.
   last active tier can't be archived (`archiveMembershipTier` returns null) —
   Vipps evaluates the page against a real priced product. Zero tiers exists
   only for legacy orgs (dashboard prompts; public pages degrade gracefully).
+  **Member registry** (added 2026-08-20, branch scaffold-vips-test, migration
+  `0005_memberships.sql`, specs `concepts/membership.md` +
+  NEW `concepts/annual-period.md`): four tables, because they move on different
+  clocks — `supporting_members` (the person; `vipps_sub` is how a returning
+  supporter is recognized, UNIQUE per org), `membership_agreements` (the
+  standing yearly Vipps arrangement, one per subscription, spans years),
+  `memberships` (ONE CALENDAR-YEAR period each; unique per member+year; created
+  only when money was captured — status active/lapsed is DERIVED from
+  `period_year`, never stored), `membership_charges` (every payment attempt;
+  `vipps_charge_id` UNIQUE = the webhook idempotency key). **The annual period
+  is the calendar year** (decided 2026-08-19, specced 2026-08-20): mid-year
+  joins pay a pro-rated remainder (`proratedJoinFeeNok`/`annualPeriodFor` in
+  `@stottemedlem/core`), renewals cost the full fee each January — this
+  REPLACED the old "renewal is an explicit payment, proration out of scope"
+  wording in `use-cases/renew-annual-membership.md`. Repository helpers in
+  `packages/db/src/index.ts` (`recordDraftedAgreement`, `activateAgreement`,
+  `recordCharge`, `grantMembershipForCapturedCharge`, `listMembersForPeriod`)
+  are all idempotent by design. NOT yet built: the join route, receipt page,
+  webhook receiver/queue consumer, member-list UI.
+  **Joining + the payment loop** (added 2026-08-20, same branch): public
+  `POST /bli-medlem/[slug]/start` drafts the Vipps agreement (full annual fee
+  as the agreement price, PRO-RATED initial charge) and 303s to Vipps;
+  `kvittering.astro` is the redirect landing page (asks Vipps, never trusts the
+  redirect — also the polling fallback); `min-side.astro?n=<manage_token>` is
+  the member's own page (spec `concepts/member-self-service.md`: no login, the
+  unguessable token IS the credential, offers a real stop, noindex);
+  `POST /api/vipps/[slug]` is the per-org webhook receiver (HMAC-verified →
+  401, unknown org → 404, apply failure → 500 so Vipps redelivers; `/api/vipps/*`
+  is public in middleware). Shared logic in `src/lib/membership.ts`
+  (`startJoin`, `syncAgreement`, `applyCharge`/`syncCharge`, `applyVippsEvent`) — the
+  dispatcher ALWAYS syncs the agreement first because charge-captured beats
+  agreement-activated in practice, and settles captures that arrived too early.
+  Admins connect events on `/o/[slug]/vipps` ("Betalingsvarsler"), which stores
+  the registration + secret in Vault beside the keys; locally
+  `VIPPS_WEBHOOK_SECRET` in `.dev.vars` stands in (test env only).
+  **Worker cache gotcha this created:** the public-page cache now SKIPS any URL
+  with a query string (an error message for one visitor must not be cached for
+  all) and its key carries the date (the join page quotes a pro-rated price
+  that changes daily) — `publicPageCache.ts` purge keys must match, incl. the
+  date fragment.
+  **Renewals + repricing** (added 2026-08-20): `src/lib/renewals.ts`
+  (`repriceAgreements`, `createDueRenewalCharges`) driven by `worker.ts`
+  `scheduled` — 02:00 reconcile-then-reprice, 04:00 reprice-then-renew — with the jobs
+  DYNAMICALLY imported so the worker tsconfig (no DOM lib) doesn't have to
+  typecheck app libs. Both are idempotent by comparison, not by memory: a
+  reprice runs only where `membership_agreements.annual_fee_nok` ≠ the tier's
+  current fee, a renewal only where no charge row exists for next period. Fee
+  policy (decided 2026-08-20, spec `use-cases/change-the-annual-fee.md`): a
+  change hits EXISTING members at their next renewal (no grandfathering),
+  history keeps what was actually paid, returning lapsed members pay the
+  current fee, and notifying members is an ACKNOWLEDGED GAP — the tier edit
+  page tells the admin to do it themselves. Renewal timing lives in core
+  (`isRenewalWindow`/`renewalPeriodYear`, tested): arranged from 1 Dec, due
+  1 Jan, `retryDays: 7`. The renewal charge's Idempotency-Key is DERIVED
+  (`stableUuid("renewal:<agreementId>:<year>")` in core), not random, so a run
+  that creates the charge and then fails to write it down cannot bill the member
+  twice tomorrow. The tier form also reprices immediately on save so
+  members' apps match at once.
+  **Reconciliation** (added 2026-08-21, spec `concepts/payment-reconciliation.md`):
+  `src/lib/reconcile.ts` (`reconcileOrganization`) runs FIRST in the 02:00 job.
+  Webhook delivery is at-least-once, which also means at-most-never — a real
+  captured renewal was lost this way when its receiver URL died — so the product
+  re-reads Vipps instead of trusting that it was told. Per agreement it calls
+  `getAgreement` + `listCharges` and makes D1 match; `listCharges` is the only
+  thing that can find a charge Vipps has and we have NO row for. Which
+  agreements a run visits comes from `selectAgreementsToReconcile` in
+  `@stottemedlem/db`: suspicion first (open charge due on/before today, captured
+  charge with no membership, PENDING draft < 14 days old), then a rotation over
+  ACTIVE agreements ordered by the new `last_reconciled_at` column (migration
+  `0007_agreement_reconciliation.sql`; NULLs sort first in SQLite), capped at
+  250 per org per run so a night's cost is predictable. A failed read is NOT
+  marked reconciled, so it goes first next time; drafts too old to chase are
+  counted and logged rather than silently dropped. Read-only + idempotent —
+  it never creates or cancels a charge. **Testing the cron locally:** `astro dev` can't
+  reach `scheduled` — build, then `wrangler dev --test-scheduled` and hit
+  `/cdn-cgi/handler/scheduled?cron=0+2+*+*+*` (NOT `/__scheduled`, which our
+  custom fetch handler swallows into a /login redirect). The `vipps-test-rig`
+  skill has a recipe for proving reconciliation against a real agreement.
+  `PUBLIC_ORIGIN` is now a wrangler var per env (the deployed origin): a
+  scheduled job has no request to derive the origin from, and worker.ts now
+  typechecks `lib/membership.ts` transitively, so it must exist on the
+  generated `Env` too — not just in `src/env.d.ts`.
   **Public org pages are stale-while-revalidate cached** in
   `worker.ts` (named cache `public-org-pages`, key = origin+path, no query/
   trailing slash; `x-sm-cache: hit|miss` header; every visit revalidates in
@@ -135,7 +229,19 @@ lives in `specs/`, kept in sync with code by a mandatory `Stop`-hook harness.
   in `src/lib/vipps.ts`). Vault enablement smoke:
   `pnpm --filter @stottemedlem/backoffice run vault-smoke`. Read-only
   credential smoke (keys via env vars):
-  `pnpm --filter @stottemedlem/vipps run smoke` (refuses prod). API
+  `pnpm --filter @stottemedlem/vipps run smoke` (refuses prod).
+  **Local end-to-end rig (added 2026-08-20, branch scaffold-vips-test):**
+  `run recurring-test` (packages/vipps/scripts/) drives a REAL yearly
+  agreement on apitest from the CLI — draft (+ a QR to scan with the Merchant
+  Test app) → poll → userinfo → charges → renewal charge → stop — plus
+  `listen`, a local receiver for the three URLs Vipps calls back into
+  (`/retur`, `/min-side` = the mandatory management page, `/webhook`
+  HMAC-verified), exposed by `run tunnel` (cloudflared quick tunnel writing
+  `.vipps-tunnel`; NEW URL every restart, so re-register webhooks). Keys come
+  from `apps/backoffice/.dev.vars`; those same four vars are a test-env-ONLY
+  fallback in `getVippsForOrg` when an org has no Vault keys. Runbook +
+  prerequisites (MT app, test users, PIN 1236):
+  `docs/vipps-local-recurring-test.md`. API
   behaviour ground truth: `docs/research/vipps-recurring-payments.md` +
   stack-docs "Vipps API mechanics" + "WorkOS Vault".
 - `packages/qr/` — `@stottemedlem/qr`, shared QR code/card generation, split
@@ -208,6 +314,15 @@ lives in `specs/`, kept in sync with code by a mandatory `Stop`-hook harness.
   it, via `qrCardSvg`'s default `footer`). Spec: `specs/concepts/brand-attribution.md`.
 
 ## Deployment (as of 2026-07-07)
+- **Nothing runs on a pull request.** `.github/workflows/` holds only
+  `deploy-marketing.yml` and `deploy-backoffice.yml`, both `on: push` to `main`
+  — `gh pr checks <n>` reports "no checks reported" on every branch (confirmed
+  2026-08-24 on PR #27). So a PR is unverified until it merges, and the first
+  thing that runs the build is the deploy itself: run
+  `pnpm turbo run build typecheck test` locally before opening one, and don't
+  read a green PR page as a green build. Merging also applies remote D1
+  migrations (each deploy job runs `wrangler d1 migrations apply --remote`
+  first), so merge is when schema changes land for real — keep them additive.
 - Marketing auto-deploys to Cloudflare Workers on push to `main` via
   `.github/workflows/deploy-marketing.yml` (build with turbo filter, then
   `pnpm --filter @stottemedlem/marketing run deploy` — `run` is mandatory, see
@@ -290,13 +405,15 @@ the Donations `Schedule.interval` enum is `[MONTHLY]` only, found nowhere in pro
 | (canonical) `README.md` | monorepo layout, commands, toolchain |
 | stop-hooks.md | how the two Stop hooks compose + how to test a hook locally |
 | qr-codes.md | @stottemedlem/qr package split, the /api/qr/[slug] embed contract (backoffice), the front-page card preview (marketing), qrcode-lib gotchas, open domain-routing item |
+| (skill) `vipps-test-rig` | drive a REAL recurring subscription on apitest from the CLI (agreement → MT-app approval → charges → webhooks → stop) + the local receiver and tunnel; the sandbox-DNS gotcha when verifying a tunnel |
 | (skill) `verify-qr` | decode a generated QR PNG (file or URL) + assert payload — real scan-level proof |
-| (skill) `verify-public-routes` | assert the public join pages over real HTTP (status, `/org/*` 301s, `x-sm-cache` miss→hit, brand attribution) + `seed.sh`, the tier-aware local D1 seed |
+| (skill) `verify-public-routes` | + `d1.sh "<SQL>"` — read local D1 rows as JSON (the member-registry tables incl.); assert the public join pages over real HTTP (status, `/org/*` 301s, `x-sm-cache` miss→hit, brand attribution) + `seed.sh`, the tier-aware local D1 seed |
 | (canonical) `docs/architecture/overview.md` | proposed architecture: 2 deployables (Astro static marketing + one Astro-SSR Worker for backoffice/API/webhooks/cron/queues), D1 as system of record, WorkOS org-gated admin, Vipps Login for members, 11-step scaffolding plan |
 | (skill) `stack-docs` | verified platform gotchas: Astro CF adapter custom worker entry, WorkOS SDK on Workers |
 | (skill) `spec-lint` | `node .claude/skills/spec-lint/check.mjs` — validates spec links + INDEX registration after any specs/ edit |
 | (skill) `preview-screenshot` | headless-Chrome screenshot of any local URL → Read the PNG; the visual validation loop for UI work |
 | (skill) `dev-logs` | `bash .claude/skills/dev-logs/devlog.sh start\|tail\|grep` — read the dev server's stdout (console.log/error, request lines, SSR stack traces) via `astro dev --background` + `.astro/dev.log`; foreground `pnpm dev` output is unreadable to agents |
+| (canonical) `docs/vipps-local-recurring-test.md` | runbook for rehearsing a real recurring subscription on apitest from the CLI: prerequisites (test keys, MT app + test users, cloudflared), the tunnel and why it's needed, the lifecycle commands, what to look for at each step, cleanup, troubleshooting |
 | (canonical) `docs/research/vipps-recurring-payments.md` | verified Vipps Recurring API v3 research (yearly agreements, tiers via LEGACY pricing PATCH, 10 webhook events, local DB as system of record, NO onboarding/retention rules); Appendix A rules out Vipps Donasjoner definitively (monthly-only enum, no API amount control) — read before any payment work; not yet fed into `specs/` |
 | (canonical) `docs/vipps-portal-walkthrough/README.md` | IN-PROGRESS (started 2026-07-28) recorded click-through of portal.vippsmobilepay.com with user-supplied screenshots (→ `images/`) — verifies onboarding checklist open question 6 and collects MSN + test API keys; session log is empty until the first screenshot lands — continue the recording there, one numbered entry per screen |
 | (canonical) `docs/vipps-org-onboarding.md` | iterable checklist of what an org must do to get Vipps live — baseline assumes an EXISTING standard Vipps business account; steps = add Faste betalinger to the agreement, approval, then org pastes its own MSN + API keys (DECIDED 2026-07-28: no Vipps platform-partner model to begin with) — in two forms: detailed post-org-creation instructions + 3-step marketing-site headlines — the source for future onboarding UI/marketing copy; not yet fed into `specs/` |

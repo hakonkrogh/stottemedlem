@@ -214,3 +214,42 @@ export interface WebhookRegistration {
 export interface ListWebhooksResponse {
   webhooks: WebhookRegistration[];
 }
+
+// ── Userinfo ─────────────────────────────────────────────────────────────
+
+/**
+ * The profile-sharing scopes an agreement may request. Passed space-separated
+ * as `DraftAgreementRequest.scope`; what the member consents to is what
+ * `Userinfo` carries afterwards.
+ */
+export const MEMBER_USERINFO_SCOPE = "name email phoneNumber" as const;
+
+export interface UserinfoAddress {
+  address_type?: string;
+  country?: string;
+  formatted?: string;
+  postal_code?: string;
+  region?: string;
+  street_address?: string;
+}
+
+/**
+ * Consented profile data for one member, keyed by the agreement's `sub`.
+ * Field names are OIDC snake_case (`phone_number`), unlike the camelCase
+ * scope names. Fetchable for only 168 hours after consent — persist name and
+ * contact details at signup, never later (docs/research/vipps-recurring-payments.md,
+ * finding 12).
+ */
+export interface Userinfo {
+  sub: string;
+  name?: string;
+  given_name?: string;
+  family_name?: string;
+  email?: string;
+  email_verified?: boolean;
+  phone_number?: string;
+  phone_number_verified?: boolean;
+  birthdate?: string;
+  address?: UserinfoAddress;
+  other_addresses?: UserinfoAddress[];
+}

@@ -32,6 +32,11 @@ money.
   every other environment talks to Vipps' test environment and accepts only
   test keys. This is not a choice the organization makes in the product; a
   set from the wrong environment simply fails the proof above.
+- Outside production, an organization that has not added keys of its own may
+  fall back to a shared **test** sales unit belonging to the deployment, so
+  the payment flow can be rehearsed end to end before any organization brings
+  its own credentials. The production product never does this: there, only
+  keys an administrator connected can move an organization's money.
 - Stored keys are encrypted, isolated per organization, and never leave the
   back office: after saving, the two secret values are only ever shown
   masked. Replacing them means pasting a full new set.

@@ -2,7 +2,7 @@
 // Prominent inline message. Add variants (e.g. success) here rather than
 // styling ad-hoc boxes in screens.
 interface Props {
-  variant?: "error" | "info";
+  variant?: "error" | "info" | "success";
 }
 const { variant = "error" } = Astro.props;
 ---
@@ -27,5 +27,10 @@ const { variant = "error" } = Astro.props;
     color: var(--sm-accent-ink);
     background: var(--sm-accent-soft);
     border: 1px solid var(--sm-border-strong);
+  }
+  .success {
+    color: var(--sm-success);
+    background: var(--sm-success-bg);
+    border: 1px solid var(--sm-success-border);
   }
 </style>

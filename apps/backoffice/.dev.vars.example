@@ -25,3 +25,31 @@ WORKOS_COOKIE_PASSWORD="change-me-to-32+-random-characters"
 # key set from the CLI instead, pass them as env vars to:
 #   pnpm --filter @stottemedlem/vipps run smoke
 VIPPS_API_BASE_URL="https://apitest.vipps.no"
+
+# One sales unit's TEST keys, used by two things:
+#   1. the CLI test rig (packages/vipps/scripts/*, see
+#      docs/vipps-local-recurring-test.md), and
+#   2. locally only, as a fallback when an org has no keys in WorkOS Vault —
+#      so the payment flow can be exercised without a WorkOS account. The
+#      fallback is refused unless VIPPS_API_BASE_URL is apitest.vipps.no, so
+#      production always uses the org's own stored keys.
+# Copy them from portal.vippsmobilepay.com → For utviklere, on the TEST sales unit.
+VIPPS_CLIENT_ID=""
+VIPPS_CLIENT_SECRET=""
+VIPPS_SUBSCRIPTION_KEY=""
+VIPPS_MSN=""
+# The secret Vipps returns when a webhook receiver is registered (shown once).
+# Locally: register with `pnpm --filter @stottemedlem/vipps run recurring-test
+# webhooks register --public-url https://<your tunnel>` and paste it here — in
+# production each org's own secret is stored in WorkOS Vault instead.
+VIPPS_WEBHOOK_SECRET=""
+
+# Optional: pin the public HTTPS origin Vipps calls back into (redirect,
+# management page, webhooks). Left empty, the harness reads .vipps-tunnel,
+# written by `pnpm --filter @stottemedlem/vipps run tunnel`.
+VIPPS_TEST_PUBLIC_URL=""
+
+# The app derives its own public origin from each incoming request, which is
+# right behind a tunnel too. Set this only when that is wrong — e.g. something
+# in front rewrites the Host header. Must be HTTPS: Vipps rejects anything else.
+PUBLIC_ORIGIN=""

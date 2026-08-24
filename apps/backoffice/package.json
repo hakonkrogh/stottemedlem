@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "wrangler d1 migrations apply DB --local && astro dev --port 4322",
+    "dev": "CI=1 wrangler d1 migrations apply DB --local && astro dev --port 4322",
     "build": "astro build",
     "preview": "astro preview",
     "deploy": "wrangler deploy",

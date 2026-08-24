@@ -1,0 +1,113 @@
+---
+import {
+  closeAgreement,
+  findAgreementByManageToken,
+  getOrganizationBySlug,
+  listMembershipHistory,
+} from "@stottemedlem/db";
+import Alert from "@stottemedlem/ui/components/Alert.astro";
+import Button from "@stottemedlem/ui/components/Button.astro";
+import Heading from "@stottemedlem/ui/components/Heading.astro";
+import Stack from "@stottemedlem/ui/components/Stack.astro";
+import Text from "@stottemedlem/ui/components/Text.astro";
+import TextLink from "@stottemedlem/ui/components/TextLink.astro";
+import PublicShell from "../../../layouts/PublicShell.astro";
+import { getDb } from "../../../lib/db";
+import { getVippsForOrg } from "../../../lib/vipps";
+import { getWorkOS } from "../../../lib/workos";
+
+// The member's own page — the address Vipps requires every agreement to carry,
+// and which must offer actual management rather than an explanation of whom to
+// contact (specs/use-cases/renew-annual-membership.md: ending the arrangement
+// is never harder than starting it was).
+//
+// There is no login: the page is opened from the member's Vipps app, and the
+// token in the URL is what makes it theirs. An unknown token is simply a 404 —
+// it never reveals that some other membership exists.
+const slug = Astro.params.slug;
+const db = getDb();
+const org = slug ? await getOrganizationBySlug(db, slug) : null;
+if (!org) return new Response("Fant ikke organisasjonen", { status: 404 });
+
+const token = Astro.url.searchParams.get("n");
+const agreement = token ? await findAgreementByManageToken(db, token) : null;
+if (!agreement || agreement.orgId !== org.id) {
+  return new Response("Fant ikke medlemskapet", { status: 404 });
+}
+
+let stopped = agreement.status === "STOPPED" || agreement.status === "EXPIRED";
+let stopFailed = false;
+
+if (Astro.request.method === "POST" && !stopped) {
+  const vipps = await getVippsForOrg(getWorkOS(), org.workosOrgId);
+  try {
+    if (!vipps) throw new Error("organisasjonen mangler Vipps-oppsett");
+    // Stop it with Vipps first: the member's word only counts once the
+    // provider will stop charging. Our record follows.
+    await vipps.updateAgreement(
+      agreement.vippsAgreementId,
+      { status: "STOPPED" },
+      crypto.randomUUID(),
+    );
+    await closeAgreement(db, agreement.vippsAgreementId, "STOPPED");
+    stopped = true;
+  } catch (error) {
+    console.error("could not stop agreement", error);
+    stopFailed = true;
+  }
+}
+
+// What they have paid for stands: stopping ends the renewal, not the year.
+const history = agreement.memberId ? await listMembershipHistory(db, agreement.memberId) : [];
+const current = history[0];
+const title = `Ditt støttemedlemskap — ${org.name}`;
+---
+
+<PublicShell title={title} description={`Administrer støttemedlemskapet ditt i ${org.name}.`} noindex>
+  <Stack gap="lg">
+    <Stack gap="sm">
+      <Heading>Ditt støttemedlemskap</Heading>
+      {
+        current ? (
+          <Text variant="lead">
+            {current.tierName} i {org.name} — {current.paidNok} kr betalt for {current.periodYear},
+            gyldig ut året.
+          </Text>
+        ) : (
+          <Text variant="lead">Medlemskapet i {org.name} er ikke bekreftet ennå.</Text>
+        )
+      }
+    </Stack>
+
+    {stopFailed && <Alert variant="error">Vi fikk ikke stoppet medlemskapet nå. Prøv igjen om litt.</Alert>}
+
+    {
+      stopped ? (
+        <Stack gap="sm">
+          <Alert variant="success">Medlemskapet er sagt opp.</Alert>
+          <Text>
+            Du blir ikke belastet igjen. {current && `Du er støttemedlem ut ${current.periodYear}.`}
+          </Text>
+        </Stack>
+      ) : (
+        <Stack gap="sm">
+          <Text>
+            Medlemskapet fornyes automatisk ved årsskiftet til {agreement.annualFeeNok} kr i året.
+            Du får varsel i Vipps-appen før hver fornyelse.
+          </Text>
+          <form method="post">
+            <Button type="submit" variant="secondary">Si opp medlemskapet</Button>
+          </form>
+          <Text variant="small">
+            Sier du opp, står du som støttemedlem ut året du har betalt for — du blir bare ikke
+            belastet på nytt.
+          </Text>
+        </Stack>
+      )
+    }
+
+    <Text variant="small">
+      <TextLink href={`/bli-medlem/${org.slug}`}>Om {org.name}</TextLink>
+    </Text>
+  </Stack>
+</PublicShell>

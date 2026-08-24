@@ -11,6 +11,7 @@ import type {
   RegisterWebhookRequest,
   RegisterWebhookResponse,
   UpdateAgreementRequest,
+  Userinfo,
 } from "./types.js";
 
 /** Test environment — same API surface as production, separate keys, no real money. */
@@ -212,6 +213,20 @@ export function createVippsClient(config: VippsConfig) {
         method: "DELETE",
         path: `/recurring/v3/agreements/${agreementId}/charges/${chargeId}`,
         idempotencyKey,
+      });
+    },
+
+    // ── Userinfo ─────────────────────────────────────────────────────────
+
+    /**
+     * The member's consented profile data, keyed by the `sub` an agreement
+     * carries when it was drafted with `scope`. Only reachable for 168 hours
+     * after consent, so callers must persist what they need at signup.
+     */
+    getUserinfo(sub: string) {
+      return request<Userinfo>({
+        method: "GET",
+        path: `/vipps-userinfo-api/userinfo/${sub}`,
       });
     },
 

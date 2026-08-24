@@ -155,3 +155,26 @@ describe("request plumbing", () => {
     expect((error as VippsApiError).body).toContain("about:blank");
   });
 });
+
+describe("getUserinfo", () => {
+  it("fetches the consented profile by the agreement's sub", async () => {
+    const { impl, requests } = fakeFetch([
+      tokenResponse(),
+      Response.json({
+        sub: "9fe5d0e3-4702-4113-a154-90bc68063325",
+        name: "Test User",
+        email: "test@example.no",
+        phone_number: "4712345678",
+      }),
+    ]);
+
+    const profile = await client(impl).getUserinfo("9fe5d0e3-4702-4113-a154-90bc68063325");
+
+    expect(profile.name).toBe("Test User");
+    expect(profile.phone_number).toBe("4712345678");
+    expect(requests[1]?.url).toBe(
+      "https://apitest.vipps.no/vipps-userinfo-api/userinfo/9fe5d0e3-4702-4113-a154-90bc68063325",
+    );
+    expect(requests[1]?.headers).toMatchObject({ Authorization: "Bearer test-token" });
+  });
+});

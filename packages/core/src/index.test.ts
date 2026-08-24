@@ -1,14 +1,22 @@
 import { describe, expect, it } from "vitest";
 import {
+  annualPeriodFor,
+  daysInYear,
+  daysRemainingInYear,
   formatOrganisasjonsnummer,
+  isRenewalWindow,
   isValidOrganisasjonsnummer,
   joinPagePath,
   joinPageTermsUrl,
   joinPageUrl,
   MEMBERSHIP_TIER_KEY_MAX_LENGTH,
   membershipTierKey,
+  nextAnnualPeriod,
   normalizeMembershipTierDescription,
+  proratedJoinFeeNok,
+  renewalPeriodYear,
   slugifyOrganizationName,
+  stableUuid,
   tierAgreementExternalId,
   tierKeyFromAgreementExternalId,
   VIPPS_EXTERNAL_ID_MAX_LENGTH,
@@ -147,5 +155,85 @@ describe("isValidOrganisasjonsnummer", () => {
     expect(isValidOrganisasjonsnummer("12345678")).toBe(false);
     expect(isValidOrganisasjonsnummer("92360901a")).toBe(false);
     expect(isValidOrganisasjonsnummer("")).toBe(false);
+  });
+});
+
+describe("annual period", () => {
+  it("runs from the join date to 31 December of the same year", () => {
+    expect(annualPeriodFor(new Date("2026-08-20T10:00:00Z"))).toEqual({
+      year: 2026,
+      start: "2026-08-20",
+      end: "2026-12-31",
+    });
+  });
+
+  it("gives a renewal the whole next calendar year", () => {
+    expect(nextAnnualPeriod(annualPeriodFor(new Date("2026-08-20T10:00:00Z")))).toEqual({
+      year: 2027,
+      start: "2027-01-01",
+      end: "2027-12-31",
+    });
+  });
+
+  it("counts the join day itself as remaining", () => {
+    expect(daysRemainingInYear(new Date("2026-12-31T23:00:00Z"))).toBe(1);
+    expect(daysRemainingInYear(new Date("2026-01-01T00:00:00Z"))).toBe(365);
+    expect(daysRemainingInYear(new Date("2028-01-01T00:00:00Z"))).toBe(366);
+  });
+});
+
+describe("proratedJoinFeeNok", () => {
+  it("charges the full fee for a 1 January join", () => {
+    expect(proratedJoinFeeNok(250, new Date("2026-01-01T09:00:00Z"))).toBe(250);
+  });
+
+  it("charges the remaining share of the year mid-year", () => {
+    // 2026-08-20 → 134 days left of 365; 250 × 134/365 = 91.8 → 92
+    expect(proratedJoinFeeNok(250, new Date("2026-08-20T12:00:00Z"))).toBe(92);
+    // Half a year left is about half the fee.
+    expect(proratedJoinFeeNok(1200, new Date("2026-07-01T00:00:00Z"))).toBe(605);
+  });
+
+  it("never charges nothing, and never more than the annual fee", () => {
+    expect(proratedJoinFeeNok(250, new Date("2026-12-31T12:00:00Z"))).toBe(1);
+    expect(proratedJoinFeeNok(250, new Date("2026-01-01T00:00:00Z"))).toBe(250);
+  });
+
+  it("accounts for the extra day in a leap year", () => {
+    expect(daysInYear(2028)).toBe(366);
+    expect(daysInYear(2026)).toBe(365);
+  });
+});
+
+describe("renewal timing", () => {
+  it("arranges renewals from 1 December, not before", () => {
+    expect(isRenewalWindow(new Date("2026-11-30T23:00:00Z"))).toBe(false);
+    expect(isRenewalWindow(new Date("2026-12-01T00:00:00Z"))).toBe(true);
+    expect(isRenewalWindow(new Date("2026-12-31T23:59:00Z"))).toBe(true);
+  });
+
+  it("leaves most of the year alone", () => {
+    expect(isRenewalWindow(new Date("2026-01-02T00:00:00Z"))).toBe(false);
+    expect(isRenewalWindow(new Date("2026-08-20T12:00:00Z"))).toBe(false);
+  });
+
+  it("always pays for the next calendar year", () => {
+    expect(renewalPeriodYear(new Date("2026-12-01T00:00:00Z"))).toBe(2027);
+    expect(renewalPeriodYear(new Date("2026-12-31T23:00:00Z"))).toBe(2027);
+  });
+});
+
+describe("stableUuid", () => {
+  it("is the same for the same seed and different for another", async () => {
+    const a = await stableUuid("renewal:agreement-1:2027");
+    const b = await stableUuid("renewal:agreement-1:2027");
+    const c = await stableUuid("renewal:agreement-1:2028");
+    expect(a).toBe(b);
+    expect(a).not.toBe(c);
+  });
+
+  it("is a well-formed v4-shaped UUID, which is what Vipps validates", async () => {
+    const uuid = await stableUuid("renewal:agreement-1:2027");
+    expect(uuid).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/);
   });
 });

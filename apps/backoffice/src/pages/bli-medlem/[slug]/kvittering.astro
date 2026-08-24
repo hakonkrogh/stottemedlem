@@ -1,0 +1,103 @@
+---
+import { findAgreementByVippsId, getOrganizationBySlug } from "@stottemedlem/db";
+import Heading from "@stottemedlem/ui/components/Heading.astro";
+import Stack from "@stottemedlem/ui/components/Stack.astro";
+import Text from "@stottemedlem/ui/components/Text.astro";
+import TextLink from "@stottemedlem/ui/components/TextLink.astro";
+import PublicShell from "../../../layouts/PublicShell.astro";
+import { getDb } from "../../../lib/db";
+import { syncAgreement, syncCharge } from "../../../lib/membership";
+import { getVippsForOrg } from "../../../lib/vipps";
+import { getWorkOS } from "../../../lib/workos";
+
+// Where the supporter lands coming back from Vipps. Arriving here is NOT proof
+// that anything was paid (specs/use-cases/join-as-supporting-member.md), so the
+// page asks Vipps rather than believing the redirect — and it is also the
+// polling fallback for when a webhook is slow or lost.
+const slug = Astro.params.slug;
+const db = getDb();
+const org = slug ? await getOrganizationBySlug(db, slug) : null;
+if (!org) return new Response("Fant ikke organisasjonen", { status: 404 });
+
+// Vipps appends the agreement id it redirected for; without it there is
+// nothing to confirm and the visitor is simply sent back to the join page.
+const agreementId = Astro.url.searchParams.get("agreementId");
+if (!agreementId) return Astro.redirect(`/bli-medlem/${org.slug}`);
+
+let status: "active" | "pending" | "stopped" | "unknown" = "unknown";
+let memberName: string | null = null;
+
+const vipps = await getVippsForOrg(getWorkOS(), org.workosOrgId);
+if (vipps) {
+  try {
+    const { local, remote } = await syncAgreement(db, vipps, agreementId);
+    // The agreement belongs to this organization or it is none of our business.
+    if (local && local.orgId === org.id) {
+      for (const charge of await vipps.listCharges(agreementId)) {
+        await syncCharge(db, vipps, agreementId, charge.id);
+      }
+      const settled = await findAgreementByVippsId(db, agreementId);
+      status =
+        remote.status === "ACTIVE" ? "active" : remote.status === "PENDING" ? "pending" : "stopped";
+      memberName = settled?.memberId ? await memberNameFor(settled.memberId) : null;
+    }
+  } catch (error) {
+    console.error("could not confirm agreement", error);
+  }
+}
+
+async function memberNameFor(memberId: string): Promise<string | null> {
+  const { listMembershipHistory } = await import("@stottemedlem/db");
+  const history = await listMembershipHistory(db, memberId);
+  return history[0]?.tierName ?? null;
+}
+
+const title = `Takk for støtten — ${org.name}`;
+---
+
+<PublicShell title={title} description={`Kvittering for støttemedlemskap i ${org.name}.`} noindex>
+  <Stack gap="lg">
+    {
+      status === "active" && (
+        <Stack gap="sm">
+          <Heading>Takk for støtten!</Heading>
+          <Text variant="lead">
+            Du er nå støttemedlem i {org.name}
+            {memberName ? ` med medlemskapet ${memberName}` : ""}, ut året.
+          </Text>
+          <Text>
+            Medlemskapet fornyes automatisk ved årsskiftet til den årlige kontingenten, så lenge du
+            vil være med. Du får varsel i Vipps-appen før hver fornyelse, og kan si opp når som
+            helst.
+          </Text>
+        </Stack>
+      )
+    }
+    {
+      status === "pending" && (
+        <Stack gap="sm">
+          <Heading>Vi venter på Vipps</Heading>
+          <Text variant="lead">
+            Betalingen er ikke bekreftet ennå. Fullfør i Vipps-appen om du ikke har gjort det — så
+            snart Vipps bekrefter, er du støttemedlem i {org.name}.
+          </Text>
+          <Text>Du kan trygt laste denne siden på nytt.</Text>
+        </Stack>
+      )
+    }
+    {
+      (status === "stopped" || status === "unknown") && (
+        <Stack gap="sm">
+          <Heading>Medlemskapet ble ikke opprettet</Heading>
+          <Text variant="lead">
+            Avtalen ble avbrutt eller avvist, og ingenting er trukket. Du kan prøve på nytt fra
+            støttemedlemssiden.
+          </Text>
+        </Stack>
+      )
+    }
+    <Text variant="small">
+      <TextLink href={`/bli-medlem/${org.slug}`}>Tilbake til {org.name}</TextLink>
+    </Text>
+  </Stack>
+</PublicShell>

@@ -50,6 +50,7 @@ scope.
 | [Access the back office](use-cases/access-the-back-office.md) | Draft | [Collecting annual support](problems/collecting-annual-support.md) |
 | [Set up a supporting membership](use-cases/set-up-supporting-membership.md) | Draft | [Collecting annual support](problems/collecting-annual-support.md) |
 | [Join as a supporting member](use-cases/join-as-supporting-member.md) | Draft | [Collecting annual support](problems/collecting-annual-support.md) |
+| [Change the annual fee](use-cases/change-the-annual-fee.md) | Draft | [Collecting annual support](problems/collecting-annual-support.md) |
 | [Curate the member list](use-cases/curate-member-list.md) | Draft | [Keeping an accurate list](problems/keeping-an-accurate-member-list.md) |
 | [Renew annual membership](use-cases/renew-annual-membership.md) | Draft | [Keeping an accurate list](problems/keeping-an-accurate-member-list.md) |
 | [Promote membership with a QR code card](use-cases/promote-with-qr-card.md) | Draft | [Collecting annual support](problems/collecting-annual-support.md) |
@@ -65,8 +66,11 @@ scope.
 | [Supporting member](concepts/supporting-member.md) | Draft |
 | [Membership](concepts/membership.md) | Draft |
 | [Membership tier](concepts/membership-tier.md) | Draft |
+| [Annual period](concepts/annual-period.md) | Draft |
 | [Annual fee](concepts/annual-fee.md) | Draft |
 | [Join page](concepts/join-page.md) | Draft |
+| [Member self-service page](concepts/member-self-service.md) | Draft |
+| [Payment reconciliation](concepts/payment-reconciliation.md) | Draft |
 | [Vipps API keys](concepts/vipps-api-keys.md) | Draft |
 | [Brand attribution](concepts/brand-attribution.md) | Active |
 | [Scorecard](concepts/scorecard.md) | Draft |

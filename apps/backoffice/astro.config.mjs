@@ -14,5 +14,13 @@ export default defineConfig({
     ssr: {
       noExternal: ["@stottemedlem/ui", "@fontsource-variable/fraunces"],
     },
+    server: {
+      // Payment testing has to reach this dev server from the outside — Vipps
+      // opens the redirect, the member's management page and the webhook
+      // receiver over a public HTTPS tunnel. Vite otherwise answers any
+      // unfamiliar Host with "Blocked request", which looks exactly like a
+      // broken tunnel. Dev-only; deployed Workers never see this config.
+      allowedHosts: [".trycloudflare.com", ".ngrok-free.app", ".ngrok.io"],
+    },
   },
 });

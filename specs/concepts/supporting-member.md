@@ -23,6 +23,10 @@ without creating a duplicate person each year.
   hand.
 - The same person can hold a sequence of memberships over multiple annual periods
   (their history), but at most one membership per annual period.
+- A supporting member's identity is captured **at the moment of joining**,
+  from the payment provider's profile with the supporter's consent, and is
+  never re-fetched afterwards: the provider only offers it for a short window
+  after consent. What is captured then is what the organization has.
 - Identity/contact details can be corrected without altering payment history.
 
 ## Relationships

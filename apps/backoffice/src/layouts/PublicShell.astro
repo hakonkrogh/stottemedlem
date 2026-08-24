@@ -11,8 +11,15 @@ import { CANONICAL_ORIGIN } from "@stottemedlem/core";
 interface Props {
   title: string;
   description?: string;
+  /**
+   * Keep this page out of search results. The join page and its salgsvilkår
+   * must stay indexable (Vipps' website verification reads them), but a
+   * personal page — a receipt, a membership's own page — is for one visitor
+   * and belongs to nobody else.
+   */
+  noindex?: boolean;
 }
-const { title, description } = Astro.props;
+const { title, description, noindex } = Astro.props;
 ---
 
 <html lang="no">
@@ -20,6 +27,7 @@ const { title, description } = Astro.props;
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     {description && <meta name="description" content={description} />}
+    {noindex && <meta name="robots" content="noindex" />}
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <title>{title}</title>
   </head>
