@@ -314,6 +314,15 @@ lives in `specs/`, kept in sync with code by a mandatory `Stop`-hook harness.
   it, via `qrCardSvg`'s default `footer`). Spec: `specs/concepts/brand-attribution.md`.
 
 ## Deployment (as of 2026-07-07)
+- **Nothing runs on a pull request.** `.github/workflows/` holds only
+  `deploy-marketing.yml` and `deploy-backoffice.yml`, both `on: push` to `main`
+  — `gh pr checks <n>` reports "no checks reported" on every branch (confirmed
+  2026-08-24 on PR #27). So a PR is unverified until it merges, and the first
+  thing that runs the build is the deploy itself: run
+  `pnpm turbo run build typecheck test` locally before opening one, and don't
+  read a green PR page as a green build. Merging also applies remote D1
+  migrations (each deploy job runs `wrangler d1 migrations apply --remote`
+  first), so merge is when schema changes land for real — keep them additive.
 - Marketing auto-deploys to Cloudflare Workers on push to `main` via
   `.github/workflows/deploy-marketing.yml` (build with turbo filter, then
   `pnpm --filter @stottemedlem/marketing run deploy` — `run` is mandatory, see
