@@ -52,7 +52,11 @@
 		// environment. This base URL is the ONLY per-environment Vipps config:
 		// each org adds its own sales-unit keys in the backoffice
 		// (/o/[slug]/vipps), stored per org in WorkOS Vault.
-		"VIPPS_API_BASE_URL": "https://api.vipps.no"
+		"VIPPS_API_BASE_URL": "https://api.vipps.no",
+		// The origin Vipps sends supporters back to and delivers payment events
+		// to. Stated rather than derived, because a scheduled job has no incoming
+		// request to derive it from. Empty locally (.dev.vars) = use the request's.
+		"PUBLIC_ORIGIN": "https://app.xn--stttemedlem-hgb.no"
 	},
 	// ── Bindings ──────────────────────────────────────────────────────────
 	// Real resource ids (provisioned 2026-08-12 via `wrangler d1 create`,
@@ -136,7 +140,8 @@
 				"WORKOS_REDIRECT_URI": "https://staging.app.xn--stttemedlem-hgb.no/callback",
 				// Vipps TEST environment — orgs add their own test sales-unit keys
 				// through the backoffice, so only the base URL differs from prod.
-				"VIPPS_API_BASE_URL": "https://apitest.vipps.no"
+				"VIPPS_API_BASE_URL": "https://apitest.vipps.no",
+				"PUBLIC_ORIGIN": "https://staging.app.xn--stttemedlem-hgb.no"
 			},
 			"d1_databases": [
 				{

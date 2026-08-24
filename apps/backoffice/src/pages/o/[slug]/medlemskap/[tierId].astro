@@ -2,6 +2,7 @@
 import { MEMBERSHIP_TIER_DESCRIPTION_MAX_LENGTH } from "@stottemedlem/core";
 import {
   archiveMembershipTier,
+  countActiveAgreementsForTier,
   createMembershipTier,
   getOrganizationBySlug,
   listMembershipTiers,
@@ -27,6 +28,8 @@ import {
   tierFormValues,
 } from "../../../../lib/membershipTiers";
 import { purgeOrgPublicPages } from "../../../../lib/publicPageCache";
+import { repriceAgreements } from "../../../../lib/renewals";
+import { getVippsForOrg } from "../../../../lib/vipps";
 import { getWorkOS, orgPath } from "../../../../lib/workos";
 
 // Creating and editing a membership tier are ONE mechanism on this subpage
@@ -101,7 +104,20 @@ if (Astro.request.method === "POST") {
       if (isNew) {
         await createMembershipTier(db, org.id, parsed.input);
       } else if (tier) {
+        const feeChanged = parsed.input.annualFeeNok !== tier.annualFeeNok;
         await updateMembershipTier(db, org.id, tier.id, parsed.input);
+        // Existing members move to the new fee at their next renewal
+        // (specs/use-cases/change-the-annual-fee.md). The nightly job would
+        // get there anyway; doing it now means the amount in members' Vipps
+        // apps matches what the administrator just set, immediately.
+        if (feeChanged) {
+          const vipps = await getVippsForOrg(getWorkOS(), org.workosOrgId);
+          if (vipps) {
+            const { failed } = await repriceAgreements(db, vipps, org.id);
+            // Failures are not fatal: tonight's run tries again.
+            if (failed) console.warn(`${failed} agreement(s) not repriced yet for ${org.slug}`);
+          }
+        }
       }
       await purgeOrgPublicPages(org.slug, Astro.url.origin);
       return Astro.redirect(orgPath(org.slug));
@@ -110,6 +126,10 @@ if (Astro.request.method === "POST") {
 }
 
 const canArchive = !isNew && tiers.length > 1;
+// What a price change would actually move. Shown before the administrator
+// changes anything, because the product cannot yet tell members itself
+// (specs/use-cases/change-the-annual-fee.md, open question).
+const activeMembers = tier ? await countActiveAgreementsForTier(db, tier.id) : 0;
 const title = isNew ? "Legg til medlemskap" : `Endre ${tier?.name}`;
 ---
 
@@ -124,6 +144,16 @@ const title = isNew ? "Legg til medlemskap" : `Endre ${tier?.name}`;
       </Text>
     </Stack>
     {archiveError && <Alert variant="error">{archiveError}</Alert>}
+    {
+      activeMembers > 0 && (
+        <Alert variant="info">
+          {activeMembers} støttemedlem{activeMembers === 1 ? "" : "mer"} betaler i dag{" "}
+          {tier?.annualFeeNok} kr i året for dette medlemskapet. Endrer du prisen, gjelder den for
+          dem fra neste fornyelse ved årsskiftet — det de har betalt for i år, står. Vipps varsler
+          om beløpet, men ikke om at prisen er endret, så gi medlemmene beskjed selv.
+        </Alert>
+      )
+    }
     {
       isNew && (
         <div class="templates">
