@@ -10,6 +10,20 @@ import { NotFoundException, type WorkOS } from "@workos-inc/node";
 // apitest.vipps.no everywhere except production, so test keys entered locally
 // or on staging can never be confused with production keys.
 
+/**
+ * Where an organization's payment events are delivered, and the secret that
+ * proves a delivery really came from Vipps. Stored beside the keys because it
+ * is the same kind of thing: a per-org secret that must never be readable by
+ * another organization. Vipps shows the secret once, at registration.
+ */
+export interface OrgWebhookRegistration {
+  id: string;
+  secret: string;
+  /** The receiver URL registered — changes whenever the deployment's does. */
+  url: string;
+  registeredAt: string;
+}
+
 /** The credential set an org copies from portal.vippsmobilepay.com → For utviklere. */
 export interface OrgVippsKeys {
   clientId: string;
@@ -18,6 +32,8 @@ export interface OrgVippsKeys {
   merchantSerialNumber: string;
   /** ISO timestamp of the last successful live validation against Vipps. */
   validatedAt: string;
+  /** Absent until payment events have been connected for this deployment. */
+  webhook?: OrgWebhookRegistration;
 }
 
 /** Vault object name; unique per WorkOS environment, one object per org. */
@@ -60,6 +76,21 @@ export async function saveOrgVippsKeys(
       context: { organizationId: workosOrgId },
     });
   }
+}
+
+/**
+ * Store (or replace) where this deployment receives the org's payment events.
+ * Kept alongside the keys so a single Vault read gives everything the webhook
+ * receiver needs to verify a delivery.
+ */
+export async function saveOrgWebhookRegistration(
+  workos: WorkOS,
+  workosOrgId: string,
+  webhook: OrgWebhookRegistration,
+): Promise<void> {
+  const keys = await readOrgVippsKeys(workos, workosOrgId);
+  if (!keys) throw new Error("cannot register webhooks before the org has Vipps keys");
+  await saveOrgVippsKeys(workos, workosOrgId, { ...keys, webhook });
 }
 
 export type VippsKeysValidation = { ok: true } | { ok: false; message: string };

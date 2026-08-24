@@ -16,6 +16,9 @@ function isPublic(pathname: string): boolean {
   return (
     PUBLIC_EXACT.has(pathname) ||
     pathname.startsWith("/api/qr/") ||
+    // Vipps' payment-event deliveries carry no session; they authenticate
+    // themselves with an HMAC signature the receiver verifies.
+    pathname.startsWith("/api/vipps/") ||
     pathname.startsWith(`/${JOIN_PAGE_PATH_SEGMENT}/`) ||
     pathname.startsWith("/org/")
   );

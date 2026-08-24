@@ -24,6 +24,24 @@ interface Env {
    * keys (stored in WorkOS Vault; see src/lib/vippsKeys.ts).
    */
   VIPPS_API_BASE_URL: string;
+  /**
+   * The public HTTPS origin Vipps must reach (redirect, the member's own
+   * management page, webhook deliveries). Normally derived from the incoming
+   * request; set only when the outside address differs from the one the Worker
+   * sees — e.g. a local tunnel in front of `astro dev`.
+   */
+  PUBLIC_ORIGIN?: string;
+  /**
+   * Optional local-development keys for ONE shared Vipps TEST sales unit
+   * (.dev.vars), used only when an org has no keys of its own in Vault and
+   * only against apitest.vipps.no — see src/lib/vipps.ts.
+   */
+  VIPPS_CLIENT_ID?: string;
+  VIPPS_CLIENT_SECRET?: string;
+  VIPPS_SUBSCRIPTION_KEY?: string;
+  VIPPS_MSN?: string;
+  /** Local-development webhook secret for that same shared TEST sales unit. */
+  VIPPS_WEBHOOK_SECRET?: string;
   /** KV cache for Vipps access tokens (1 h test / 24 h prod lifetime). */
   VIPPS_TOKENS: import("@cloudflare/workers-types").KVNamespace;
   /** R2 bucket for uploaded org media (logo/banner images). */

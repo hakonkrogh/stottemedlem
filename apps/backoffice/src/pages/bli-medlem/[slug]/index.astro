@@ -1,6 +1,12 @@
 ---
-import { formatOrganisasjonsnummer, joinPageTermsUrl, joinPageUrl } from "@stottemedlem/core";
+import {
+  annualPeriodFor,
+  formatOrganisasjonsnummer,
+  joinPageTermsUrl,
+  proratedJoinFeeNok,
+} from "@stottemedlem/core";
 import { getOrganizationBySlug, listMembershipTiers } from "@stottemedlem/db";
+import Alert from "@stottemedlem/ui/components/Alert.astro";
 import Button from "@stottemedlem/ui/components/Button.astro";
 import Heading from "@stottemedlem/ui/components/Heading.astro";
 import Stack from "@stottemedlem/ui/components/Stack.astro";
@@ -26,6 +32,14 @@ if (!org) return new Response("Fant ikke organisasjonen", { status: 404 });
 // zero happens only for organizations predating tiers, which the back office
 // prompts to fix.
 const tiers = await listMembershipTiers(db, org.id);
+
+// What joining costs today: the rest of this calendar year, pro-rated
+// (specs/concepts/annual-period.md). The page states both numbers, so nobody
+// is surprised by either the amount now or the full fee in January.
+const period = annualPeriodFor();
+const priceToday = new Map(
+  tiers.map((tier) => [tier.id, proratedJoinFeeNok(tier.annualFeeNok, new Date())]),
+);
 
 const title = `${org.name} — bli støttemedlem`;
 const description = `Bli støttemedlem i ${org.name} og støtt arbeidet med et fast årlig bidrag.`;
@@ -57,6 +71,10 @@ const bannerUrl = org.bannerKey ? orgImageUrl(org.slug, "banner", org.bannerKey)
 // The admin-chosen focal point decides which part of the banner survives the
 // crop to the wide backdrop (settings page picker); center when unset.
 const bannerFocus = `${org.bannerFocusX ?? 50}% ${org.bannerFocusY ?? 50}%`;
+
+// Set when the join attempt bounced back here (see start.ts). Query strings are
+// not part of the page's cache key, so this never gets cached onto anyone else.
+const joinError = Astro.url.searchParams.get("feil");
 ---
 
 <PublicShell title={title} description={description}>
@@ -71,6 +89,17 @@ const bannerFocus = `${org.bannerFocusX ?? 50}% ${org.bannerFocusY ?? 50}%`;
           <p class="org-name">{org.name}</p>
         </div>
       </header>
+      {
+        joinError && (
+          <Alert variant="error">
+            {joinError === "ikke-klar"
+              ? `${org.name} har ikke fullført oppsettet for betaling ennå. Prøv igjen senere.`
+              : joinError === "ukjent-medlemskap"
+                ? "Medlemskapet du valgte finnes ikke lenger. Velg et av medlemskapene under."
+                : "Vi fikk ikke kontakt med Vipps akkurat nå. Prøv igjen om litt."}
+          </Alert>
+        )
+      }
       <Stack gap="sm">
         <Heading>Bli støttemedlem</Heading>
         <Text variant="lead">{subheadIntro}</Text>
@@ -85,12 +114,21 @@ const bannerFocus = `${org.bannerFocusX ?? 50}% ${org.bannerFocusY ?? 50}%`;
           annualFeeNok={tier.annualFeeNok}
           description={tier.description}
         >
-          <Button
-            href={tiers.length > 1 ? joinPageUrl(org.slug, tier.key) : joinPageUrl(org.slug)}
-            block
-          >
-            Bli støttemedlem med Vipps
-          </Button>
+          {
+            priceToday.get(tier.id) !== tier.annualFeeNok && (
+              <Text variant="small">
+                Du betaler {priceToday.get(tier.id)} kr nå for resten av {period.year}, deretter{" "}
+                {tier.annualFeeNok} kr i året.
+              </Text>
+            )
+          }
+          {/* A POST, because choosing a membership creates an agreement with
+              Vipps — and because this page is cached, so it can hold no state
+              of its own. */}
+          <form method="post" action={`/bli-medlem/${org.slug}/start`}>
+            <input type="hidden" name="medlemskap" value={tier.key} />
+            <Button type="submit" block>Bli støttemedlem med Vipps</Button>
+          </form>
         </MembershipTierCard>
       ))
     }

@@ -8,17 +8,21 @@ import Stack from "@stottemedlem/ui/components/Stack.astro";
 import Text from "@stottemedlem/ui/components/Text.astro";
 import TextField from "@stottemedlem/ui/components/TextField.astro";
 import TextLink from "@stottemedlem/ui/components/TextLink.astro";
+import { RECURRING_WEBHOOK_EVENTS } from "@stottemedlem/vipps";
 import Shell from "../../../layouts/Shell.astro";
 import { getDb } from "../../../lib/db";
+import { publicOrigin } from "../../../lib/membership";
+import { getVippsForOrg } from "../../../lib/vipps";
 import {
   maskSecret,
   type OrgVippsKeys,
   parseVippsKeysForm,
   readOrgVippsKeys,
   saveOrgVippsKeys,
-  validateVippsKeys,
+  saveOrgWebhookRegistration,
   type VippsKeysFieldErrors,
   type VippsKeysFormValues,
+  validateVippsKeys,
   vippsEnvironmentLabel,
 } from "../../../lib/vippsKeys";
 import { getWorkOS, orgPath } from "../../../lib/workos";
@@ -60,10 +64,45 @@ let fieldErrors: VippsKeysFieldErrors = {};
 let saved = false;
 let retested = false;
 let validationError: string | null = null;
+let webhookConnected = false;
+let webhookError: string | null = null;
+
+// Where THIS deployment receives the org's payment events. Derived from the
+// request, so production, staging and a local tunnel each register their own
+// receiver against the same sales unit rather than stealing each other's.
+const webhookUrl = `${publicOrigin(Astro.request)}/api/vipps/${org.slug}`;
 
 if (Astro.request.method === "POST") {
   const form = await Astro.request.formData();
-  if (form.get("intent") === "test" && stored) {
+  if (form.get("intent") === "webhooks" && stored) {
+    // Connect payment events: register a receiver with Vipps and keep the
+    // secret it returns — it is shown once, and without it no delivery can be
+    // proved genuine. Re-registering replaces the old receiver, which is what
+    // an address change (a new tunnel, a new domain) needs.
+    const vipps = await getVippsForOrg(workos, workosOrgId);
+    try {
+      if (!vipps) throw new Error("missing Vipps client");
+      if (stored.webhook) await vipps.deleteWebhook(stored.webhook.id).catch(() => {});
+      const registration = await vipps.registerWebhook({
+        url: webhookUrl,
+        events: RECURRING_WEBHOOK_EVENTS,
+      });
+      const webhook = {
+        id: registration.id,
+        secret: registration.secret,
+        url: webhookUrl,
+        registeredAt: new Date().toISOString(),
+      };
+      await saveOrgWebhookRegistration(workos, workosOrgId, webhook);
+      stored = { ...stored, webhook };
+      webhookConnected = true;
+    } catch (error) {
+      console.error("could not register webhooks", error);
+      webhookError =
+        "Vipps ville ikke registrere varslingsadressen. Sjekk at adressen er offentlig " +
+        "tilgjengelig over https, og prøv igjen om litt.";
+    }
+  } else if (form.get("intent") === "test" && stored) {
     // Re-run the live check against the keys already in Vault.
     const result = await validateVippsKeys(stored);
     if (result.ok) {
@@ -106,6 +145,12 @@ const validatedDate = stored ? new Date(stored.validatedAt).toLocaleDateString("
     </Stack>
 
     {saved && <Alert variant="info">Nøklene virker og er lagret. Vipps er koblet til.</Alert>}
+    {webhookConnected && (
+      <Alert variant="success">
+        Betalingsvarsler er koblet til. Medlemskap blir nå oppdatert automatisk når noen betaler.
+      </Alert>
+    )}
+    {webhookError && <Alert variant="error">{webhookError}</Alert>}
     {retested && <Alert variant="info">Nøklene virker fortsatt.</Alert>}
     {validationError && <Alert variant="error">{validationError}</Alert>}
 
@@ -123,6 +168,46 @@ const validatedDate = stored ? new Date(stored.validatedAt).toLocaleDateString("
           <form method="post">
             <Button variant="secondary" name="intent" value="test" block>
               Test nøklene på nytt
+            </Button>
+          </form>
+        </Stack>
+      )
+    }
+
+    {
+      stored && (
+        <Stack gap="sm">
+          <Heading level={2}>Betalingsvarsler</Heading>
+          <Text variant="small">
+            For at et medlemskap skal bli aktivt av seg selv når noen betaler, må Vipps få vite
+            hvor den skal varsle oss. Adressen følger denne installasjonen, så koble til på nytt
+            hvis adressen endrer seg.
+          </Text>
+          {stored.webhook ? (
+            <div class="keys">
+              <Text variant="small">Varsler går til: {stored.webhook.url}</Text>
+              <Text variant="small">
+                Koblet til:{" "}
+                {new Date(stored.webhook.registeredAt).toLocaleDateString("nb-NO")}
+              </Text>
+              {stored.webhook.url !== webhookUrl && (
+                <Alert variant="error">
+                  Varslene går til en annen adresse enn denne siden ({webhookUrl}). Koble til på
+                  nytt, ellers går betalinger tapt.
+                </Alert>
+              )}
+            </div>
+          ) : (
+            <Text variant="small">Ikke koblet til ennå — betalinger vil ikke registreres.</Text>
+          )}
+          <form method="post">
+            <Button
+              variant={stored.webhook ? "secondary" : "primary"}
+              name="intent"
+              value="webhooks"
+              block
+            >
+              {stored.webhook ? "Koble til på nytt" : "Koble til betalingsvarsler"}
             </Button>
           </form>
         </Stack>
