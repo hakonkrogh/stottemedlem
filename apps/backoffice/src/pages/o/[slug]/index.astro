@@ -1,6 +1,12 @@
 ---
 import { joinPageTermsUrl, joinPageUrl } from "@stottemedlem/core";
-import { ensureOrganization, getOrganizationBySlug, listMembershipTiers } from "@stottemedlem/db";
+import {
+  countMembersByStatus,
+  ensureOrganization,
+  getOrganizationBySlug,
+  listMembershipTiers,
+  listOrganizationMembers,
+} from "@stottemedlem/db";
 import Alert from "@stottemedlem/ui/components/Alert.astro";
 import Button from "@stottemedlem/ui/components/Button.astro";
 import CardFooter from "@stottemedlem/ui/components/CardFooter.astro";
@@ -77,6 +83,9 @@ const displayName =
   [session.firstName, session.lastName].filter(Boolean).join(" ") || session.email;
 const canSwitch = memberships.length > 1;
 const tiers = await listMembershipTiers(db, org.id);
+const members = await listOrganizationMembers(db, org.id);
+const { active, lapsed } = countMembersByStatus(members);
+const currentYear = new Date().getUTCFullYear();
 const profileComplete = org.orgnr !== null && org.contactEmail !== null;
 const vippsKeys = await readOrgVippsKeys(workos, org.workosOrgId);
 const joinUrl = joinPageUrl(org.slug);
@@ -87,9 +96,7 @@ const termsUrl = joinPageTermsUrl(org.slug);
   <Stack gap="lg">
     <Stack gap="sm">
       <Heading>{org.name}</Heading>
-      <Text variant="lead">
-        Innlogget som {displayName}. Medlemslisten og resten av administrasjonen kommer senere.
-      </Text>
+      <Text variant="lead">Innlogget som {displayName}.</Text>
     </Stack>
     {
       !profileComplete && (
@@ -109,6 +116,19 @@ const termsUrl = joinPageTermsUrl(org.slug);
         </Alert>
       )
     }
+    <Stack gap="sm">
+      <Heading level={2}>Medlemmer</Heading>
+      <Text variant="small">
+        {
+          members.length === 0
+            ? "Ingen støttemedlemmer ennå — de dukker opp her av seg selv når noen melder seg inn."
+            : `${active} ${active === 1 ? "aktivt medlem" : "aktive medlemmer"} i ${currentYear}${lapsed > 0 ? `, ${lapsed} utløpt` : ""}.`
+        }
+      </Text>
+      <Button variant="secondary" href={`${orgPath(org.slug)}/medlemmer`} block>
+        Åpne medlemslisten
+      </Button>
+    </Stack>
     <Stack gap="sm">
       <Heading level={2}>Medlemskap</Heading>
       {
