@@ -202,6 +202,9 @@ importers:
       '@types/node':
         specifier: 'catalog:'
         version: 22.19.20
+      qrcode:
+        specifier: ^1.5.4
+        version: 1.5.4
       typescript:
         specifier: 'catalog:'
         version: 5.9.3

@@ -18,10 +18,13 @@
     "dev": "tsc --watch --preserveWatchOutput",
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
-    "smoke": "node scripts/smoke.mjs"
+    "smoke": "node scripts/smoke.mjs",
+    "recurring-test": "tsc && node scripts/recurring-test.mjs",
+    "tunnel": "bash scripts/tunnel.sh"
   },
   "devDependencies": {
     "@types/node": "catalog:",
+    "qrcode": "^1.5.4",
     "typescript": "catalog:",
     "vitest": "catalog:"
   }

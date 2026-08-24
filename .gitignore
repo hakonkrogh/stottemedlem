@@ -15,3 +15,7 @@ tmp/
 worker-configuration.d.ts
 storybook-static/
 *storybook.log
+# Vipps local test rig: the quick-tunnel origin and the harness' saved ids
+# (agreement/charge ids and the webhook secret Vipps shows only once).
+.vipps-tunnel
+.vipps-test-state.json
