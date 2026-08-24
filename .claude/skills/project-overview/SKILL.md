@@ -83,6 +83,10 @@ lives in `specs/`, kept in sync with code by a mandatory `Stop`-hook harness.
   `PublicShell.astro` (indexable, brand attribution; admin `Shell.astro` stays
   noindex). Astro template gotcha found here twice: text + `{expr}` separated
   by a newline collapses the space ("arbeidet iNordnes") — join with `{" "}`.
+  Same class, third sighting 2026-08-24: **two adjacent expressions on ONE line
+  inside a component slot** — `<Text>{a} {b}</Text>` — also lose the space
+  ("var 2024.Den årlige"). Building the sentence in the frontmatter
+  (`[a, b].filter(Boolean).join(" ")`) is immune to both and reads better.
   **Org visual identity** (added 2026-08-12, branch org-image-editing):
   `logo_key`/`banner_key` columns (migration `0002_org_images.sql`) hold R2
   object keys in the backoffice `MEDIA` bucket binding; upload/validate/serve
@@ -182,6 +186,21 @@ lives in `specs/`, kept in sync with code by a mandatory `Stop`-hook harness.
   that creates the charge and then fails to write it down cannot bill the member
   twice tomorrow. The tier form also reprices immediately on save so
   members' apps match at once.
+  **Member list** (added 2026-08-24, spec `use-cases/curate-member-list.md`):
+  `/o/[slug]/medlemmer` (list, `?sok=` search) + `/o/[slug]/medlemmer/[memberId]`
+  (history + the one editable thing, contact details). Queries live in
+  `@stottemedlem/db` (`listOrganizationMembers`, `countMembersByStatus`,
+  `matchesMemberSearch`, `getOrganizationMember`, `updateMemberContactDetails`);
+  status is DERIVED (never a column, never settable) and a supporter with no
+  completed payment renders as "Ikke betalt", not lapsed. Two conventions this
+  established, worth following for new back-office screens: (1) the page is thin
+  — `requireOrgAccess(session, slug)` in `src/lib/orgAccess.ts` resolves the org
+  + checks WorkOS membership (an org you may not see and one that does not exist
+  are deliberately identical), then it loads data and renders a `*Screen.astro`;
+  (2) that screen is a pure presentational component with a `.stories.ts`, which
+  is the ONLY way to see an auth-gated page (see `preview-screenshot`) — fixtures
+  shared via `components/memberFixtures.ts`. The whole list is loaded and
+  filtered in the screen on purpose, so counts do not move while you search.
   **Reconciliation** (added 2026-08-21, spec `concepts/payment-reconciliation.md`):
   `src/lib/reconcile.ts` (`reconcileOrganization`) runs FIRST in the 02:00 job.
   Webhook delivery is at-least-once, which also means at-most-never — a real
