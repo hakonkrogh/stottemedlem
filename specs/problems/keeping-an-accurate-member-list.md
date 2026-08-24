@@ -27,6 +27,10 @@ or grant application. The organization can't act on support it can't see.
 - Status follows directly from whether the annual fee is paid for the current
   period — no manual reconciliation.
 - Lapsed members are visible so they can be invited to renew.
+- The list is right even when the product was never told about a payment. A
+  lost notification must not turn a paying member into a lapsed one; the
+  product goes and checks
+  ([payment reconciliation](../concepts/payment-reconciliation.md)).
 
 ## Solved by
 - [Use case: Curate the member list](../use-cases/curate-member-list.md)
@@ -35,3 +39,5 @@ or grant application. The organization can't act on support it can't see.
 ## Related
 - [Concept: Membership](../concepts/membership.md)
 - [Concept: Supporting member](../concepts/supporting-member.md)
+- [Concept: Payment reconciliation](../concepts/payment-reconciliation.md) — how
+  the list stays right when a payment notification never arrives

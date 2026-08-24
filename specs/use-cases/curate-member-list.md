@@ -25,7 +25,9 @@ From the organization's point of view:
    (which annual periods they have supported).
 4. The administrator can correct a member's recorded identity/contact details.
 5. The list reflects payments automatically — a new join or renewal appears
-   without manual entry.
+   without manual entry, and keeps doing so even when the product was never
+   notified that the payment happened
+   ([payment reconciliation](../concepts/payment-reconciliation.md)).
 
 ## Acceptance criteria
 - [ ] The list shows every supporting member with their current status and valid
@@ -47,3 +49,5 @@ From the organization's point of view:
 ## Related
 - [Concept: Membership](../concepts/membership.md)
 - [Concept: Supporting member](../concepts/supporting-member.md)
+- [Concept: Payment reconciliation](../concepts/payment-reconciliation.md) — what
+  keeps the list true to the money without anyone reconciling by hand

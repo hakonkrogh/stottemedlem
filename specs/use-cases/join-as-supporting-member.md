@@ -29,10 +29,19 @@ From the supporter's point of view:
    [supporting member](../concepts/supporting-member.md) (e.g. name and a contact
    such as email) comes from the supporter's Vipps profile, with their consent —
    the supporter only types it in themselves if Vipps cannot provide it.
-3. The supporter approves the payment of the annual fee in Vipps.
+3. The supporter approves the payment in Vipps. Joining mid-year costs only
+   the remaining share of the [annual fee](../concepts/annual-fee.md) for the
+   current [annual period](../concepts/annual-period.md); the supporter is told
+   both what they pay now and what the membership costs per year afterwards.
+   Approving also sets up the yearly continuation — the supporter agrees once,
+   and [renewal](renew-annual-membership.md) then happens by itself until they
+   end it.
 4. On successful payment, the supporter becomes an **active** supporting member
-   for the current annual period, and this is reflected immediately in the
-   organization's [member list](curate-member-list.md).
+   for the current [annual period](../concepts/annual-period.md), and this is
+   reflected immediately in the organization's
+   [member list](curate-member-list.md). Payment is what decides this: the
+   supporter returning from Vipps is not by itself proof that anything was
+   paid, and the product never treats it as such.
 5. The supporter receives confirmation that they are now a supporting member and
    until when their support is valid.
 
@@ -44,16 +53,22 @@ From the supporter's point of view:
       annual period, attributed to the named supporter.
 - [ ] The supporter is told their membership is active and its valid-until date.
 - [ ] A failed or abandoned payment does not create an active membership.
+- [ ] A payment that succeeded creates the membership even if the product was
+      never notified of it.
 
 ## Out of scope
 - Gift/third-party memberships (paying on behalf of someone else).
-- Recurring auto-charge (renewal is handled as its own use case for now).
 - Anonymous support with no identity captured.
 
 ## Related
 - [Concept: Supporting member](../concepts/supporting-member.md)
 - [Concept: Membership](../concepts/membership.md)
+- [Concept: Annual period](../concepts/annual-period.md)
+- [Concept: Member self-service page](../concepts/member-self-service.md) — the
+  member's own page, whose address every membership carries
 - [Concept: Annual fee](../concepts/annual-fee.md)
+- [Concept: Payment reconciliation](../concepts/payment-reconciliation.md) — the
+  safety net when the payment succeeds but word of it never reaches us
 - [Use case: Earn stars and recruit new members](earn-stars-and-recruit.md) — a
   join may arrive via a member's referral QR code; completing it credits that
   member's recruit count.
