@@ -62,6 +62,24 @@ change + restart, the first visit to a cached page still serves the PRE-change
 copy (that's SWR working, not a broken build); curl twice, or purge, before
 judging a change invisible.
 
+Secrets are NOT in the generated `Env` (verified 2026-08-24, adding
+`RESEND_API_KEY`). `wrangler types` builds `Env` from wrangler.jsonc `vars`
+**plus whatever keys happen to be in the local `.dev.vars`** — so a secret
+typechecks on your machine and fails in CI or a fresh worktree with
+`error TS2339: Property 'X' does not exist on type 'Env'`. It only bites in
+`worker.ts`'s import tree (app code uses the hand-written `src/env.d.ts`
+instead), which is easy to trip by importing one new lib from the scheduled
+handler. Declare the secret at the point of use:
+
+```ts
+// The weak-type check rejects `const s: { X?: string } = env` with TS2559
+// ("no properties in common"), so widen instead of annotating:
+const secrets = env as typeof env & { RESEND_API_KEY?: string };
+```
+
+Non-secret config has the better fix — make it a real wrangler `var` in both
+envs (that is why `PUBLIC_ORIGIN` is one).
+
 ## Repo-specific install gotchas
 
 - `workerd` must be in `onlyBuiltDependencies` (pnpm-workspace.yaml) — its postinstall
