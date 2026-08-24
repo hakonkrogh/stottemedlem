@@ -245,9 +245,18 @@ real account. Source: developer.vippsmobilepay.com/docs/knowledge-base/test-envi
   walkthrough log records the answer once observed).
 - **Test users:** portal → *For utviklere* → *Test users* — auto-generates
   phone number + test NIN; usable on multiple devices simultaneously.
-- **MT (Merchant Test) app:** iOS via TestFlight / Android via Google Play
-  (join their Google Group first) — real-app mirror; approve test recurring
-  agreements on a phone with a test user for true end-to-end.
+- **MT (Merchant Test) app:** iOS via TestFlight
+  (https://testflight.apple.com/join/hTAYrwea, no invitation code) / Android
+  via Google Play after joining
+  https://groups.google.com/u/0/g/vipps-mobilepay-test-app with the same
+  account — real-app mirror, coexists with the production app; approve test
+  recurring agreements on a phone with a test user for true end-to-end.
+  **PIN in the MT app is `1236`.** Vipps documents special test amounts that
+  force outcomes (e.g. insufficient funds) — see the test-environment page.
+- **The rig for all of this ships with the repo** (added 2026-08-20):
+  `pnpm --filter @stottemedlem/vipps run recurring-test` + `run tunnel` drive a
+  real agreement end to end and receive the webhooks. Skill: `vipps-test-rig`;
+  runbook: `docs/vipps-local-recurring-test.md`.
 
 ### Vipps API mechanics (verified 2026-08-10, implemented in `packages/vipps`)
 
@@ -279,6 +288,89 @@ real account. Source: developer.vippsmobilepay.com/docs/knowledge-base/test-envi
   testable body→`x-ms-content-sha256` example pair (used as a fixture in
   `packages/vipps/src/webhook-verification.test.ts`). Verify with
   `crypto.subtle.verify` (constant-time) — works on workerd and Node alike.
+- **Userinfo (member identity):** an agreement drafted with
+  `scope: "name email phoneNumber"` (camelCase scope names, space-separated)
+  comes back carrying `sub`; fetch the profile with
+  `GET /vipps-userinfo-api/userinfo/{sub}` using the same auth headers as any
+  other call (`client.getUserinfo(sub)`). The **response fields are OIDC
+  snake_case** — `phone_number`, `phone_number_verified`, `given_name`,
+  `family_name`, `birthdate`, `address` — NOT the camelCase scope names.
+  Reachable for **168 hours after consent only**, so identity must be
+  persisted at signup (spec: `specs/concepts/supporting-member.md`).
+  Source: developer.vippsmobilepay.com/docs/APIs/userinfo-api/userinfo-api-quick-start/
+  (has a verbatim example body). Doc-URL gotcha: `/docs/developer-resources/…`
+  paths 404 — the test-environment page lives under `/docs/knowledge-base/`.
+- **Local key fallback (test env only):** `getVippsForOrg` falls back to
+  `VIPPS_CLIENT_ID/_SECRET/_SUBSCRIPTION_KEY/VIPPS_MSN` from `.dev.vars` when
+  an org has no Vault keys AND `VIPPS_API_BASE_URL` is apitest — so the join
+  flow can be exercised locally without a WorkOS account. Production never
+  does this (spec: `specs/concepts/vipps-api-keys.md`).
+- **Full recurring lifecycle VERIFIED LIVE 2026-08-20** (test sales unit, MT
+  app approval on a real phone, rig in `packages/vipps/scripts`). What the run
+  established beyond the docs:
+  - Approving an agreement that carries an `initialCharge` fires **two**
+    webhooks ~1 s apart, `recurring.charge-captured.v1` **before**
+    `recurring.agreement-activated.v1`. Don't wait for the activation event
+    before recording the payment — and expect either order to be possible.
+  - Our HMAC verification passes on **real** deliveries (previously only
+    proven against the docs' fixture).
+  - A charge's `due` comes back from GET as a **timestamp**
+    (`2026-08-20T12:31:23Z`), though create takes `YYYY-MM-DD`. Don't compare
+    the two as strings.
+  - A charge created inside the 30-day visibility window is **DUE
+    immediately**, never PENDING. The INITIAL charge reads `CHARGED`.
+  - `userinfo` for a test user also returns `sid`, and `email_verified` is
+    `false` while `phone_number_verified` is `true`.
+  - **A merchant-created RECURRING charge really is captured on its due date**,
+    with nothing running on our side — confirmed 2026-08-21 by leaving a charge
+    due overnight and reading it back `CHARGED`. Costs a real day to reverify,
+    so take this one on record. Its webhook went to a dead tunnel and Vipps
+    retried for days; the charge itself was unaffected.
+  - **`GET /agreements/{id}/charges` is the reconciliation surface**: it returns
+    every charge on the agreement — INITIAL and RECURRING, in every status —
+    which makes it the only way to find a charge Vipps has and we have no row
+    for. Verified 2026-08-21 by pointing an empty local record at a real
+    agreement: two captured charges whose webhooks were never received came back
+    in full and rebuilt the membership. A charge id + agreement id is all a
+    recovery needs. (`GET /agreements?status=` still lists ONE status per call,
+    so it cannot replace the local record — see the agreement note below.)
+- **An agreement carries NO member identity** (verified live 2026-08-20 on a
+  real ACTIVE agreement — asked repeatedly, so record it once): the full field
+  set is `campaign, countryCode, created, externalId, id, interval,
+  merchantAgreementUrl, merchantRedirectUrl, paymentMethod, pricing,
+  productDescription, productName, start, status, stop, sub, userinfoUrl,
+  uuid, vippsConfirmationUrl`. The member's name/email/phone appear in **none**
+  of the values — identity exists only behind `userinfoUrl`, for 168 hours.
+  Combined with "no all-statuses listing" and no documented retention, this is
+  the concrete proof that **Vipps cannot serve as the member registry**; our D1
+  is (specs/concepts/membership.md). Open question needing portal access: does
+  the portal UI list payer names for Faste betalinger? The API does not.
+- **`Idempotency-Key` must be a UUID** (found the hard way 2026-08-20, in the
+  join route): passing our own business key — `externalId`, i.e.
+  `<tierKey>:<uuid>` — gets `400 … "Invalid value for Idempotency-Key"`. The
+  colon is the problem; the docs' "1–40 chars" understates the validation.
+  Pass `crypto.randomUUID()`; the business key belongs in `externalId`.
+- **Testing the app through a tunnel needs two non-Vipps unlocks** (both cost
+  an hour on 2026-08-20):
+  1. Vite blocks unfamiliar Host headers — a tunnel gets
+     `403 Blocked request. This host … is not allowed`, which reads exactly
+     like a broken tunnel. Fixed permanently in `apps/backoffice/astro.config.mjs`
+     (`vite.server.allowedHosts` covers `.trycloudflare.com`/`.ngrok*`).
+  2. Astro rejects cross-site form POSTs, so `curl -X POST -d …` gets
+     `403 Cross-site POST form submissions are forbidden`. Real browsers send
+     `Origin`; curl must too (`-H "Origin: https://<host>"`). JSON bodies (the
+     Vipps webhook) are unaffected — the check only applies to form content
+     types.
+- **Webhook registration validates the receiver URL's reachability**
+  (verified 2026-08-20): a `400 … extraDetails[{name:"url", reason:"The URL
+  and/or hostname you provided is not allowed"}]` right after a tunnel starts
+  is TRANSIENT — the hostname simply isn't in public DNS yet. Re-probed
+  seconds later, `*.trycloudflare.com`, `*.ngrok-free.app` and
+  `staging.app.xn--stttemedlem-hgb.no` were all accepted (all ten events), so
+  there is no tunnel-domain blocklist. Retry before concluding otherwise.
+- **The Recurring approval deeplink is short-lived:** the
+  `vippsConfirmationUrl` JWT carries `exp = iat + 600` — **10 minutes** to
+  approve in the app before the draft must be re-created.
 - **Env selection is pure config:** `VIPPS_API_BASE_URL` var —
   `https://apitest.vipps.no` in `.dev.vars` + wrangler `env.staging`,
   `https://api.vipps.no` only in top-level (production) vars. Since

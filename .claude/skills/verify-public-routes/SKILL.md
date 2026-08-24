@@ -10,6 +10,24 @@ pass while broken: the join page must 200, its former `/org/*` address must 301
 with the query intact, and the stale-while-revalidate cache must go
 `miss` → `hit`. This drives them over real HTTP.
 
+## Read what's actually in local D1
+
+    bash .claude/skills/verify-public-routes/d1.sh "<SQL>"     # rows as JSON, nothing else
+
+Wrangler wraps every result in banners and a table, so ad-hoc `d1 execute`
+calls need re-quoting and grepping each time; this prints just the rows, and
+carries the load-bearing `CI=1`. Read-only by convention — `seed.sh` writes.
+Since migration 0005 the interesting tables are the member registry:
+`supporting_members`, `membership_agreements`, `memberships`,
+`membership_charges` (see `project-overview`). Handy for proving an invariant
+holds rather than assuming it:
+
+    d1.sh "SELECT count(*) AS n FROM memberships WHERE period_year = 2026"
+
+**Not seeded yet:** `seed.sh` writes an org + tiers but no members. Once the
+join flow lands, extend it with a supporting member, an ACTIVE agreement and a
+current-year membership, so member-list screens have a baseline.
+
 ## Seed first (pages read D1)
 
     bash .claude/skills/verify-public-routes/seed.sh [slug]     # default: eksempel-musikkorps
@@ -19,6 +37,13 @@ tiers**. The tiers matter: since tiering landed (2026-08-19)
 `organizations.annual_fee_nok` is LEGACY and unused, so an org seeded without
 `membership_tiers` rows renders the *zero-tier degraded* page, not the real
 offer — a silently wrong baseline for screenshots and assertions.
+
+It also applies pending D1 migrations first (`CI=1 wrangler d1 migrations
+apply DB --local`), so a fresh worktree seeds instead of dying with `no such
+table: organizations`. The `CI=1` is load-bearing everywhere wrangler is
+chained in a script: interactively it stops on `? About to apply N
+migration(s)` and waits forever — which is exactly how the `pnpm dev`
+self-heal was silently dead until 2026-08-20 (see `project-overview`).
 
 Local D1 lives in `apps/backoffice/.wrangler` and is shared **live** with a
 running `astro dev` — seed after starting the server, no restart needed. Seed
