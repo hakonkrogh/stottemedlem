@@ -2,10 +2,10 @@
 import { MEMBERSHIP_TIER_DESCRIPTION_MAX_LENGTH } from "@stottemedlem/core";
 import {
   archiveMembershipTier,
-  countActiveAgreementsForTier,
   createMembershipTier,
   getOrganizationBySlug,
   listMembershipTiers,
+  tierMemberReach,
   updateMembershipTier,
 } from "@stottemedlem/db";
 import Alert from "@stottemedlem/ui/components/Alert.astro";
@@ -19,6 +19,7 @@ import TextField from "@stottemedlem/ui/components/TextField.astro";
 import TextLink from "@stottemedlem/ui/components/TextLink.astro";
 import Shell from "../../../../layouts/Shell.astro";
 import { getDb } from "../../../../lib/db";
+import { getEmailSender } from "../../../../lib/email";
 import {
   getTierTemplate,
   parseTierForm,
@@ -27,6 +28,7 @@ import {
   type TierFormValues,
   tierFormValues,
 } from "../../../../lib/membershipTiers";
+import { type NoticeReport, sendOwedFeeChangeNotices } from "../../../../lib/notices";
 import { purgeOrgPublicPages } from "../../../../lib/publicPageCache";
 import { repriceAgreements } from "../../../../lib/renewals";
 import { getVippsForOrg } from "../../../../lib/vipps";
@@ -82,6 +84,8 @@ if (template) {
 }
 const feePlaceholder = String(template?.suggestedFeeNok ?? 300);
 
+let notice: NoticeReport | null = null;
+
 if (Astro.request.method === "POST") {
   const form = await Astro.request.formData();
   const action = String(form.get("action") ?? "save");
@@ -117,10 +121,22 @@ if (Astro.request.method === "POST") {
             // Failures are not fatal: tonight's run tries again.
             if (failed) console.warn(`${failed} agreement(s) not repriced yet for ${org.slug}`);
           }
+          // Telling the members is not a side effect of the price change — it
+          // is half of what a price change *is*
+          // (specs/use-cases/change-the-annual-fee.md). Doing it here rather
+          // than leaving it to tonight's run means the administrator learns
+          // straight away who could not be reached, while they are still
+          // thinking about the change. Anything that fails is still owed, and
+          // the nightly run picks it up.
+          notice = await sendOwedFeeChangeNotices(db, org, Astro.url.origin, getEmailSender());
         }
       }
       await purgeOrgPublicPages(org.slug, Astro.url.origin);
-      return Astro.redirect(orgPath(org.slug));
+      return Astro.redirect(
+        notice
+          ? `${orgPath(org.slug)}?varslet=${notice.told}.${notice.unreachable + notice.failed}`
+          : orgPath(org.slug),
+      );
     }
   }
 }
@@ -129,7 +145,8 @@ const canArchive = !isNew && tiers.length > 1;
 // What a price change would actually move. Shown before the administrator
 // changes anything, because the product cannot yet tell members itself
 // (specs/use-cases/change-the-annual-fee.md, open question).
-const activeMembers = tier ? await countActiveAgreementsForTier(db, tier.id) : 0;
+const reach = tier ? await tierMemberReach(db, tier.id) : { members: 0, unreachable: 0 };
+const activeMembers = reach.members;
 const title = isNew ? "Legg til medlemskap" : `Endre ${tier?.name}`;
 ---
 
@@ -149,8 +166,13 @@ const title = isNew ? "Legg til medlemskap" : `Endre ${tier?.name}`;
         <Alert variant="info">
           {activeMembers} støttemedlem{activeMembers === 1 ? "" : "mer"} betaler i dag{" "}
           {tier?.annualFeeNok} kr i året for dette medlemskapet. Endrer du prisen, gjelder den for
-          dem fra neste fornyelse ved årsskiftet — det de har betalt for i år, står. Vipps varsler
-          om beløpet, men ikke om at prisen er endret, så gi medlemmene beskjed selv.
+          dem fra neste fornyelse ved årsskiftet — det de har betalt for i år, står. Vi sender dem
+          en e-post om endringen med én gang, og ingen blir belastet en ny pris de ikke har visst
+          om i minst to uker.
+          {
+            reach.unreachable > 0 &&
+              ` ${reach.unreachable} av dem har vi ingen e-postadresse til — dem må dere si fra til selv.`
+          }
         </Alert>
       )
     }

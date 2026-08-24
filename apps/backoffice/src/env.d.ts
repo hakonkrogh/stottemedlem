@@ -32,6 +32,17 @@ interface Env {
    */
   PUBLIC_ORIGIN?: string;
   /**
+   * Resend API key (secret). Absent = member notices are logged, not sent, and
+   * nothing is recorded as having told anyone (see src/lib/email.ts).
+   */
+  RESEND_API_KEY?: string;
+  /**
+   * The address member notices are sent from. Must be on a domain verified
+   * with the provider, so it is always ours — the organization's own address
+   * is the reply-to instead (specs/concepts/member-notice.md).
+   */
+  EMAIL_FROM_ADDRESS: string;
+  /**
    * Optional local-development keys for ONE shared Vipps TEST sales unit
    * (.dev.vars), used only when an org has no keys of its own in Vault and
    * only against apitest.vipps.no — see src/lib/vipps.ts.

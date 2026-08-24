@@ -75,10 +75,19 @@ export const nothingPaidYet: MemberOverview = {
   renewing: true,
 };
 
+/** Paying, but joined without sharing an address — nobody can be told anything. */
+export const noWayToReach: MemberOverview = {
+  member: fixtureMember("m-6", "Sigrun Vik", null, "4755555555"),
+  latest: fixturePeriod("m-6", 2026, 300),
+  status: "active",
+  renewing: true,
+};
+
 export const everyone: MemberOverview[] = [
   withoutName,
   endingAfterThisYear,
   continuing,
   lapsed,
+  noWayToReach,
   nothingPaidYet,
 ];
