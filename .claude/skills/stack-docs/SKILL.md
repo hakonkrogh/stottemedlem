@@ -512,6 +512,20 @@ the marketing Worker serves that, and Resend's records live on `send.` and
   Scripts/Routes, D1 and R2, not Zone → DNS → Edit. Either the user adds them
   in the dashboard, or they mint a token with that permission.
 
+**Check them rather than assume them** — records get added one at a time and a
+missing SPF looks like nothing at all until the first send fails. On 2026-08-25
+this found DKIM and the MX live but `TXT send` (SPF) never added:
+
+```sh
+for r in "TXT send" "TXT resend._domainkey" "MX send" "TXT _dmarc"; do
+  t=${r% *}; n=${r#* }; printf "%-24s " "$n ($t)"
+  echo "$(dig +short $t $n.xn--stttemedlem-hgb.no @8.8.8.8 | head -1)" | head -c 70; echo
+done
+```
+
+Which environments hold the API key: `wrangler secret list [--env staging]`
+from `apps/backoffice` (works off the local OAuth session, no token needed).
+
 ## Forward references (not captured yet)
 
 | topic | where |
