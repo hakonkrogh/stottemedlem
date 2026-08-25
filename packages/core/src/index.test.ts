@@ -11,6 +11,7 @@ import {
   joinPageUrl,
   MEMBERSHIP_TIER_KEY_MAX_LENGTH,
   membershipTierKey,
+  memberUnsubscribePath,
   nextAnnualPeriod,
   normalizeMembershipTierDescription,
   proratedJoinFeeNok,
@@ -235,5 +236,19 @@ describe("stableUuid", () => {
   it("is a well-formed v4-shaped UUID, which is what Vipps validates", async () => {
     const uuid = await stableUuid("renewal:agreement-1:2027");
     expect(uuid).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/);
+  });
+});
+
+describe("memberUnsubscribePath", () => {
+  it("lives under the org's public pages and carries the member's token", () => {
+    expect(memberUnsubscribePath("nordnes", "tok-1")).toBe(
+      "/bli-medlem/nordnes/meldinger-av?n=tok-1",
+    );
+  });
+
+  it("keeps a token with reserved characters intact in the URL", () => {
+    expect(memberUnsubscribePath("nordnes", "a/b&c")).toBe(
+      "/bli-medlem/nordnes/meldinger-av?n=a%2Fb%26c",
+    );
   });
 });

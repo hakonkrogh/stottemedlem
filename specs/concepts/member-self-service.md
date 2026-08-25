@@ -35,6 +35,10 @@ the organization and without the organization having to answer.
   [join page](join-page.md).
 - It carries the same [brand attribution](brand-attribution.md) as every other
   public-facing surface.
+- It shows whether the member has declined
+  [organization messages](org-message.md), and can reverse that choice — the
+  one-click decline offered in every message lands the member here to change
+  their mind later.
 
 ## Open questions
 - **Identifying a member who lost the address.** Today the address is the only

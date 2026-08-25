@@ -1,0 +1,253 @@
+---
+// Writing to the supporting members (specs/use-cases/keep-supporters-in-the-loop.md,
+// specs/concepts/org-message.md). Plain text on purpose: this is member
+// communication, not a newsletter tool. The audience is a rule, not a list —
+// the counts shown here are derived from the live register, and derived again
+// when the message actually goes out.
+import type { MessageReach, OrgMessage, OrgMessageAudience } from "@stottemedlem/db";
+import { bodyParagraphs } from "@stottemedlem/email";
+import Alert from "@stottemedlem/ui/components/Alert.astro";
+import Button from "@stottemedlem/ui/components/Button.astro";
+import CardFooter from "@stottemedlem/ui/components/CardFooter.astro";
+import Heading from "@stottemedlem/ui/components/Heading.astro";
+import Stack from "@stottemedlem/ui/components/Stack.astro";
+import Text from "@stottemedlem/ui/components/Text.astro";
+import TextArea from "@stottemedlem/ui/components/TextArea.astro";
+import TextField from "@stottemedlem/ui/components/TextField.astro";
+import TextLink from "@stottemedlem/ui/components/TextLink.astro";
+
+export interface MessageFormValues {
+  subject: string;
+  body: string;
+  audience: OrgMessageAudience;
+}
+
+interface Props {
+  orgName: string;
+  values: MessageFormValues;
+  fieldErrors: { subject?: string; body?: string };
+  /** What each audience choice amounts to, from the live register. */
+  reach: { active: MessageReach; all: MessageReach };
+  /** "edit" shows the form; "preview" shows the message as members read it. */
+  mode: "edit" | "preview";
+  /** Earlier messages, newest first — each links to its own result. */
+  previous: OrgMessage[];
+  messagesPath: string;
+  backPath: string;
+  error?: string | null;
+}
+const { orgName, values, fieldErrors, reach, mode, previous, messagesPath, backPath, error } =
+  Astro.props;
+
+const plural = (n: number) => `${n} støttemedlem${n === 1 ? "" : "mer"}`;
+const reachSentence = (r: MessageReach) => {
+  const caveats = [
+    r.unreachable > 0 && `${r.unreachable} har vi ingen e-postadresse til`,
+    r.declined > 0 && `${r.declined} har meldt seg av`,
+  ].filter(Boolean);
+  return `Går til ${plural(r.reached)}${caveats.length > 0 ? ` — ${caveats.join(", ")}` : ""}.`;
+};
+
+const chosenReach = values.audience === "all" ? reach.all : reach.active;
+const paragraphs = bodyParagraphs(values.body);
+const date = (iso: string) => `${iso.slice(8, 10)}.${iso.slice(5, 7)}.${iso.slice(0, 4)}`;
+---
+
+<Stack gap="lg">
+  <Stack gap="sm">
+    <Heading>Meldinger</Heading>
+    <Text variant="lead">
+      Skriv til støttemedlemmene deres — en takk, en oppdatering eller nyheter. Meldingen sendes
+      på e-post til adressene i medlemsregisteret.
+    </Text>
+  </Stack>
+
+  {error && <Alert variant="error">{error}</Alert>}
+
+  {
+    mode === "preview" ? (
+      <Stack gap="sm">
+        <Heading level={2}>Slik ser meldingen ut</Heading>
+        <div class="preview">
+          <p class="preview-subject">{values.subject}</p>
+          {paragraphs.map((paragraph) => (
+            <p class="preview-paragraph">{paragraph}</p>
+          ))}
+          <hr class="preview-rule" />
+          <p class="preview-footer">
+            Sendt via støttemedlem.no på vegne av {orgName}. Du får denne meldingen fordi du er
+            støttemedlem i {orgName}. Meld deg av slike meldinger.
+          </p>
+        </div>
+        <Text variant="small">{reachSentence(chosenReach)}</Text>
+        <form method="post">
+          <input type="hidden" name="subject" value={values.subject} />
+          <input type="hidden" name="body" value={values.body} />
+          <input type="hidden" name="audience" value={values.audience} />
+          <Stack gap="sm">
+            <Button name="action" value="send" block>
+              Send meldingen
+            </Button>
+            <Button variant="secondary" name="action" value="edit" block>
+              Rediger
+            </Button>
+          </Stack>
+        </form>
+      </Stack>
+    ) : (
+      <form method="post">
+        <Stack gap="lg">
+          <TextField
+            label="Emne"
+            name="subject"
+            value={values.subject}
+            required
+            error={fieldErrors.subject}
+          />
+          <TextArea
+            label="Melding"
+            name="body"
+            value={values.body}
+            rows={10}
+            required
+            hint="Ren tekst — en tom linje gir nytt avsnitt. Vi legger til en avsenderlinje og en avmeldingslenke nederst."
+            error={fieldErrors.body}
+          />
+          {/* The layout lives on an inner div: browsers do not reliably lay a
+              fieldset itself out as grid/flex (its content gets an anonymous
+              box), so the fieldset only carries the semantics. */}
+          <fieldset class="audience">
+            <legend>
+              <Text variant="small">Hvem skal få meldingen?</Text>
+            </legend>
+            <div class="audience-options">
+              <label class="audience-choice">
+                <input
+                  type="radio"
+                  name="audience"
+                  value="active"
+                  checked={values.audience !== "all"}
+                />
+                <span class="audience-text">
+                  <span class="audience-label">Aktive støttemedlemmer</span>
+                  <span class="audience-reach">{reachSentence(reach.active)}</span>
+                </span>
+              </label>
+              <label class="audience-choice">
+                <input
+                  type="radio"
+                  name="audience"
+                  value="all"
+                  checked={values.audience === "all"}
+                />
+                <span class="audience-text">
+                  <span class="audience-label">Alle, også utløpte medlemskap</span>
+                  <span class="audience-reach">
+                    {reachSentence(reach.all)} Bruk denne når dere vil invitere tilbake dem som har
+                    falt fra.
+                  </span>
+                </span>
+              </label>
+            </div>
+          </fieldset>
+          <Button name="action" value="preview" block>
+            Forhåndsvis
+          </Button>
+        </Stack>
+      </form>
+    )
+  }
+
+  {
+    previous.length > 0 && (
+      <Stack gap="sm">
+        <Heading level={2}>Sendte meldinger</Heading>
+        {previous.map((message) => (
+          <Text variant="small">
+            <TextLink href={`${messagesPath}/${message.id}`}>«{message.subject}»</TextLink>
+            <span>{message.sentAt ? ` — sendt ${date(message.sentAt)}` : " — sendes nå"}</span>
+          </Text>
+        ))}
+      </Stack>
+    )
+  }
+
+  <CardFooter>
+    <TextLink href={backPath}>← Tilbake til oversikten</TextLink>
+  </CardFooter>
+</Stack>
+
+<style>
+  .audience {
+    border: 0;
+    margin: 0;
+    padding: 0;
+    min-inline-size: 0;
+  }
+  .audience legend {
+    padding: 0;
+    margin-bottom: 0.5rem;
+  }
+  .audience-options {
+    display: grid;
+    gap: 0.75rem;
+  }
+  .audience-choice {
+    display: flex;
+    justify-content: flex-start;
+    gap: 0.6rem;
+    align-items: flex-start;
+    width: 100%;
+    font-size: 1rem;
+    font-weight: 400;
+    text-align: left;
+    cursor: pointer;
+  }
+  /* Sized explicitly: generic `input` styling elsewhere assumes text fields
+     (width 100%), and a full-width radio hit-area breaks the row. */
+  .audience-choice input {
+    flex: 0 0 auto;
+    width: 1.05rem;
+    height: 1.05rem;
+    margin: 0.2rem 0 0;
+    padding: 0;
+    accent-color: var(--sm-accent);
+  }
+  .audience-text {
+    flex: 1 1 auto;
+  }
+  .audience-label {
+    display: block;
+    font-weight: 600;
+  }
+  .audience-reach {
+    display: block;
+    font-size: 0.85rem;
+    font-weight: 400;
+    color: var(--sm-muted);
+  }
+  .preview {
+    border: 1px solid var(--sm-border);
+    border-radius: var(--sm-radius-lg);
+    padding: 1.25rem;
+    background: var(--sm-surface);
+  }
+  .preview-subject {
+    font-weight: 700;
+    margin: 0 0 0.75rem;
+  }
+  .preview-paragraph {
+    margin: 0 0 0.75rem;
+    white-space: pre-line;
+  }
+  .preview-rule {
+    border: 0;
+    border-top: 1px solid var(--sm-border);
+    margin: 1.25rem 0 0.75rem;
+  }
+  .preview-footer {
+    margin: 0;
+    font-size: 0.8rem;
+    color: var(--sm-muted);
+  }
+</style>

@@ -91,6 +91,13 @@ export const supportingMembers = sqliteTable("supporting_members", {
   phone: text("phone"),
   /** Vipps' opaque per-user id — how a returning supporter is recognized. */
   vippsSub: text("vipps_sub"),
+  /**
+   * When the member declined the organization's own messages
+   * (specs/concepts/org-message.md). Null = may be contacted. Member notices
+   * ignore this on purpose: declining news never declines being told what you
+   * will be charged.
+   */
+  messagesDeclinedAt: text("messages_declined_at"),
   createdAt: text("created_at").notNull().default(sql`(datetime('now'))`),
 });
 
@@ -256,3 +263,59 @@ export const memberNotices = sqliteTable("member_notices", {
 
 export type MemberNotice = typeof memberNotices.$inferSelect;
 export type NewMemberNotice = typeof memberNotices.$inferInsert;
+
+/**
+ * Who an organization message goes to: current members by default, lapsed
+ * members only as a deliberate choice (specs/concepts/org-message.md).
+ */
+export type OrgMessageAudience = "active" | "all";
+
+/**
+ * The organization's own messages to its supporting members
+ * (specs/concepts/org-message.md) — composed by an administrator, delivered by
+ * the product. The audience is a rule, never a stored recipient list: who the
+ * message reaches is derived from the live register when it is sent.
+ */
+export const orgMessages = sqliteTable("org_messages", {
+  id: text("id").primaryKey(),
+  orgId: text("org_id")
+    .notNull()
+    .references(() => organizations.id),
+  subject: text("subject").notNull(),
+  /** Plain text with blank-line paragraphs; the product offers no formatting. */
+  body: text("body").notNull(),
+  audience: text("audience").$type<OrgMessageAudience>().notNull(),
+  createdAt: text("created_at").notNull().default(sql`(datetime('now'))`),
+  /** Set when the send job finished walking the audience; null = still queued. */
+  sentAt: text("sent_at"),
+});
+
+export type OrgMessage = typeof orgMessages.$inferSelect;
+export type NewOrgMessage = typeof orgMessages.$inferInsert;
+
+/** How the send job left one member: told, not accepted, or no way to reach. */
+export type OrgMessageOutcome = "sent" | "failed" | "unreachable";
+
+/**
+ * One row per member the send job dealt with. The (message, member) uniqueness
+ * is what makes a retried send idempotent: a member already dealt with is
+ * never contacted twice for the same message.
+ */
+export const orgMessageRecipients = sqliteTable("org_message_recipients", {
+  id: text("id").primaryKey(),
+  messageId: text("message_id")
+    .notNull()
+    .references(() => orgMessages.id),
+  orgId: text("org_id")
+    .notNull()
+    .references(() => organizations.id),
+  memberId: text("member_id")
+    .notNull()
+    .references(() => supportingMembers.id),
+  outcome: text("outcome").$type<OrgMessageOutcome>().notNull(),
+  detail: text("detail"),
+  createdAt: text("created_at").notNull().default(sql`(datetime('now'))`),
+});
+
+export type OrgMessageRecipient = typeof orgMessageRecipients.$inferSelect;
+export type NewOrgMessageRecipient = typeof orgMessageRecipients.$inferInsert;

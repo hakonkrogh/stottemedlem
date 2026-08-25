@@ -1,4 +1,5 @@
 export { type FeeChangeNotice, feeChangeNotice } from "./feeChangeNotice.js";
+export { bodyParagraphs, type OrgMessageEmail, orgMessage } from "./orgMessage.js";
 export {
   createLoggingSender,
   createResendSender,

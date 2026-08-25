@@ -1,0 +1,107 @@
+---
+// What became of one organization message (specs/concepts/org-message.md):
+// a plain account of what went out and what did not. Everything here comes
+// from the recorded per-member outcomes — the product never claims a send
+// that did not happen, so an empty result while the queue works is shown as
+// exactly that, not as success.
+import type { OrgMessage, OrgMessageOutcome } from "@stottemedlem/db";
+import { bodyParagraphs } from "@stottemedlem/email";
+import Alert from "@stottemedlem/ui/components/Alert.astro";
+import CardFooter from "@stottemedlem/ui/components/CardFooter.astro";
+import Heading from "@stottemedlem/ui/components/Heading.astro";
+import Stack from "@stottemedlem/ui/components/Stack.astro";
+import Text from "@stottemedlem/ui/components/Text.astro";
+import TextLink from "@stottemedlem/ui/components/TextLink.astro";
+import type { MessageDeliveryReport } from "../lib/messages";
+
+interface Props {
+  message: OrgMessage;
+  report: MessageDeliveryReport;
+  /** The members the message did NOT reach, by name, so the org can act. */
+  problems: { name: string | null; outcome: OrgMessageOutcome }[];
+  messagesPath: string;
+}
+const { message, report, problems, messagesPath } = Astro.props;
+
+const plural = (n: number) => `${n} støttemedlem${n === 1 ? "" : "mer"}`;
+const audienceLabel =
+  message.audience === "all" ? "alle, også utløpte medlemskap" : "aktive støttemedlemmer";
+const paragraphs = bodyParagraphs(message.body);
+const problemLabel = (outcome: OrgMessageOutcome) =>
+  outcome === "failed" ? "sending feilet" : "ingen e-postadresse";
+---
+
+<Stack gap="lg">
+  <Stack gap="sm">
+    <Heading>«{message.subject}»</Heading>
+    <Text variant="lead">{`Til ${audienceLabel}.`}</Text>
+  </Stack>
+
+  {
+    !message.sentAt ? (
+      <Alert variant="info">
+        Meldingen sendes nå. Last siden på nytt om et øyeblikk for å se resultatet.
+      </Alert>
+    ) : (
+      <Stack gap="sm">
+        <Alert variant={report.sent > 0 ? "success" : "info"}>
+          {report.sent > 0
+            ? `Sendt til ${plural(report.sent)}.`
+            : "Meldingen nådde ingen — se hvem vi ikke kunne nå under."}
+        </Alert>
+        {(report.unreachable > 0 || report.failed > 0) && (
+          <Text variant="small">
+            {[
+              report.unreachable > 0 &&
+                `${plural(report.unreachable)} har vi ingen e-postadresse til — dem må dere nå selv`,
+              report.failed > 0 && `${report.failed} kunne ikke leveres nå`,
+            ]
+              .filter(Boolean)
+              .join(". ")}
+            .
+          </Text>
+        )}
+      </Stack>
+    )
+  }
+
+  {
+    problems.length > 0 && (
+      <Stack gap="sm">
+        <Heading level={2}>Ikke nådd</Heading>
+        {problems.map((problem) => (
+          <Text variant="small">
+            {[problem.name ?? "Uten navn", " — ", problemLabel(problem.outcome)].join("")}
+          </Text>
+        ))}
+      </Stack>
+    )
+  }
+
+  <Stack gap="sm">
+    <Heading level={2}>Meldingen</Heading>
+    <div class="body">
+      {paragraphs.map((paragraph) => <p>{paragraph}</p>)}
+    </div>
+  </Stack>
+
+  <CardFooter>
+    <TextLink href={messagesPath}>← Tilbake til meldinger</TextLink>
+  </CardFooter>
+</Stack>
+
+<style>
+  .body {
+    border: 1px solid var(--sm-border);
+    border-radius: var(--sm-radius-lg);
+    padding: 1.25rem;
+    background: var(--sm-surface);
+  }
+  .body p {
+    margin: 0 0 0.75rem;
+    white-space: pre-line;
+  }
+  .body p:last-child {
+    margin-bottom: 0;
+  }
+</style>

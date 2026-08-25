@@ -18,39 +18,48 @@ involved, using the member register it already has.
 ## Behaviour
 From the organization's point of view:
 
-1. The administrator composes a message to supporting members — a thank-you,
-   an update on what is happening in the organization, or news that keeps
-   members involved.
-2. The administrator chooses the audience from the register (e.g. all active
-   members) rather than maintaining any separate contact list.
-3. The product delivers the message to the selected members using the contact
-   details in the register.
-4. A member who has lapsed or opted out of communication is not contacted.
+1. The administrator composes an
+   [organization message](../concepts/org-message.md) — a subject and a
+   plain-text body — a thank-you, an update on what is happening in the
+   organization, or news that keeps members involved.
+2. The administrator chooses the audience from the register rather than
+   maintaining any separate contact list. **Current members are the default;
+   including lapsed members is a separate, deliberate choice** — inviting a
+   lapsed supporter back is legitimate, silently continuing to mail people who
+   left is not. (Decided 2026-08-25, resolving the former open question.)
+3. While choosing, the administrator sees how many members the message will
+   reach — and how many it cannot: members with no contact address and members
+   who have declined are counted, not hidden.
+4. The administrator previews the message as members will read it, then sends.
+5. The product delivers the message to the selected members using the contact
+   details in the register, and shows plainly what went out and what did not.
+   It never claims a send that did not happen.
+6. A member who has declined organization messages is never contacted,
+   whatever audience was chosen.
 
 From the supporting member's point of view:
 
 - They hear from the organization they support: gratitude for their
-  contribution and updates about what their support enables.
-- They can decline further communication without ending their membership.
+  contribution and updates about what their support enables. Every message is
+  recognizably from that organization, and a reply reaches it.
+- **Every message carries a one-click way to decline further ones** — no login,
+  no account; the member's unguessable address identifies them, the same
+  pattern as the [self-service page](../concepts/member-self-service.md).
+  Declining is reversible from their own page, does not end the membership,
+  and never stops a [member notice](../concepts/member-notice.md).
+  (Decided 2026-08-25, resolving the former open question.)
 
 ## Acceptance criteria
 - [ ] The audience is always derived from the live register — no exports, no
-      second list.
-- [ ] Members who opted out of communication (or whose membership ended) are
-      excluded automatically.
+      second list, no stored snapshot.
+- [ ] Members who declined organization messages are excluded automatically,
+      whatever audience is chosen; lapsed members are reached only when the
+      administrator deliberately includes them.
 - [ ] Every message is attributable to the organization the member supports.
-
-## Open questions
-- **Whether a lapsed supporter may be contacted.** This use case says they are
-  not, but the [problem it solves](../problems/supporters-never-hear-back.md)
-  says winning them back is half the point — an unthanked supporter lapsing is
-  the failure it describes, and keeping a member is cheaper than finding a new
-  one. The two readings differ: "do not keep mailing people who left" and
-  "never invite them back" are not the same rule. Unresolved, and it decides
-  who the audience may include.
-- **How a supporter declines.** That they must be able to is settled — and that
-  declining must never stop a [member notice](../concepts/member-notice.md).
-  How they say so, and how the product recognizes them without a login, is not.
+- [ ] Every message offers declining further messages, completed in one click
+      without a login.
+- [ ] What went out is recorded per member, and the administrator is shown who
+      could not be reached.
 
 ## Out of scope
 - General-purpose newsletters/CRM campaigns, segmentation beyond membership
@@ -61,6 +70,8 @@ From the supporting member's point of view:
   messages never stops them.
 
 ## Related
+- [Concept: Organization message](../concepts/org-message.md) — the message
+  this use case is about, and the rules it obeys
 - [Concept: Supporting member](../concepts/supporting-member.md)
 - [Concept: Member notice](../concepts/member-notice.md) — the deliberate
   opposite of this use case, and where opting out stops applying
