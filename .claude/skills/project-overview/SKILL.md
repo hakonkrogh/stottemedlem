@@ -284,6 +284,15 @@ lives in `specs/`, kept in sync with code by a mandatory `Stop`-hook harness.
   from both nightly crons as the retry; the nightly path needs `PUBLIC_ORIGIN`
   (a scheduled run has no request to derive a member's URL from) and is
   therefore a no-op in local dev unless you set it.
+  **`RESEND_API_KEY` is set in PRODUCTION ONLY** (decided 2026-08-25) — from
+  `apps/backoffice`, `wrangler secret put RESEND_API_KEY`, no `--env`. Staging
+  is deliberately left unset so it falls back to the logging sender: staging's
+  D1 holds test members with undeliverable addresses (`…@eksempel.example`),
+  and those bounces would land on the SAME verified domain production sends
+  from, damaging the real sending reputation. Don't "fix" the missing staging
+  secret. If staging ever must send for real, give it its own verified
+  subdomain in `EMAIL_FROM_ADDRESS` first, then
+  `wrangler secret put RESEND_API_KEY --env staging`.
 - `packages/qr/` — `@stottemedlem/qr`, shared QR code/card generation, split
   isomorphic/node/browser (see qr-codes.md before touching QR anything).
 - `packages/ui/` — `@stottemedlem/ui` (added 2026-07-28), the shared UI
