@@ -40,6 +40,18 @@ From the supporting member's point of view:
       excluded automatically.
 - [ ] Every message is attributable to the organization the member supports.
 
+## Open questions
+- **Whether a lapsed supporter may be contacted.** This use case says they are
+  not, but the [problem it solves](../problems/supporters-never-hear-back.md)
+  says winning them back is half the point — an unthanked supporter lapsing is
+  the failure it describes, and keeping a member is cheaper than finding a new
+  one. The two readings differ: "do not keep mailing people who left" and
+  "never invite them back" are not the same rule. Unresolved, and it decides
+  who the audience may include.
+- **How a supporter declines.** That they must be able to is settled — and that
+  declining must never stop a [member notice](../concepts/member-notice.md).
+  How they say so, and how the product recognizes them without a login, is not.
+
 ## Out of scope
 - General-purpose newsletters/CRM campaigns, segmentation beyond membership
   status, and analytics — this is member communication, not a marketing tool.
