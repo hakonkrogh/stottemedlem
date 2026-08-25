@@ -6,6 +6,7 @@ import {
   endingAfterThisYear,
   lapsed,
   nothingPaidYet,
+  noWayToReach,
   withoutName,
 } from "./memberFixtures";
 
@@ -19,3 +20,4 @@ export const ActiveButEnding = { args: { entry: endingAfterThisYear, href: "#" }
 export const Lapsed = { args: { entry: lapsed, href: "#" } };
 export const WithoutName = { args: { entry: withoutName, href: "#" } };
 export const NothingPaidYet = { args: { entry: nothingPaidYet, href: "#" } };
+export const NoWayToReach = { args: { entry: noWayToReach, href: "#" } };

@@ -65,6 +65,9 @@ importers:
       '@stottemedlem/db':
         specifier: workspace:*
         version: link:../../packages/db
+      '@stottemedlem/email':
+        specifier: workspace:*
+        version: link:../../packages/email
       '@stottemedlem/qr':
         specifier: workspace:*
         version: link:../../packages/qr
@@ -149,6 +152,18 @@ importers:
       '@cloudflare/workers-types':
         specifier: 'catalog:'
         version: 5.20260721.1
+      '@types/node':
+        specifier: 'catalog:'
+        version: 22.19.20
+      typescript:
+        specifier: 'catalog:'
+        version: 5.9.3
+      vitest:
+        specifier: 'catalog:'
+        version: 4.1.8(@types/node@22.19.20)(vite@8.0.16(@types/node@22.19.20)(esbuild@0.28.1)(yaml@2.9.0))
+
+  packages/email:
+    devDependencies:
       '@types/node':
         specifier: 'catalog:'
         version: 22.19.20

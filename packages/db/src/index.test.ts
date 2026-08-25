@@ -2,9 +2,12 @@ import { describe, expect, it } from "vitest";
 import {
   countMembersByStatus,
   isProfileComplete,
+  type MemberFeeStanding,
   type MemberOverview,
   matchesMemberSearch,
   membershipStatus,
+  owesFeeChangeNotice,
+  renewalFeeNok,
 } from "./index.js";
 import type { Organization } from "./schema.js";
 
@@ -104,5 +107,90 @@ describe("matchesMemberSearch", () => {
 
   it("does not crash on a supporter who consented to no name", () => {
     expect(matchesMemberSearch(overview(null, "active"), "ingrid")).toBe(false);
+  });
+});
+
+const standing = (overrides: {
+  tierFee: number;
+  knownFeeNok: number;
+  ripeFeeNok: number;
+}): MemberFeeStanding => ({
+  agreement: {
+    id: "agr-1",
+    orgId: base.id,
+    memberId: "mem-1",
+    tierId: "tier-1",
+    vippsAgreementId: "agr_x",
+    externalId: "stottemedlem:mem-1",
+    status: "ACTIVE",
+    annualFeeNok: overrides.knownFeeNok,
+    vippsSub: null,
+    manageToken: "tok",
+    createdAt: "2026-01-02 00:00:00",
+    activatedAt: "2026-01-02 00:00:00",
+    stoppedAt: null,
+    lastReconciledAt: null,
+  },
+  member: {
+    id: "mem-1",
+    orgId: base.id,
+    name: "Ingrid Solheim",
+    email: "ingrid@eksempel.no",
+    phone: null,
+    vippsSub: null,
+    createdAt: "2026-01-02 00:00:00",
+  },
+  tier: {
+    id: "tier-1",
+    orgId: base.id,
+    key: "stottemedlem",
+    name: "Støttemedlem",
+    description: null,
+    annualFeeNok: overrides.tierFee,
+    archivedAt: null,
+    createdAt: "2026-01-01 00:00:00",
+  },
+  knownFeeNok: overrides.knownFeeNok,
+  ripeFeeNok: overrides.ripeFeeNok,
+  lastNoticeAt: null,
+});
+
+describe("owesFeeChangeNotice", () => {
+  it("is owed exactly when the tier costs something other than the member believes", () => {
+    expect(owesFeeChangeNotice(standing({ tierFee: 300, knownFeeNok: 250, ripeFeeNok: 250 }))).toBe(
+      true,
+    );
+    expect(owesFeeChangeNotice(standing({ tierFee: 250, knownFeeNok: 250, ripeFeeNok: 250 }))).toBe(
+      false,
+    );
+  });
+
+  it("is not owed again once the member has been told, even before it takes effect", () => {
+    // Told yesterday: knownFee already the new one, ripeFee still the old.
+    expect(owesFeeChangeNotice(standing({ tierFee: 300, knownFeeNok: 300, ripeFeeNok: 250 }))).toBe(
+      false,
+    );
+  });
+});
+
+describe("renewalFeeNok", () => {
+  it("charges the tier's fee when nothing has changed", () => {
+    expect(renewalFeeNok(standing({ tierFee: 250, knownFeeNok: 250, ripeFeeNok: 250 }))).toBe(250);
+  });
+
+  it("charges the new fee once the member has known it long enough", () => {
+    expect(renewalFeeNok(standing({ tierFee: 300, knownFeeNok: 300, ripeFeeNok: 300 }))).toBe(300);
+  });
+
+  it("holds the old price when the rise was announced too recently", () => {
+    expect(renewalFeeNok(standing({ tierFee: 300, knownFeeNok: 300, ripeFeeNok: 250 }))).toBe(250);
+  });
+
+  it("holds the old price when the member has not been told at all", () => {
+    expect(renewalFeeNok(standing({ tierFee: 300, knownFeeNok: 250, ripeFeeNok: 250 }))).toBe(250);
+  });
+
+  it("passes a price cut on immediately — being charged less is no surprise", () => {
+    expect(renewalFeeNok(standing({ tierFee: 200, knownFeeNok: 200, ripeFeeNok: 250 }))).toBe(200);
   });
 });

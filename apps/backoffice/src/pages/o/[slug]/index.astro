@@ -90,6 +90,14 @@ const profileComplete = org.orgnr !== null && org.contactEmail !== null;
 const vippsKeys = await readOrgVippsKeys(workos, org.workosOrgId);
 const joinUrl = joinPageUrl(org.slug);
 const termsUrl = joinPageTermsUrl(org.slug);
+
+// Set by the membership form after a price change: how many members were told,
+// and how many still have to be told by the organization itself
+// (specs/use-cases/change-the-annual-fee.md).
+const [told = 0, unreached = 0] = (Astro.url.searchParams.get("varslet") ?? "")
+  .split(".")
+  .map((part) => Number.parseInt(part, 10) || 0);
+const showNoticeResult = Astro.url.searchParams.has("varslet");
 ---
 
 <Shell title={org.name}>
@@ -98,6 +106,23 @@ const termsUrl = joinPageTermsUrl(org.slug);
       <Heading>{org.name}</Heading>
       <Text variant="lead">Innlogget som {displayName}.</Text>
     </Stack>
+    {
+      showNoticeResult && (
+        <Alert variant={unreached > 0 ? "info" : "success"}>
+          {told === 0
+            ? "Ingen medlemmer trengte varsel om den nye prisen."
+            : `${told} støttemedlem${told === 1 ? "" : "mer"} har fått e-post om den nye prisen.`}
+          {unreached > 0 && (
+            <>
+              {" "}
+              {unreached} nådde vi ikke fram til — de blir stående på prisen de kjenner til dere
+              får sagt fra.{" "}
+              <TextLink href={`${orgPath(org.slug)}/medlemmer`}>Se medlemslisten</TextLink>
+            </>
+          )}
+        </Alert>
+      )
+    }
     {
       !profileComplete && (
         <Alert variant="info">

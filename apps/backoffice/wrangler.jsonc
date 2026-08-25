@@ -56,7 +56,12 @@
 		// The origin Vipps sends supporters back to and delivers payment events
 		// to. Stated rather than derived, because a scheduled job has no incoming
 		// request to derive it from. Empty locally (.dev.vars) = use the request's.
-		"PUBLIC_ORIGIN": "https://app.xn--stttemedlem-hgb.no"
+		"PUBLIC_ORIGIN": "https://app.xn--stttemedlem-hgb.no",
+		// Where member notices come from (specs/concepts/member-notice.md). The
+		// domain must be verified with Resend; the RESEND_API_KEY secret is set
+		// out of band (`wrangler secret put RESEND_API_KEY [--env staging]`).
+		// Without that secret notices are logged instead of sent.
+		"EMAIL_FROM_ADDRESS": "varsel@xn--stttemedlem-hgb.no"
 	},
 	// ── Bindings ──────────────────────────────────────────────────────────
 	// Real resource ids (provisioned 2026-08-12 via `wrangler d1 create`,
@@ -141,7 +146,8 @@
 				// Vipps TEST environment — orgs add their own test sales-unit keys
 				// through the backoffice, so only the base URL differs from prod.
 				"VIPPS_API_BASE_URL": "https://apitest.vipps.no",
-				"PUBLIC_ORIGIN": "https://staging.app.xn--stttemedlem-hgb.no"
+				"PUBLIC_ORIGIN": "https://staging.app.xn--stttemedlem-hgb.no",
+				"EMAIL_FROM_ADDRESS": "varsel@xn--stttemedlem-hgb.no"
 			},
 			"d1_databases": [
 				{

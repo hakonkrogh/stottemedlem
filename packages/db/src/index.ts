@@ -12,10 +12,13 @@ import { drizzle } from "drizzle-orm/d1";
 import {
   type AgreementStatus,
   type ChargeStatus,
+  type MemberNotice,
+  type MemberNoticeKind,
   type Membership,
   type MembershipAgreement,
   type MembershipCharge,
   type MembershipTier,
+  memberNotices,
   membershipAgreements,
   membershipCharges,
   memberships,
@@ -29,14 +32,18 @@ import {
 export {
   type AgreementStatus,
   type ChargeStatus,
+  type MemberNotice,
+  type MemberNoticeKind,
   type Membership,
   type MembershipAgreement,
   type MembershipCharge,
   type MembershipTier,
+  memberNotices,
   membershipAgreements,
   membershipCharges,
   memberships,
   membershipTiers,
+  type NewMemberNotice,
   type NewMembership,
   type NewMembershipAgreement,
   type NewMembershipCharge,
@@ -613,6 +620,27 @@ export async function countActiveAgreementsForTier(db: Db, tierId: string): Prom
 }
 
 /**
+ * Who a fee change would move, and how many of them the product could not tell
+ * about it. An organization is shown the second number *before* it changes a
+ * price, because members it cannot reach are members it must reach itself
+ * (specs/use-cases/change-the-annual-fee.md).
+ */
+export async function tierMemberReach(
+  db: Db,
+  tierId: string,
+): Promise<{ members: number; unreachable: number }> {
+  const rows = await db
+    .select({ email: supportingMembers.email })
+    .from(membershipAgreements)
+    .innerJoin(supportingMembers, eq(membershipAgreements.memberId, supportingMembers.id))
+    .where(and(eq(membershipAgreements.tierId, tierId), eq(membershipAgreements.status, "ACTIVE")));
+  return {
+    members: rows.length,
+    unreachable: rows.filter((row) => !row.email?.trim()).length,
+  };
+}
+
+/**
  * Record the price a member is now signed up at, after the payment provider
  * has accepted the change. Never the other way round: the provider is what
  * actually charges them.
@@ -1002,4 +1030,168 @@ export async function updateMemberContactDetails(
     .where(and(eq(supportingMembers.orgId, orgId), eq(supportingMembers.id, memberId)))
     .returning();
   return row ?? null;
+}
+
+// ── Member notices ───────────────────────────────────────────────────────
+// What the product has told a member about their own membership, and what
+// that entitles it to charge them (specs/concepts/member-notice.md).
+
+/**
+ * How long a member must have known a new price before it can be charged
+ * (specs/use-cases/change-the-annual-fee.md). Long enough to read an email and
+ * act on it; short enough that an organization repricing in the autumn still
+ * reaches the coming renewal.
+ */
+export const FEE_NOTICE_DAYS = 14;
+
+const isoDaysAgo = (days: number, from: Date): string =>
+  new Date(from.getTime() - days * 86_400_000).toISOString();
+
+/**
+ * One member's position on price: what they are signed up for, what they
+ * believe they pay, and what they may be charged today.
+ */
+export interface MemberFeeStanding {
+  agreement: MembershipAgreement;
+  member: SupportingMember;
+  tier: MembershipTier;
+  /**
+   * The fee the member currently expects — the last one they were told, or
+   * failing that the last one they actually paid. Differs from the tier's fee
+   * exactly when they are owed a notice.
+   */
+  knownFeeNok: number;
+  /**
+   * The fee they may be charged now: the last one they have known long enough
+   * (see FEE_NOTICE_DAYS). A change announced yesterday is not in here.
+   */
+  ripeFeeNok: number;
+  /** When they were last told about a price, if ever. */
+  lastNoticeAt: string | null;
+}
+
+/**
+ * Every live arrangement in the organization, with what its member knows about
+ * the price. Agreements with nobody attached are left out: a draft nobody
+ * consented to has no one to tell and no one to charge.
+ */
+export async function listMemberFeeStandings(
+  db: Db,
+  orgId: string,
+  today: Date = new Date(),
+): Promise<MemberFeeStanding[]> {
+  const rows = await db
+    .select({ agreement: membershipAgreements, tier: membershipTiers, member: supportingMembers })
+    .from(membershipAgreements)
+    .innerJoin(membershipTiers, eq(membershipAgreements.tierId, membershipTiers.id))
+    .innerJoin(supportingMembers, eq(membershipAgreements.memberId, supportingMembers.id))
+    .where(and(eq(membershipAgreements.orgId, orgId), eq(membershipAgreements.status, "ACTIVE")));
+  if (rows.length === 0) return [];
+
+  const notices = await db
+    .select()
+    .from(memberNotices)
+    .where(and(eq(memberNotices.orgId, orgId), eq(memberNotices.kind, "fee-change")))
+    .orderBy(desc(memberNotices.sentAt));
+
+  // What they last actually paid — the fee they know when they have never been
+  // sent a notice, because paying it is how they learned it.
+  const paid = await db
+    .select({
+      memberId: memberships.memberId,
+      periodYear: memberships.periodYear,
+      annualFeeNok: memberships.annualFeeNok,
+    })
+    .from(memberships)
+    .where(eq(memberships.orgId, orgId))
+    .orderBy(desc(memberships.periodYear));
+
+  const lastPaidFee = new Map<string, number>();
+  for (const row of paid)
+    if (!lastPaidFee.has(row.memberId)) lastPaidFee.set(row.memberId, row.annualFeeNok);
+
+  const cutoff = isoDaysAgo(FEE_NOTICE_DAYS, today);
+  const key = (memberId: string, tierId: string) => `${memberId}:${tierId}`;
+  const newest = new Map<string, MemberNotice>();
+  const newestRipe = new Map<string, MemberNotice>();
+  for (const notice of notices) {
+    if (!notice.tierId) continue;
+    const k = key(notice.memberId, notice.tierId);
+    if (!newest.has(k)) newest.set(k, notice);
+    if (!newestRipe.has(k) && notice.sentAt <= cutoff) newestRipe.set(k, notice);
+  }
+
+  return rows.map(({ agreement, tier, member }) => {
+    const k = key(member.id, tier.id);
+    // Order matters: what we told them beats what they paid, and both beat the
+    // agreement's own amount — which repricing overwrites, so it is only a
+    // last resort for a member who has somehow paid nothing yet.
+    const fallback = lastPaidFee.get(member.id) ?? agreement.annualFeeNok;
+    return {
+      agreement,
+      member,
+      tier,
+      knownFeeNok: newest.get(k)?.feeNok ?? fallback,
+      ripeFeeNok: newestRipe.get(k)?.feeNok ?? fallback,
+      lastNoticeAt: newest.get(k)?.sentAt ?? null,
+    };
+  });
+}
+
+/** Whether this member has yet to hear about the price they are now on. */
+export function owesFeeChangeNotice(standing: MemberFeeStanding): boolean {
+  return standing.tier.annualFeeNok !== standing.knownFeeNok;
+}
+
+/**
+ * What this member's next renewal may cost.
+ *
+ * Never more than they have known about for long enough — that is the whole
+ * point of the notice. Never more than the tier costs either: a price cut
+ * reaches them at once, because being charged less than announced is not the
+ * kind of surprise the rule guards against.
+ */
+export function renewalFeeNok(standing: MemberFeeStanding): number {
+  return Math.min(standing.tier.annualFeeNok, standing.ripeFeeNok);
+}
+
+export interface MemberNoticeRecord {
+  orgId: string;
+  memberId: string;
+  agreementId: string;
+  kind: MemberNoticeKind;
+  tierId: string;
+  feeNok: number;
+  previousFeeNok: number;
+}
+
+/** Write down that a member was told — only ever after the message went out. */
+export async function recordMemberNotice(db: Db, notice: MemberNoticeRecord): Promise<void> {
+  await db.insert(memberNotices).values({ id: crypto.randomUUID(), ...notice });
+}
+
+/** Everything an organization has told one member, newest first. */
+export async function listMemberNotices(db: Db, memberId: string): Promise<MemberNotice[]> {
+  return db
+    .select()
+    .from(memberNotices)
+    .where(eq(memberNotices.memberId, memberId))
+    .orderBy(desc(memberNotices.sentAt));
+}
+
+/**
+ * Which of the organization's arrangements already have a payment booked for a
+ * period. A fee change cannot reach a renewal that is already arranged, so
+ * this is how a notice knows which year to name.
+ */
+export async function agreementsChargedForPeriod(
+  db: Db,
+  orgId: string,
+  periodYear: number,
+): Promise<Set<string>> {
+  const rows = await db
+    .select({ agreementId: membershipCharges.agreementId })
+    .from(membershipCharges)
+    .where(and(eq(membershipCharges.orgId, orgId), eq(membershipCharges.periodYear, periodYear)));
+  return new Set(rows.map((row) => row.agreementId));
 }

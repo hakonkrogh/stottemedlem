@@ -3,7 +3,9 @@ import {
   type Db,
   findChargeForPeriod,
   listActiveAgreementsWithTier,
+  listMemberFeeStandings,
   recordCharge,
+  renewalFeeNok,
   updateAgreementFee,
 } from "@stottemedlem/db";
 import type { VippsClient } from "@stottemedlem/vipps";
@@ -59,9 +61,12 @@ export async function repriceAgreements(
  * Arrange next year's payment for everyone still with us. Vipps charges
  * nothing on its own: every renewal exists because this job created it.
  *
- * The amount is the tier's fee as it stands now, so a fee change that arrived
- * before this runs is what the member pays; one that arrives after finds the
- * charge already made and waits for the following year.
+ * The amount is not simply the tier's current fee. A member is charged what
+ * they have been told they will be charged, and told long enough ago to have
+ * done something about it (specs/use-cases/change-the-annual-fee.md) — so a
+ * price rise announced last week finds its members still on last year's
+ * amount, and reaches them a year later instead. A fee change arriving after
+ * the charge is made finds it already there and waits, as before.
  */
 export async function createDueRenewalCharges(
   db: Db,
@@ -76,14 +81,17 @@ export async function createDueRenewalCharges(
   const periodYear = renewalPeriodYear(today);
   const due = `${periodYear}-01-01`;
 
-  for (const { agreement, tier } of await listActiveAgreementsWithTier(db, orgId)) {
+  for (const standing of await listMemberFeeStandings(db, orgId, today)) {
+    const { agreement, tier } = standing;
     // Already arranged — the guard that makes running this nightly harmless.
     if (await findChargeForPeriod(db, agreement.id, periodYear)) continue;
+    // What this member may be charged, which is not always what the tier costs.
+    const annualFeeNok = renewalFeeNok(standing);
     try {
       const { chargeId } = await vipps.createCharge(
         agreement.vippsAgreementId,
         {
-          amount: toOre(tier.annualFeeNok),
+          amount: toOre(annualFeeNok),
           description: `${tier.name} ${periodYear}`,
           due,
           // Vipps retries a failed charge daily for this many days. A yearly
@@ -104,7 +112,7 @@ export async function createDueRenewalCharges(
         periodYear,
         type: "RECURRING",
         status: "PENDING",
-        amountNok: tier.annualFeeNok,
+        amountNok: annualFeeNok,
         due,
       });
       created++;
