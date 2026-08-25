@@ -53,3 +53,13 @@ VIPPS_TEST_PUBLIC_URL=""
 # right behind a tunnel too. Set this only when that is wrong — e.g. something
 # in front rewrites the Host header. Must be HTTPS: Vipps rejects anything else.
 PUBLIC_ORIGIN=""
+
+# ── Member notices (email) ──────────────────────────────────────────────
+# What the product tells a member about their own membership — today, that a
+# tier's price changed (specs/concepts/member-notice.md). Leave RESEND_API_KEY
+# empty locally: notices are then written to the dev-server log instead of
+# sent, and nothing is recorded as having told anyone, so the flow is safe to
+# exercise. Fill it (resend.com → API keys) to send for real; the from-address
+# domain must be verified with Resend first.
+RESEND_API_KEY=""
+EMAIL_FROM_ADDRESS="varsel@xn--stttemedlem-hgb.no"

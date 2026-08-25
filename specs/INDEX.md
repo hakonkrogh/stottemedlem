@@ -70,6 +70,7 @@ scope.
 | [Annual fee](concepts/annual-fee.md) | Draft |
 | [Join page](concepts/join-page.md) | Draft |
 | [Member self-service page](concepts/member-self-service.md) | Draft |
+| [Member notice](concepts/member-notice.md) | Draft |
 | [Payment reconciliation](concepts/payment-reconciliation.md) | Draft |
 | [Vipps API keys](concepts/vipps-api-keys.md) | Draft |
 | [Brand attribution](concepts/brand-attribution.md) | Active |

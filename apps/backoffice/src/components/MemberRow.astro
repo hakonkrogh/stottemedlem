@@ -24,6 +24,10 @@ const period = latest
     ? `Betalt for ${latest.periodYear}`
     : `Siste periode ${latest.periodYear}`
   : "Ingen periode betalt ennå";
+// A member with no address is one the product cannot tell about a price
+// change, so the organization has to (specs/concepts/member-notice.md). It is
+// only worth flagging while they are still paying.
+const unreachable = status === "active" && !member.email?.trim();
 ---
 
 <a class="row" href={href}>
@@ -32,6 +36,7 @@ const period = latest
   <span class="meta">
     <span class:list={["pill", standing]}>{label}</span>
     <span class="period">{period}{renewing && latest ? " · fornyes" : ""}</span>
+    {unreachable && <span class="pill unreachable">Ingen e-post</span>}
   </span>
 </a>
 
@@ -83,6 +88,12 @@ const period = latest
     color: var(--sm-success);
     background: var(--sm-success-bg);
     border-color: var(--sm-success-border);
+  }
+  .pill.unreachable {
+    color: var(--sm-muted);
+    background: transparent;
+    border-color: var(--sm-border-strong);
+    border-style: dashed;
   }
   .pill.lapsed,
   .pill.unpaid {

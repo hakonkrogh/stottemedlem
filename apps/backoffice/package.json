@@ -16,6 +16,7 @@
     "@astrojs/cloudflare": "catalog:",
     "@stottemedlem/core": "workspace:*",
     "@stottemedlem/db": "workspace:*",
+    "@stottemedlem/email": "workspace:*",
     "@stottemedlem/qr": "workspace:*",
     "@stottemedlem/ui": "workspace:*",
     "@stottemedlem/vipps": "workspace:*",

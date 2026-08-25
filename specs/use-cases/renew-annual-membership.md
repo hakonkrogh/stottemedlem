@@ -28,7 +28,12 @@ organization's list stays accurate as periods turn over.
 3. The supporter is told what is coming before it is taken, with enough notice
    to opt out, and can end the arrangement at any time — from their own payment
    app or from the organization's own self-service page. Ending it is never
-   harder than starting it was.
+   harder than starting it was. The payment app shows the coming payment and
+   announces it shortly before it is taken; when the **amount has changed**
+   since last year, that is not enough — the app states a number, not a change
+   — so the product sends its own
+   [member notice](../concepts/member-notice.md) as well
+   ([changing the annual fee](change-the-annual-fee.md)).
 4. If the payment does not succeed, the product waits out the payment
    provider's retries rather than judging early. Only when the payment has
    definitively failed does the membership lapse, and the member is then shown
@@ -64,8 +69,9 @@ organization's list stays accurate as periods turn over.
 
 ## Out of scope
 - Mid-period tier upgrades (changing tier takes effect at the next renewal).
-- Reminders the product sends itself; today the notice before a renewal payment
-  is the one the payment app gives.
+- A reminder before an *unchanged* renewal: the payment app already shows the
+  coming payment for weeks and announces it the day before, and repeating that
+  would be noise. The product speaks up when something changed.
 - Reviving a lapsed membership retroactively — a return starts a new period.
 
 ## Related
@@ -74,5 +80,7 @@ organization's list stays accurate as periods turn over.
 - [Concept: Member self-service page](../concepts/member-self-service.md) — where
   a member ends the arrangement themselves
 - [Concept: Annual fee](../concepts/annual-fee.md)
+- [Concept: Member notice](../concepts/member-notice.md) — what the product
+  tells a member itself, when the payment app cannot
 - [Concept: Payment reconciliation](../concepts/payment-reconciliation.md) — why
   a renewal counts even when nobody told us about it

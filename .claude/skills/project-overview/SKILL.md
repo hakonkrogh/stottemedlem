@@ -263,6 +263,36 @@ lives in `specs/`, kept in sync with code by a mandatory `Stop`-hook harness.
   `docs/vipps-local-recurring-test.md`. API
   behaviour ground truth: `docs/research/vipps-recurring-payments.md` +
   stack-docs "Vipps API mechanics" + "WorkOS Vault".
+- `packages/email/` — `@stottemedlem/email` (added 2026-08-24, branch
+  member-notices, spec `specs/concepts/member-notice.md`): the ONLY way the
+  product speaks to a member — Resend REST client (fetch-only, batched at 100,
+  a rejected batch counts as nobody told) plus the notice copy itself
+  (`feeChangeNotice`, Norwegian). **The sending address is always ours**
+  (`EMAIL_FROM_ADDRESS` var, `varsel@xn--stttemedlem-hgb.no`) — a provider only
+  sends from a domain we own; the org is the display name + `reply_to`.
+  `RESEND_API_KEY` is a secret; **absent = `createLoggingSender()`**, which
+  prints the notice and reports `sent: false`, so nothing is recorded as told
+  and nobody's price moves. That fallback is what makes the whole flow testable
+  locally with no provider account. Wiring: `apps/backoffice/src/lib/email.ts`
+  (sender) + `lib/notices.ts` (who is owed one).
+  **The 14-day rule** (decided 2026-08-24): a member is charged the fee they
+  have known for ≥14 days, never a newer one — `renewalFeeNok()` in
+  `@stottemedlem/db`, and `member_notices` (migration 0008) is the evidence
+  that decides it. What they were TOLD beats what they last PAID, and both beat
+  `membership_agreements.annual_fee_nok` (repricing overwrites that column, so
+  it is only a last resort). Notices are sent from the tier form on save AND
+  from both nightly crons as the retry; the nightly path needs `PUBLIC_ORIGIN`
+  (a scheduled run has no request to derive a member's URL from) and is
+  therefore a no-op in local dev unless you set it.
+  **`RESEND_API_KEY` is set in PRODUCTION ONLY** (decided 2026-08-25) — from
+  `apps/backoffice`, `wrangler secret put RESEND_API_KEY`, no `--env`. Staging
+  is deliberately left unset so it falls back to the logging sender: staging's
+  D1 holds test members with undeliverable addresses (`…@eksempel.example`),
+  and those bounces would land on the SAME verified domain production sends
+  from, damaging the real sending reputation. Don't "fix" the missing staging
+  secret. If staging ever must send for real, give it its own verified
+  subdomain in `EMAIL_FROM_ADDRESS` first, then
+  `wrangler secret put RESEND_API_KEY --env staging`.
 - `packages/qr/` — `@stottemedlem/qr`, shared QR code/card generation, split
   isomorphic/node/browser (see qr-codes.md before touching QR anything).
 - `packages/ui/` — `@stottemedlem/ui` (added 2026-07-28), the shared UI
@@ -304,6 +334,14 @@ lives in `specs/`, kept in sync with code by a mandatory `Stop`-hook harness.
   commits that are already merged and makes a one-commit branch look like ten.
   Scope a branch/PR against `origin/main` (`git log --oneline origin/main..HEAD`)
   before writing the PR body.
+- **Stacked PRs strand silently** (this cost the project PR #28, recovered as
+  #29 on 2026-08-25). If PR B is based on branch A and A is merged to `main`
+  *without deleting A*, B still targets the now-stale A: merging B lands it on
+  a dead branch, `gh pr list` says MERGED, and nothing ever reaches main. The
+  files simply are not there. **Delete the base branch when merging the lower
+  PR** — that is what makes GitHub retarget the dependent one to `main`. To
+  check for an already-stranded PR: `git ls-tree origin/main --name-only <path>`
+  for a file the PR added, not the PR's own merged/unmerged status.
 - Single package: `pnpm turbo run <task> --filter=@stottemedlem/<name>`.
 - Build-order gotcha: the apps consume `@stottemedlem/core` / `@stottemedlem/qr`
   from their built `dist/`, so an app build needs those packages built first.
@@ -315,7 +353,11 @@ lives in `specs/`, kept in sync with code by a mandatory `Stop`-hook harness.
 - Conventions: ESM everywhere; never use the `any` type; use `ast-grep` for structural search.
 - Tooling gotchas: `astro check` emits false ts(6133) "declared but never read"
   *hints* for symbols used only after a frontmatter early-`return` (0 errors =
-  still green — don't chase them). A new package with `"test": "vitest run"`
+  still green — don't chase them). A NEW PACKAGE needs `.js` extensions on its
+  own relative imports (`from "./types.js"`) — `tsconfig.base.json` uses
+  node16 resolution, so extensionless ones fail the build with TS2835, and the
+  knock-on is a wave of bogus TS7006 implicit-`any` errors from the types that
+  failed to resolve. A new package with `"test": "vitest run"`
   and zero test files FAILS `pnpm test` — add a first test with the package.
   **`git stash` KILLS a running `astro dev` server** (hit 2026-08-20 while
   stashing to get a Biome baseline): swapping files under the daemon takes it

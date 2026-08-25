@@ -1,3 +1,4 @@
+import { env } from "cloudflare:workers";
 import { handle } from "@astrojs/cloudflare/handler";
 import { JOIN_PAGE_PATH_SEGMENT } from "@stottemedlem/core";
 
@@ -57,15 +58,25 @@ async function renderAndCache(
  * loading the jobs.
  */
 async function runScheduledJobs(cron: string): Promise<void> {
-  const [{ getDb }, { getVippsForOrg }, { getWorkOS }, { listOrganizations }, renewals, reconcile] =
-    await Promise.all([
-      import("./lib/db"),
-      import("./lib/vipps"),
-      import("./lib/workos"),
-      import("@stottemedlem/db"),
-      import("./lib/renewals"),
-      import("./lib/reconcile"),
-    ]);
+  const [
+    { getDb },
+    { getVippsForOrg },
+    { getWorkOS },
+    { listOrganizations },
+    renewals,
+    reconcile,
+    notices,
+    { getEmailSender },
+  ] = await Promise.all([
+    import("./lib/db"),
+    import("./lib/vipps"),
+    import("./lib/workos"),
+    import("@stottemedlem/db"),
+    import("./lib/renewals"),
+    import("./lib/reconcile"),
+    import("./lib/notices"),
+    import("./lib/email"),
+  ]);
 
   const db = getDb();
   const workos = getWorkOS();
@@ -90,6 +101,31 @@ async function runScheduledJobs(cron: string): Promise<void> {
               `${report.agreementsCorrected} agreement(s), ${report.chargesCorrected} charge(s) ` +
               `corrected, ${report.chargesUnknown} unknown, ${report.failed} failed, ` +
               `${report.abandonedDrafts} draft(s) no longer chased`,
+          );
+        }
+      }
+
+      // Members owed word of a new price are told before anything is arranged
+      // for them. The back office already tried when the price changed; this
+      // is the second chance for anyone that failed, and it runs in both jobs
+      // because a member cannot be charged a price they have not heard about
+      // (specs/use-cases/change-the-annual-fee.md).
+      // A notice has to link the member to their own page, and a scheduled run
+      // has no request to derive the address from — hence PUBLIC_ORIGIN. Say so
+      // rather than skipping in silence.
+      if (!env.PUBLIC_ORIGIN) {
+        console.warn("PUBLIC_ORIGIN not set — member notices skipped this run");
+      } else {
+        const told = await notices.sendOwedFeeChangeNotices(
+          db,
+          org,
+          env.PUBLIC_ORIGIN,
+          getEmailSender(),
+        );
+        if (notices.isNoteworthy(told)) {
+          console.log(
+            `${org.slug}: fee notices — ${told.told} told, ` +
+              `${told.unreachable} unreachable, ${told.failed} failed`,
           );
         }
       }

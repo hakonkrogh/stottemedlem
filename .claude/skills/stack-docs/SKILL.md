@@ -62,6 +62,24 @@ change + restart, the first visit to a cached page still serves the PRE-change
 copy (that's SWR working, not a broken build); curl twice, or purge, before
 judging a change invisible.
 
+Secrets are NOT in the generated `Env` (verified 2026-08-24, adding
+`RESEND_API_KEY`). `wrangler types` builds `Env` from wrangler.jsonc `vars`
+**plus whatever keys happen to be in the local `.dev.vars`** — so a secret
+typechecks on your machine and fails in CI or a fresh worktree with
+`error TS2339: Property 'X' does not exist on type 'Env'`. It only bites in
+`worker.ts`'s import tree (app code uses the hand-written `src/env.d.ts`
+instead), which is easy to trip by importing one new lib from the scheduled
+handler. Declare the secret at the point of use:
+
+```ts
+// The weak-type check rejects `const s: { X?: string } = env` with TS2559
+// ("no properties in common"), so widen instead of annotating:
+const secrets = env as typeof env & { RESEND_API_KEY?: string };
+```
+
+Non-secret config has the better fix — make it a real wrangler `var` in both
+envs (that is why `PUBLIC_ORIGIN` is one).
+
 ## Repo-specific install gotchas
 
 - `workerd` must be in `onlyBuiltDependencies` (pnpm-workspace.yaml) — its postinstall
@@ -382,6 +400,45 @@ real account. Source: developer.vippsmobilepay.com/docs/knowledge-base/test-envi
   (keys via env vars): `pnpm --filter @stottemedlem/vipps run smoke`
   (refuses to run against prod).
 
+### Vipps as a notification channel — what it can and cannot carry (verified 2026-08-24)
+
+Asked every time someone proposes "just send it through Vipps". Vipps pushes
+**only about money**, only to members with a live agreement, on **its** schedule.
+
+- **Pushes Vipps sends by itself, no work from us:** 1 day before `due`
+  ("One day before the due date, the user is notified"); **every failed charge**
+  ("We always send a push notification to the user in the app if a charge
+  attempt is unsuccessful"); card-about-to-expire. **Successful payment is
+  opt-in** — the "Notify me when paying" toggle on the agreement confirmation
+  screen, off by default.
+- **Passive visibility:** the upcoming charge appears in the app's *Payments*
+  tab **up to 35 days before `due`**, once it flips `PENDING → DUE` (~30 days
+  out). `RENEWAL_ARRANGED_FROM` (Dec 1 → due Jan 1 = 31 days) sits just inside
+  that window — move it earlier to use the full one.
+- **The ONE free-text lever: `charge.description`, `maxLength: 100`**, and the
+  OpenAPI spec annotates it verbatim *"This field is visible to the end user
+  in-app"* (`recurring-swagger-id.yaml`). Title above it is
+  `agreement.productName` (≤45). We currently spend ~20 of the 100 chars
+  (`"${tier.name} ${periodYear}"`). This is the only text the product can put
+  in front of a member today, and it rides on a payment.
+- **What it CANNOT do — don't design around it:** (1) no messaging API at all
+  (Recurring v3 = agreements + charges, same reason there's no product
+  catalogue); (2) **a price change is silent** — `PATCH pricing.amount`
+  triggers no notification and no re-approval, the member just sees a
+  different number, so the merchant owns that notice; (3) the channel **dies
+  with the agreement** — a stopped or lapsed member is unreachable, which is
+  exactly who an org most wants to write to; (4) timing is Vipps' (1 day), not
+  "enough notice to opt out".
+- **Therefore:** `specs/use-cases/renew-annual-membership.md` §3 is nearly
+  satisfiable by Vipps alone; `change-the-annual-fee.md` §5 and
+  `keep-supporters-in-the-loop.md` are **not** — those need our own email. The
+  address book already exists: userinfo `name email phoneNumber` is persisted
+  at signup (168-hour window) and editable in the member list. Only a sender
+  is missing.
+- Sources: developer.vippsmobilepay.com/docs/APIs/recurring-api/
+  {recurring-api-guide,recurring-api-faq}/ +
+  developer.vippsmobilepay.com/redocusaurus/recurring-swagger-id.yaml
+
 ### WorkOS Vault (verified against SDK v10.7.0, 2026-08-18)
 
 - **Vault ≠ the dashboard's per-org "API Keys" tab** (evaluated 2026-08-19,
@@ -418,6 +475,56 @@ real account. Source: developer.vippsmobilepay.com/docs/knowledge-base/test-envi
   `pnpm --filter @stottemedlem/backoffice run vault-smoke` (create → read →
   update → delete of a throwaway object; a 401/402/403 means Vault isn't
   enabled there).
+
+## Resend sending domain (verified 2026-08-25 against resend.com/docs)
+
+Member notices go out from `varsel@xn--stttemedlem-hgb.no` — the apex, in
+punycode (derive it, never retype it). Add the domain in Resend as
+`xn--stttemedlem-hgb.no` and pick the **EU (Ireland)** region: the region is
+what decides the bounce hostname below, and the members are Norwegian.
+
+Three records on the Cloudflare zone `xn--stttemedlem-hgb.no`
+(`95aa7289a9c15a7787106b8ab2583d67`), plus DMARC. **Nothing goes on the apex** —
+the marketing Worker serves that, and Resend's records live on `send.` and
+`resend._domainkey`:
+
+| Type | Name | Value | Priority |
+|------|------|-------|----------|
+| MX | `send` | `feedback-smtp.eu-west-1.amazonses.com` | 10 |
+| TXT | `send` | `v=spf1 include:amazonses.com ~all` | — |
+| TXT | `resend._domainkey` | the account's own `p=…` DKIM key | — |
+| TXT | `_dmarc` | `v=DMARC1; p=none; rua=mailto:hei@xn--stttemedlem-hgb.no` | — |
+
+- Resend runs on SES underneath, hence the `amazonses.com` values. Copy the
+  real DKIM key and MX host from the dashboard — both are account/region
+  specific.
+- **Cloudflare gotcha the docs call out:** paste `send`, NOT
+  `send.xn--stttemedlem-hgb.no` — Cloudflare appends the zone itself, so the
+  full name yields `send.xn--stttemedlem-hgb.no.xn--stttemedlem-hgb.no`.
+- Proxy status **DNS only** (grey cloud).
+- The from-address may sit on the **apex** even though the records sit on
+  `send.` — that subdomain only carries the Return-Path/bounce handling.
+- Cloudflare Email Routing, if ever enabled on this zone, puts its own MX on
+  the apex; no conflict with these.
+- Start DMARC at `p=none` (observe only), tighten to `p=quarantine` once real
+  sends are seen passing.
+- **The CI Cloudflare token cannot add these** — it is scoped to Workers
+  Scripts/Routes, D1 and R2, not Zone → DNS → Edit. Either the user adds them
+  in the dashboard, or they mint a token with that permission.
+
+**Check them rather than assume them** — records get added one at a time and a
+missing SPF looks like nothing at all until the first send fails. On 2026-08-25
+this found DKIM and the MX live but `TXT send` (SPF) never added:
+
+```sh
+for r in "TXT send" "TXT resend._domainkey" "MX send" "TXT _dmarc"; do
+  t=${r% *}; n=${r#* }; printf "%-24s " "$n ($t)"
+  echo "$(dig +short $t $n.xn--stttemedlem-hgb.no @8.8.8.8 | head -1)" | head -c 70; echo
+done
+```
+
+Which environments hold the API key: `wrangler secret list [--env staging]`
+from `apps/backoffice` (works off the local OAuth session, no token needed).
 
 ## Forward references (not captured yet)
 
