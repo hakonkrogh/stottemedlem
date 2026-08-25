@@ -334,6 +334,14 @@ lives in `specs/`, kept in sync with code by a mandatory `Stop`-hook harness.
   commits that are already merged and makes a one-commit branch look like ten.
   Scope a branch/PR against `origin/main` (`git log --oneline origin/main..HEAD`)
   before writing the PR body.
+- **Stacked PRs strand silently** (this cost the project PR #28, recovered as
+  #29 on 2026-08-25). If PR B is based on branch A and A is merged to `main`
+  *without deleting A*, B still targets the now-stale A: merging B lands it on
+  a dead branch, `gh pr list` says MERGED, and nothing ever reaches main. The
+  files simply are not there. **Delete the base branch when merging the lower
+  PR** — that is what makes GitHub retarget the dependent one to `main`. To
+  check for an already-stranded PR: `git ls-tree origin/main --name-only <path>`
+  for a file the PR added, not the PR's own merged/unmerged status.
 - Single package: `pnpm turbo run <task> --filter=@stottemedlem/<name>`.
 - Build-order gotcha: the apps consume `@stottemedlem/core` / `@stottemedlem/qr`
   from their built `dist/`, so an app build needs those packages built first.
