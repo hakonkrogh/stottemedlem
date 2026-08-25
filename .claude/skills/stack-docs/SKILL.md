@@ -476,6 +476,42 @@ Asked every time someone proposes "just send it through Vipps". Vipps pushes
   update → delete of a throwaway object; a 401/402/403 means Vault isn't
   enabled there).
 
+## Resend sending domain (verified 2026-08-25 against resend.com/docs)
+
+Member notices go out from `varsel@xn--stttemedlem-hgb.no` — the apex, in
+punycode (derive it, never retype it). Add the domain in Resend as
+`xn--stttemedlem-hgb.no` and pick the **EU (Ireland)** region: the region is
+what decides the bounce hostname below, and the members are Norwegian.
+
+Three records on the Cloudflare zone `xn--stttemedlem-hgb.no`
+(`95aa7289a9c15a7787106b8ab2583d67`), plus DMARC. **Nothing goes on the apex** —
+the marketing Worker serves that, and Resend's records live on `send.` and
+`resend._domainkey`:
+
+| Type | Name | Value | Priority |
+|------|------|-------|----------|
+| MX | `send` | `feedback-smtp.eu-west-1.amazonses.com` | 10 |
+| TXT | `send` | `v=spf1 include:amazonses.com ~all` | — |
+| TXT | `resend._domainkey` | the account's own `p=…` DKIM key | — |
+| TXT | `_dmarc` | `v=DMARC1; p=none; rua=mailto:hei@xn--stttemedlem-hgb.no` | — |
+
+- Resend runs on SES underneath, hence the `amazonses.com` values. Copy the
+  real DKIM key and MX host from the dashboard — both are account/region
+  specific.
+- **Cloudflare gotcha the docs call out:** paste `send`, NOT
+  `send.xn--stttemedlem-hgb.no` — Cloudflare appends the zone itself, so the
+  full name yields `send.xn--stttemedlem-hgb.no.xn--stttemedlem-hgb.no`.
+- Proxy status **DNS only** (grey cloud).
+- The from-address may sit on the **apex** even though the records sit on
+  `send.` — that subdomain only carries the Return-Path/bounce handling.
+- Cloudflare Email Routing, if ever enabled on this zone, puts its own MX on
+  the apex; no conflict with these.
+- Start DMARC at `p=none` (observe only), tighten to `p=quarantine` once real
+  sends are seen passing.
+- **The CI Cloudflare token cannot add these** — it is scoped to Workers
+  Scripts/Routes, D1 and R2, not Zone → DNS → Edit. Either the user adds them
+  in the dashboard, or they mint a token with that permission.
+
 ## Forward references (not captured yet)
 
 | topic | where |
