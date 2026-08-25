@@ -85,6 +85,27 @@ description: Render any local URL (marketing/backoffice dev or preview server) t
   `table _cf_ALARM has 3 columns but 2 values` on every later local command).
   Fix: `rm -rf apps/backoffice/.wrangler` and redo migrations/seeding with the
   workspace wrangler (hit 2026-08-12).
+- **Storybook compiles Astro `<style>` blocks UNSCOPED** (community
+  `@storybook-astro`, seen 2026-08-25): the markup keeps its `data-astro-cid`
+  attributes but the injected CSS has plain selectors, so one component's
+  element rules leak onto every story — TextField's `input { width: 100%;
+  display: block }` and `label { font-weight: 600 }` turned another screen's
+  radio into a full-width block and bolded its labels. The real app (astro
+  dev/build) scopes correctly, so the breakage is Storybook-only — but
+  Storybook is the visual loop for auth-gated screens, so it still blocks
+  sign-off. Fix by styling form elements explicitly by class in the screen
+  (width/height/font on the input, font-weight/size on the label); see
+  `.audience-choice input` in `ComposeMessageScreen.astro`. Corollary: don't
+  *rely* on another component's leaked styles looking right in a story.
+- **Debugging a story that only looks wrong:** `chrome --dump-dom` races the
+  async story render (returns the skeleton even with `--virtual-time-budget`).
+  `npm i puppeteer-core` in the scratchpad and drive the installed Chrome
+  (`executablePath: "/Applications/Google Chrome.app/Contents/MacOS/Google
+  Chrome"`), `waitForSelector` on your class, then read `getBoundingClientRect`
+  + `getComputedStyle` — that is how the leaked `input{width:100%}` above was
+  found in minutes after screenshots alone went in circles. Also: HMR can
+  serve stale component CSS to shot.sh's fresh Chrome profile inconsistently —
+  measure computed styles before trusting a weird screenshot after an edit.
 - **Dark full-page "An error occurred" overlay in an astro-dev screenshot may
   not be about the URL you shot.** Vite broadcasts any SSR error to every
   connected page over the HMR websocket as a full-screen overlay — e.g. a

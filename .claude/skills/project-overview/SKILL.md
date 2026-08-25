@@ -35,9 +35,14 @@ lives in `specs/`, kept in sync with code by a mandatory `Stop`-hook harness.
   per-env WorkOS config (`WORKOS_*`) is in `wrangler.jsonc` vars/secrets + `.dev.vars`
   locally. Real sign-in needs `.dev.vars` filled + AuthKit redirect URIs registered.
   `.dev.vars` is untracked, so a FRESH WORKTREE lacks it — auth-gated pages 302
-  to /login there; copy it from the main checkout
-  (`~/code/private/stottemedlem/apps/backoffice/.dev.vars`) when a session must
-  exercise logged-in flows (public `/bli-medlem/*` pages need no auth).
+  to /login there, and `pnpm typecheck` FAILS with TS2339
+  (`WORKOS_API_KEY`/`VIPPS_*` "does not exist on type 'Env'" in lib/vipps.ts +
+  lib/workos.ts): secrets only enter the wrangler-generated `Env` by leaking
+  from `.dev.vars`, so the missing file breaks typecheck before it breaks
+  login. Copy it from wherever one exists — the MAIN CHECKOUT may not have it
+  (verified absent 2026-08-25); find one with
+  `ls ~/.superset/worktrees/*/*/apps/backoffice/.dev.vars` and copy from a
+  sibling worktree. (Public `/bli-medlem/*` pages need no auth.)
   See `docs/architecture/overview.md` + `stack-docs` (env access + per-env build gotchas).
 - `packages/core/` — `@stottemedlem/core`, shared domain types/logic (incl. org
   slugs, canonical join/landing/salgsvilkår URLs, orgnr MOD11 validation).
@@ -201,6 +206,32 @@ lives in `specs/`, kept in sync with code by a mandatory `Stop`-hook harness.
   is the ONLY way to see an auth-gated page (see `preview-screenshot`) — fixtures
   shared via `components/memberFixtures.ts`. The whole list is loaded and
   filtered in the screen on purpose, so counts do not move while you search.
+  **Org messages** (added 2026-08-25, branch glowing-snarl/PR #32, spec
+  `specs/concepts/org-message.md` + resolved open questions in
+  `use-cases/keep-supporters-in-the-loop.md`): `/o/[slug]/meldinger` composes
+  a plain-text message to supporting members (subject, body, audience,
+  preview, per-message result at `/meldinger/[messageId]`). Decided
+  2026-08-25: default audience = ACTIVE members, lapsed only via the explicit
+  "Alle, også utløpte" choice; declining is one click, no login, at
+  `memberUnsubscribePath` (`/bli-medlem/[slug]/meldinger-av?n=<manageToken>`,
+  POST mutates — never GET), reversible there and shown on min-side, and
+  NEVER stops a member notice (`supporting_members.messages_declined_at`,
+  migration 0009). Sending is ASYNC: the POST records the message
+  (`org_messages`) and enqueues on the `org-messages` queue (`ORG_MESSAGES`
+  binding); the `worker.ts` queue consumer (its first real job) derives the
+  audience from the live register at delivery time (`deliverOrgMessage` in
+  `src/lib/messages.ts`) and records one outcome row per member
+  (`org_message_recipients`, unique per message+member = retry idempotency;
+  only provider-accepted sends count as `sent`). **Provision the queues
+  before deploy** — `wrangler queues create org-messages` (+
+  `org-messages-staging`); deploy validates consumers and fails otherwise
+  (still pending as of PR #32). Proving the send job needs no auth and no
+  queue: a scratch `pnpm dlx tsx` script in `apps/backoffice` with wrangler's
+  `getPlatformProxy({ configPath: "./wrangler.jsonc", persist: true })` (same
+  live local D1 as `astro dev`) calling `deliverOrgMessage` with
+  `createLoggingSender()` — the logger prints the composed email (incl. the
+  unsubscribe URL) and reports `sent:false`, honestly recorded as `failed`.
+  That harness pattern works for ANY app lib that only touches D1 + packages.
   **Reconciliation** (added 2026-08-21, spec `concepts/payment-reconciliation.md`):
   `src/lib/reconcile.ts` (`reconcileOrganization`) runs FIRST in the 02:00 job.
   Webhook delivery is at-least-once, which also means at-most-never — a real
