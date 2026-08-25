@@ -4,6 +4,8 @@
 interface Props {
   label: string;
   name: string;
+  /** Steers the on-screen keyboard on a phone; the field is text either way. */
+  type?: "text" | "email" | "tel" | "search";
   id?: string;
   value?: string;
   placeholder?: string;
@@ -11,14 +13,15 @@ interface Props {
   autofocus?: boolean;
   error?: string | null;
 }
-const { label, name, id = name, value, placeholder, required, autofocus, error } = Astro.props;
+const { label, name, type = "text", id = name, value, placeholder, required, autofocus, error } =
+  Astro.props;
 const errorId = `${id}-error`;
 ---
 
 <div class="field">
   <label for={id}>{label}</label>
   <input
-    type="text"
+    type={type}
     id={id}
     name={name}
     value={value}

@@ -1,0 +1,24 @@
+---
+import { listOrganizationMembers } from "@stottemedlem/db";
+import MemberListScreen from "../../../../components/MemberListScreen.astro";
+import Shell from "../../../../layouts/Shell.astro";
+import { getDb } from "../../../../lib/db";
+import { requireOrgAccess } from "../../../../lib/orgAccess";
+import { orgPath } from "../../../../lib/workos";
+
+// The organization's member list (specs/use-cases/curate-member-list.md).
+const org = await requireOrgAccess(Astro.locals.session, Astro.params.slug);
+if (!org) return Astro.redirect("/orgs");
+
+const members = await listOrganizationMembers(getDb(), org.id);
+---
+
+<Shell title={`Medlemmer — ${org.name}`}>
+  <MemberListScreen
+    members={members}
+    search={Astro.url.searchParams.get("sok") ?? ""}
+    membersPath={`${orgPath(org.slug)}/medlemmer`}
+    backPath={orgPath(org.slug)}
+    currentYear={new Date().getUTCFullYear()}
+  />
+</Shell>
