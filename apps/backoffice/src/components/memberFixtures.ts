@@ -10,7 +10,16 @@ export function fixtureMember(
   email: string | null,
   phone: string | null,
 ): SupportingMember {
-  return { id, orgId: ORG_ID, name, email, phone, vippsSub: `sub-${id}`, createdAt: "2026-01-04" };
+  return {
+    id,
+    orgId: ORG_ID,
+    name,
+    email,
+    phone,
+    vippsSub: `sub-${id}`,
+    messagesDeclinedAt: null,
+    createdAt: "2026-01-04",
+  };
 }
 
 export function fixturePeriod(

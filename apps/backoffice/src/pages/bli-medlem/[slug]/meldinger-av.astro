@@ -1,0 +1,105 @@
+---
+import { memberSelfServicePath } from "@stottemedlem/core";
+import {
+  findAgreementByManageToken,
+  getOrganizationBySlug,
+  getSupportingMember,
+  setMessagesDeclined,
+} from "@stottemedlem/db";
+import Alert from "@stottemedlem/ui/components/Alert.astro";
+import Button from "@stottemedlem/ui/components/Button.astro";
+import Heading from "@stottemedlem/ui/components/Heading.astro";
+import Stack from "@stottemedlem/ui/components/Stack.astro";
+import Text from "@stottemedlem/ui/components/Text.astro";
+import TextLink from "@stottemedlem/ui/components/TextLink.astro";
+import PublicShell from "../../../layouts/PublicShell.astro";
+import { getDb } from "../../../lib/db";
+
+// The one-click decline every organization message carries
+// (specs/concepts/org-message.md): one page, one button, no login — the
+// unguessable token in the URL is the member's identity, exactly as on their
+// self-service page. The same page reverses the choice, so a change of heart
+// costs one click too.
+//
+// The click is a POST on purpose: mail scanners follow links, and a scanner
+// must not be able to unsubscribe anyone.
+const slug = Astro.params.slug;
+const db = getDb();
+const org = slug ? await getOrganizationBySlug(db, slug) : null;
+if (!org) return new Response("Fant ikke organisasjonen", { status: 404 });
+
+const token = Astro.url.searchParams.get("n");
+const agreement = token ? await findAgreementByManageToken(db, token) : null;
+if (!agreement || agreement.orgId !== org.id || !agreement.memberId) {
+  return new Response("Fant ikke medlemskapet", { status: 404 });
+}
+
+let member = await getSupportingMember(db, agreement.memberId);
+if (!member) return new Response("Fant ikke medlemskapet", { status: 404 });
+
+let changed = false;
+if (Astro.request.method === "POST") {
+  const form = await Astro.request.formData();
+  const decline = form.get("handling") !== "pa";
+  await setMessagesDeclined(db, member.id, decline);
+  member = { ...member, messagesDeclinedAt: decline ? new Date().toISOString() : null };
+  changed = true;
+}
+
+const declined = Boolean(member.messagesDeclinedAt);
+const selfServiceHref = token ? memberSelfServicePath(org.slug, token) : null;
+---
+
+<PublicShell
+  title={`Meldinger fra ${org.name}`}
+  description={`Velg om du vil ha meldinger fra ${org.name}.`}
+  noindex
+>
+  <Stack gap="lg">
+    <Stack gap="sm">
+      <Heading>Meldinger fra {org.name}</Heading>
+      <Text variant="lead">
+        {
+          declined
+            ? `Du får ikke lenger meldinger fra ${org.name}.`
+            : `Du får meldinger fra ${org.name} — takk, oppdateringer og nyheter — fordi du er støttemedlem.`
+        }
+      </Text>
+    </Stack>
+
+    {
+      changed && (
+        <Alert variant="success">
+          {declined ? "Du er meldt av." : "Du får meldinger igjen."}
+        </Alert>
+      )
+    }
+
+    <form method="post">
+      {
+        declined ? (
+          <Button type="submit" name="handling" value="pa" variant="secondary" block>
+            Få meldinger igjen
+          </Button>
+        ) : (
+          <Button type="submit" name="handling" value="av" block>
+            Meld meg av
+          </Button>
+        )
+      }
+    </form>
+
+    <Text variant="small">
+      Dette gjelder bare {org.name} sine egne meldinger. Du er fortsatt støttemedlem, og viktige
+      varsler om ditt eget medlemskap — for eksempel om prisen endrer seg — kommer uansett.
+    </Text>
+
+    {
+      selfServiceHref && (
+        <Text variant="small">
+          <TextLink href={selfServiceHref}>Se eller avslutt medlemskapet ditt</TextLink>
+        </Text>
+      )
+    }
+  </Stack>
+</PublicShell>

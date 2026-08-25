@@ -153,6 +153,13 @@ const showNoticeResult = Astro.url.searchParams.has("varslet");
       <Button variant="secondary" href={`${orgPath(org.slug)}/medlemmer`} block>
         Åpne medlemslisten
       </Button>
+      {
+        members.length > 0 && (
+          <Button variant="secondary" href={`${orgPath(org.slug)}/meldinger`} block>
+            Skriv til medlemmene
+          </Button>
+        )
+      }
     </Stack>
     <Stack gap="sm">
       <Heading level={2}>Medlemskap</Heading>

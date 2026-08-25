@@ -1,9 +1,10 @@
 /**
- * One message to one person. The product only ever sends
- * specs/concepts/member-notice.md — messages about someone's own membership —
- * so there is no audience, no campaign, and no unsubscribe link: a member who
- * wants these to stop ends the membership, which every notice tells them how
- * to do.
+ * One message to one person. The product sends two kinds: member notices
+ * (specs/concepts/member-notice.md), which cannot be declined — a member who
+ * wants those to stop ends the membership instead — and organization messages
+ * (specs/concepts/org-message.md), which always carry a one-click decline.
+ * Either way there is no audience or campaign here: composing the right
+ * message to the right person happens upstream, one at a time.
  */
 export interface EmailMessage {
   to: string;

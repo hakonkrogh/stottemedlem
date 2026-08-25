@@ -1,0 +1,52 @@
+---
+import {
+  getOrgMessage,
+  listOrganizationMembers,
+  listOrgMessageRecipients,
+} from "@stottemedlem/db";
+import MessageResultScreen from "../../../../components/MessageResultScreen.astro";
+import Shell from "../../../../layouts/Shell.astro";
+import { getDb } from "../../../../lib/db";
+import { summarizeDelivery } from "../../../../lib/messages";
+import { requireOrgAccess } from "../../../../lib/orgAccess";
+import { orgPath } from "../../../../lib/workos";
+
+// What became of one message (specs/concepts/org-message.md): read entirely
+// from the recorded outcomes, so it shows what actually happened — including
+// "nothing yet" while the queue is still walking the audience.
+const org = await requireOrgAccess(Astro.locals.session, Astro.params.slug);
+if (!org) return Astro.redirect("/orgs");
+
+const db = getDb();
+const messagesPath = `${orgPath(org.slug)}/meldinger`;
+const message = Astro.params.messageId
+  ? await getOrgMessage(db, org.id, Astro.params.messageId)
+  : null;
+if (!message) return Astro.redirect(messagesPath);
+
+const recipients = await listOrgMessageRecipients(db, message.id);
+const report = summarizeDelivery(recipients);
+
+// Names for the members the message did not reach, so the org can act.
+const names = new Map(
+  (await listOrganizationMembers(db, org.id)).map((entry) => [
+    entry.member.id,
+    entry.member.name,
+  ]),
+);
+const problems = recipients
+  .filter((recipient) => recipient.outcome !== "sent")
+  .map((recipient) => ({
+    name: names.get(recipient.memberId) ?? null,
+    outcome: recipient.outcome,
+  }));
+---
+
+<Shell title={`«${message.subject}» — ${org.name}`}>
+  <MessageResultScreen
+    message={message}
+    report={report}
+    problems={problems}
+    messagesPath={messagesPath}
+  />
+</Shell>

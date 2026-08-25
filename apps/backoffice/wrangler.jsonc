@@ -93,12 +93,28 @@
 			{
 				"binding": "VIPPS_EVENTS",
 				"queue": "vipps-events"
+			},
+			// Org messages to supporting members (specs/concepts/org-message.md):
+			// the compose page enqueues, the queue handler in src/worker.ts walks
+			// the register and sends. Provision once per environment BEFORE the
+			// next deploy: `wrangler queues create org-messages`
+			// (+ `wrangler queues create org-messages-staging`).
+			{
+				"binding": "ORG_MESSAGES",
+				"queue": "org-messages"
 			}
 		],
 		"consumers": [
 			{
 				"queue": "vipps-events",
 				"max_batch_size": 10,
+				"max_retries": 5
+			},
+			{
+				"queue": "org-messages",
+				// One message walks the whole audience; small batches keep a slow
+				// provider from starving the next organization's message.
+				"max_batch_size": 5,
 				"max_retries": 5
 			}
 		]
@@ -172,12 +188,21 @@
 					{
 						"binding": "VIPPS_EVENTS",
 						"queue": "vipps-events-staging"
+					},
+					{
+						"binding": "ORG_MESSAGES",
+						"queue": "org-messages-staging"
 					}
 				],
 				"consumers": [
 					{
 						"queue": "vipps-events-staging",
 						"max_batch_size": 10,
+						"max_retries": 5
+					},
+					{
+						"queue": "org-messages-staging",
+						"max_batch_size": 5,
 						"max_retries": 5
 					}
 				]

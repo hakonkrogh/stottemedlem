@@ -71,6 +71,7 @@ scope.
 | [Join page](concepts/join-page.md) | Draft |
 | [Member self-service page](concepts/member-self-service.md) | Draft |
 | [Member notice](concepts/member-notice.md) | Draft |
+| [Organization message](concepts/org-message.md) | Draft |
 | [Payment reconciliation](concepts/payment-reconciliation.md) | Draft |
 | [Vipps API keys](concepts/vipps-api-keys.md) | Draft |
 | [Brand attribution](concepts/brand-attribution.md) | Active |

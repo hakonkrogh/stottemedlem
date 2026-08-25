@@ -195,12 +195,56 @@ export default {
     ctx.waitUntil(runScheduledJobs(controller.cron));
   },
 
-  // Consumer for the Vipps webhook event queue. Idempotent event processing
-  // lands with the webhook pipeline (scaffolding step 6).
+  /**
+   * Queue consumers. Today that is org-messages: an administrator's message to
+   * the supporting members (specs/concepts/org-message.md). The request only
+   * writes the message down and enqueues this job — walking the whole register
+   * happens here, where a retry after a crash costs nothing: delivery records
+   * an outcome per member, so a redelivered job skips everyone already dealt
+   * with. Imported lazily for the same reason the cron jobs are: the fetch
+   * path never pays for loading them.
+   */
   async queue(batch, _env) {
-    console.log(`queue ${batch.queue}: ${batch.messages.length} message(s) — no consumer yet`);
+    const [{ getDb }, { getEmailSender }, messages, { getOrganizationBySlug }] = await Promise.all([
+      import("./lib/db"),
+      import("./lib/email"),
+      import("./lib/messages"),
+      import("@stottemedlem/db"),
+    ]);
+    const db = getDb();
     for (const message of batch.messages) {
-      message.ack();
+      if (!messages.isOrgMessageJob(message.body)) {
+        // Not a job this consumer knows; dropping it beats redelivering it
+        // forever. The Vipps event queue still has no consumer — its receiver
+        // applies events synchronously.
+        console.warn(`queue ${batch.queue}: unrecognized message dropped`);
+        message.ack();
+        continue;
+      }
+      const job = message.body;
+      try {
+        const org = await getOrganizationBySlug(db, job.slug);
+        if (!org) throw new Error(`unknown organization ${job.slug}`);
+        const report = await messages.deliverOrgMessage(
+          db,
+          org,
+          job.messageId,
+          job.origin,
+          getEmailSender(),
+        );
+        if (report) {
+          console.log(
+            `${job.slug}: message ${job.messageId} — ${report.sent} sent, ` +
+              `${report.failed} failed, ${report.unreachable} unreachable`,
+          );
+        }
+        message.ack();
+      } catch (error) {
+        // A crash mid-audience is safe to retry: outcomes already recorded
+        // keep those members from being contacted twice.
+        console.error(`org message delivery failed (${job.slug}/${job.messageId})`, error);
+        message.retry();
+      }
     }
   },
 } satisfies ExportedHandler<Env>;

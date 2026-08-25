@@ -179,6 +179,16 @@ export function memberSelfServicePath(slug: string, manageToken: string): string
 }
 
 /**
+ * The one-click decline every organization message must carry (see
+ * specs/concepts/org-message.md) — where a member stops the organization's own
+ * messages without a login and without ending anything. The same token as the
+ * self-service page: whoever holds it is the member.
+ */
+export function memberUnsubscribePath(slug: string, manageToken: string): string {
+  return `${joinPagePath(slug)}/meldinger-av?n=${encodeURIComponent(manageToken)}`;
+}
+
+/**
  * Validate a Norwegian organisasjonsnummer: 9 digits with a MOD11 check digit
  * (weights 3,2,7,6,5,4,3,2). Accepts digits with optional spaces.
  */

@@ -1,11 +1,15 @@
 import { describe, expect, it } from "vitest";
 import {
   countMembersByStatus,
+  inMessageAudience,
+  isMessageReachable,
   isProfileComplete,
   type MemberFeeStanding,
   type MemberOverview,
   matchesMemberSearch,
   membershipStatus,
+  type MessageableMember,
+  messageReach,
   owesFeeChangeNotice,
   renewalFeeNok,
 } from "./index.js";
@@ -64,6 +68,7 @@ const overview = (
     email: null,
     phone: null,
     vippsSub: null,
+    messagesDeclinedAt: null,
     createdAt: "2026-01-01 00:00:00",
     ...extra,
   },
@@ -138,6 +143,7 @@ const standing = (overrides: {
     email: "ingrid@eksempel.no",
     phone: null,
     vippsSub: null,
+    messagesDeclinedAt: null,
     createdAt: "2026-01-02 00:00:00",
   },
   tier: {
@@ -192,5 +198,54 @@ describe("renewalFeeNok", () => {
 
   it("passes a price cut on immediately — being charged less is no surprise", () => {
     expect(renewalFeeNok(standing({ tierFee: 200, knownFeeNok: 200, ripeFeeNok: 250 }))).toBe(200);
+  });
+});
+
+const messageable = (
+  status: "active" | "lapsed",
+  extra: { email?: string | null; manageToken?: string | null; declinedAt?: string | null } = {},
+): MessageableMember => ({
+  member: {
+    id: crypto.randomUUID(),
+    orgId: base.id,
+    name: "Et Medlem",
+    email: extra.email === undefined ? "medlem@eksempel.example" : extra.email,
+    phone: null,
+    vippsSub: null,
+    messagesDeclinedAt: extra.declinedAt ?? null,
+    createdAt: "2026-01-01 00:00:00",
+  },
+  status,
+  manageToken: extra.manageToken === undefined ? "tok" : extra.manageToken,
+});
+
+describe("messageReach", () => {
+  const everyone = [
+    messageable("active"),
+    messageable("active", { email: null }),
+    messageable("active", { manageToken: null }),
+    messageable("active", { declinedAt: "2026-05-01 00:00:00" }),
+    messageable("lapsed"),
+    messageable("lapsed", { email: "  " }),
+  ];
+
+  it("reaches active members by default; lapsed only as a deliberate choice", () => {
+    expect(messageReach(everyone, "active")).toEqual({ reached: 1, unreachable: 2, declined: 1 });
+    expect(messageReach(everyone, "all")).toEqual({ reached: 2, unreachable: 3, declined: 1 });
+  });
+
+  it("counts a member who declined as declined, never as reachable", () => {
+    const declined = [messageable("active", { declinedAt: "2026-05-01 00:00:00" })];
+    expect(messageReach(declined, "active")).toEqual({ reached: 0, unreachable: 0, declined: 1 });
+  });
+
+  it("treats a member without their own page as unreachable — every message must carry the one-click decline", () => {
+    expect(isMessageReachable(messageable("active", { manageToken: null }))).toBe(false);
+    expect(isMessageReachable(messageable("active"))).toBe(true);
+  });
+
+  it("never lets a lapsed member into the default audience", () => {
+    expect(inMessageAudience(messageable("lapsed"), "active")).toBe(false);
+    expect(inMessageAudience(messageable("lapsed"), "all")).toBe(true);
   });
 });
