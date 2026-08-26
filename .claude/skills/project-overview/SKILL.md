@@ -641,9 +641,16 @@ lives in `specs/`, kept in sync with code by a mandatory `Stop`-hook harness.
   OPEN_CHARGE_STATUSES renewal charge exists for the current period; both
   member queries feed it; specs membership.md + curate-member-list.md state
   the retry grace.
-  NOT yet rehearsed: mid-period stop from the product's `min-side.astro` +
-  04:00 skipping a STOPPED agreement; in-window double-arrange guard (needs
-  December dates). Fixed 2026-08-26: webhook route now uses the tolerant
+  Mid-period stop REHEARSED 2026-08-26 end-to-end with a real agreement
+  (agr_gTdL3vU) drafted by the product's own join flow: approval in the MT app
+  captured the pro-rated INITIAL instantly; with NO webhook registered,
+  reconcile alone settled the whole join (agreement ACTIVE, member created
+  from userinfo, 2026 membership granted); min-side rendered by manage token
+  (bogus token → 404), POST stop → Vipps STOPPED + D1 stopped_at + page shows
+  "ut 2026"; renewal job reads only status='ACTIVE' agreements
+  (listActiveAgreementsWithTier) so a stopped agreement can never be
+  re-arranged — 0 RECURRING rows after a job run. Still not rehearsable until
+  December: the in-window double-arrange guard. Fixed 2026-08-26: webhook route now uses the tolerant
   Vault read (`readStoredKeys`) so a key-store outage in the test env falls
   back to `.dev.vars` instead of 500ing every delivery (spec
   `concepts/vipps-api-keys.md` updated to match).

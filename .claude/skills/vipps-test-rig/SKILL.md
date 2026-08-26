@@ -98,6 +98,29 @@ developer.vippsmobilepay.com/docs/knowledge-base/test-environment/). The charge
 fails only on its due date, then Vipps retries for `--retry-days` (default 7)
 — a definitive FAILED takes due date + retry window to observe.
 
+## Driving the PRODUCT's join flow from the CLI (learned 2026-08-26)
+
+To rehearse product-side flows (min-side stop, kvittering) you need an
+agreement drafted by the product, not the rig. Tunnel the dev server
+(`cloudflared tunnel --url http://localhost:4322`) so the drafted callback
+URLs are https, then:
+
+```sh
+curl -D - -X POST -H "Origin: https://<tunnel>" \
+  "https://<tunnel>/bli-medlem/<slug>/start" -d "medlemskap=<tier key>"
+```
+
+The `Origin` header is required — Astro's CSRF check 403s a POST without it.
+The 303 `location:` is the approval URL (JWT carries the `agreementId`;
+expires in ~10 min); the drafted row + `manage_token` land in D1 at once.
+Show the user a scannable QR: a terminal QR printed from an agent's tool call
+never reaches the user's screen — write a PNG instead and open it
+(`qrcode.toFile(path, url, {width: 600})` with the `qrcode` dep in
+packages/vipps, then `open <path>` so Preview shows it for the phone to scan). If the fresh
+trycloudflare hostname won't resolve locally (negative DNS cache), get the IP
+with `dig @1.1.1.1 <host> +short` and pin it via `curl --resolve <host>:443:<ip>`
+— Vipps and the phone are unaffected.
+
 ## The two background processes
 
 ```sh
