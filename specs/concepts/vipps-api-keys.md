@@ -35,8 +35,12 @@ money.
 - Outside production, an organization that has not added keys of its own may
   fall back to a shared **test** sales unit belonging to the deployment, so
   the payment flow can be rehearsed end to end before any organization brings
-  its own credentials. The production product never does this: there, only
-  keys an administrator connected can move an organization's money.
+  its own credentials. The same fallback applies when the key store itself is
+  unreachable, and it covers the whole flow — including verifying that a
+  payment notification is genuine — so a store outage never silently drops
+  what Vipps reports. The production product never does this: there, only
+  keys an administrator connected can move an organization's money, and a key
+  store failure is a real failure.
 - Stored keys are encrypted, isolated per organization, and never leave the
   back office: after saving, the two secret values are only ever shown
   masked. Stored keys are **presented, not offered as a form**

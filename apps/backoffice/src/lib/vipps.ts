@@ -37,7 +37,7 @@ export async function getVippsForOrg(
  * — local development has the test sales unit in .dev.vars to fall back on.
  * In production a Vault failure is real and propagates.
  */
-async function readStoredKeys(workos: WorkOS, workosOrgId: string) {
+export async function readStoredKeys(workos: WorkOS, workosOrgId: string) {
   try {
     return await readOrgVippsKeys(workos, workosOrgId);
   } catch (error) {
