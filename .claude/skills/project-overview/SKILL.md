@@ -621,6 +621,30 @@ lives in `specs/`, kept in sync with code by a mandatory `Stop`-hook harness.
   only, and now sits on `MemberOverview` — so any new `MemberOverview` fixture
   needs it. Migration `0011_member_card.sql` backfills a card token for every
   existing member. Rendering/route details: `qr-codes.md` in this skill.
+  **Renewal-loop verification state (updated 2026-08-26, branch
+  recurring-payments-mgmt):** rehearsed against real apitest — join/activation/
+  pro-rated initial charge, a real renewal charge captured on its due date,
+  webhook signature + tamper + unknown-org contracts (200/401/404), a
+  charge-failed event NOT trusted (product asked Vipps, recorded DUE),
+  reconcile via `cron.sh "0 2 * * *"` finding 4 provider-known/product-unknown
+  charges on a real agreement and settling every captured one into the single
+  2026 membership (idempotent), 04:00 job twice = no reprice (fees aligned),
+  no renewal arranged (out of Dec-window), no double-arrange. Vipps special
+  test amounts are øre passed as decimal NOK (`vt charge --amount 1.51` = 151
+  øre = insufficient funds). IN FLIGHT: real failing renewal chr-TCYB7Em on
+  agr_Mt2LutK, due 2026-08-27, retryDays 7 — check with
+  `vt charges --agreement agr_Mt2LutK` from 08-27 to watch FAILED land, then
+  whether reconcile records it and what the member list shows. CONFIRMED BUG:
+  `membershipStatus` (packages/db/src/index.ts, `periodYear >= currentYear`,
+  no charge-state input) shows a member lapsed from Jan 1 while their renewal
+  is still inside the 7-day retry window — violates renew-annual-membership's
+  "never lapsed while payment is still being retried"; fix not yet designed.
+  NOT yet rehearsed: mid-period stop from the product's `min-side.astro` +
+  04:00 skipping a STOPPED agreement; in-window double-arrange guard (needs
+  December dates). Fixed 2026-08-26: webhook route now uses the tolerant
+  Vault read (`readStoredKeys`) so a key-store outage in the test env falls
+  back to `.dev.vars` instead of 500ing every delivery (spec
+  `concepts/vipps-api-keys.md` updated to match).
   **Member list** (added 2026-08-24, spec `use-cases/curate-member-list.md`):
   `/o/[slug]/medlemmer` (list, `?sok=` search) + `/o/[slug]/medlemmer/[memberId]`
   (history + the one editable thing, contact details). Queries live in

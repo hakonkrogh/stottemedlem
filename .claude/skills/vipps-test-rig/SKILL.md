@@ -89,6 +89,15 @@ drafts fine with nothing running locally. Start the tunnel only when something
 must actually call BACK into this machine: webhooks, or approving and landing
 on `/retur`.
 
+## Forcing a failed charge
+
+Vipps' special test amounts are **øre**, and `--amount` is NOK — pass decimals:
+`vt charge --days 1 --amount 1.51` = 151 øre = "insufficient funds" (182
+refused by issuer, 184 withdrawal limit, 186 expired card; full list:
+developer.vippsmobilepay.com/docs/knowledge-base/test-environment/). The charge
+fails only on its due date, then Vipps retries for `--retry-days` (default 7)
+— a definitive FAILED takes due date + retry window to observe.
+
 ## The two background processes
 
 ```sh
