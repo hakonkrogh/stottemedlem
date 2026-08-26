@@ -80,6 +80,15 @@ const secrets = env as typeof env & { RESEND_API_KEY?: string };
 Non-secret config has the better fix — make it a real wrangler `var` in both
 envs (that is why `PUBLIC_ORIGIN` is one).
 
+Consequence (as of 2026-08-26): **`pnpm run typecheck` in apps/backoffice
+FAILS on a fresh worktree with no `.dev.vars`** — 6 pre-existing TS2339
+errors in `src/lib/vipps.ts` + `src/lib/workos.ts` (they read
+`env.VIPPS_*`/`env.WORKOS_API_KEY` directly instead of widening). Not your
+change's fault; check whether YOUR files appear in the errors before chasing
+it. (Also remember the workspace packages must be built first —
+`pnpm --filter './packages/*' run build` — or `astro check` drowns in
+"Cannot find module '@stottemedlem/db'".)
+
 ## Repo-specific install gotchas
 
 - `workerd` must be in `onlyBuiltDependencies` (pnpm-workspace.yaml) — its postinstall
@@ -556,19 +565,27 @@ takes a structural `SentryLike`, so the SAME sink works with
 package depends on no vendor). Wiring: `apps/backoffice/src/lib/log.ts` is
 one factory export; modules take `const log = logger("webhooks")` at MODULE
 scope (areas in use: renewals, reconcile, notices, webhooks, scheduled;
-console always, Sentry only when `SENTRY_DSN` var non-empty). Verified
+console always, Sentry only when `SENTRY_DSN` is set). Verified
 2026-08-26: `import { env } from "cloudflare:workers"` IS readable at module
 init in workerd (the factory reads `env.SENTRY_DSN` at import time; fetch and
 scheduled both fine under `wrangler dev`),
 `worker.ts` wrapped in `Sentry.withSentry` (fetch+scheduled+queue,
 `tracesSampleRate: 0`), cron loop + Vipps webhook route log through it.
-Grouping rule: STABLE messages, moving numbers in context. The prod
-`SENTRY_DSN` is SET (2026-08-26, EU-region project, ingest.de.sentry.io;
-staging deliberately empty — a later staging project should be its OWN Sentry
-project so prod keeps the free 5k errors/mo). Sentry project layout (settled
+Grouping rule: STABLE messages, moving numbers in context.
+**`SENTRY_DSN` is a production-only SECRET, not a var** (moved 2026-08-26,
+same day the var shipped: a wrangler.jsonc top-level var is inherited by
+local dev — `astro dev` runs the real worker — so the first local session
+filed 4 localhost issues into prod Sentry; `wrangler secret put SENTRY_DSN`
+excludes local/staging by construction since secrets never reach a local
+machine. Being a secret it is also absent from the generated `Env` — both
+readers, `lib/log.ts` and `worker.ts`, use the widening pattern above. Local
+opt-in: paste a personal test project's DSN in `.dev.vars`). Prod DSN set
+2026-08-26, EU-region project, ingest.de.sentry.io; staging deliberately has
+none — a later staging project should be its OWN Sentry project so prod keeps
+the free 5k errors/mo. Sentry project layout (settled
 2026-08-26): ONE project, slug `backoffice-server` (renamed from
 `javascript-astro`; rename is DSN-safe — DSNs key on project id, not slug —
-id 4511977082519632 matches the DSN in wrangler.jsonc); add staging/browser
+id 4511977082519632); add staging/browser
 projects only when those surfaces get wired; no project for marketing
 (assets-only, no code). Still pending: the
 Healthchecks.io pings. Verified in workerd via
@@ -585,8 +602,11 @@ The facts below informed the choice:
   and third-party integrations generally, plus API access — start at the paid
   Team tier. Free = 1 user, 5k errors/mo, email notifications, 1 uptime + 1
   cron monitor. Don't design a free Sentry→Slack alert path; it doesn't exist
-  natively. (A claude.ai Sentry MCP connector exists in sessions —
-  `mcp__claude_ai_Sentry__authenticate` — if an account is ever set up.)
+  natively. (The claude.ai Sentry MCP connector works against the account —
+  verified 2026-08-26: org slug `stottemedlem`, regionUrl
+  `https://de.sentry.io` (EU) — pass regionUrl to every call. The free plan
+  has no API tokens, so the MCP is the only headless read/update path;
+  authenticate via `/mcp` in-session.)
 - **Better Stack Uptime free tier is the generous one:** 10 monitors, 30 s
   checks, and email + Slack + SMS + phone alerts all included on free.
   UptimeRobot free = 50 monitors but 5-min checks and murkier Slack support.

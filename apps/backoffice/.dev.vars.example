@@ -63,3 +63,11 @@ PUBLIC_ORIGIN=""
 # domain must be verified with Resend first.
 RESEND_API_KEY=""
 EMAIL_FROM_ADDRESS="varsel@xn--stttemedlem-hgb.no"
+
+# ── Operational alerting (Sentry) ───────────────────────────────────────
+# Leave empty: local errors are logged to the console, never reported. The
+# production DSN is a Worker secret (`wrangler secret put SENTRY_DSN`), so a
+# dev machine cannot accidentally report into production alerting. To exercise
+# the alerting pipeline locally, paste the DSN of your OWN throwaway Sentry
+# project here (specs/concepts/operational-alerting.md).
+SENTRY_DSN=""
