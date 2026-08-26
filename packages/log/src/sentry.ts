@@ -39,15 +39,18 @@ export function sentrySink(sentry: SentryLike, options: SentrySinkOptions = {}):
     log(event: LogEvent): void {
       if (!levelAtLeast(event.level, minLevel)) {
         sentry.addBreadcrumb?.({
-          category: "log",
+          category: event.area,
           message: event.message,
           level: sentryLevel(event.level),
           data: event.context,
         });
         return;
       }
+      // The area rides as a tag: tags are what Sentry's issue list filters
+      // and alert rules match on, unlike extras.
       const captureContext = {
         level: sentryLevel(event.level),
+        tags: { area: event.area },
         extra: event.context,
       };
       if (event.error !== undefined) {

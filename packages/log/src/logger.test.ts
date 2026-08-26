@@ -9,20 +9,21 @@ function collectingSink(): { sink: LogSink; events: LogEvent[] } {
 }
 
 describe("createLogger", () => {
-  it("fans one event out to every sink", () => {
+  it("fans one event out to every sink, stamped with the area", () => {
     const a = collectingSink();
     const b = collectingSink();
-    createLogger([a.sink, b.sink]).info("hello");
+    createLogger("renewals", [a.sink, b.sink]).info("hello");
     expect(a.events).toHaveLength(1);
     expect(b.events).toHaveLength(1);
-    expect(a.events[0]).toEqual({ level: "info", message: "hello", context: {} });
+    expect(a.events[0]).toEqual({ area: "renewals", level: "info", message: "hello", context: {} });
   });
 
   it("carries the thrown value on error events", () => {
     const { sink, events } = collectingSink();
     const boom = new Error("boom");
-    createLogger([sink]).error("job failed", boom, { org: "korpset" });
+    createLogger("renewals", [sink]).error("job failed", boom, { org: "korpset" });
     expect(events[0]).toEqual({
+      area: "renewals",
       level: "error",
       message: "job failed",
       error: boom,
@@ -30,10 +31,11 @@ describe("createLogger", () => {
     });
   });
 
-  it("merges bound context under call-site context", () => {
+  it("merges bound context under call-site context, keeping the area", () => {
     const { sink, events } = collectingSink();
-    const logger = createLogger([sink]).with({ org: "korpset", cron: "0 4 * * *" });
+    const logger = createLogger("reconcile", [sink]).with({ org: "korpset", cron: "0 4 * * *" });
     logger.warn("slow", { org: "koret" });
+    expect(events[0]?.area).toBe("reconcile");
     expect(events[0]?.context).toEqual({ org: "koret", cron: "0 4 * * *" });
   });
 
@@ -45,7 +47,7 @@ describe("createLogger", () => {
     };
     const { sink, events } = collectingSink();
     const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
-    expect(() => createLogger([broken, sink]).error("still logged")).not.toThrow();
+    expect(() => createLogger("test", [broken, sink]).error("still logged")).not.toThrow();
     expect(events).toHaveLength(1);
     expect(consoleError).toHaveBeenCalledWith("log sink failed", expect.any(Error));
     consoleError.mockRestore();
@@ -53,18 +55,18 @@ describe("createLogger", () => {
 });
 
 describe("consoleSink", () => {
-  it("routes levels to the matching console method and omits empty context", () => {
+  it("routes levels to the matching console method, prefixed with the area", () => {
     const log = vi.spyOn(console, "log").mockImplementation(() => {});
     const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
     const error = vi.spyOn(console, "error").mockImplementation(() => {});
-    const logger = createLogger([consoleSink()]);
+    const logger = createLogger("renewals", [consoleSink()]);
     const boom = new Error("boom");
     logger.info("quiet night");
     logger.warn("degraded", { org: "korpset" });
     logger.error("failed", boom);
-    expect(log).toHaveBeenCalledWith("quiet night");
-    expect(warn).toHaveBeenCalledWith("degraded", { org: "korpset" });
-    expect(error).toHaveBeenCalledWith("failed", boom);
+    expect(log).toHaveBeenCalledWith("[renewals] quiet night");
+    expect(warn).toHaveBeenCalledWith("[renewals] degraded", { org: "korpset" });
+    expect(error).toHaveBeenCalledWith("[renewals] failed", boom);
     log.mockRestore();
     warn.mockRestore();
     error.mockRestore();

@@ -557,7 +557,12 @@ package depends on no vendor). Wiring: `apps/backoffice/src/lib/log.ts`
 Grouping rule: STABLE messages, moving numbers in context. The prod
 `SENTRY_DSN` is SET (2026-08-26, EU-region project, ingest.de.sentry.io;
 staging deliberately empty — a later staging project should be its OWN Sentry
-project so prod keeps the free 5k errors/mo). Still pending: the
+project so prod keeps the free 5k errors/mo). Sentry project layout (settled
+2026-08-26): ONE project, slug `backoffice-server` (renamed from
+`javascript-astro`; rename is DSN-safe — DSNs key on project id, not slug —
+id 4511977082519632 matches the DSN in wrangler.jsonc); add staging/browser
+projects only when those surfaces get wired; no project for marketing
+(assets-only, no code). Still pending: the
 Healthchecks.io pings. Verified in workerd via
 `wrangler dev --test-scheduled` → `/cdn-cgi/handler/scheduled`.
 A DSN can be verified headlessly, no SDK involved — POST one envelope

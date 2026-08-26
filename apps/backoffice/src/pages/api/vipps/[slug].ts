@@ -2,7 +2,7 @@ import { getOrganizationBySlug } from "@stottemedlem/db";
 import { verifyWebhookDelivery } from "@stottemedlem/vipps";
 import type { APIRoute } from "astro";
 import { getDb } from "../../../lib/db";
-import { getLogger } from "../../../lib/log";
+import { logger } from "../../../lib/log";
 import { applyVippsEvent, type VippsEvent } from "../../../lib/membership";
 import { getVippsForOrg, testEnvironmentWebhookSecret } from "../../../lib/vipps";
 import { readOrgVippsKeys } from "../../../lib/vippsKeys";
@@ -29,7 +29,7 @@ export const POST: APIRoute = async ({ params, request }) => {
   const keys = await readOrgVippsKeys(workos, org.workosOrgId);
   const secret = keys?.webhook?.secret ?? testEnvironmentWebhookSecret();
   if (!secret) {
-    getLogger().error("webhook received but no registration secret stored", undefined, {
+    logger("webhooks").error("webhook received but no registration secret stored", undefined, {
       org: org.slug,
     });
     return new Response("no webhook registration", { status: 404 });
@@ -53,7 +53,7 @@ export const POST: APIRoute = async ({ params, request }) => {
   // the operator: repeated failures mean the stored secret has drifted from
   // the registration, and Vipps is retrying a delivery we keep refusing.
   if (!verified) {
-    getLogger().warn("webhook signature verification failed", { org: org.slug });
+    logger("webhooks").warn("webhook signature verification failed", { org: org.slug });
     return new Response("bad signature", { status: 401 });
   }
 
@@ -74,7 +74,7 @@ export const POST: APIRoute = async ({ params, request }) => {
   } catch (error) {
     // 500 so Vipps redelivers: losing an event silently would leave a paying
     // supporter off the member list.
-    getLogger().error("failed to apply webhook event", error, {
+    logger("webhooks").error("failed to apply webhook event", error, {
       org: org.slug,
       eventType: event.eventType,
     });

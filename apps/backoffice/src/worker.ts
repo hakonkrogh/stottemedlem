@@ -2,7 +2,7 @@ import { env } from "cloudflare:workers";
 import { handle } from "@astrojs/cloudflare/handler";
 import * as Sentry from "@sentry/cloudflare";
 import { JOIN_PAGE_PATH_SEGMENT } from "@stottemedlem/core";
-import { getLogger } from "./lib/log";
+import { logger } from "./lib/log";
 
 // Public org pages (specs/concepts/join-page.md): the join page and its
 // salgsvilkår are served stale-while-revalidate — a visit gets the cached copy
@@ -86,16 +86,17 @@ async function runScheduledJobs(cron: string): Promise<void> {
   const reconcileFirst = cron === RECONCILE_CRON;
   // Stable messages, moving numbers in context: the alerting sink groups
   // recurrences of the same problem by message, so one bad week is one issue,
-  // not seven (specs/concepts/operational-alerting.md).
-  const log = getLogger().with({ cron });
+  // not seven. Each job logs under its own area (specs/concepts/operational-alerting.md).
 
   // A notice has to link the member to their own page, and a scheduled run has
   // no request to derive the address from — hence PUBLIC_ORIGIN. Say so rather
   // than skipping in silence.
-  if (!env.PUBLIC_ORIGIN) log.warn("PUBLIC_ORIGIN not set — member notices skipped this run");
+  if (!env.PUBLIC_ORIGIN) {
+    logger("notices").warn("PUBLIC_ORIGIN not set — member notices skipped this run", { cron });
+  }
 
   for (const org of await listOrganizations(db)) {
-    const orgLog = log.with({ org: org.slug });
+    const ctx = { cron, org: org.slug };
     try {
       const vipps = await getVippsForOrg(workos, org.workosOrgId);
       // An organization that has not connected Vipps has nothing to renew.
@@ -108,11 +109,16 @@ async function runScheduledJobs(cron: string): Promise<void> {
       if (reconcileFirst) {
         const report = await reconcile.reconcileOrganization(db, vipps, org.id);
         if (report.failed > 0) {
-          orgLog.error("reconciliation could not read some agreements back", undefined, {
-            ...report,
-          });
+          logger("reconcile").error(
+            "reconciliation could not read some agreements back",
+            undefined,
+            {
+              ...report,
+              ...ctx,
+            },
+          );
         } else if (reconcile.isNoteworthy(report)) {
-          orgLog.info("reconciled", { ...report });
+          logger("reconcile").info("reconciled", { ...report, ...ctx });
         }
       }
 
@@ -129,9 +135,12 @@ async function runScheduledJobs(cron: string): Promise<void> {
           getEmailSender(),
         );
         if (told.failed > 0) {
-          orgLog.error("fee change notices failed to send", undefined, { ...told });
+          logger("notices").error("fee change notices failed to send", undefined, {
+            ...told,
+            ...ctx,
+          });
         } else if (notices.isNoteworthy(told)) {
-          orgLog.info("fee notices sent", { ...told });
+          logger("notices").info("fee notices sent", { ...told, ...ctx });
         }
       }
 
@@ -139,21 +148,25 @@ async function runScheduledJobs(cron: string): Promise<void> {
       // the fee that is current tonight.
       const { repriced, failed } = await renewals.repriceAgreements(db, vipps, org.id);
       if (failed > 0) {
-        orgLog.error("repricing failed for some agreements", undefined, { repriced, failed });
+        logger("renewals").error("repricing failed for some agreements", undefined, {
+          repriced,
+          failed,
+          ...ctx,
+        });
       } else if (repriced > 0) {
-        orgLog.info("repriced agreements", { repriced });
+        logger("renewals").info("repriced agreements", { repriced, ...ctx });
       }
 
       if (arrangeRenewals) {
         const result = await renewals.createDueRenewalCharges(db, vipps, org.id);
         if (result.failed > 0) {
-          orgLog.error("renewal charges failed", undefined, { ...result });
+          logger("renewals").error("renewal charges failed", undefined, { ...result, ...ctx });
         } else if (result.created > 0) {
-          orgLog.info("renewal charges created", { ...result });
+          logger("renewals").info("renewal charges created", { ...result, ...ctx });
         }
       }
     } catch (error) {
-      orgLog.error("scheduled job failed", error);
+      logger("scheduled").error("scheduled job failed", error, ctx);
     }
   }
 }

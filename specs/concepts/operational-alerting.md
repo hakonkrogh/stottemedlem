@@ -29,6 +29,10 @@ renewing.
 - **One problem is one conversation.** Recurrences of the same failure are
   grouped, not one message per occurrence — a bad week reads as one issue with
   a count, and a fixed problem that returns is news again.
+- **Every alert names its area.** Each report says which part of the product
+  spoke — renewals, reconciliation, webhooks, notices — so the operator knows
+  where to look before opening anything, and can tell one area's bad night
+  from another's.
 - **Alerts carry identifiers and counts, never member personal data.** An
   alert names the organization and the failing thing (agreement id, event
   type, how many); a member's name, email or phone number never leaves the

@@ -7,7 +7,7 @@ import type { LogEvent, LogSink } from "./types.js";
 export function consoleSink(): LogSink {
   return {
     log(event: LogEvent): void {
-      const parts: unknown[] = [event.message];
+      const parts: unknown[] = [`[${event.area}] ${event.message}`];
       if (Object.keys(event.context).length > 0) parts.push(event.context);
       if (event.error !== undefined) parts.push(event.error);
       if (event.level === "error") console.error(...parts);

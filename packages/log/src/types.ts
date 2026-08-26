@@ -16,6 +16,12 @@ export function levelAtLeast(level: LogLevel, threshold: LogLevel): boolean {
 }
 
 export interface LogEvent {
+  /**
+   * Which area of the product spoke — a short slug like "renewals" or
+   * "webhooks", fixed when the logger is created. Every event carries one:
+   * an alert should say where to look before anything is opened.
+   */
+  area: string;
   level: LogLevel;
   message: string;
   /** The thrown value, when the event reports one. */
