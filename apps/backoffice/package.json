@@ -14,9 +14,11 @@
   },
   "dependencies": {
     "@astrojs/cloudflare": "catalog:",
+    "@sentry/cloudflare": "^10.70.0",
     "@stottemedlem/core": "workspace:*",
     "@stottemedlem/db": "workspace:*",
     "@stottemedlem/email": "workspace:*",
+    "@stottemedlem/log": "workspace:*",
     "@stottemedlem/qr": "workspace:*",
     "@stottemedlem/ui": "workspace:*",
     "@stottemedlem/vipps": "workspace:*",

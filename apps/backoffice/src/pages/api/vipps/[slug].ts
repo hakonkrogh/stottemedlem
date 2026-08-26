@@ -2,10 +2,13 @@ import { getOrganizationBySlug } from "@stottemedlem/db";
 import { verifyWebhookDelivery } from "@stottemedlem/vipps";
 import type { APIRoute } from "astro";
 import { getDb } from "../../../lib/db";
+import { logger } from "../../../lib/log";
 import { applyVippsEvent, type VippsEvent } from "../../../lib/membership";
 import { getVippsForOrg, testEnvironmentWebhookSecret } from "../../../lib/vipps";
 import { readOrgVippsKeys } from "../../../lib/vippsKeys";
 import { getWorkOS } from "../../../lib/workos";
+
+const log = logger("webhooks");
 
 // Where Vipps tells us what happened to an organization's payments — the
 // channel that turns money into membership. One receiver per organization,
@@ -28,7 +31,9 @@ export const POST: APIRoute = async ({ params, request }) => {
   const keys = await readOrgVippsKeys(workos, org.workosOrgId);
   const secret = keys?.webhook?.secret ?? testEnvironmentWebhookSecret();
   if (!secret) {
-    console.error(`webhook for ${org.slug} but no registration secret stored`);
+    log.error("webhook received but no registration secret stored", undefined, {
+      org: org.slug,
+    });
     return new Response("no webhook registration", { status: 404 });
   }
 
@@ -46,8 +51,13 @@ export const POST: APIRoute = async ({ params, request }) => {
     secret,
   );
   // Anything we cannot prove came from Vipps is refused outright — an
-  // unverified delivery must never move money or membership.
-  if (!verified) return new Response("bad signature", { status: 401 });
+  // unverified delivery must never move money or membership. Worth a word to
+  // the operator: repeated failures mean the stored secret has drifted from
+  // the registration, and Vipps is retrying a delivery we keep refusing.
+  if (!verified) {
+    log.warn("webhook signature verification failed", { org: org.slug });
+    return new Response("bad signature", { status: 401 });
+  }
 
   let event: VippsEvent;
   try {
@@ -66,7 +76,10 @@ export const POST: APIRoute = async ({ params, request }) => {
   } catch (error) {
     // 500 so Vipps redelivers: losing an event silently would leave a paying
     // supporter off the member list.
-    console.error(`failed to apply ${event.eventType} for ${org.slug}`, error);
+    log.error("failed to apply webhook event", error, {
+      org: org.slug,
+      eventType: event.eventType,
+    });
     return new Response("could not apply event", { status: 500 });
   }
 

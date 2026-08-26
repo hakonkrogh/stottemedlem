@@ -39,10 +39,13 @@ lives in `specs/`, kept in sync with code by a mandatory `Stop`-hook harness.
   (`WORKOS_API_KEY`/`VIPPS_*` "does not exist on type 'Env'" in lib/vipps.ts +
   lib/workos.ts): secrets only enter the wrangler-generated `Env` by leaking
   from `.dev.vars`, so the missing file breaks typecheck before it breaks
-  login. Copy it from wherever one exists — the MAIN CHECKOUT may not have it
-  (verified absent 2026-08-25); find one with
-  `ls ~/.superset/worktrees/*/*/apps/backoffice/.dev.vars` and copy from a
-  sibling worktree. (Public `/bli-medlem/*` pages need no auth.)
+  login. The MAIN CHECKOUT may not have one either (verified absent
+  2026-08-25/26). For typecheck alone, `cp .dev.vars.example .dev.vars`
+  suffices — the example declares every key, which is all `wrangler types`
+  needs, and empty secrets degrade safely. For real logged-in flows, copy a
+  filled one from a sibling worktree
+  (`ls ~/.superset/worktrees/*/*/apps/backoffice/.dev.vars`) or get values
+  from the user. (Public `/bli-medlem/*` pages need no auth.)
   See `docs/architecture/overview.md` + `stack-docs` (env access + per-env build gotchas).
 - `packages/core/` — `@stottemedlem/core`, shared domain types/logic (incl. org
   slugs, canonical join/landing/salgsvilkår URLs, orgnr MOD11 validation).

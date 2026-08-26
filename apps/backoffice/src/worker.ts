@@ -1,6 +1,8 @@
 import { env } from "cloudflare:workers";
 import { handle } from "@astrojs/cloudflare/handler";
+import * as Sentry from "@sentry/cloudflare";
 import { JOIN_PAGE_PATH_SEGMENT } from "@stottemedlem/core";
+import { logger } from "./lib/log";
 
 // Public org pages (specs/concepts/join-page.md): the join page and its
 // salgsvilkår are served stale-while-revalidate — a visit gets the cached copy
@@ -23,6 +25,13 @@ const RECONCILE_CRON = "0 2 * * *";
 // Backstop for how long an unvisited copy may keep serving; every visit
 // refreshes it long before this matters.
 const CACHE_MAX_AGE_SECONDS = 7 * 24 * 60 * 60;
+
+// One logger per job area, taken once at module scope
+// (specs/concepts/operational-alerting.md).
+const reconcileLog = logger("reconcile");
+const noticesLog = logger("notices");
+const renewalsLog = logger("renewals");
+const scheduledLog = logger("scheduled");
 
 function withCacheStatus(response: Response, status: "hit" | "miss"): Response {
   const tagged = new Response(response.body, response);
@@ -82,8 +91,19 @@ async function runScheduledJobs(cron: string): Promise<void> {
   const workos = getWorkOS();
   const arrangeRenewals = cron === RENEWAL_CRON;
   const reconcileFirst = cron === RECONCILE_CRON;
+  // Stable messages, moving numbers in context: the alerting sink groups
+  // recurrences of the same problem by message, so one bad week is one issue,
+  // not seven. Each job logs under its own area (specs/concepts/operational-alerting.md).
+
+  // A notice has to link the member to their own page, and a scheduled run has
+  // no request to derive the address from — hence PUBLIC_ORIGIN. Say so rather
+  // than skipping in silence.
+  if (!env.PUBLIC_ORIGIN) {
+    noticesLog.warn("PUBLIC_ORIGIN not set — member notices skipped this run", { cron });
+  }
 
   for (const org of await listOrganizations(db)) {
+    const ctx = { cron, org: org.slug };
     try {
       const vipps = await getVippsForOrg(workos, org.workosOrgId);
       // An organization that has not connected Vipps has nothing to renew.
@@ -95,13 +115,13 @@ async function runScheduledJobs(cron: string): Promise<void> {
       // (specs/concepts/payment-reconciliation.md).
       if (reconcileFirst) {
         const report = await reconcile.reconcileOrganization(db, vipps, org.id);
-        if (reconcile.isNoteworthy(report)) {
-          console.log(
-            `${org.slug}: reconciled ${report.visited} — ` +
-              `${report.agreementsCorrected} agreement(s), ${report.chargesCorrected} charge(s) ` +
-              `corrected, ${report.chargesUnknown} unknown, ${report.failed} failed, ` +
-              `${report.abandonedDrafts} draft(s) no longer chased`,
-          );
+        if (report.failed > 0) {
+          reconcileLog.error("reconciliation could not read some agreements back", undefined, {
+            ...report,
+            ...ctx,
+          });
+        } else if (reconcile.isNoteworthy(report)) {
+          reconcileLog.info("reconciled", { ...report, ...ctx });
         }
       }
 
@@ -110,44 +130,48 @@ async function runScheduledJobs(cron: string): Promise<void> {
       // is the second chance for anyone that failed, and it runs in both jobs
       // because a member cannot be charged a price they have not heard about
       // (specs/use-cases/change-the-annual-fee.md).
-      // A notice has to link the member to their own page, and a scheduled run
-      // has no request to derive the address from — hence PUBLIC_ORIGIN. Say so
-      // rather than skipping in silence.
-      if (!env.PUBLIC_ORIGIN) {
-        console.warn("PUBLIC_ORIGIN not set — member notices skipped this run");
-      } else {
+      if (env.PUBLIC_ORIGIN) {
         const told = await notices.sendOwedFeeChangeNotices(
           db,
           org,
           env.PUBLIC_ORIGIN,
           getEmailSender(),
         );
-        if (notices.isNoteworthy(told)) {
-          console.log(
-            `${org.slug}: fee notices — ${told.told} told, ` +
-              `${told.unreachable} unreachable, ${told.failed} failed`,
-          );
+        if (told.failed > 0) {
+          noticesLog.error("fee change notices failed to send", undefined, { ...told, ...ctx });
+        } else if (notices.isNoteworthy(told)) {
+          noticesLog.info("fee notices sent", { ...told, ...ctx });
         }
       }
 
       // Repricing runs in both jobs: a renewal arranged tonight must be for
       // the fee that is current tonight.
       const { repriced, failed } = await renewals.repriceAgreements(db, vipps, org.id);
-      if (repriced || failed) console.log(`${org.slug}: repriced ${repriced}, failed ${failed}`);
+      if (failed > 0) {
+        renewalsLog.error("repricing failed for some agreements", undefined, {
+          repriced,
+          failed,
+          ...ctx,
+        });
+      } else if (repriced > 0) {
+        renewalsLog.info("repriced agreements", { repriced, ...ctx });
+      }
 
       if (arrangeRenewals) {
         const result = await renewals.createDueRenewalCharges(db, vipps, org.id);
-        if (result.created || result.failed) {
-          console.log(`${org.slug}: renewals created ${result.created}, failed ${result.failed}`);
+        if (result.failed > 0) {
+          renewalsLog.error("renewal charges failed", undefined, { ...result, ...ctx });
+        } else if (result.created > 0) {
+          renewalsLog.info("renewal charges created", { ...result, ...ctx });
         }
       }
     } catch (error) {
-      console.error(`scheduled job failed for ${org.slug}`, error);
+      scheduledLog.error("scheduled job failed", error, ctx);
     }
   }
 }
 
-export default {
+const handler = {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
     if (url.pathname.startsWith(FORMER_ORG_PAGE_PREFIX)) {
@@ -248,3 +272,19 @@ export default {
     }
   },
 } satisfies ExportedHandler<Env>;
+
+// Sentry wraps every handler (fetch, scheduled, queue): an unhandled throw is
+// reported before the response goes out, and the captures behind
+// src/lib/log.ts's sink land on the right event. With no DSN configured —
+// local dev, staging — the SDK initializes disabled and this wrapper is a
+// pass-through (specs/concepts/operational-alerting.md).
+export default Sentry.withSentry(
+  (env: Env) => ({
+    dsn: env.SENTRY_DSN || undefined,
+    // Error monitoring only: the free plan's quota is spent on errors, and
+    // tracing is what the Workers observability dashboard already covers.
+    tracesSampleRate: 0,
+    sendDefaultPii: false,
+  }),
+  handler,
+);
