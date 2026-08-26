@@ -8,6 +8,8 @@ import { getVippsForOrg, testEnvironmentWebhookSecret } from "../../../lib/vipps
 import { readOrgVippsKeys } from "../../../lib/vippsKeys";
 import { getWorkOS } from "../../../lib/workos";
 
+const log = logger("webhooks");
+
 // Where Vipps tells us what happened to an organization's payments — the
 // channel that turns money into membership. One receiver per organization,
 // because the secret that proves a delivery genuine is the organization's own.
@@ -29,7 +31,7 @@ export const POST: APIRoute = async ({ params, request }) => {
   const keys = await readOrgVippsKeys(workos, org.workosOrgId);
   const secret = keys?.webhook?.secret ?? testEnvironmentWebhookSecret();
   if (!secret) {
-    logger("webhooks").error("webhook received but no registration secret stored", undefined, {
+    log.error("webhook received but no registration secret stored", undefined, {
       org: org.slug,
     });
     return new Response("no webhook registration", { status: 404 });
@@ -53,7 +55,7 @@ export const POST: APIRoute = async ({ params, request }) => {
   // the operator: repeated failures mean the stored secret has drifted from
   // the registration, and Vipps is retrying a delivery we keep refusing.
   if (!verified) {
-    logger("webhooks").warn("webhook signature verification failed", { org: org.slug });
+    log.warn("webhook signature verification failed", { org: org.slug });
     return new Response("bad signature", { status: 401 });
   }
 
@@ -74,7 +76,7 @@ export const POST: APIRoute = async ({ params, request }) => {
   } catch (error) {
     // 500 so Vipps redelivers: losing an event silently would leave a paying
     // supporter off the member list.
-    logger("webhooks").error("failed to apply webhook event", error, {
+    log.error("failed to apply webhook event", error, {
       org: org.slug,
       eventType: event.eventType,
     });

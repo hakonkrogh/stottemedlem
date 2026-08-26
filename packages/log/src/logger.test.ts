@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { consoleSink } from "./console.js";
-import { createLogger } from "./logger.js";
+import { createLogger, createLoggerFactory } from "./logger.js";
 import type { LogEvent, LogSink } from "./types.js";
 
 function collectingSink(): { sink: LogSink; events: LogEvent[] } {
@@ -51,6 +51,28 @@ describe("createLogger", () => {
     expect(events).toHaveLength(1);
     expect(consoleError).toHaveBeenCalledWith("log sink failed", expect.any(Error));
     consoleError.mockRestore();
+  });
+});
+
+describe("createLoggerFactory", () => {
+  it("hands out one cached logger per area", () => {
+    const { sink, events } = collectingSink();
+    const logger = createLoggerFactory([sink]);
+    expect(logger("renewals")).toBe(logger("renewals"));
+    expect(logger("renewals")).not.toBe(logger("webhooks"));
+    logger("renewals").info("hi");
+    logger("webhooks").info("hi");
+    expect(events.map((e) => e.area)).toEqual(["renewals", "webhooks"]);
+  });
+});
+
+describe("area enforcement", () => {
+  it("rejects anything that is not a lowercase slug", () => {
+    const { sink } = collectingSink();
+    for (const bad of ["", "Renewals", "two words", "-leading"]) {
+      expect(() => createLogger(bad, [sink])).toThrow(/invalid log area/);
+    }
+    expect(() => createLogger("vipps-webhooks", [sink])).not.toThrow();
   });
 });
 

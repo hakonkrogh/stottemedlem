@@ -26,6 +26,13 @@ const RECONCILE_CRON = "0 2 * * *";
 // refreshes it long before this matters.
 const CACHE_MAX_AGE_SECONDS = 7 * 24 * 60 * 60;
 
+// One logger per job area, taken once at module scope
+// (specs/concepts/operational-alerting.md).
+const reconcileLog = logger("reconcile");
+const noticesLog = logger("notices");
+const renewalsLog = logger("renewals");
+const scheduledLog = logger("scheduled");
+
 function withCacheStatus(response: Response, status: "hit" | "miss"): Response {
   const tagged = new Response(response.body, response);
   tagged.headers.set("x-sm-cache", status);
@@ -92,7 +99,7 @@ async function runScheduledJobs(cron: string): Promise<void> {
   // no request to derive the address from — hence PUBLIC_ORIGIN. Say so rather
   // than skipping in silence.
   if (!env.PUBLIC_ORIGIN) {
-    logger("notices").warn("PUBLIC_ORIGIN not set — member notices skipped this run", { cron });
+    noticesLog.warn("PUBLIC_ORIGIN not set — member notices skipped this run", { cron });
   }
 
   for (const org of await listOrganizations(db)) {
@@ -109,16 +116,12 @@ async function runScheduledJobs(cron: string): Promise<void> {
       if (reconcileFirst) {
         const report = await reconcile.reconcileOrganization(db, vipps, org.id);
         if (report.failed > 0) {
-          logger("reconcile").error(
-            "reconciliation could not read some agreements back",
-            undefined,
-            {
-              ...report,
-              ...ctx,
-            },
-          );
+          reconcileLog.error("reconciliation could not read some agreements back", undefined, {
+            ...report,
+            ...ctx,
+          });
         } else if (reconcile.isNoteworthy(report)) {
-          logger("reconcile").info("reconciled", { ...report, ...ctx });
+          reconcileLog.info("reconciled", { ...report, ...ctx });
         }
       }
 
@@ -135,12 +138,9 @@ async function runScheduledJobs(cron: string): Promise<void> {
           getEmailSender(),
         );
         if (told.failed > 0) {
-          logger("notices").error("fee change notices failed to send", undefined, {
-            ...told,
-            ...ctx,
-          });
+          noticesLog.error("fee change notices failed to send", undefined, { ...told, ...ctx });
         } else if (notices.isNoteworthy(told)) {
-          logger("notices").info("fee notices sent", { ...told, ...ctx });
+          noticesLog.info("fee notices sent", { ...told, ...ctx });
         }
       }
 
@@ -148,25 +148,25 @@ async function runScheduledJobs(cron: string): Promise<void> {
       // the fee that is current tonight.
       const { repriced, failed } = await renewals.repriceAgreements(db, vipps, org.id);
       if (failed > 0) {
-        logger("renewals").error("repricing failed for some agreements", undefined, {
+        renewalsLog.error("repricing failed for some agreements", undefined, {
           repriced,
           failed,
           ...ctx,
         });
       } else if (repriced > 0) {
-        logger("renewals").info("repriced agreements", { repriced, ...ctx });
+        renewalsLog.info("repriced agreements", { repriced, ...ctx });
       }
 
       if (arrangeRenewals) {
         const result = await renewals.createDueRenewalCharges(db, vipps, org.id);
         if (result.failed > 0) {
-          logger("renewals").error("renewal charges failed", undefined, { ...result, ...ctx });
+          renewalsLog.error("renewal charges failed", undefined, { ...result, ...ctx });
         } else if (result.created > 0) {
-          logger("renewals").info("renewal charges created", { ...result, ...ctx });
+          renewalsLog.info("renewal charges created", { ...result, ...ctx });
         }
       }
     } catch (error) {
-      logger("scheduled").error("scheduled job failed", error, ctx);
+      scheduledLog.error("scheduled job failed", error, ctx);
     }
   }
 }

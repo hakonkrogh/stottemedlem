@@ -547,11 +547,14 @@ BOTH cron jobs — Sentry free includes only 1 cron monitor
 (`Sentry.withMonitor`) and there are 2 triggers; Healthchecks also catches
 "the Worker never ran at all".
 **Layer 1 implemented 2026-08-26** (spec `specs/concepts/operational-alerting.md`):
-vendor-neutral `packages/log` (`@stottemedlem/log`: `createLogger` + sinks;
-`sentrySink` takes a structural `SentryLike`, so the SAME sink works with
-`@sentry/cloudflare` on the Worker and `@sentry/browser` in a page — the
-package depends on no vendor). Wiring: `apps/backoffice/src/lib/log.ts`
-(`getLogger()`; console always, Sentry only when `SENTRY_DSN` var non-empty),
+vendor-neutral `packages/log` (`@stottemedlem/log`: `createLogger(area, sinks)`
+— the area slug is REQUIRED, becomes the `area` tag on Sentry issues and the
+`[area]` console prefix; `sentrySink` takes a structural `SentryLike`, so the
+SAME sink works with `@sentry/cloudflare` on the Worker and `@sentry/browser`
+in a page — the package depends on no vendor). Wiring:
+`apps/backoffice/src/lib/log.ts` (`logger("renewals"|"reconcile"|"notices"|
+"webhooks"|"scheduled")`, cached per area; console always, Sentry only when
+`SENTRY_DSN` var non-empty),
 `worker.ts` wrapped in `Sentry.withSentry` (fetch+scheduled+queue,
 `tracesSampleRate: 0`), cron loop + Vipps webhook route log through it.
 Grouping rule: STABLE messages, moving numbers in context. The prod

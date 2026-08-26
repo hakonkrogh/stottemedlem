@@ -1,5 +1,5 @@
 export { consoleSink } from "./console.js";
-export { createLogger } from "./logger.js";
+export { createLogger, createLoggerFactory } from "./logger.js";
 export { type SentryLike, type SentrySinkOptions, sentrySink } from "./sentry.js";
 export {
   LOG_LEVELS,
