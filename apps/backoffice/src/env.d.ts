@@ -37,8 +37,10 @@ interface Env {
    */
   RESEND_API_KEY?: string;
   /**
-   * Sentry DSN (not a secret — it can only be written to). Empty everywhere
-   * except production; empty means errors are logged, not reported
+   * Sentry DSN, set as a secret (`wrangler secret put SENTRY_DSN`) on
+   * production ONLY — kept out of wrangler.jsonc `vars` so local dev can
+   * never inherit it and report a developer's machine into production
+   * alerting. Absent means errors are logged, not reported
    * (specs/concepts/operational-alerting.md).
    */
   SENTRY_DSN?: string;
