@@ -634,11 +634,13 @@ lives in `specs/`, kept in sync with code by a mandatory `Stop`-hook harness.
   øre = insufficient funds). IN FLIGHT: real failing renewal chr-TCYB7Em on
   agr_Mt2LutK, due 2026-08-27, retryDays 7 — check with
   `vt charges --agreement agr_Mt2LutK` from 08-27 to watch FAILED land, then
-  whether reconcile records it and what the member list shows. CONFIRMED BUG:
-  `membershipStatus` (packages/db/src/index.ts, `periodYear >= currentYear`,
-  no charge-state input) shows a member lapsed from Jan 1 while their renewal
-  is still inside the 7-day retry window — violates renew-annual-membership's
-  "never lapsed while payment is still being retried"; fix not yet designed.
+  whether reconcile records it and what the member list shows. The
+  lapsed-while-retrying bug this rehearsal confirmed is FIXED (2026-08-26,
+  commit "Lapse waits for the payment to definitively fail"):
+  `membershipStanding` in @stottemedlem/db keeps a member active while an
+  OPEN_CHARGE_STATUSES renewal charge exists for the current period; both
+  member queries feed it; specs membership.md + curate-member-list.md state
+  the retry grace.
   NOT yet rehearsed: mid-period stop from the product's `min-side.astro` +
   04:00 skipping a STOPPED agreement; in-window double-arrange guard (needs
   December dates). Fixed 2026-08-26: webhook route now uses the tolerant
