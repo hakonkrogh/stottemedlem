@@ -61,7 +61,12 @@
 		// domain must be verified with Resend; the RESEND_API_KEY secret is set
 		// out of band (`wrangler secret put RESEND_API_KEY [--env staging]`).
 		// Without that secret notices are logged instead of sent.
-		"EMAIL_FROM_ADDRESS": "varsel@xn--stttemedlem-hgb.no"
+		"EMAIL_FROM_ADDRESS": "varsel@xn--stttemedlem-hgb.no",
+		// Sentry DSN for operational alerting (specs/concepts/operational-alerting.md).
+		// Not a secret (a DSN can only be written to); empty = errors are
+		// logged, not reported. Deliberately empty on staging — the free
+		// plan's error quota is production's.
+		"SENTRY_DSN": "https://1653055062146d7dede9767adb373914@o4511977076228096.ingest.de.sentry.io/4511977082519632"
 	},
 	// ── Bindings ──────────────────────────────────────────────────────────
 	// Real resource ids (provisioned 2026-08-12 via `wrangler d1 create`,
@@ -163,7 +168,9 @@
 				// through the backoffice, so only the base URL differs from prod.
 				"VIPPS_API_BASE_URL": "https://apitest.vipps.no",
 				"PUBLIC_ORIGIN": "https://staging.app.xn--stttemedlem-hgb.no",
-				"EMAIL_FROM_ADDRESS": "varsel@xn--stttemedlem-hgb.no"
+				"EMAIL_FROM_ADDRESS": "varsel@xn--stttemedlem-hgb.no",
+				// Empty on purpose: alerting is production-only (see top-level vars).
+				"SENTRY_DSN": ""
 			},
 			"d1_databases": [
 				{

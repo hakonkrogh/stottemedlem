@@ -526,6 +526,66 @@ done
 Which environments hold the API key: `wrangler secret list [--env staging]`
 from `apps/backoffice` (works off the local OAuth session, no token needed).
 
+## Alerting channels — free-tier facts (verified 2026-08-25 against vendor pricing pages)
+
+Checked while choosing a monitoring setup. Re-verify before relying on
+limits — pricing pages drift.
+
+**DECIDED 2026-08-25: personal email-only alerting.** The owner wants to know
+something is wrong, not be paged — no Slack, no uptime SaaS, nothing
+middle-of-the-night. Plan (revised same day, Sentry replacing a DIY Resend
+alert helper once email-only made the free plan sufficient):
+(1) **Sentry free** as the error layer — `@sentry/cloudflare`'s `withSentry`
+wraps the existing `worker.ts` `ExportedHandler` (fetch + scheduled + queue);
+auto-captures unhandled errors, groups/dedups (one email per issue, not per
+occurrence), and deliberate business alerts (cron `failed > 0`, missing
+`PUBLIC_ORIGIN`/`RESEND_API_KEY`) go through `captureMessage`. Independent of
+Resend, so "Resend broken" still alerts. Docs:
+docs.sentry.io/platforms/javascript/guides/cloudflare/
+(2) **Healthchecks.io free** (20 checks, email) as the dead-man's switch for
+BOTH cron jobs — Sentry free includes only 1 cron monitor
+(`Sentry.withMonitor`) and there are 2 triggers; Healthchecks also catches
+"the Worker never ran at all".
+**Layer 1 implemented 2026-08-26** (spec `specs/concepts/operational-alerting.md`):
+vendor-neutral `packages/log` (`@stottemedlem/log`: `createLogger` + sinks;
+`sentrySink` takes a structural `SentryLike`, so the SAME sink works with
+`@sentry/cloudflare` on the Worker and `@sentry/browser` in a page — the
+package depends on no vendor). Wiring: `apps/backoffice/src/lib/log.ts`
+(`getLogger()`; console always, Sentry only when `SENTRY_DSN` var non-empty),
+`worker.ts` wrapped in `Sentry.withSentry` (fetch+scheduled+queue,
+`tracesSampleRate: 0`), cron loop + Vipps webhook route log through it.
+Grouping rule: STABLE messages, moving numbers in context. The prod
+`SENTRY_DSN` is SET (2026-08-26, EU-region project, ingest.de.sentry.io;
+staging deliberately empty — a later staging project should be its OWN Sentry
+project so prod keeps the free 5k errors/mo). Still pending: the
+Healthchecks.io pings. Verified in workerd via
+`wrangler dev --test-scheduled` → `/cdn-cgi/handler/scheduled`.
+A DSN can be verified headlessly, no SDK involved — POST one envelope
+(three newline-separated JSON lines: `{event_id,sent_at,dsn}`,
+`{"type":"event"}`, `{event_id,timestamp,platform,level,message}`; event_id =
+32 lowercase hex) to `https://<host>/api/<projectId>/envelope/` with
+content-type `application/x-sentry-envelope`; HTTP 200 + `{"id":…}` = the
+project accepted it and an issue appears.
+The facts below informed the choice:
+
+- **Sentry Developer (free) plan: email alerts ONLY.** The Slack integration —
+  and third-party integrations generally, plus API access — start at the paid
+  Team tier. Free = 1 user, 5k errors/mo, email notifications, 1 uptime + 1
+  cron monitor. Don't design a free Sentry→Slack alert path; it doesn't exist
+  natively. (A claude.ai Sentry MCP connector exists in sessions —
+  `mcp__claude_ai_Sentry__authenticate` — if an account is ever set up.)
+- **Better Stack Uptime free tier is the generous one:** 10 monitors, 30 s
+  checks, and email + Slack + SMS + phone alerts all included on free.
+  UptimeRobot free = 50 monitors but 5-min checks and murkier Slack support.
+- **Cloudflare Notifications: webhook destinations (→ Slack) require a paid
+  plan**; free accounts get email notifications only, and the useful
+  Workers-health alert types sit on Pro/Business. Email Routing is free on all
+  plans (can forward/intercept notification mail with an Email Worker).
+- Free do-it-yourself path that always works on Workers free plan: post
+  directly to a Slack incoming webhook from the Worker's own error handling
+  (`ctx.waitUntil(fetch(SLACK_WEBHOOK_URL, …))`). Tail Workers require the
+  paid Workers plan; in-handler try/catch does not.
+
 ## Forward references (not captured yet)
 
 | topic | where |

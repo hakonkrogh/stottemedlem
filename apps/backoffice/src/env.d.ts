@@ -37,6 +37,12 @@ interface Env {
    */
   RESEND_API_KEY?: string;
   /**
+   * Sentry DSN (not a secret — it can only be written to). Empty everywhere
+   * except production; empty means errors are logged, not reported
+   * (specs/concepts/operational-alerting.md).
+   */
+  SENTRY_DSN?: string;
+  /**
    * The address member notices are sent from. Must be on a domain verified
    * with the provider, so it is always ours — the organization's own address
    * is the reply-to instead (specs/concepts/member-notice.md).
