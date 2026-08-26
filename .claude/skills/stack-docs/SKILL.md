@@ -547,14 +547,19 @@ BOTH cron jobs — Sentry free includes only 1 cron monitor
 (`Sentry.withMonitor`) and there are 2 triggers; Healthchecks also catches
 "the Worker never ran at all".
 **Layer 1 implemented 2026-08-26** (spec `specs/concepts/operational-alerting.md`):
-vendor-neutral `packages/log` (`@stottemedlem/log`: `createLogger(area, sinks)`
-— the area slug is REQUIRED, becomes the `area` tag on Sentry issues and the
-`[area]` console prefix; `sentrySink` takes a structural `SentryLike`, so the
-SAME sink works with `@sentry/cloudflare` on the Worker and `@sentry/browser`
-in a page — the package depends on no vendor). Wiring:
-`apps/backoffice/src/lib/log.ts` (`logger("renewals"|"reconcile"|"notices"|
-"webhooks"|"scheduled")`, cached per area; console always, Sentry only when
-`SENTRY_DSN` var non-empty),
+vendor-neutral `packages/log` (`@stottemedlem/log`:
+`createLoggerFactory(sinks)` → `logger(area)` — the area slug is REQUIRED and
+ENFORCED in the package (lowercase slug or throw at module init); it becomes
+the `area` tag on Sentry issues and the `[area]` console prefix; `sentrySink`
+takes a structural `SentryLike`, so the SAME sink works with
+`@sentry/cloudflare` on the Worker and `@sentry/browser` in a page — the
+package depends on no vendor). Wiring: `apps/backoffice/src/lib/log.ts` is
+one factory export; modules take `const log = logger("webhooks")` at MODULE
+scope (areas in use: renewals, reconcile, notices, webhooks, scheduled;
+console always, Sentry only when `SENTRY_DSN` var non-empty). Verified
+2026-08-26: `import { env } from "cloudflare:workers"` IS readable at module
+init in workerd (the factory reads `env.SENTRY_DSN` at import time; fetch and
+scheduled both fine under `wrangler dev`),
 `worker.ts` wrapped in `Sentry.withSentry` (fetch+scheduled+queue,
 `tracesSampleRate: 0`), cron loop + Vipps webhook route log through it.
 Grouping rule: STABLE messages, moving numbers in context. The prod
