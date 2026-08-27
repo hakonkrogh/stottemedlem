@@ -4,13 +4,15 @@ import MemberListScreen from "../../../../components/MemberListScreen.astro";
 import Shell from "../../../../layouts/Shell.astro";
 import { getDb } from "../../../../lib/db";
 import { requireOrgAccess } from "../../../../lib/orgAccess";
+import { periods } from "../../../../lib/periods";
 import { orgPath } from "../../../../lib/workos";
 
 // The organization's member list (specs/use-cases/curate-member-list.md).
 const org = await requireOrgAccess(Astro.locals.session, Astro.params.slug);
 if (!org) return Astro.redirect("/orgs");
 
-const members = await listOrganizationMembers(getDb(), org.id);
+const currentPeriod = periods.periodFor().year;
+const members = await listOrganizationMembers(getDb(), org.id, currentPeriod);
 ---
 
 <Shell title={`Medlemmer — ${org.name}`}>
@@ -19,6 +21,6 @@ const members = await listOrganizationMembers(getDb(), org.id);
     search={Astro.url.searchParams.get("sok") ?? ""}
     membersPath={`${orgPath(org.slug)}/medlemmer`}
     backPath={orgPath(org.slug)}
-    currentYear={new Date().getUTCFullYear()}
+    currentYear={currentPeriod}
   />
 </Shell>

@@ -37,12 +37,15 @@ renewing.
   alert names the organization and the failing thing (agreement id, event
   type, how many); a member's name, email or phone number never leaves the
   product through an alerting vendor.
-- **Only production speaks.** Alerts report the deployed product, never a
-  developer's machine or a staging copy: a developer exercising the product
-  locally must not be able to file noise into the operator's channel — and not
-  merely by convention, but by construction: a local environment has no way to
-  obtain the production channel's address. A developer who wants to see the
-  pipeline work points it at a channel of their own.
+- **Only deployed environments speak, and each says which one it is.**
+  Production and staging both report (decided 2026-08-27 — staging's
+  accelerated calendar makes its nightly work worth watching too), and every
+  report is stamped with its environment so the operator can filter one from
+  the other and staging noise never masquerades as a production incident. The
+  operator's *email* alerts stay scoped to production reports. A developer's
+  machine still cannot speak — not merely by convention, but by construction:
+  a local environment has no way to obtain the channel's address. A developer
+  who wants to see the pipeline work points it at a channel of their own.
 - **Alerting must never become the outage.** A vendor being down or
   unconfigured degrades to plain logging; it never breaks a page view, a
   payment, or a nightly job. The alerting path also must not depend on what it

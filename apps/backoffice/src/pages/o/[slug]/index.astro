@@ -1,5 +1,5 @@
 ---
-import { joinPageTermsUrl, joinPageUrl } from "@stottemedlem/core";
+import { joinPageTermsUrl, joinPageUrl, periodLabel } from "@stottemedlem/core";
 import {
   countMembersByStatus,
   ensureOrganization,
@@ -17,6 +17,7 @@ import TextLink from "@stottemedlem/ui/components/TextLink.astro";
 import MembershipTierCard from "../../../components/MembershipTierCard.astro";
 import Shell from "../../../layouts/Shell.astro";
 import { getDb } from "../../../lib/db";
+import { periods } from "../../../lib/periods";
 import { readOrgVippsKeys } from "../../../lib/vippsKeys";
 import {
   env,
@@ -83,9 +84,9 @@ const displayName =
   [session.firstName, session.lastName].filter(Boolean).join(" ") || session.email;
 const canSwitch = memberships.length > 1;
 const tiers = await listMembershipTiers(db, org.id);
-const members = await listOrganizationMembers(db, org.id);
+const currentPeriod = periods.periodFor().year;
+const members = await listOrganizationMembers(db, org.id, currentPeriod);
 const { active, lapsed } = countMembersByStatus(members);
-const currentYear = new Date().getUTCFullYear();
 const profileComplete = org.orgnr !== null && org.contactEmail !== null;
 const vippsKeys = await readOrgVippsKeys(workos, org.workosOrgId);
 const joinUrl = joinPageUrl(org.slug);
@@ -147,7 +148,7 @@ const showNoticeResult = Astro.url.searchParams.has("varslet");
         {
           members.length === 0
             ? "Ingen støttemedlemmer ennå — de dukker opp her av seg selv når noen melder seg inn."
-            : `${active} ${active === 1 ? "aktivt medlem" : "aktive medlemmer"} i ${currentYear}${lapsed > 0 ? `, ${lapsed} utløpt` : ""}.`
+            : `${active} ${active === 1 ? "aktivt medlem" : "aktive medlemmer"} i ${periodLabel(currentPeriod)}${lapsed > 0 ? `, ${lapsed} utløpt` : ""}.`
         }
       </Text>
       <Button variant="secondary" href={`${orgPath(org.slug)}/medlemmer`} block>

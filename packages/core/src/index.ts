@@ -301,6 +301,161 @@ export function renewalPeriodYear(today: Date = new Date()): number {
   return today.getUTCFullYear() + 1;
 }
 
+// ── Period schemes (specs/concepts/annual-period.md) ────────────────────────
+//
+// Production's annual period is the calendar year. The staging environment
+// runs the same product on a compressed calendar — the ISO week as the
+// "year" — so a full membership lifecycle (join, notice, reprice, renewal,
+// lapse) can be rehearsed against the payment provider's test environment in
+// days instead of years. Which scheme applies is environment configuration
+// (PERIOD_SCHEME); everything downstream asks the scheme instead of the
+// calendar directly.
+
+/**
+ * How the product counts periods in one environment: what "the year" is, when
+ * renewals are arranged, and how long the real-time rules that surround
+ * payments run. All durations are REAL days — the payment provider's clocks
+ * (charge due dates, retries) never compress.
+ */
+export interface PeriodScheme {
+  name: "calendar-year" | "iso-week";
+  /** The period a membership taken out on `on` belongs to (start = join day). */
+  periodFor(on?: Date): AnnualPeriod;
+  /** The whole period behind a key, first day to last. */
+  fullPeriod(key: number): AnnualPeriod;
+  /** The key of the period after `key`. */
+  nextPeriodKey(key: number): number;
+  /** The key of the period a renewal arranged around now pays for. */
+  renewalPeriodKey(today?: Date): number;
+  /** Whether renewals for the coming period should already have been arranged. */
+  isRenewalWindow(today?: Date): boolean;
+  /** What joining on `on` costs: the fee, pro-rated over the period's remainder. */
+  proratedJoinFeeNok(annualFeeNok: number, on?: Date): number;
+  /** The cadence the payment agreement is created with. */
+  agreementInterval: { unit: "YEAR" | "WEEK"; count: 1 };
+  /** How many REAL days the provider retries a failed renewal charge. */
+  retryDays: number;
+  /** How long (REAL days, may be fractional) a member must have known a new fee. */
+  feeNoticeDays: number;
+  /** Reconciliation: how far back (REAL days) an unresolved payment is chased. */
+  chargeLookbackDays: number;
+  /** Reconciliation: how long (REAL days) an unapproved draft is worth asking about. */
+  draftLookbackDays: number;
+}
+
+export const calendarYearScheme: PeriodScheme = {
+  name: "calendar-year",
+  periodFor: annualPeriodFor,
+  fullPeriod: (key) => ({ year: key, start: `${key}-01-01`, end: `${key}-12-31` }),
+  nextPeriodKey: (key) => key + 1,
+  renewalPeriodKey: renewalPeriodYear,
+  isRenewalWindow,
+  proratedJoinFeeNok,
+  agreementInterval: { unit: "YEAR", count: 1 },
+  retryDays: 7,
+  feeNoticeDays: 14,
+  chargeLookbackDays: 60,
+  draftLookbackDays: 14,
+};
+
+/** Monday-based day of week, 1 (Monday) – 7 (Sunday), in UTC. */
+function isoWeekday(date: Date): number {
+  return date.getUTCDay() || 7;
+}
+
+/** The Monday starting the ISO week `date` falls in, at UTC midnight. */
+function mondayOf(date: Date): Date {
+  const day = Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate());
+  return new Date(day - (isoWeekday(date) - 1) * 86_400_000);
+}
+
+/**
+ * The ISO week `date` falls in, encoded as one comparable number:
+ * `isoYear * 100 + week` (2026-08-27 → 202635). Keys order chronologically —
+ * week 1 of the new ISO year sorts after week 52/53 of the old — so they slot
+ * into every place a calendar year goes, including the period_year column.
+ */
+export function isoWeekKey(date: Date): number {
+  // The ISO year is the calendar year of the week's Thursday.
+  const thursday = new Date(mondayOf(date).getTime() + 3 * 86_400_000);
+  const isoYear = thursday.getUTCFullYear();
+  const firstThursday = new Date(
+    mondayOf(new Date(Date.UTC(isoYear, 0, 4))).getTime() + 3 * 86_400_000,
+  );
+  const week = 1 + Math.round((thursday.getTime() - firstThursday.getTime()) / (7 * 86_400_000));
+  return isoYear * 100 + week;
+}
+
+/** The Monday starting the week behind an ISO week key. */
+function mondayOfKey(key: number): Date {
+  const isoYear = Math.floor(key / 100);
+  const week = key % 100;
+  // 4 January is always in week 1.
+  const week1Monday = mondayOf(new Date(Date.UTC(isoYear, 0, 4)));
+  return new Date(week1Monday.getTime() + (week - 1) * 7 * 86_400_000);
+}
+
+const isoWeekPeriod = (key: number): AnnualPeriod => {
+  const monday = mondayOfKey(key);
+  return {
+    year: key,
+    start: isoDate(monday),
+    end: isoDate(new Date(monday.getTime() + 6 * 86_400_000)),
+  };
+};
+
+// One accelerated day is 7/365 of a real one; durations defined in days scale
+// by the same ratio, except where the provider's own real-time rules put a
+// floor under them (a charge's due date must be ≥1 real day out, retries run
+// in real days).
+const WEEK_AS_YEAR = 7 / 365;
+
+export const isoWeekScheme: PeriodScheme = {
+  name: "iso-week",
+  periodFor: (on = new Date()) => {
+    const key = isoWeekKey(on);
+    return { year: key, start: isoDate(on), end: isoWeekPeriod(key).end };
+  },
+  fullPeriod: isoWeekPeriod,
+  nextPeriodKey: (key) => isoWeekKey(new Date(mondayOfKey(key).getTime() + 7 * 86_400_000)),
+  renewalPeriodKey: (today = new Date()) =>
+    isoWeekKey(new Date(mondayOf(today).getTime() + 7 * 86_400_000)),
+  // From Saturday: the provider requires a charge's due date ≥1 real day in
+  // the future, so the accelerated "December" (~13 hours) cannot hold the
+  // renewal — the window opens two real days before the week turns instead.
+  isRenewalWindow: (today = new Date()) => isoWeekday(today) >= 6,
+  proratedJoinFeeNok: (annualFeeNok, on = new Date()) => {
+    const remaining = 8 - isoWeekday(on);
+    const prorated = Math.round((annualFeeNok * remaining) / 7);
+    return Math.min(annualFeeNok, Math.max(1, prorated));
+  },
+  agreementInterval: { unit: "WEEK", count: 1 },
+  retryDays: 1,
+  feeNoticeDays: 14 * WEEK_AS_YEAR,
+  chargeLookbackDays: 2,
+  draftLookbackDays: 1,
+};
+
+/**
+ * The scheme an environment runs on. Unset means production's calendar year;
+ * anything else must name a scheme, loudly — a typo silently falling back to
+ * the calendar year would arrange real renewals a year out on staging.
+ */
+export function getPeriodScheme(name?: string): PeriodScheme {
+  if (!name || name === "calendar-year") return calendarYearScheme;
+  if (name === "iso-week") return isoWeekScheme;
+  throw new Error(`unknown PERIOD_SCHEME "${name}"`);
+}
+
+/**
+ * A period key as people read it: a calendar year as itself ("2026"), an ISO
+ * week key as the week ("uke 35/2026"). Derivable from the key's shape alone,
+ * so screens can label periods without knowing which scheme wrote them.
+ */
+export function periodLabel(key: number): string {
+  return key > 9999 ? `uke ${key % 100}/${Math.floor(key / 100)}` : String(key);
+}
+
 /**
  * A UUID that is always the same for the same seed — how a retry asks the
  * payment provider for *that* payment again rather than for another one.

@@ -1,9 +1,13 @@
 import { describe, expect, it } from "vitest";
 import {
   annualPeriodFor,
+  calendarYearScheme,
   daysInYear,
   daysRemainingInYear,
   formatOrganisasjonsnummer,
+  getPeriodScheme,
+  isoWeekKey,
+  isoWeekScheme,
   isRenewalWindow,
   isValidOrganisasjonsnummer,
   joinPagePath,
@@ -14,6 +18,7 @@ import {
   memberUnsubscribePath,
   nextAnnualPeriod,
   normalizeMembershipTierDescription,
+  periodLabel,
   proratedJoinFeeNok,
   renewalPeriodYear,
   slugifyOrganizationName,
@@ -250,5 +255,74 @@ describe("memberUnsubscribePath", () => {
     expect(memberUnsubscribePath("nordnes", "a/b&c")).toBe(
       "/bli-medlem/nordnes/meldinger-av?n=a%2Fb%26c",
     );
+  });
+});
+
+describe("iso-week period scheme (the accelerated staging calendar)", () => {
+  // 2026-08-27 is a Thursday in ISO week 35.
+  const thursday = new Date("2026-08-27T10:00:00Z");
+
+  it("keys a date to its ISO week, ordering chronologically across the year turn", () => {
+    expect(isoWeekKey(thursday)).toBe(202635);
+    // 2026-12-28 (Monday) starts ISO week 53 of 2026; 2027-01-04 starts week 1 of 2027.
+    expect(isoWeekKey(new Date("2026-12-28T00:00:00Z"))).toBe(202653);
+    expect(isoWeekKey(new Date("2027-01-03T23:00:00Z"))).toBe(202653);
+    expect(isoWeekKey(new Date("2027-01-04T00:00:00Z"))).toBe(202701);
+    expect(202701).toBeGreaterThan(202653);
+    // 2026-01-01 (Thursday) belongs to week 1 of 2026, not to 2025.
+    expect(isoWeekKey(new Date("2026-01-01T00:00:00Z"))).toBe(202601);
+  });
+
+  it("gives a join its remaining week and the full period its Monday–Sunday", () => {
+    const period = isoWeekScheme.periodFor(thursday);
+    expect(period).toEqual({ year: 202635, start: "2026-08-27", end: "2026-08-30" });
+    expect(isoWeekScheme.fullPeriod(202635)).toEqual({
+      year: 202635,
+      start: "2026-08-24",
+      end: "2026-08-30",
+    });
+  });
+
+  it("steps to the next period across the turn of the ISO year", () => {
+    expect(isoWeekScheme.nextPeriodKey(202635)).toBe(202636);
+    expect(isoWeekScheme.nextPeriodKey(202653)).toBe(202701);
+  });
+
+  it("pro-rates the fee over the days left of the week, never below 1 kr", () => {
+    const monday = new Date("2026-08-24T09:00:00Z");
+    const sunday = new Date("2026-08-30T09:00:00Z");
+    expect(isoWeekScheme.proratedJoinFeeNok(700, monday)).toBe(700);
+    expect(isoWeekScheme.proratedJoinFeeNok(700, thursday)).toBe(400);
+    expect(isoWeekScheme.proratedJoinFeeNok(700, sunday)).toBe(100);
+    expect(isoWeekScheme.proratedJoinFeeNok(2, sunday)).toBe(1);
+  });
+
+  it("opens the renewal window on Saturday, two real days before the week turns", () => {
+    expect(isoWeekScheme.isRenewalWindow(new Date("2026-08-28T23:00:00Z"))).toBe(false);
+    expect(isoWeekScheme.isRenewalWindow(new Date("2026-08-29T00:00:00Z"))).toBe(true);
+    expect(isoWeekScheme.isRenewalWindow(new Date("2026-08-30T12:00:00Z"))).toBe(true);
+    expect(isoWeekScheme.renewalPeriodKey(new Date("2026-08-29T12:00:00Z"))).toBe(202636);
+  });
+
+  it("resolves from environment configuration, refusing a typo loudly", () => {
+    expect(getPeriodScheme(undefined).name).toBe("calendar-year");
+    expect(getPeriodScheme("calendar-year")).toBe(calendarYearScheme);
+    expect(getPeriodScheme("iso-week")).toBe(isoWeekScheme);
+    expect(() => getPeriodScheme("weekly")).toThrow(/unknown PERIOD_SCHEME/);
+  });
+
+  it("labels period keys for people whichever scheme wrote them", () => {
+    expect(periodLabel(2026)).toBe("2026");
+    expect(periodLabel(202635)).toBe("uke 35/2026");
+  });
+
+  it("keeps the calendar-year scheme identical to the plain functions", () => {
+    expect(calendarYearScheme.periodFor(thursday)).toEqual(annualPeriodFor(thursday));
+    expect(calendarYearScheme.fullPeriod(2026)).toEqual({
+      year: 2026,
+      start: "2026-01-01",
+      end: "2026-12-31",
+    });
+    expect(calendarYearScheme.nextPeriodKey(2026)).toBe(2027);
   });
 });

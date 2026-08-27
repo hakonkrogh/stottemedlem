@@ -32,6 +32,12 @@ interface Env {
    */
   PUBLIC_ORIGIN?: string;
   /**
+   * Which period scheme this environment counts memberships in (see
+   * src/lib/periods.ts): unset/"calendar-year" in production, "iso-week" on
+   * staging — the accelerated calendar where a week is treated as a year.
+   */
+  PERIOD_SCHEME?: string;
+  /**
    * Resend API key (secret). Absent = member notices are logged, not sent, and
    * nothing is recorded as having told anyone (see src/lib/email.ts).
    */
@@ -44,6 +50,13 @@ interface Env {
    * (specs/concepts/operational-alerting.md).
    */
   SENTRY_DSN?: string;
+  /**
+   * The environment name stamped on every Sentry event ("production" /
+   * "staging"), so the operator can filter one environment's noise from the
+   * other's. A wrangler var per env; unset (local dev) reports as
+   * "development" — moot, since local dev never has the DSN.
+   */
+  SENTRY_ENVIRONMENT?: string;
   /**
    * The address member notices are sent from. Must be on a domain verified
    * with the provider, so it is always ours — the organization's own address

@@ -9,6 +9,7 @@ import {
   parseMemberContactForm,
 } from "../../../../lib/memberContact";
 import { requireOrgAccess } from "../../../../lib/orgAccess";
+import { periods } from "../../../../lib/periods";
 import { orgPath } from "../../../../lib/workos";
 
 // One member, and the correction an administrator may make to how they are
@@ -17,7 +18,12 @@ const org = await requireOrgAccess(Astro.locals.session, Astro.params.slug);
 if (!org) return Astro.redirect("/orgs");
 
 const db = getDb();
-let entry = await getOrganizationMember(db, org.id, Astro.params.memberId ?? "");
+let entry = await getOrganizationMember(
+  db,
+  org.id,
+  Astro.params.memberId ?? "",
+  periods.periodFor().year,
+);
 // Another organization's member must read as no member at all.
 if (!entry) return new Response("Fant ikke medlemmet", { status: 404 });
 
@@ -31,14 +37,14 @@ if (Astro.request.method === "POST") {
   fieldErrors = parsed.fieldErrors;
   if (parsed.details) {
     await updateMemberContactDetails(db, org.id, entry.member.id, parsed.details);
-    entry = (await getOrganizationMember(db, org.id, entry.member.id)) ?? entry;
+    entry =
+      (await getOrganizationMember(db, org.id, entry.member.id, periods.periodFor().year)) ?? entry;
     values = memberContactFormValues(entry.member);
     saved = true;
   }
 }
 
-const displayName =
-  entry.member.name || entry.member.email || entry.member.phone || "Uten navn";
+const displayName = entry.member.name || entry.member.email || entry.member.phone || "Uten navn";
 ---
 
 <Shell title={`${displayName} — ${org.name}`}>

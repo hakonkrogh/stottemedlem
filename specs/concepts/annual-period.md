@@ -33,6 +33,39 @@ already think about seasons, budgets and annual meetings.
 - The period a membership covers never changes after the fact — repricing a
   tier or changing the calendar has no effect on periods already paid for.
 
+## The accelerated staging calendar
+The staging environment runs the same product on a compressed calendar: the
+**ISO week** stands in for the year. This exists so a full membership
+lifecycle — join, fee-change notice, repricing, renewal, lapse — can be
+rehearsed against the payment provider's test environment in days instead of
+years; nothing about the real product can otherwise be observed end-to-end
+before a January comes around. Which calendar an environment counts in is
+environment configuration; production always uses the calendar year.
+
+Rules for the accelerated calendar, mirroring the real ones:
+- The period is the ISO week, Monday through Sunday. Period keys encode as
+  `<ISO year><week>` (e.g. 202635) so they order chronologically and fit
+  everywhere a calendar year goes; people see them as "uke 35/2026".
+- A mid-week join pays the pro-rated share of the remaining days of the week;
+  renewals cost the full fee.
+- The renewal window opens on **Saturday** — proportionally earlier than
+  production's 1 December. This is forced, not chosen: the payment provider
+  requires a charge's due date to be at least one *real* day in the future,
+  and the accelerated "December" (~13 hours) is too short to hold it.
+- Durations defined in real days scale with the calendar (the fee-notice rule
+  of ~six hours instead of 14 days, reconciliation lookbacks likewise), except
+  where the provider's own clocks put a floor under them: charge retries run
+  in real days and are kept to one, so a failed renewal's retries do not
+  outlive the period it pays for.
+- Scheduled upkeep runs hourly instead of nightly — the same cadence relative
+  to the period.
+- Payment agreements are created with a weekly cadence, so the provider
+  permits a charge every period.
+
+Accepted inaccuracy: member-facing prose written for the yearly product (sales
+terms, "per year" phrasing) is not rewritten for the accelerated calendar —
+staging exists to exercise the machinery, and its members are test users.
+
 ## Open questions
 - **Joining very late in the year.** A supporter who joins in mid-December pays
   a tiny remainder and is then charged the full fee weeks later. Options: let

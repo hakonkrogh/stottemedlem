@@ -1,4 +1,4 @@
-import { isRenewalWindow, renewalPeriodYear, stableUuid } from "@stottemedlem/core";
+import { periodLabel, stableUuid } from "@stottemedlem/core";
 import {
   type Db,
   findChargeForPeriod,
@@ -9,6 +9,7 @@ import {
   updateAgreementFee,
 } from "@stottemedlem/db";
 import type { VippsClient } from "@stottemedlem/vipps";
+import { periods } from "./periods";
 
 // The two jobs that keep memberships running year after year without anyone
 // touching them: moving members onto a changed fee
@@ -76,12 +77,12 @@ export async function createDueRenewalCharges(
 ): Promise<{ created: number; failed: number }> {
   let created = 0;
   let failed = 0;
-  if (!isRenewalWindow(today)) return { created, failed };
+  if (!periods.isRenewalWindow(today)) return { created, failed };
 
-  const periodYear = renewalPeriodYear(today);
-  const due = `${periodYear}-01-01`;
+  const periodYear = periods.renewalPeriodKey(today);
+  const due = periods.fullPeriod(periodYear).start;
 
-  for (const standing of await listMemberFeeStandings(db, orgId, today)) {
+  for (const standing of await listMemberFeeStandings(db, orgId, today, periods.feeNoticeDays)) {
     const { agreement, tier } = standing;
     // Already arranged — the guard that makes running this nightly harmless.
     if (await findChargeForPeriod(db, agreement.id, periodYear)) continue;
@@ -92,12 +93,14 @@ export async function createDueRenewalCharges(
         agreement.vippsAgreementId,
         {
           amount: toOre(annualFeeNok),
-          description: `${tier.name} ${periodYear}`,
+          description: `${tier.name} ${periodLabel(periodYear)}`,
           due,
           // Vipps retries a failed charge daily for this many days. A yearly
           // membership can afford to be patient: a card that fails on 1 January
-          // is far more likely to be a full wallet than a member leaving.
-          retryDays: 7,
+          // is far more likely to be a full wallet than a member leaving. (The
+          // accelerated staging calendar keeps it to one real day, or the
+          // retries would outlive the period they pay for.)
+          retryDays: periods.retryDays,
           transactionType: "DIRECT_CAPTURE",
           externalId: `${agreement.externalId}:${periodYear}`,
         },

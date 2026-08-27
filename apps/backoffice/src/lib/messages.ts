@@ -13,6 +13,7 @@ import {
   recordOrgMessageRecipient,
 } from "@stottemedlem/db";
 import { type EmailMessage, type EmailSender, orgMessage } from "@stottemedlem/email";
+import { periods } from "./periods";
 
 // Delivering an organization's own message to its supporting members
 // (specs/concepts/org-message.md, specs/use-cases/keep-supporters-in-the-loop.md).
@@ -79,7 +80,7 @@ export async function deliverOrgMessage(
   if (!message) return null;
   if (message.sentAt) return summarizeDelivery(await listOrgMessageRecipients(db, messageId));
 
-  const everyone = await listMessageableMembers(db, org.id);
+  const everyone = await listMessageableMembers(db, org.id, periods.periodFor().year);
   const dealtWith = new Set(
     (await listOrgMessageRecipients(db, messageId)).map((row) => row.memberId),
   );

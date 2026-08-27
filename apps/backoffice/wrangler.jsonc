@@ -61,14 +61,19 @@
 		// domain must be verified with Resend; the RESEND_API_KEY secret is set
 		// out of band (`wrangler secret put RESEND_API_KEY [--env staging]`).
 		// Without that secret notices are logged instead of sent.
-		"EMAIL_FROM_ADDRESS": "varsel@xn--stttemedlem-hgb.no"
+		"EMAIL_FROM_ADDRESS": "varsel@xn--stttemedlem-hgb.no",
+		// Production counts memberships in calendar years. Staging runs the
+		// accelerated ISO-week calendar instead (see its own vars below).
+		"PERIOD_SCHEME": "calendar-year",
+		// Stamped on every Sentry event so the operator can filter production
+		// from staging (specs/concepts/operational-alerting.md).
+		"SENTRY_ENVIRONMENT": "production"
 		// The Sentry DSN for operational alerting is deliberately NOT a var:
 		// local dev inherits these vars, and a developer's machine must never
-		// report into production alerting (specs/concepts/operational-alerting.md).
-		// It is set out of band, like the secrets:
-		//   wrangler secret put SENTRY_DSN     (production only; staging has none —
-		//                                       the free plan's error quota is
-		//                                       production's)
+		// report into the operator's alerting (specs/concepts/operational-alerting.md).
+		// It is set out of band, like the secrets, per DEPLOYED environment
+		// (same Sentry project; events are told apart by SENTRY_ENVIRONMENT):
+		//   wrangler secret put SENTRY_DSN [--env staging]
 		// Absent = errors are logged, not reported.
 	},
 	// ── Bindings ──────────────────────────────────────────────────────────
@@ -171,9 +176,16 @@
 				// through the backoffice, so only the base URL differs from prod.
 				"VIPPS_API_BASE_URL": "https://apitest.vipps.no",
 				"PUBLIC_ORIGIN": "https://staging.app.xn--stttemedlem-hgb.no",
-				"EMAIL_FROM_ADDRESS": "varsel@xn--stttemedlem-hgb.no"
-				// No SENTRY_DSN secret on staging on purpose: alerting is
-				// production-only (see the top-level vars comment).
+				"EMAIL_FROM_ADDRESS": "varsel@xn--stttemedlem-hgb.no",
+				// The accelerated staging calendar (specs/concepts/annual-period.md):
+				// the ISO week is treated as the annual period, so a full membership
+				// lifecycle — join, notice, reprice, renewal, lapse — can be
+				// rehearsed against Vipps test in days instead of years.
+				"PERIOD_SCHEME": "iso-week",
+				// Staging reports to the SAME Sentry project as production; this
+				// tag is what keeps the two filterable apart. The DSN is a secret:
+				// `wrangler secret put SENTRY_DSN --env staging` (set 2026-08-27).
+				"SENTRY_ENVIRONMENT": "staging"
 			},
 			"d1_databases": [
 				{
@@ -223,10 +235,14 @@
 					"bucket_name": "stottemedlem-media-staging"
 				}
 			],
+			// Hourly, not nightly: on the week-as-year calendar an accelerated
+			// day is ~28 real minutes, so hourly keeps the same cadence relative
+			// to the period as production's nightly runs. worker.ts recognizes
+			// these strings alongside the production ones.
 			"triggers": {
 				"crons": [
-					"0 4 * * *",
-					"0 2 * * *"
+					"0 * * * *",
+					"30 * * * *"
 				]
 			}
 		}

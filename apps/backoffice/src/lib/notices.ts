@@ -1,4 +1,4 @@
-import { memberSelfServicePath, renewalPeriodYear } from "@stottemedlem/core";
+import { memberSelfServicePath, periodLabel } from "@stottemedlem/core";
 import {
   agreementsChargedForPeriod,
   type Db,
@@ -9,6 +9,7 @@ import {
   recordMemberNotice,
 } from "@stottemedlem/db";
 import { type EmailMessage, type EmailSender, feeChangeNotice } from "@stottemedlem/email";
+import { periods } from "./periods";
 
 // Telling members what they will be charged, before they are charged it
 // (specs/concepts/member-notice.md, specs/use-cases/change-the-annual-fee.md).
@@ -42,7 +43,9 @@ export async function membersOwedFeeNotice(
   orgId: string,
   today: Date = new Date(),
 ): Promise<MemberFeeStanding[]> {
-  return (await listMemberFeeStandings(db, orgId, today)).filter(owesFeeChangeNotice);
+  return (await listMemberFeeStandings(db, orgId, today, periods.feeNoticeDays)).filter(
+    owesFeeChangeNotice,
+  );
 }
 
 /**
@@ -63,8 +66,8 @@ export async function sendOwedFeeChangeNotices(
   if (owed.length === 0) return report;
 
   // A renewal already booked cannot change price, so for those members the new
-  // fee first applies the year after — and the notice must say so.
-  const upcoming = renewalPeriodYear(today);
+  // fee first applies the period after — and the notice must say so.
+  const upcoming = periods.renewalPeriodKey(today);
   const arranged = await agreementsChargedForPeriod(db, org.id, upcoming);
 
   const messages: EmailMessage[] = [];
@@ -84,7 +87,9 @@ export async function sendOwedFeeChangeNotices(
         tierName: tier.name,
         previousFeeNok: standing.knownFeeNok,
         newFeeNok: tier.annualFeeNok,
-        effectiveYear: arranged.has(agreement.id) ? upcoming + 1 : upcoming,
+        effectivePeriod: periodLabel(
+          arranged.has(agreement.id) ? periods.nextPeriodKey(upcoming) : upcoming,
+        ),
         manageUrl: `${origin}${memberSelfServicePath(org.slug, agreement.manageToken)}`,
       }),
     );

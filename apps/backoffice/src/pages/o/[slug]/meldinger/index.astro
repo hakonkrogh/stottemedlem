@@ -12,6 +12,7 @@ import Shell from "../../../../layouts/Shell.astro";
 import { getDb } from "../../../../lib/db";
 import type { OrgMessageJob } from "../../../../lib/messages";
 import { requireOrgAccess } from "../../../../lib/orgAccess";
+import { periods } from "../../../../lib/periods";
 import { orgPath } from "../../../../lib/workos";
 
 // Writing to the supporting members (specs/use-cases/keep-supporters-in-the-loop.md).
@@ -38,7 +39,9 @@ if (Astro.request.method === "POST") {
   const action = String(form.get("action") ?? "preview");
   values = {
     subject: String(form.get("subject") ?? "").trim(),
-    body: String(form.get("body") ?? "").replace(/\r\n/g, "\n").trim(),
+    body: String(form.get("body") ?? "")
+      .replace(/\r\n/g, "\n")
+      .trim(),
     audience: form.get("audience") === "all" ? "all" : "active",
   };
   fieldErrors = {
@@ -71,7 +74,7 @@ if (Astro.request.method === "POST") {
   // "edit", or anything invalid, falls through to the form with errors shown.
 }
 
-const everyone = await listMessageableMembers(db, org.id);
+const everyone = await listMessageableMembers(db, org.id, periods.periodFor().year);
 const reach = {
   active: messageReach(everyone, "active"),
   all: messageReach(everyone, "all"),
