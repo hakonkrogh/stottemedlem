@@ -1,0 +1,41 @@
+---
+// STORY-ONLY wrapper: the very same OrgScreen chrome the app ships, with every
+// link repointed at the story that shows where it leads. It exists so the
+// tabbed back office can be reviewed by clicking through Storybook — tabs, edit
+// buttons and back links included — without running the app, its login or its
+// database. Nothing in the app imports it.
+import { type OrgTabId, orgTabs } from "../lib/orgNav";
+import type { OrgWarning } from "../lib/orgWarnings";
+import OrgScreen from "./OrgScreen.astro";
+import { ACTIVE_MEMBERS, ADMIN_NAME, ORG, ORG_PATH, storyHref } from "./storyFixtures";
+
+interface Props {
+  active: OrgTabId;
+  warnings?: OrgWarning[];
+  activeMembers?: number;
+}
+const { active, warnings = [], activeMembers = ACTIVE_MEMBERS } = Astro.props;
+
+const tabs = orgTabs(ORG_PATH, warnings, activeMembers).map((tab) => ({
+  ...tab,
+  href: storyHref(tab.href),
+}));
+// The screen inside is rendered first, then every href it produced is looked up
+// the same way — so a story never has to know which links its screen renders.
+const content = (await Astro.slots.render("default")).replace(
+  /href="(\/[^"]*)"/g,
+  (_match: string, href: string) => `href="${storyHref(href)}"`,
+);
+---
+
+<OrgScreen
+  orgName={ORG.name}
+  orgPath={storyHref(ORG_PATH)}
+  active={active}
+  warnings={warnings}
+  displayName={ADMIN_NAME}
+  canSwitch
+  tabs={tabs}
+>
+  <Fragment set:html={content} />
+</OrgScreen>

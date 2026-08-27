@@ -14,6 +14,21 @@ stop, in order): `spec-sync-stop.sh` then `close-gaps-stop.sh`.
 - `close-gaps-stop.sh` blocks when the session used work/research tools, to run
   the close-gaps review once.
 
+## The spec hook only sees Edit/Write/MultiEdit/NotebookEdit
+It scans the transcript for those tool calls and their `file_path`s — so specs
+written another way are **invisible to it**. Writing `specs/*.md` with a bash
+heredoc (`cat > specs/... <<'EOF'`) or `python3` reconciles the spec layer for
+real, and the hook still blocks the stop, every turn, claiming you touched
+nothing under `specs/`. In bypass-permissions mode — where the standing
+instruction is to prefer Bash for file edits — that is the default outcome.
+
+**Use the Write/Edit tool for `specs/**` files** (Bash stays fine for code), or
+expect to spend a turn explaining that the specs *are* reconciled. Verify with
+`git status --porcelain specs/` and `node .claude/skills/spec-lint/check.mjs`,
+which look at the working tree rather than the transcript. Same blind spot
+applies to any future hook written this way; a working-tree check would not
+have it.
+
 ## How to test a Stop hook locally
 The hook reads a JSON event on stdin (`stop_hook_active`, `transcript_path`) and
 parses the transcript (JSONL, one event per line) with `jq`. Simulate it:

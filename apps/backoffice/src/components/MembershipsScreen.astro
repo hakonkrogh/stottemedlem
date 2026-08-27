@@ -1,0 +1,71 @@
+---
+// The membership offer (specs/use-cases/set-up-supporting-membership.md),
+// shown as the very same membership cards the public join page shows — so
+// reviewing the offer is seeing what supporters see. Each card presents the
+// stored membership and carries the one action that changes it; the form that
+// does the changing lives on its own page.
+import type { MembershipTier } from "@stottemedlem/db";
+import Button from "@stottemedlem/ui/components/Button.astro";
+import Heading from "@stottemedlem/ui/components/Heading.astro";
+import Stack from "@stottemedlem/ui/components/Stack.astro";
+import Text from "@stottemedlem/ui/components/Text.astro";
+import MembershipTierCard from "./MembershipTierCard.astro";
+
+interface Props {
+  orgPath: string;
+  tiers: MembershipTier[];
+}
+const { orgPath, tiers } = Astro.props;
+---
+
+<Stack gap="lg">
+  <Stack gap="sm">
+    <Heading level={2}>Medlemskap</Heading>
+    <Text variant="lead">
+      {
+        tiers.length === 0
+          ? "Organisasjonen har ingen medlemskap ennå. Legg til minst ett med pris, så viser den offentlige siden tilbudet Vipps skal godkjenne."
+          : "Slik ser medlemskapene ut på den offentlige siden. Prisendringer gjelder nye innmeldinger og fremtidige fornyelser."
+      }
+    </Text>
+  </Stack>
+
+  {
+    tiers.length > 0 && (
+      <div class="tiers">
+        {tiers.map((tier) => (
+          <MembershipTierCard
+            name={tier.name}
+            annualFeeNok={tier.annualFeeNok}
+            description={tier.description}
+            headingLevel={3}
+          >
+            <Button variant="secondary" href={`${orgPath}/medlemskap/${tier.id}`} block>
+              Endre medlemskapet
+            </Button>
+          </MembershipTierCard>
+        ))}
+      </div>
+    )
+  }
+
+  <div class="add">
+    <Button href={`${orgPath}/medlemskap/ny`} variant={tiers.length === 0 ? "primary" : "secondary"} block>
+      Legg til medlemskap
+    </Button>
+  </div>
+</Stack>
+
+<style>
+  /* One card per row on a phone; as many as fit once there is room — with the
+     same air between them as the overview's preview. */
+  .tiers {
+    display: grid;
+    gap: var(--sm-space-lg) var(--sm-space-xl);
+    grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr));
+    align-items: start;
+  }
+  .add {
+    max-width: 22rem;
+  }
+</style>

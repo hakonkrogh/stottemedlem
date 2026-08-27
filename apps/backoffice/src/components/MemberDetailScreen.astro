@@ -3,27 +3,42 @@
 // the one thing an administrator may change — how to reach them
 // (specs/use-cases/curate-member-list.md). Nothing here can make somebody a
 // member or stop them being one; that follows from payment alone.
+//
+// The recorded details are PRESENTED; correcting them is a deliberate action
+// behind an edit button, so looking someone up never means facing a form.
 import { periodLabel } from "@stottemedlem/core";
 import type { MemberOverview, Membership } from "@stottemedlem/db";
 import Alert from "@stottemedlem/ui/components/Alert.astro";
 import Button from "@stottemedlem/ui/components/Button.astro";
-import Card from "@stottemedlem/ui/components/Card.astro";
-import CardFooter from "@stottemedlem/ui/components/CardFooter.astro";
 import Heading from "@stottemedlem/ui/components/Heading.astro";
+import InfoList from "@stottemedlem/ui/components/InfoList.astro";
 import Stack from "@stottemedlem/ui/components/Stack.astro";
 import Text from "@stottemedlem/ui/components/Text.astro";
 import TextField from "@stottemedlem/ui/components/TextField.astro";
 import TextLink from "@stottemedlem/ui/components/TextLink.astro";
 import type { MemberContactFieldErrors, MemberContactFormValues } from "../lib/memberContact";
+import Subpage from "./Subpage.astro";
 
 interface Props {
   entry: MemberOverview & { history: Membership[] };
   values: MemberContactFormValues;
   fieldErrors?: MemberContactFieldErrors;
   saved?: boolean;
+  /** Open the contact form instead of presenting what is recorded. */
+  editing?: boolean;
   membersPath: string;
+  /** This member's own address, which the edit action opens. */
+  memberPath: string;
 }
-const { entry, values, fieldErrors = {}, saved = false, membersPath } = Astro.props;
+const {
+  entry,
+  values,
+  fieldErrors = {},
+  saved = false,
+  editing = false,
+  membersPath,
+  memberPath,
+} = Astro.props;
 const { member, latest, status, renewing, history } = entry;
 
 const displayName = member.name || member.email || member.phone || "Uten navn";
@@ -46,54 +61,78 @@ const lead = [standing, continuation].filter(Boolean).join(" ");
 const totalPaid = history.reduce((sum, period) => sum + period.paidNok, 0);
 ---
 
-<Stack gap="lg">
+<Subpage backHref={membersPath} backLabel="Tilbake til medlemslisten">
   <Stack gap="sm">
-    <Heading>{displayName}</Heading>
+    <Heading level={2}>{displayName}</Heading>
     <Text variant="lead">{lead}</Text>
   </Stack>
 
   {saved && <Alert variant="success">Kontaktopplysningene er oppdatert.</Alert>}
 
-  <Stack gap="sm">
-    <Heading level={2}>Kontaktopplysninger</Heading>
-    <Text variant="small">
-      Hentet fra Vipps-profilen da medlemmet meldte seg inn. Rett dem gjerne — det endrer ingenting
-      ved hva som er betalt.
-    </Text>
-    <form method="post">
-      <Stack gap="md">
-        <TextField label="Navn" name="name" value={values.name} error={fieldErrors.name} />
-        <TextField
-          label="E-post"
-          name="email"
-          type="email"
-          value={values.email}
-          error={fieldErrors.email}
-        />
-        <TextField
-          label="Telefon"
-          name="phone"
-          type="tel"
-          value={values.phone}
-          error={fieldErrors.phone}
-        />
-        <Button block>Lagre</Button>
-      </Stack>
-    </form>
-  </Stack>
+  <div class="columns">
+    <section class="section">
+      <div class="section-head">
+        <Heading level={3}>Kontaktopplysninger</Heading>
+        {
+          !editing && (
+            <Button variant="secondary" href={`${memberPath}?rediger=1`}>
+              Endre
+            </Button>
+          )
+        }
+      </div>
+      <Text variant="small">
+        Hentet fra Vipps-profilen da medlemmet meldte seg inn. Rett dem gjerne — det endrer
+        ingenting ved hva som er betalt.
+      </Text>
+      {
+        editing ? (
+          <form method="post">
+            <Stack gap="md">
+              <TextField label="Navn" name="name" value={values.name} error={fieldErrors.name} />
+              <TextField
+                label="E-post"
+                name="email"
+                type="email"
+                value={values.email}
+                error={fieldErrors.email}
+              />
+              <TextField
+                label="Telefon"
+                name="phone"
+                type="tel"
+                value={values.phone}
+                error={fieldErrors.phone}
+              />
+              <Button block>Lagre</Button>
+              <Text variant="small">
+                <TextLink href={memberPath}>Avbryt</TextLink>
+              </Text>
+            </Stack>
+          </form>
+        ) : (
+          <InfoList
+            items={[
+              { label: "Navn", value: member.name },
+              { label: "E-post", value: member.email },
+              { label: "Telefon", value: member.phone },
+            ]}
+          />
+        )
+      }
+    </section>
 
-  <Stack gap="sm">
-    <Heading level={2}>Støttehistorikk</Heading>
-    {
-      history.length === 0 ? (
-        <Text variant="muted">Ingen perioder er betalt ennå.</Text>
-      ) : (
-        <>
-          <Text variant="small">
-            {history.length === 1 ? "Én periode" : `${history.length} perioder`}, til sammen{" "}
-            {totalPaid} kr.
-          </Text>
-          <Card>
+    <section class="section">
+      <Heading level={3}>Støttehistorikk</Heading>
+      {
+        history.length === 0 ? (
+          <Text variant="muted">Ingen perioder er betalt ennå.</Text>
+        ) : (
+          <>
+            <Text variant="small">
+              {history.length === 1 ? "Én periode" : `${history.length} perioder`}, til sammen{" "}
+              {totalPaid} kr.
+            </Text>
             <ul class="history">
               {history.map((period) => (
                 <li>
@@ -103,24 +142,43 @@ const totalPaid = history.reduce((sum, period) => sum + period.paidNok, 0);
                 </li>
               ))}
             </ul>
-          </Card>
-        </>
-      )
-    }
-  </Stack>
+          </>
+        )
+      }
+    </section>
+  </div>
 
-  <CardFooter>
-    <TextLink href={membersPath}>← Tilbake til medlemslisten</TextLink>
-  </CardFooter>
-</Stack>
+</Subpage>
 
 <style>
+  /* Details and history stand side by side once the display has room. */
+  .columns {
+    display: grid;
+    gap: var(--sm-space-lg);
+    grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr));
+    align-items: start;
+  }
+  .section {
+    display: grid;
+    gap: var(--sm-space-sm);
+    align-content: start;
+  }
+  .section-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--sm-space-sm);
+  }
   .history {
     list-style: none;
     margin: 0;
-    padding: 0;
+    padding: 0.9rem 1rem;
     display: grid;
     gap: 0.6rem;
+    background: var(--sm-bg);
+    border: 1px solid var(--sm-border);
+    border-radius: var(--sm-radius-md);
   }
   .history li {
     display: flex;

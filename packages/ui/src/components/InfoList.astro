@@ -1,0 +1,79 @@
+---
+// The product's default way of PRESENTING stored information: a quiet label
+// with the value beneath it, never an input. Screens show what is stored this
+// way and offer a separate edit action; nobody types into a field they did not
+// ask to open.
+//
+// `layout="columns"` lets a wide screen put several facts side by side while a
+// narrow one still stacks them.
+interface Props {
+  items: Array<{
+    label: string;
+    /** Null or empty renders as a muted dash — "we don't have this". */
+    value: string | null;
+    /** Quieter line under the value, e.g. where a value came from. */
+    hint?: string;
+  }>;
+  layout?: "rows" | "columns";
+}
+const { items, layout = "rows" } = Astro.props;
+---
+
+<dl class:list={["info-list", layout]}>
+  {
+    items.map((item) => (
+      <div class="item">
+        <dt>{item.label}</dt>
+        <dd>
+          {item.value ? (
+            <span class="value">{item.value}</span>
+          ) : (
+            <span class="value empty">—</span>
+          )}
+          {item.hint && <span class="hint">{item.hint}</span>}
+        </dd>
+      </div>
+    ))
+  }
+</dl>
+
+<style>
+  .info-list {
+    margin: 0;
+    display: grid;
+    gap: var(--sm-space-md);
+  }
+  .columns {
+    grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+    gap: var(--sm-space-md) var(--sm-space-lg);
+  }
+  .item {
+    display: grid;
+    gap: 0.15rem;
+    align-content: start;
+    min-width: 0;
+  }
+  dt {
+    font-size: 0.8rem;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    color: var(--sm-muted);
+  }
+  dd {
+    margin: 0;
+    display: grid;
+    gap: 0.15rem;
+    min-width: 0;
+  }
+  .value {
+    overflow-wrap: anywhere;
+  }
+  .empty {
+    color: var(--sm-muted);
+  }
+  .hint {
+    font-size: 0.85rem;
+    color: var(--sm-muted);
+    overflow-wrap: anywhere;
+  }
+</style>

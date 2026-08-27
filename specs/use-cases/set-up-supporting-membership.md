@@ -29,7 +29,10 @@ From the organization's point of view:
    creation step keeps it to a single amount so it doesn't stall getting
    started, and everything about it can be changed later.
 3. The administrator refines the membership offer in the back office. The
-   organization's **overview page lists all its memberships**, presented as
+   **front page previews the whole offer** — the memberships as the supporter
+   sees them — with one way on to the **membership place** of the
+   [back office](../concepts/back-office.md), which **lists all its
+   memberships**, presented as
    the very same membership cards the public join page shows (see the
    one-presentation rule in [membership tier](../concepts/membership-tier.md))
    — reviewing the offer *is* seeing what supporters see. Selecting a
@@ -60,8 +63,11 @@ From the organization's point of view:
    are added, the back office prompts for them. Storing the keys is the last
    thing the administrator does: the product then connects payment-event
    delivery with Vipps by itself and keeps it connected (see
-   [Vipps API keys](../concepts/vipps-api-keys.md)) — there is no separate
-   connect step.
+   [Vipps API keys](../concepts/vipps-api-keys.md)) — there is no setup step
+   for it, and while it is working the back office says nothing about it. If
+   the delivery is *not* connected, the back office says so and lets the
+   administrator have the repair made now instead of waiting for the next
+   scheduled run.
 6. Once configured, the organization is ready to receive supporting members; no
    further setup is required to take the first payment.
 
@@ -70,7 +76,10 @@ behaviour existed) is **prompted in the back office** to complete the missing
 fields, and can edit its profile there at any time.
 
 The organization can also give its join page a **visual identity**: in the
-back-office settings it can edit its details (name and profile) and upload a
+back-office settings — which presents the stored details and opens a form only
+when the administrator asks to change them
+([presenting and editing](../concepts/presenting-and-editing.md)) — it can edit
+its details (name and profile) and upload a
 **logo** and a **banner image**, shown on the
 [join page](../concepts/join-page.md). For the banner the
 organization can also pick the **focal point** — which part of the image stays
@@ -89,10 +98,10 @@ immediately. A name change never changes the slug or the public addresses.
       administrator can add a tier (name, optional description, annual fee),
       edit it, and archive it — except the last active tier, which cannot be
       archived, so the organization always offers at least one membership.
-- [ ] The organization's overview lists every active membership as the same
-      membership card the public join page shows; selecting one opens it
-      for editing on its own page, and an add button after the list opens the
-      same page for creating a new one.
+- [ ] The back office's membership place lists every active membership as the
+      same membership card the public join page shows; each card carries the
+      action that opens it for editing on its own page, and an add button after
+      the list opens the same page for creating a new one.
 - [ ] When adding a tier, the administrator can start from a standard
       template (basic or VIP) that prefills name and description with
       standard texts; the price field stays empty with a suggested amount,
@@ -111,10 +120,15 @@ immediately. A name change never changes the slug or the public addresses.
 - [ ] An administrator can add the organization's
       [Vipps API keys](../concepts/vipps-api-keys.md); a set Vipps rejects is
       not stored, and the administrator is told why. Stored secrets are only
-      ever shown masked.
+      ever shown masked, and stored keys are presented rather than laid out as
+      a form — replacing them is a deliberate action
+      ([presenting and editing](../concepts/presenting-and-editing.md)).
 - [ ] Once keys are stored, payment events are connected without any further
-      administrator action, and stay connected on their own; the back office
-      shows the connection status but offers no manual connect action.
+      administrator action, and stay connected on their own; while they are
+      connected the back office says nothing about them.
+- [ ] When payment events are not connected — missing, or pointing elsewhere —
+      the back office says so and offers to have it connected now, without
+      that ever becoming a setup step the administrator must understand.
 - [ ] A supporter using that address can complete
       [joining](join-as-supporting-member.md) without further admin action.
 - [ ] A tier's annual fee can be changed later; the change applies to future
@@ -136,6 +150,8 @@ immediately. A name change never changes the slug or the public addresses.
 - Tax/receipt configuration.
 
 ## Related
+- [Concept: Back office](../concepts/back-office.md)
+- [Concept: Presenting and editing](../concepts/presenting-and-editing.md)
 - [Concept: Organization](../concepts/organization.md)
 - [Concept: Membership tier](../concepts/membership-tier.md)
 - [Concept: Annual fee](../concepts/annual-fee.md)

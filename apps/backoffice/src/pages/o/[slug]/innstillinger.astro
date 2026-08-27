@@ -1,21 +1,12 @@
 ---
 import { env } from "cloudflare:workers";
 import {
-  getOrganizationBySlug,
   type OrganizationImages,
   type OrganizationProfile,
   updateOrganizationProfile,
 } from "@stottemedlem/db";
-import Alert from "@stottemedlem/ui/components/Alert.astro";
-import Button from "@stottemedlem/ui/components/Button.astro";
-import CardFooter from "@stottemedlem/ui/components/CardFooter.astro";
-import Heading from "@stottemedlem/ui/components/Heading.astro";
-import Stack from "@stottemedlem/ui/components/Stack.astro";
-import Text from "@stottemedlem/ui/components/Text.astro";
-import TextField from "@stottemedlem/ui/components/TextField.astro";
-import TextLink from "@stottemedlem/ui/components/TextLink.astro";
-import OrgImageFields from "../../../components/OrgImageFields.astro";
-import OrgProfileFields from "../../../components/OrgProfileFields.astro";
+import OrgScreen from "../../../components/OrgScreen.astro";
+import OrgSettingsScreen from "../../../components/OrgSettingsScreen.astro";
 import Shell from "../../../layouts/Shell.astro";
 import { getDb } from "../../../lib/db";
 import { applyImageField } from "../../../lib/orgImages";
@@ -24,13 +15,14 @@ import {
   parseProfileForm,
   profileFormValues,
 } from "../../../lib/orgProfile";
+import { orgView, requireOrgView } from "../../../lib/orgView";
 import { purgeOrgPublicPages } from "../../../lib/publicPageCache";
 import { getWorkOS, orgPath } from "../../../lib/workos";
 
 // Org settings — the org's public details: the profile fields the join page
 // and salgsvilkår show (specs/concepts/join-page.md), the name, and the
-// optional visual identity (logo + banner image). Orgs created before a field
-// was required complete it here, prompted by the dashboard banner.
+// optional visual identity (logo + banner image). What is stored is shown as
+// information; `?rediger=1` opens the one form that changes it.
 /** Parse a focal-point percentage from the form; null when absent/invalid. */
 function parseFocusPercent(value: FormDataEntryValue | null): number | null {
   if (typeof value !== "string" || value.trim() === "") return null;
@@ -39,24 +31,10 @@ function parseFocusPercent(value: FormDataEntryValue | null): number | null {
   return Math.min(100, Math.max(0, Math.round(n)));
 }
 
-const session = Astro.locals.session;
-if (!session) return Astro.redirect("/login");
-const slug = Astro.params.slug;
-if (!slug) return Astro.redirect("/orgs");
-
-const db = getDb();
-let org = await getOrganizationBySlug(db, slug);
-if (!org) return Astro.redirect("/orgs");
+let view = await requireOrgView(Astro.locals.session, Astro.params.slug, Astro.request);
+if (!view) return Astro.redirect("/orgs");
+let org = view.org;
 const workosOrgId = org.workosOrgId;
-
-const { data: memberships } = await getWorkOS().userManagement.listOrganizationMemberships({
-  userId: session.userId,
-  statuses: ["active"],
-  limit: 100,
-});
-if (!memberships.some((m) => m.organizationId === workosOrgId)) {
-  return Astro.redirect("/orgs");
-}
 
 let values = profileFormValues(org);
 let fieldErrors: ProfileFieldErrors = {};
@@ -103,37 +81,46 @@ if (Astro.request.method === "POST") {
   }
 
   if (Object.keys(patch).length > 0) {
-    org = (await updateOrganizationProfile(db, workosOrgId, patch)) ?? org;
+    org = (await updateOrganizationProfile(getDb(), workosOrgId, patch)) ?? org;
   }
   saved = Object.keys(fieldErrors).length === 0 && !nameError && !logo.error && !banner.error;
-  // The public pages serve a cached copy; clear this datacenter's copy so the
-  // admin sees the change on their next look (visitors self-heal on traffic).
-  if (saved) await purgeOrgPublicPages(org.slug, Astro.url.origin);
+  if (saved) {
+    // The public pages serve a cached copy; clear this datacenter's copy so the
+    // admin sees the change on their next look (visitors self-heal on traffic).
+    await purgeOrgPublicPages(org.slug, Astro.url.origin);
+    // The saved details may have settled a warning — recompute the chrome.
+    view = await orgView(org, Astro.request);
+    values = profileFormValues(org);
+    name = org.name;
+  }
 }
+
+// A save closes the form again; anything still wrong keeps it open.
+const hasErrors =
+  Object.keys(fieldErrors).length > 0 || !!nameError || !!imageErrors.logo || !!imageErrors.banner;
+const editing = hasErrors || (Astro.url.searchParams.has("rediger") && !saved);
 ---
 
-<Shell title={`Innstillinger — ${org.name}`}>
-  <Stack gap="lg">
-    <Stack gap="sm">
-      <Heading>Innstillinger</Heading>
-      <Text variant="lead">
-        Dette vises på den offentlige siden til {org.name} og i salgsvilkårene — Vipps krever at
-        organisasjonsnummer og kontakt er fylt ut. Logo og bannerbilde er valgfritt. Medlemskap
-        og priser administrerer du fra{" "}
-        <TextLink href={orgPath(org.slug)}>oversikten</TextLink>.
-      </Text>
-    </Stack>
-    {saved && <Alert variant="info">Lagret. Den offentlige siden oppdateres ved neste besøk.</Alert>}
-    <form method="post" enctype="multipart/form-data">
-      <Stack gap="lg">
-        <TextField label="Navn" name="name" value={name} required error={nameError} />
-        <OrgProfileFields values={values} fieldErrors={fieldErrors} />
-        <OrgImageFields org={org} errors={imageErrors} />
-        <Button block>Lagre</Button>
-      </Stack>
-    </form>
-    <CardFooter>
-      <TextLink href={orgPath(org.slug)}>Tilbake til oversikten</TextLink>
-    </CardFooter>
-  </Stack>
+<Shell title={`Innstillinger — ${org.name}`} frame={false}>
+  <OrgScreen
+    orgName={org.name}
+    orgPath={orgPath(org.slug)}
+    active="innstillinger"
+    warnings={view.warnings}
+    activeMembers={view.activeMembers}
+  >
+    <OrgSettingsScreen
+      org={org}
+      orgPath={orgPath(org.slug)}
+      editing={editing}
+      values={values}
+      fieldErrors={fieldErrors}
+      name={name}
+      nameError={nameError}
+      imageErrors={imageErrors}
+      saved={saved}
+      vippsKeys={view.vippsKeys}
+      paymentEventsConnected={view.vippsKeys?.webhook?.url === view.webhookUrl}
+    />
+  </OrgScreen>
 </Shell>

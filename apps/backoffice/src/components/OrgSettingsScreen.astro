@@ -1,0 +1,227 @@
+---
+// The organization's own details (specs/use-cases/set-up-supporting-membership.md).
+//
+// What is stored is PRESENTED, not laid out as a form: an administrator who
+// came to look at the contact address should not have to walk past an open
+// text field to do it. One edit action opens the form; saving closes it again.
+import { formatOrganisasjonsnummer } from "@stottemedlem/core";
+import type { Organization } from "@stottemedlem/db";
+import Alert from "@stottemedlem/ui/components/Alert.astro";
+import Button from "@stottemedlem/ui/components/Button.astro";
+import Heading from "@stottemedlem/ui/components/Heading.astro";
+import InfoList from "@stottemedlem/ui/components/InfoList.astro";
+import Stack from "@stottemedlem/ui/components/Stack.astro";
+import Text from "@stottemedlem/ui/components/Text.astro";
+import TextField from "@stottemedlem/ui/components/TextField.astro";
+import TextLink from "@stottemedlem/ui/components/TextLink.astro";
+import { orgImageUrl } from "../lib/orgImages";
+import type { ProfileFieldErrors, ProfileFormValues } from "../lib/orgProfile";
+import type { OrgVippsKeys } from "../lib/vippsKeys";
+import OrgImageFields from "./OrgImageFields.astro";
+import OrgProfileFields from "./OrgProfileFields.astro";
+
+interface Props {
+  org: Organization;
+  orgPath: string;
+  /** Open the form instead of the presentation. */
+  editing?: boolean;
+  values: ProfileFormValues;
+  fieldErrors?: ProfileFieldErrors;
+  name: string;
+  nameError?: string;
+  imageErrors?: { logo?: string; banner?: string };
+  saved?: boolean;
+  vippsKeys: OrgVippsKeys | null;
+  /** False when the org's payment events are not reaching this deployment. */
+  paymentEventsConnected: boolean;
+}
+const {
+  org,
+  orgPath,
+  editing = false,
+  values,
+  fieldErrors = {},
+  name,
+  nameError,
+  imageErrors = {},
+  saved = false,
+  vippsKeys,
+  paymentEventsConnected,
+} = Astro.props;
+
+const editPath = `${orgPath}/innstillinger?rediger=1`;
+const settingsPath = `${orgPath}/innstillinger`;
+const vippsPath = `${orgPath}/vipps`;
+const validatedDate = vippsKeys
+  ? new Date(vippsKeys.validatedAt).toLocaleDateString("nb-NO")
+  : null;
+const bannerPosition =
+  org.bannerFocusX !== null && org.bannerFocusY !== null
+    ? `${org.bannerFocusX}% ${org.bannerFocusY}%`
+    : "50% 50%";
+---
+
+<Stack gap="lg">
+  <Stack gap="sm">
+    <Heading level={2}>Innstillinger</Heading>
+    <Text variant="lead">
+      Dette vises på den offentlige siden til {org.name} og i salgsvilkårene — Vipps krever at
+      organisasjonsnummer og kontakt er fylt ut. Logo og bannerbilde er valgfritt.
+    </Text>
+  </Stack>
+
+  {saved && <Alert variant="success">Lagret. Den offentlige siden oppdateres ved neste besøk.</Alert>}
+
+  {
+    editing ? (
+      <form method="post" class="form-column" enctype="multipart/form-data">
+        <Stack gap="lg">
+          <TextField label="Navn" name="name" value={name} required error={nameError} />
+          <OrgProfileFields values={values} fieldErrors={fieldErrors} />
+          <OrgImageFields org={org} errors={imageErrors} />
+          <Button block>Lagre</Button>
+          <Text variant="small">
+            <TextLink href={settingsPath}>Avbryt</TextLink>
+          </Text>
+        </Stack>
+      </form>
+    ) : (
+      <>
+        <section class="section">
+          <div class="section-head">
+            <Heading level={3}>Organisasjonen</Heading>
+            <Button variant="secondary" href={editPath}>
+              Endre opplysningene
+            </Button>
+          </div>
+          <InfoList
+            layout="columns"
+            items={[
+              { label: "Navn", value: org.name },
+              {
+                label: "Organisasjonsnummer",
+                value: org.orgnr && formatOrganisasjonsnummer(org.orgnr),
+              },
+              { label: "Kontakt-e-post", value: org.contactEmail },
+            ]}
+          />
+        </section>
+
+        <section class="section">
+          <Heading level={3}>Logo og bannerbilde</Heading>
+          {org.logoKey || org.bannerKey ? (
+            <div class="images">
+              {org.logoKey && (
+                <figure class="image">
+                  <img class="logo" src={orgImageUrl(org.slug, "logo", org.logoKey)} alt="" />
+                  <figcaption>Logo</figcaption>
+                </figure>
+              )}
+              {org.bannerKey && (
+                <figure class="image banner-figure">
+                  <img
+                    class="banner"
+                    src={orgImageUrl(org.slug, "banner", org.bannerKey)}
+                    style={`object-position: ${bannerPosition}`}
+                    alt=""
+                  />
+                  <figcaption>Bannerbilde, beskåret slik den offentlige siden viser det</figcaption>
+                </figure>
+              )}
+            </div>
+          ) : (
+            <Text variant="small">
+              Ingen bilder ennå — den offentlige siden viser navnet alene.
+            </Text>
+          )}
+        </section>
+
+        <section class="section">
+          <div class="section-head">
+            <Heading level={3}>Vipps</Heading>
+            <Button variant="secondary" href={vippsPath}>
+              {vippsKeys ? "Se Vipps-nøklene" : "Legg inn Vipps-nøkler"}
+            </Button>
+          </div>
+          {vippsKeys ? (
+            <InfoList
+              layout="columns"
+              items={[
+                { label: "Salgsenhet (MSN)", value: vippsKeys.merchantSerialNumber },
+                { label: "Sist bekreftet mot Vipps", value: validatedDate },
+                {
+                  label: "Betalingsvarsler",
+                  value: paymentEventsConnected ? "Koblet til" : "Ikke koblet til ennå",
+                },
+              ]}
+            />
+          ) : (
+            <Text variant="small">
+              Vipps er ikke koblet til ennå — organisasjonen kan ikke ta betalt før salgsenhetens
+              API-nøkler er lagt inn.
+            </Text>
+          )}
+        </section>
+      </>
+    )
+  }
+</Stack>
+
+<style>
+  /* A form reads best in one column even when the panel is wide. */
+  .form-column {
+    max-width: 34rem;
+  }
+  .section {
+    display: grid;
+    gap: var(--sm-space-sm);
+    padding-top: var(--sm-space-md);
+    border-top: 1px solid var(--sm-border);
+  }
+  .section:first-of-type {
+    padding-top: 0;
+    border-top: none;
+  }
+  .section-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--sm-space-sm);
+  }
+  .images {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--sm-space-md);
+  }
+  .image {
+    margin: 0;
+    display: grid;
+    gap: 0.35rem;
+    min-width: 0;
+  }
+  .banner-figure {
+    flex: 1 1 18rem;
+  }
+  .image figcaption {
+    font-size: 0.85rem;
+    color: var(--sm-muted);
+  }
+  .logo {
+    width: 4.5rem;
+    height: 4.5rem;
+    object-fit: contain;
+    padding: 0.35rem;
+    background: var(--sm-surface);
+    border: 1px solid var(--sm-border);
+    border-radius: 50%;
+  }
+  /* The same 12:5 crop the join page uses, so the preview is the truth. */
+  .banner {
+    width: 100%;
+    aspect-ratio: 12 / 5;
+    object-fit: cover;
+    border: 1px solid var(--sm-border);
+    border-radius: var(--sm-radius-md);
+  }
+</style>

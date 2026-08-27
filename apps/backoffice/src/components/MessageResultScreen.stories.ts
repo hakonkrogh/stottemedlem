@@ -1,14 +1,15 @@
-// Screen stories render inside ScreenFrame (the same frame Shell uses) via a
-// configured-component slot, so Storybook shows the screen as it ships.
+// Screen stories render inside the org chrome the app ships (StoryScreen wraps
+// OrgScreen), so Storybook shows the screen exactly as it ships.
 import type { OrgMessage, OrgMessageOutcome } from "@stottemedlem/db";
 import type { MessageDeliveryReport } from "../lib/messages";
 import MessageResultScreen from "./MessageResultScreen.astro";
 import { fixtureMessage, sentProblems, sentReport } from "./messageFixtures";
-import ScreenFrame from "./ScreenFrame.astro";
+import StoryScreen from "./StoryScreen.astro";
+import { ORG_PATH } from "./storyFixtures";
 
 export default {
   title: "Backoffice/Meldingsresultat",
-  component: ScreenFrame,
+  component: StoryScreen,
 };
 
 interface ScreenProps {
@@ -19,6 +20,8 @@ interface ScreenProps {
 }
 
 const inFrame = (props: Partial<ScreenProps>) => ({
+  active: "medlemmer",
+  warnings: [],
   slots: {
     default: {
       component: MessageResultScreen,
@@ -26,7 +29,7 @@ const inFrame = (props: Partial<ScreenProps>) => ({
         message: fixtureMessage(),
         report: sentReport,
         problems: sentProblems,
-        messagesPath: "#",
+        messagesPath: `${ORG_PATH}/meldinger`,
         ...props,
       },
     },

@@ -1,6 +1,7 @@
 ---
 import { getOrganizationMember, updateMemberContactDetails } from "@stottemedlem/db";
 import MemberDetailScreen from "../../../../components/MemberDetailScreen.astro";
+import OrgScreen from "../../../../components/OrgScreen.astro";
 import Shell from "../../../../layouts/Shell.astro";
 import { getDb } from "../../../../lib/db";
 import {
@@ -8,14 +9,15 @@ import {
   memberContactFormValues,
   parseMemberContactForm,
 } from "../../../../lib/memberContact";
-import { requireOrgAccess } from "../../../../lib/orgAccess";
+import { requireOrgView } from "../../../../lib/orgView";
 import { periods } from "../../../../lib/periods";
 import { orgPath } from "../../../../lib/workos";
 
 // One member, and the correction an administrator may make to how they are
 // recorded (specs/use-cases/curate-member-list.md).
-const org = await requireOrgAccess(Astro.locals.session, Astro.params.slug);
-if (!org) return Astro.redirect("/orgs");
+const view = await requireOrgView(Astro.locals.session, Astro.params.slug, Astro.request);
+if (!view) return Astro.redirect("/orgs");
+const { org, warnings } = view;
 
 const db = getDb();
 let entry = await getOrganizationMember(
@@ -45,14 +47,23 @@ if (Astro.request.method === "POST") {
 }
 
 const displayName = entry.member.name || entry.member.email || entry.member.phone || "Uten navn";
+const membersPath = `${orgPath(org.slug)}/medlemmer`;
+const memberPath = `${membersPath}/${entry.member.id}`;
+// A save closes the form again; anything still wrong keeps it open.
+const editing =
+  Object.keys(fieldErrors).length > 0 || (Astro.url.searchParams.has("rediger") && !saved);
 ---
 
-<Shell title={`${displayName} — ${org.name}`}>
-  <MemberDetailScreen
-    entry={entry}
-    values={values}
-    fieldErrors={fieldErrors}
-    saved={saved}
-    membersPath={`${orgPath(org.slug)}/medlemmer`}
-  />
+<Shell title={`${displayName} — ${org.name}`} frame={false}>
+  <OrgScreen orgName={org.name} orgPath={orgPath(org.slug)} active="medlemmer" warnings={warnings} activeMembers={view.activeMembers}>
+    <MemberDetailScreen
+      entry={entry}
+      values={values}
+      fieldErrors={fieldErrors}
+      saved={saved}
+      editing={editing}
+      membersPath={membersPath}
+      memberPath={memberPath}
+    />
+  </OrgScreen>
 </Shell>

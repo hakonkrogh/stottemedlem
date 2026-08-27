@@ -1,0 +1,260 @@
+---
+// The frame every screen of an organization's back office renders inside
+// (specs/use-cases/access-the-back-office.md): who you are looking at, who you
+// are, and the four places an organization is — Oversikt, Innstillinger,
+// Medlemmer, Medlemskap.
+//
+// The tabs are chrome, not a widget: each one is an ordinary link to an
+// ordinary page, so a tab can be bookmarked, opened in a new window and
+// reloaded. A tab wears a badge for the things that are not in order and that
+// it is where you go to fix (specs/use-cases/set-up-supporting-membership.md).
+//
+// The panel is as wide as the display allows: one column on a phone, and the
+// screens inside spread into the room a larger screen offers.
+import Card from "@stottemedlem/ui/components/Card.astro";
+import TextLink from "@stottemedlem/ui/components/TextLink.astro";
+import { type OrgTab, type OrgTabId, orgTabs } from "../lib/orgNav";
+import type { OrgWarning } from "../lib/orgWarnings";
+
+interface Props {
+  orgName: string;
+  orgPath: string;
+  active: OrgTabId;
+  warnings?: OrgWarning[];
+  /** The signed-in administrator, shown quietly beside the organization. */
+  displayName?: string;
+  /** Only an administrator of several organizations can switch. */
+  canSwitch?: boolean;
+  /** Supporters current this period, carried as a pill on the member tab. */
+  activeMembers?: number;
+  /** The tab set to render; the organization's own four by default. */
+  tabs?: OrgTab[];
+}
+const {
+  orgName,
+  orgPath,
+  active,
+  warnings = [],
+  displayName,
+  canSwitch = false,
+  activeMembers = 0,
+  tabs = orgTabs(orgPath, warnings, activeMembers),
+} = Astro.props;
+
+// Each place has a symbol as well as a name, so the four stay side by side on a
+// phone: below the breakpoint the labels step aside and the symbols (with any
+// pill) carry the tab bar. The names stay in the accessibility tree throughout.
+const TAB_ICONS: Record<OrgTabId, string> = {
+  oversikt:
+    '<path d="M3 10.5 12 3l9 7.5"/><path d="M5.5 9.4V20a1 1 0 0 0 1 1H9v-6h6v6h2.5a1 1 0 0 0 1-1V9.4"/>',
+  medlemmer:
+    '<path d="M15.5 20v-1.5a4 4 0 0 0-4-4h-4a4 4 0 0 0-4 4V20"/><circle cx="9.5" cy="7.5" r="3.5"/><path d="M21 20v-1.5a4 4 0 0 0-3-3.87"/><path d="M16.5 4.13a3.5 3.5 0 0 1 0 6.74"/>',
+  // A heart, not a payment card: a membership is somebody choosing to back the
+  // organization, and the tab is that offer — not how the money moves.
+  medlemskap:
+    '<path d="M20.6 4.9a5.2 5.2 0 0 0-7.35 0L12 6.15 10.75 4.9a5.2 5.2 0 1 0-7.35 7.35l1.25 1.25L12 20.8l7.35-7.3 1.25-1.25a5.2 5.2 0 0 0 0-7.35z"/>',
+  innstillinger:
+    '<path d="M4 7.5h5"/><path d="M15 7.5h5"/><path d="M4 16.5h3"/><path d="M13 16.5h7"/><circle cx="12" cy="7.5" r="2.5"/><circle cx="10" cy="16.5" r="2.5"/>',
+};
+---
+
+<div class="org-screen">
+  <header class="chrome">
+    <div class="account">
+      {displayName && <span class="who">{displayName}</span>}
+      {canSwitch && <TextLink href="/orgs">Bytt organisasjon</TextLink>}
+      <TextLink href="/logout">Logg ut</TextLink>
+    </div>
+    <h1 class="org-name"><a href={orgPath}>{orgName}</a></h1>
+    <nav class="tabs" aria-label="Organisasjonen">
+      {
+        tabs.map((tab) => (
+          <a class="tab" href={tab.href} aria-current={tab.id === active ? "page" : undefined}>
+            <svg
+              class="icon"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.6"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <Fragment set:html={TAB_ICONS[tab.id]} />
+            </svg>
+            <span class="label">{tab.label}</span>
+            {tab.count !== undefined && (
+              <span class="count" title={`${tab.count} aktive medlemmer`}>
+                {tab.count}
+              </span>
+            )}
+            {tab.warnings > 0 && (
+              <span class="badge" title={`${tab.warnings} ting å ordne`}>
+                {tab.warnings}
+                <span class="sr-only"> ting å ordne</span>
+              </span>
+            )}
+          </a>
+        ))
+      }
+    </nav>
+  </header>
+  <Card>
+    <slot />
+  </Card>
+</div>
+
+<style>
+  .org-screen {
+    width: 100%;
+    max-width: 60rem;
+    margin-inline: auto;
+    display: grid;
+    gap: var(--sm-space-md);
+  }
+  .chrome {
+    display: grid;
+    gap: var(--sm-space-sm);
+  }
+  /* Who you are signed in as sits above everything, out of the way of the
+     organization's own name — which is the page's subject and gets the room. */
+  .account {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: flex-end;
+    gap: 0.35rem 0.85rem;
+    margin-bottom: var(--sm-space-sm);
+    font-size: 0.85rem;
+    color: var(--sm-muted);
+  }
+  .org-name {
+    margin: 0;
+    font-family: var(--sm-font-display);
+    font-weight: var(--sm-font-display-weight, 600);
+    font-variation-settings: var(--sm-font-display-variation, normal);
+    font-size: 1.6rem;
+    line-height: 1.2;
+    letter-spacing: -0.01em;
+    overflow-wrap: anywhere;
+  }
+  .org-name a {
+    color: inherit;
+    text-decoration: none;
+    border-radius: var(--sm-radius-sm);
+  }
+  .org-name a:hover {
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+  .org-name a:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px var(--sm-focus-ring);
+  }
+  .who {
+    overflow-wrap: anywhere;
+  }
+  /* Narrow screens scroll the tabs sideways rather than wrapping them into a
+     second row that pushes the panel down. */
+  .tabs {
+    display: flex;
+    gap: 0.35rem;
+    overflow-x: auto;
+    scrollbar-width: none;
+    margin-inline: -0.25rem;
+    padding: 0.15rem 0.25rem;
+  }
+  .tabs::-webkit-scrollbar {
+    display: none;
+  }
+  .tab {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.45rem 0.85rem;
+    font-size: 0.95rem;
+    font-weight: 600;
+    white-space: nowrap;
+    color: var(--sm-muted);
+    text-decoration: none;
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 999px;
+  }
+  .tab:hover {
+    color: var(--sm-ink);
+    background: var(--sm-accent-soft);
+  }
+  .tab:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px var(--sm-focus-ring);
+  }
+  .tab[aria-current="page"] {
+    color: var(--sm-ink);
+    background: var(--sm-surface);
+    border-color: var(--sm-border);
+    box-shadow: 0 1px 2px rgba(80, 60, 30, 0.08);
+  }
+  /* A standing number reads as information; a warning reads as amber. */
+  .count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 1.3rem;
+    padding: 0 0.35rem;
+    font-size: 0.75rem;
+    line-height: 1.3rem;
+    color: var(--sm-muted);
+    background: var(--sm-bg);
+    border: 1px solid var(--sm-border);
+    border-radius: 999px;
+  }
+  .tab[aria-current="page"] .count {
+    background: var(--sm-bg);
+  }
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 1.3rem;
+    padding: 0 0.35rem;
+    font-size: 0.75rem;
+    line-height: 1.3rem;
+    color: var(--sm-accent-ink);
+    background: var(--sm-accent);
+    border-radius: 999px;
+  }
+  .icon {
+    width: 1.15rem;
+    height: 1.15rem;
+    flex: none;
+  }
+  /* On a phone the four names do not fit side by side, and a scrolling tab bar
+     hides the places that matter. Below this width the symbols carry them —
+     with any pill, which is the part worth seeing from across the room. */
+  @media (max-width: 32rem) {
+    .tabs {
+      justify-content: space-between;
+      overflow-x: visible;
+    }
+    .tab {
+      padding: 0.45rem 0.7rem;
+    }
+    .tab .label {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip-path: inset(50%);
+      white-space: nowrap;
+    }
+  }
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+</style>

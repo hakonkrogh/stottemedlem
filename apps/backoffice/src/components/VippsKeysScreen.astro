@@ -1,0 +1,232 @@
+---
+// The organization's own Vipps credentials (specs/concepts/vipps-api-keys.md).
+//
+// Stored keys are PRESENTED — masked, as information — and changing them is a
+// deliberate action behind an edit button: nobody is shown four empty fields
+// over credentials that already work.
+//
+// Payment events connect themselves, so when they are connected this screen
+// says nothing about them at all. It speaks up only when they are not
+// reaching this deployment, and then it offers the retry that would otherwise
+// wait for the next scheduled run.
+import Alert from "@stottemedlem/ui/components/Alert.astro";
+import Button from "@stottemedlem/ui/components/Button.astro";
+import Heading from "@stottemedlem/ui/components/Heading.astro";
+import InfoList from "@stottemedlem/ui/components/InfoList.astro";
+import Stack from "@stottemedlem/ui/components/Stack.astro";
+import Text from "@stottemedlem/ui/components/Text.astro";
+import TextField from "@stottemedlem/ui/components/TextField.astro";
+import TextLink from "@stottemedlem/ui/components/TextLink.astro";
+import type { VippsKeysFieldErrors, VippsKeysFormValues } from "../lib/vippsKeys";
+import Subpage from "./Subpage.astro";
+
+/** The stored keys as they may be shown: secrets already masked. */
+interface StoredKeysView {
+  merchantSerialNumber: string;
+  clientId: string;
+  clientSecretMasked: string;
+  subscriptionKeyMasked: string;
+  validatedDate: string;
+  /** Where the org's payment events are delivered today, if anywhere. */
+  webhookUrl: string | null;
+  webhookRegisteredDate: string | null;
+}
+
+interface Props {
+  orgName: string;
+  orgPath: string;
+  /** Which Vipps environment this deployment's keys must belong to. */
+  envLabel: string;
+  stored: StoredKeysView | null;
+  /** Open the key form. Always open when nothing is stored yet. */
+  editing?: boolean;
+  values: VippsKeysFormValues;
+  fieldErrors?: VippsKeysFieldErrors;
+  /** Where this deployment expects the org's payment events. */
+  expectedWebhookUrl: string;
+  saved?: boolean;
+  retested?: boolean;
+  validationError?: string | null;
+  webhookConnected?: boolean;
+  webhookError?: string | null;
+}
+const {
+  orgName,
+  orgPath,
+  envLabel,
+  stored,
+  editing = false,
+  values,
+  fieldErrors = {},
+  expectedWebhookUrl,
+  saved = false,
+  retested = false,
+  validationError = null,
+  webhookConnected = false,
+  webhookError = null,
+} = Astro.props;
+
+const showForm = editing || !stored;
+const paymentEventsOk = stored !== null && stored.webhookUrl === expectedWebhookUrl;
+const vippsPath = `${orgPath}/vipps`;
+---
+
+<Subpage backHref={`${orgPath}/innstillinger`} backLabel="Tilbake til innstillinger">
+  <Stack gap="sm">
+    <Heading level={2}>Vipps-nøkler</Heading>
+    <Text variant="lead">
+      API-nøklene til salgsenheten {orgName} bruker for Faste betalinger. Du finner dem i
+      Vipps-portalen under «For utviklere». Nøklene må høre til {envLabel}.
+    </Text>
+  </Stack>
+
+  {saved && <Alert variant="success">Nøklene virker og er lagret. Vipps er koblet til.</Alert>}
+  {
+    webhookConnected && (
+      <Alert variant="success">
+        Betalingsvarsler er koblet til. Medlemskap blir nå oppdatert automatisk når noen betaler.
+      </Alert>
+    )
+  }
+  {webhookError && <Alert variant="error">{webhookError}</Alert>}
+  {retested && <Alert variant="info">Nøklene virker fortsatt.</Alert>}
+  {validationError && <Alert variant="error">{validationError}</Alert>}
+
+  {
+    stored && !editing && (
+      <section class="section">
+        <div class="section-head">
+          <Heading level={3}>Lagrede nøkler</Heading>
+          <Button variant="secondary" href={`${vippsPath}?rediger=1`}>
+            Endre nøklene
+          </Button>
+        </div>
+        <InfoList
+          layout="columns"
+          items={[
+            { label: "MSN (salgsenhet)", value: stored.merchantSerialNumber },
+            { label: "client_id", value: stored.clientId },
+            { label: "client_secret", value: stored.clientSecretMasked },
+            { label: "Subscription key", value: stored.subscriptionKeyMasked },
+            { label: "Sist bekreftet mot Vipps", value: stored.validatedDate },
+          ]}
+        />
+        <form method="post" class="retest">
+          <Button variant="secondary" name="intent" value="test" block>
+            Test nøklene på nytt
+          </Button>
+        </form>
+      </section>
+    )
+  }
+
+  {
+    stored && !paymentEventsOk && (
+      <section class="section">
+        <Heading level={3}>Betalingsvarsler</Heading>
+        <Alert variant="info">
+          {stored.webhookUrl
+            ? "Betalingsvarslene peker et annet sted enn hit, så medlemskap kan bli stående uendret når noen betaler."
+            : "Vipps vet ennå ikke hvor betalinger skal varsles, så medlemskap blir ikke oppdatert automatisk når noen betaler."}{" "}
+          Dette ordner seg av seg selv ved neste planlagte kjøring — eller nå, hvis du vil.
+        </Alert>
+        <InfoList
+          items={[
+            { label: "Varslene skal gå til", value: expectedWebhookUrl },
+            ...(stored.webhookUrl
+              ? [
+                  {
+                    label: "Går i dag til",
+                    value: stored.webhookUrl,
+                    hint: stored.webhookRegisteredDate
+                      ? `Koblet til ${stored.webhookRegisteredDate}`
+                      : undefined,
+                  },
+                ]
+              : []),
+          ]}
+        />
+        <form method="post" class="retest">
+          <Button name="intent" value="webhook" block>
+            Koble til betalingsvarsler nå
+          </Button>
+        </form>
+      </section>
+    )
+  }
+
+  {
+    showForm && (
+      <section class="section">
+        <Heading level={3}>{stored ? "Bytt nøkler" : "Legg inn nøkler"}</Heading>
+        <Text variant="small">
+          Vi tester nøklene mot Vipps før de lagres — ingenting lagres hvis de ikke virker.
+          {stored && " Nye nøkler erstatter de lagrede."}
+        </Text>
+        <form method="post" class="form-column">
+          <Stack gap="lg">
+            <TextField
+              label="client_id"
+              name="clientId"
+              value={values.clientId}
+              error={fieldErrors.clientId}
+              required
+            />
+            <TextField
+              label="client_secret"
+              name="clientSecret"
+              value={values.clientSecret}
+              error={fieldErrors.clientSecret}
+              required
+            />
+            <TextField
+              label="Subscription key (Ocp-Apim-Subscription-Key)"
+              name="subscriptionKey"
+              value={values.subscriptionKey}
+              error={fieldErrors.subscriptionKey}
+              required
+            />
+            <TextField
+              label="MSN (Merchant Serial Number)"
+              name="merchantSerialNumber"
+              value={values.merchantSerialNumber}
+              error={fieldErrors.merchantSerialNumber}
+              required
+            />
+            <Button block>Test og lagre</Button>
+            {stored && (
+              <Text variant="small">
+                <TextLink href={vippsPath}>Avbryt</TextLink>
+              </Text>
+            )}
+          </Stack>
+        </form>
+      </section>
+    )
+  }
+
+</Subpage>
+
+<style>
+  .section {
+    display: grid;
+    gap: var(--sm-space-sm);
+    padding-top: var(--sm-space-md);
+    border-top: 1px solid var(--sm-border);
+  }
+  .section:first-of-type {
+    padding-top: 0;
+    border-top: none;
+  }
+  .section-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--sm-space-sm);
+  }
+  .form-column,
+  .retest {
+    max-width: 34rem;
+  }
+</style>
