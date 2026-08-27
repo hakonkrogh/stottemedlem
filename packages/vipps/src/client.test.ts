@@ -178,3 +178,46 @@ describe("getUserinfo", () => {
     expect(requests[1]?.headers).toMatchObject({ Authorization: "Bearer test-token" });
   });
 });
+
+describe("refundCharge", () => {
+  it("posts the amount and description to the charge's refund endpoint", async () => {
+    const { impl, requests } = fakeFetch([tokenResponse(), new Response(null, { status: 204 })]);
+
+    await expect(
+      client(impl).refundCharge(
+        "agr_123",
+        "chr_WCVbcA",
+        { amount: 25000, description: "Refundert støttemedlemskap 2026" },
+        "9c2ca95c-245f-4a2e-aab2-4a08eb78e6cb",
+      ),
+    ).resolves.toBeUndefined();
+
+    const call = requests[1];
+    expect(call?.url).toBe(
+      "https://apitest.vipps.no/recurring/v3/agreements/agr_123/charges/chr_WCVbcA/refund",
+    );
+    expect(call?.method).toBe("POST");
+    expect(call?.headers).toMatchObject({
+      "Idempotency-Key": "9c2ca95c-245f-4a2e-aab2-4a08eb78e6cb",
+      "Merchant-Serial-Number": "123456",
+    });
+    // Vipps requires an amount even for a full refund; minor units, never kroner.
+    expect(JSON.parse(call?.body ?? "{}")).toEqual({
+      amount: 25000,
+      description: "Refundert støttemedlemskap 2026",
+    });
+  });
+
+  it("surfaces a refusal (e.g. single-settlement sales unit) as VippsApiError", async () => {
+    const { impl } = fakeFetch([
+      tokenResponse(),
+      new Response('{"detail":"Refund is not possible"}', { status: 400 }),
+    ]);
+    const error = await client(impl)
+      .refundCharge("agr_123", "chr_WCVbcA", { amount: 25000, description: "Refusjon" }, "key-1")
+      .catch((e: unknown) => e);
+    expect(error).toBeInstanceOf(VippsApiError);
+    expect((error as VippsApiError).status).toBe(400);
+    expect((error as VippsApiError).body).toContain("Refund is not possible");
+  });
+});

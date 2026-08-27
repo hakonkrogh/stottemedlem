@@ -1,6 +1,7 @@
 // Fictitious supporters for the member-list stories — never a real person's
 // details, since stories are committed and screenshotted.
 import type { MemberOverview, Membership, SupportingMember } from "@stottemedlem/db";
+import type { PaymentView } from "../lib/refunds";
 
 const ORG_ID = "org-1";
 
@@ -91,6 +92,16 @@ export const noWayToReach: MemberOverview = {
   status: "active",
   renewing: true,
 };
+
+/** One payment as the member's page presents it (specs/use-cases/refund-a-payment.md). */
+export function fixturePayment(
+  year: number,
+  amountNok: number,
+  state: PaymentView["state"] = "paid",
+  refusal: PaymentView["refusal"] = null,
+): PaymentView {
+  return { chargeId: `chr-${year}`, periodYear: year, amountNok, state, refusal };
+}
 
 export const everyone: MemberOverview[] = [
   withoutName,

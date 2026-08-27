@@ -427,6 +427,68 @@ async function cancelCharge() {
   console.log(`Cancelled charge ${chargeId}.`);
 }
 
+/**
+ * Give a captured charge's money back — the only real proof the product's
+ * refund action works (specs/use-cases/refund-a-payment.md). Real money on
+ * apitest, so it prints exactly what it is about to do first.
+ *
+ * Refunds the WHOLE captured amount by default, because that is all the
+ * product ever offers; `--amount <NOK>` exists only to rehearse the partial
+ * refund an organization can still make in Vipps' portal, which arrives as
+ * PARTIALLY_REFUNDED and must NOT revoke the membership.
+ *
+ * Answers 204 with no body, so the charge is read back afterwards: the status
+ * it lands on (REFUNDED vs PARTIALLY_REFUNDED) and `summary.refunded` are the
+ * assertion. Refunding does NOT stop the agreement — run `stop` too, the way
+ * the product's own action does.
+ */
+async function refundCharge() {
+  const agreementId = currentAgreementId();
+  const state = readState();
+  const chargeId =
+    typeof flags.charge === "string" ? flags.charge : (state.chargeId ?? state.renewalChargeId);
+  if (!chargeId) {
+    console.error("No charge id. Pass --charge <id>, or run `charges` to find one.");
+    process.exit(1);
+  }
+
+  const before = await client.getCharge(agreementId, chargeId).catch(reportApiError);
+  const capturedOre = before.summary?.captured ?? before.amount;
+  const amountOre =
+    flags.amount === undefined ? capturedOre : Math.round(Number(flags.amount) * 100);
+  if (before.status !== "CHARGED") {
+    console.error(
+      `Charge ${chargeId} is ${before.status}, not CHARGED — there is nothing to give back.`,
+    );
+    process.exit(1);
+  }
+  console.log(
+    `Refunding ${fromOre(amountOre)} of ${fromOre(capturedOre)} NOK captured on ${chargeId}…`,
+  );
+
+  await client
+    .refundCharge(
+      agreementId,
+      chargeId,
+      { amount: amountOre, description: flags.description ?? "Test refund" },
+      idempotencyKey(),
+    )
+    .catch(reportApiError);
+
+  // 204 says nothing; the charge itself says everything.
+  const after = await client.getCharge(agreementId, chargeId).catch(reportApiError);
+  console.log(
+    `${chargeId} is now ${after.status} — captured ${fromOre(after.summary?.captured ?? 0)}, ` +
+      `refunded ${fromOre(after.summary?.refunded ?? 0)} NOK.`,
+  );
+  console.log(
+    after.status === "REFUNDED"
+      ? "Full refund: the product must now have removed that period's membership."
+      : "Partial refund: the membership must still stand.",
+  );
+  console.log("The agreement is untouched — run `stop` if the arrangement should end too.");
+}
+
 /** Merchant-side stop. Irreversible — Vipps has no way back to ACTIVE. */
 async function stopAgreement() {
   const agreementId = currentAgreementId();
@@ -694,6 +756,9 @@ function help() {
   charges         List the agreement's charges
   charge          Create next year's charge  --days 1 | --due YYYY-MM-DD  --amount 250
   cancel-charge   Cancel a PENDING/DUE charge  --charge <id>
+  refund          Give a CHARGED charge's money back  --charge <id>
+                    whole captured amount by default; --amount <NOK> rehearses the
+                    partial refund only Vipps' portal can make  --description <text>
   agreements      List agreements  --status ACTIVE (one status per call)
   idempotency     Create a probe charge, then replay the identical request + key on
                   every later run to measure Idempotency-Key retention
@@ -718,6 +783,7 @@ const commands = {
   charges: listCharges,
   charge: createCharge,
   "cancel-charge": cancelCharge,
+  refund: refundCharge,
   agreements: listAgreements,
   idempotency: runIdempotencyProbe,
   stop: stopAgreement,

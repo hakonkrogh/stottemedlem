@@ -156,6 +156,17 @@ export interface CreateChargeResponse {
   chargeId: string;
 }
 
+/**
+ * What has actually happened to a charge's money, in minor units. A refund
+ * must be asked for as an amount, so `captured` is what a full refund refunds
+ * — read it from Vipps rather than assuming what we billed.
+ */
+export interface ChargeSummary {
+  captured: number;
+  refunded: number;
+  cancelled: number;
+}
+
 export interface Charge {
   id: string;
   status: ChargeStatus;
@@ -170,6 +181,19 @@ export interface Charge {
   transactionId?: string;
   failureReason?: string | null;
   failureDescription?: string | null;
+  /** Present on a single-charge lookup; absent on some listings. */
+  summary?: ChargeSummary;
+}
+
+export interface RefundChargeRequest {
+  /**
+   * Minor units (øre). Vipps requires an amount even for a full refund; pass
+   * the charge's captured amount. Partial refunds are possible in the API and
+   * deliberately not offered by this product (specs/use-cases/refund-a-payment.md).
+   */
+  amount: number;
+  /** 1–100 characters; ends up in the merchant's own transaction records. */
+  description: string;
 }
 
 // ── Webhooks v1 ──────────────────────────────────────────────────────────

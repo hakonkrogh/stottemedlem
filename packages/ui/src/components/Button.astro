@@ -3,7 +3,8 @@
 // when `href` is given. `block` stretches it to the container width — the
 // default in the narrow card layouts.
 interface Props {
-  variant?: "primary" | "secondary";
+  /** `danger` is for confirming something irreversible, e.g. moving money back. */
+  variant?: "primary" | "secondary" | "danger";
   href?: string;
   type?: "button" | "submit";
   block?: boolean;
@@ -70,5 +71,15 @@ const Tag = href ? "a" : "button";
   .secondary:hover {
     background: var(--sm-accent-soft);
     border-color: var(--sm-accent);
+  }
+
+  .danger {
+    color: #fff;
+    background: var(--sm-danger);
+    border-color: var(--sm-danger);
+  }
+  .danger:hover {
+    background: #6f1616;
+    border-color: #6f1616;
   }
 </style>

@@ -1,6 +1,6 @@
 ---
 name: vipps-test-rig
-description: Drive a REAL Vipps recurring subscription against apitest from the CLI — draft agreement, approve in the Merchant Test app, poll, userinfo, charges, renewal, webhooks, stop — plus a local receiver for the three URLs Vipps calls back into. The only real proof payment code works; unit tests and typecheck prove nothing about Vipps. Use for any Recurring/webhook/agreement work.
+description: Drive a REAL Vipps recurring subscription against apitest from the CLI — draft agreement, approve in the Merchant Test app, poll, userinfo, charges, renewal, refunds, webhooks, stop — plus a local receiver for the three URLs Vipps calls back into. The only real proof payment code works; unit tests and typecheck prove nothing about Vipps. Use for any Recurring/webhook/agreement work.
 ---
 
 # Vipps recurring test rig
@@ -31,6 +31,14 @@ vt idempotency             # Idempotency-Key retention probe: first run creates 
                            #   request — same chargeId back = key still honoured. Replays
                            #   accumulate in state; a duplicate is cancelled on the spot.
                            #   --fresh new probe · --cleanup cancel probe charge + clear
+vt refund                  # give a CHARGED charge's money back — the real proof of
+                           #   specs/use-cases/refund-a-payment.md. Whole captured amount
+                           #   by default (all the product ever offers); --amount <NOK>
+                           #   rehearses the PARTIAL refund only Vipps' portal can make,
+                           #   which must NOT revoke the membership. Prints the charge's
+                           #   status + summary read back AFTER (the refund answers 204
+                           #   with no body). Does NOT stop the agreement — run `stop` too,
+                           #   as the product's own action does.
 vt stop                    # merchant-side stop (irreversible)
 vt state | vt reset        # saved ids (packages/vipps/.vipps-test-state.json, gitignored)
 ```
@@ -174,12 +182,20 @@ Clean up the seeded rows afterwards.
   second money-taking RECURRING charge for a period, fire the 02:00 cron,
   expect `DUPLICATE RENEWAL on <agreement>` + `duplicateRenewals: 1`; cancel
   it, re-fire, expect 0.
+- **Refunds: two things the docs do NOT answer — settle them on the next live
+  run.** (1) Whether a refund needs a positive settlement balance on the sales
+  unit, and (2) what a `409` on `/refund` actually means (a second refund? an
+  amount over what was captured?). Both are cheap to probe: `vt refund` twice
+  on the same charge, and once with `--amount` above the captured sum. Write
+  what you find into §13 of `docs/research/vipps-recurring-payments.md`.
+  Known already: a `400` saying *"Refund is not possible"* means the sales unit
+  uses the **single settlement** setup — refunds are impossible there at all.
 - MT app approval needs a test user from portal → *For utviklere* → *Testbrukere*;
   the PIN in the MT app is **`1236`**.
 
 ## Grow it, don't one-off it
 
-New surface (e.g. refunds, agreement listing) → add a command to
+New surface (e.g. agreement listing) → add a command to
 `packages/vipps/scripts/recurring-test.mjs` and a row here, so the next check is
 an invocation rather than a throwaway script.
 

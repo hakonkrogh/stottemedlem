@@ -464,6 +464,70 @@ export function periodLabel(key: number): string {
   return key > 9999 ? `uke ${key % 100}/${Math.floor(key / 100)}` : String(key);
 }
 
+// ── Refunds (specs/use-cases/refund-a-payment.md) ─────────────────────────
+
+/**
+ * How long after capture the payment provider still allows a refund. Real
+ * days, not period-scheme days: this is Vipps' rule about money, so the
+ * accelerated staging calendar does not shorten it with everything else.
+ *
+ * Uncomfortably tight for a yearly membership — last year's payment leaves the
+ * window at almost exactly the moment this year's renewal is taken.
+ */
+export const REFUND_WINDOW_DAYS = 365;
+
+/** Why a payment cannot be given back — each one a truthful thing to show. */
+export type RefundRefusal = "not-captured" | "already-refunded" | "too-old";
+
+/** What deciding on a refund needs to know about a recorded payment. */
+export interface RefundablePayment {
+  status: string;
+  /** When the money was actually taken; null while it never was. */
+  capturedAt: string | null;
+}
+
+/**
+ * Whether a payment can still be given back, from what has been recorded — so
+ * the back office offers refunding only where it is real, and says why where
+ * it is not, instead of failing when pressed.
+ */
+export function refundRefusal(
+  payment: RefundablePayment,
+  now: Date = new Date(),
+): RefundRefusal | null {
+  if (payment.status === "REFUNDED" || payment.status === "PARTIALLY_REFUNDED") {
+    return "already-refunded";
+  }
+  if (payment.status !== "CHARGED" || !payment.capturedAt) return "not-captured";
+  const sinceCapture = (now.getTime() - new Date(payment.capturedAt).getTime()) / 86_400_000;
+  return sinceCapture > REFUND_WINDOW_DAYS ? "too-old" : null;
+}
+
+/**
+ * What became of a payment, in the terms an administrator thinks in: the
+ * provider's ten statuses collapsed to the outcomes worth telling apart on a
+ * member's page — it stands, it went back, some of it went back, it is on its
+ * way, or it never happened.
+ */
+export type PaymentState = "paid" | "refunded" | "partly-refunded" | "pending" | "failed";
+
+export function paymentState(status: string): PaymentState {
+  switch (status) {
+    case "CHARGED":
+    case "PARTIALLY_CAPTURED":
+      return "paid";
+    case "REFUNDED":
+      return "refunded";
+    case "PARTIALLY_REFUNDED":
+      return "partly-refunded";
+    case "FAILED":
+    case "CANCELLED":
+      return "failed";
+    default:
+      return "pending";
+  }
+}
+
 /**
  * A UUID that is always the same for the same seed — how a retry asks the
  * payment provider for *that* payment again rather than for another one.

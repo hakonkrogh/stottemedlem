@@ -1,5 +1,12 @@
 ---
-import { getOrganizationMember, updateMemberContactDetails } from "@stottemedlem/db";
+import {
+  findChargeByVippsId,
+  getMembershipAgreement,
+  getOrganizationMember,
+  listChargesForMember,
+  updateMemberContactDetails,
+} from "@stottemedlem/db";
+import { VippsApiError } from "@stottemedlem/vipps";
 import MemberDetailScreen from "../../../../components/MemberDetailScreen.astro";
 import OrgScreen from "../../../../components/OrgScreen.astro";
 import Shell from "../../../../layouts/Shell.astro";
@@ -9,12 +16,20 @@ import {
   memberContactFormValues,
   parseMemberContactForm,
 } from "../../../../lib/memberContact";
+import { type RefundResult, refundMembershipPayment } from "../../../../lib/membership";
 import { requireOrgView } from "../../../../lib/orgView";
 import { periods } from "../../../../lib/periods";
-import { orgPath } from "../../../../lib/workos";
+import { paymentViews } from "../../../../lib/refunds";
+import { getVippsForOrg } from "../../../../lib/vipps";
+import { getWorkOS, orgPath } from "../../../../lib/workos";
 
-// One member, and the correction an administrator may make to how they are
-// recorded (specs/use-cases/curate-member-list.md).
+// One member: who they are, every period they have supported, what was
+// actually paid, and the two things an administrator may do about it —
+// correct how they are recorded (specs/use-cases/curate-member-list.md) and
+// give a payment back (specs/use-cases/refund-a-payment.md).
+//
+// Nothing here can make somebody a member or set their status by hand. A
+// refund is not an exception to that: money moves, and the status follows it.
 const view = await requireOrgView(Astro.locals.session, Astro.params.slug, Astro.request);
 if (!view) return Astro.redirect("/orgs");
 const { org, warnings } = view;
@@ -32,26 +47,72 @@ if (!entry) return new Response("Fant ikke medlemmet", { status: 404 });
 let values = memberContactFormValues(entry.member);
 let fieldErrors: MemberContactFieldErrors = {};
 let saved = false;
+let refunded: RefundResult | null = null;
+let refundError: string | null = null;
 
 if (Astro.request.method === "POST") {
-  const parsed = parseMemberContactForm(await Astro.request.formData());
-  values = parsed.values;
-  fieldErrors = parsed.fieldErrors;
-  if (parsed.details) {
-    await updateMemberContactDetails(db, org.id, entry.member.id, parsed.details);
-    entry =
-      (await getOrganizationMember(db, org.id, entry.member.id, periods.periodFor().year)) ?? entry;
-    values = memberContactFormValues(entry.member);
-    saved = true;
+  const form = await Astro.request.formData();
+  const refundChargeId = String(form.get("refunder") ?? "");
+
+  if (refundChargeId) {
+    refundError = await refundPayment(refundChargeId);
+  } else {
+    const parsed = parseMemberContactForm(form);
+    values = parsed.values;
+    fieldErrors = parsed.fieldErrors;
+    if (parsed.details) {
+      await updateMemberContactDetails(db, org.id, entry.member.id, parsed.details);
+      saved = true;
+    }
+  }
+
+  // Both actions change what the page shows, and a refund changes the history
+  // itself — read the member back rather than patching the copy in hand.
+  entry =
+    (await getOrganizationMember(db, org.id, entry.member.id, periods.periodFor().year)) ?? entry;
+  values = memberContactFormValues(entry.member);
+}
+
+/**
+ * Give one payment back. Refuses anything that is not this organization's own
+ * member's payment, and reports every failure in words an administrator can
+ * act on — nothing is written down unless Vipps confirmed the money moved.
+ */
+async function refundPayment(vippsChargeId: string): Promise<string | null> {
+  const charge = await findChargeByVippsId(db, vippsChargeId);
+  if (!charge || charge.orgId !== org.id) return "Fant ikke betalingen.";
+  const agreement = await getMembershipAgreement(db, charge.agreementId);
+  if (!agreement || agreement.memberId !== entry?.member.id) return "Fant ikke betalingen.";
+
+  const vipps = await getVippsForOrg(getWorkOS(), org.workosOrgId);
+  if (!vipps) return "Organisasjonen mangler Vipps-oppsett, så vi kan ikke refundere herfra.";
+
+  try {
+    refunded = await refundMembershipPayment(db, vipps, agreement, charge);
+    return null;
+  } catch (error) {
+    console.error("could not refund charge", error);
+    if (error instanceof VippsApiError) {
+      return "Vipps ville ikke refundere denne betalingen. Det kan være at den allerede er refundert, eller at salgsenheten er satt opp med samleoppgjør. Prøv igjen, eller sjekk betalingen i Vipps-portalen.";
+    }
+    return "Vi fikk ikke refundert betalingen nå. Prøv igjen om litt.";
   }
 }
 
+const payments = paymentViews(await listChargesForMember(db, entry.member.id));
 const displayName = entry.member.name || entry.member.email || entry.member.phone || "Uten navn";
 const membersPath = `${orgPath(org.slug)}/medlemmer`;
 const memberPath = `${membersPath}/${entry.member.id}`;
 // A save closes the form again; anything still wrong keeps it open.
 const editing =
   Object.keys(fieldErrors).length > 0 || (Astro.url.searchParams.has("rediger") && !saved);
+// Money leaving is deliberate: the button asks, and only this confirmation
+// screen can send the refund.
+const confirming = refunded
+  ? null
+  : (payments.find(
+      (payment) => payment.chargeId === Astro.url.searchParams.get("refunder") && !payment.refusal,
+    ) ?? null);
 ---
 
 <Shell title={`${displayName} — ${org.name}`} frame={false}>
@@ -62,6 +123,10 @@ const editing =
       fieldErrors={fieldErrors}
       saved={saved}
       editing={editing}
+      payments={payments}
+      confirming={confirming}
+      refunded={refunded}
+      refundError={refundError}
       membersPath={membersPath}
       memberPath={memberPath}
     />

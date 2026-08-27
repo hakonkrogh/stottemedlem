@@ -23,6 +23,17 @@ over year as a history of memberships.
   renewal.
 - A membership comes into existence only on a successful payment of the annual
   fee — never by manual status change.
+- A membership lasts only as long as the payment behind it does. A payment
+  given back **in full** takes its period with it: the membership it bought
+  ceases to exist, and the supporter is not counted as having supported that
+  year ([refund a payment](../use-cases/refund-a-payment.md)). This is the same
+  rule as above read backwards, not an exception to it — the period follows the
+  money in both directions, and an administrator still never sets status by
+  hand. A payment given back only in part leaves the membership standing: the
+  year was still paid for.
+- Losing a membership is not losing the person. The
+  [supporting member](supporting-member.md) remains recorded, with nothing paid
+  — the same state as someone whose first payment never completed.
 - At most one membership exists per supporting member per annual period.
 - A renewal creates the next period's membership for the same supporting member,
   rather than a new person.
@@ -59,4 +70,6 @@ over year as a history of memberships.
 - [Use case: Join as a supporting member](../use-cases/join-as-supporting-member.md)
 - [Use case: Renew annual membership](../use-cases/renew-annual-membership.md)
 - [Use case: Curate the member list](../use-cases/curate-member-list.md)
+- [Use case: Refund a supporting member's payment](../use-cases/refund-a-payment.md)
 - [Problem: Keeping an accurate list](../problems/keeping-an-accurate-member-list.md)
+- [Problem: A payment that should never have happened](../problems/honouring-a-refund-request.md)

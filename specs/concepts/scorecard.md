@@ -21,6 +21,12 @@ perk of being a member, and a growth loop for the organization.
 - Stars and recruit count are **derived, never hand-edited**: stars from the
   member's [membership](membership.md) periods (one per supported annual
   period), the recruit count from completed referred joins.
+- Because stars are derived, a period that goes away takes its star with it: a
+  payment refunded in full is a year that was not supported after all
+  ([refund a payment](../use-cases/refund-a-payment.md)). Nothing special
+  happens — the counter simply counts what is there. A member's recruits keep
+  their own memberships and their own stars regardless; one person's refund is
+  never another's loss.
 - A scorecard is **per organization** — stars count years supporting *that*
   organization and do not transfer between organizations.
 - A member can produce a **printable proof of support** showing their scorecard

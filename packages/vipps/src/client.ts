@@ -8,6 +8,7 @@ import type {
   DraftAgreementRequest,
   DraftAgreementResponse,
   ListWebhooksResponse,
+  RefundChargeRequest,
   RegisterWebhookRequest,
   RegisterWebhookResponse,
   UpdateAgreementRequest,
@@ -212,6 +213,29 @@ export function createVippsClient(config: VippsConfig) {
       return request<void>({
         method: "DELETE",
         path: `/recurring/v3/agreements/${agreementId}/charges/${chargeId}`,
+        idempotencyKey,
+      });
+    },
+
+    /**
+     * Give back money already taken. The counterpart of cancelCharge: cancel
+     * applies before capture and releases instantly, refund applies after and
+     * takes days to reach the customer. Allowed up to 365 days after capture.
+     *
+     * Answers 204 with no body, so the resulting status (REFUNDED /
+     * PARTIALLY_REFUNDED) has to be read back with getCharge. Refunding does
+     * NOT stop the agreement — that is a separate updateAgreement call.
+     */
+    refundCharge(
+      agreementId: string,
+      chargeId: string,
+      body: RefundChargeRequest,
+      idempotencyKey: string,
+    ) {
+      return request<void>({
+        method: "POST",
+        path: `/recurring/v3/agreements/${agreementId}/charges/${chargeId}/refund`,
+        body,
         idempotencyKey,
       });
     },

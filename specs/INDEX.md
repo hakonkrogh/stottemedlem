@@ -42,6 +42,7 @@ scope.
 | [Keeping an accurate list of who has paid](problems/keeping-an-accurate-member-list.md) | Draft | [Curate the member list](use-cases/curate-member-list.md), [Renew annual membership](use-cases/renew-annual-membership.md) |
 | [Supporters never hear back from the organization](problems/supporters-never-hear-back.md) | Draft | [Keep supporting members in the loop](use-cases/keep-supporters-in-the-loop.md) |
 | [Loyalty is invisible and word of mouth goes untracked](problems/invisible-loyalty-and-word-of-mouth.md) | Draft | [Earn stars and recruit new members](use-cases/earn-stars-and-recruit.md) |
+| [A payment that should never have happened cannot be undone](problems/honouring-a-refund-request.md) | Draft | [Refund a supporting member's payment](use-cases/refund-a-payment.md) |
 
 ## Use cases — *what the product does*
 
@@ -53,6 +54,7 @@ scope.
 | [Change the annual fee](use-cases/change-the-annual-fee.md) | Draft | [Collecting annual support](problems/collecting-annual-support.md) |
 | [Curate the member list](use-cases/curate-member-list.md) | Draft | [Keeping an accurate list](problems/keeping-an-accurate-member-list.md) |
 | [Renew annual membership](use-cases/renew-annual-membership.md) | Draft | [Keeping an accurate list](problems/keeping-an-accurate-member-list.md) |
+| [Refund a supporting member's payment](use-cases/refund-a-payment.md) | Draft | [A payment that should never have happened](problems/honouring-a-refund-request.md) |
 | [Promote membership with a QR code card](use-cases/promote-with-qr-card.md) | Draft | [Collecting annual support](problems/collecting-annual-support.md) |
 | [Keep supporting members in the loop](use-cases/keep-supporters-in-the-loop.md) | Draft | [Supporters never hear back](problems/supporters-never-hear-back.md) |
 | [Earn stars and recruit new members](use-cases/earn-stars-and-recruit.md) | Draft | [Invisible loyalty and word of mouth](problems/invisible-loyalty-and-word-of-mouth.md) |
