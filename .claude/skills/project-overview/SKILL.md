@@ -30,7 +30,12 @@ lives in `specs/`, kept in sync with code by a mandatory `Stop`-hook harness.
   add/edit membership form where `ny` means create); `src/pages/bli-medlem/[slug]/**`
   is the PUBLIC surface (landing `index.astro`, `vilkar.astro`, `banner.ts`,
   `logo.ts`), plus `src/pages/api/qr/[slug].ts`. Admin edits call
-  `purgeOrgPublicPages` so the public copy refreshes. Env/secrets come from `import { env } from
+  `purgeOrgPublicPages` so the public copy refreshes. Backoffice logging goes
+  through `logger("<area>")` from `src/lib/log`
+  (specs/concepts/operational-alerting.md): stable message, ids/counts in
+  context — that's what reaches the operator via Sentry in production. Do NOT
+  copy the bare `console.error` style still in older lib files (renewals.ts) —
+  console lines die in the Workers log. Env/secrets come from `import { env } from
   "cloudflare:workers"` (NOT `Astro.locals.runtime.env` — removed in Astro v6+);
   per-env WorkOS config (`WORKOS_*`) is in `wrangler.jsonc` vars/secrets + `.dev.vars`
   locally. Real sign-in needs `.dev.vars` filled + AuthKit redirect URIs registered.

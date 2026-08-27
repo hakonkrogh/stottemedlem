@@ -116,7 +116,8 @@ the job discover everything itself.
 ```sh
 # a tier priced at what the real agreement actually costs, so the reprice step
 # that runs right after finds no drift and leaves the live agreement alone
-wrangler d1 execute DB --local --command "
+# from apps/backoffice; bare `wrangler` is not on PATH — use pnpm exec
+pnpm exec wrangler d1 execute DB --local --command "
   INSERT OR REPLACE INTO membership_tiers VALUES ('tier-live','org-seed-1','live-test','Livetest',NULL,250,NULL,datetime('now'));
   INSERT OR REPLACE INTO membership_agreements
     (id,org_id,member_id,tier_id,vipps_agreement_id,external_id,status,annual_fee_nok,vipps_sub,manage_token,created_at,last_reconciled_at)
@@ -164,6 +165,15 @@ Clean up the seeded rows afterwards.
   behave the same.
 - **Vipps auto-charges nothing.** Every renewal charge is created by us; a
   created charge stays PENDING/DUE until its due date (min 1 day out).
+- **Cancel every charge you create, before ending the session.** The test
+  agreement is shared across sessions/worktrees, and a leftover DUE charge
+  WILL capture on its due date — and trips the duplicate-renewal alarm for
+  whoever reconciles next (found live 2026-08-27: a stray 1.51 NOK charge
+  from an unknown earlier run). `vt charges` to list, `vt cancel-charge
+  --charge <id>`. This is also how to PROVE the duplicate alarm: create a
+  second money-taking RECURRING charge for a period, fire the 02:00 cron,
+  expect `DUPLICATE RENEWAL on <agreement>` + `duplicateRenewals: 1`; cancel
+  it, re-fire, expect 0.
 - MT app approval needs a test user from portal → *For utviklere* → *Testbrukere*;
   the PIN in the MT app is **`1236`**.
 
