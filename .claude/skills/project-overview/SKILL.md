@@ -102,8 +102,18 @@ lives in `specs/`, kept in sync with code by a mandatory `Stop`-hook harness.
   wrangler.jsonc purely so `worker.ts` can 301 it to the new path (printed QR
   codes / registered Vipps URLs must never break) — don't drop that route.
   Path segment lives in ONE place: `JOIN_PAGE_PATH_SEGMENT` /
-  `joinPagePath()` in `@stottemedlem/core` (also `joinPageUrl`,
-  `joinPageTermsUrl`); public in middleware (with `/favicon.ico` —
+  `joinPagePath()`/`joinPageTermsPath()` in `@stottemedlem/core` (also
+  `joinPageUrl`, `joinPageTermsUrl` — CANONICAL-origin-only, for marketing +
+  fallback). **Shareable addresses are env-aware since 2026-08-27** (branch
+  staging-membership-links; staging used to show PRODUCTION links): backoffice
+  code showing/encoding the shareable address (dashboard "Offentlige lenker",
+  `/api/qr/[slug]` payloads) must use `shareableJoinUrl`/`shareableJoinTermsUrl`
+  from `src/lib/joinLinks.ts` — `JOIN_PAGE_ORIGIN` wrangler var (set on staging
+  only) falling back to `CANONICAL_ORIGIN`; note this is NOT `PUBLIC_ORIGIN`,
+  which is the Vipps-callback origin (`app.` host on prod, where `/api/*` is
+  routed — the apex only routes `/bli-medlem/*` + `/org/*` to this worker).
+  Public pages link to EACH OTHER with relative paths (visitor stays on the
+  origin they arrived at). Public in middleware (with `/favicon.ico` —
   else crawlers get bounced into the login flow), rendered by
   `PublicShell.astro` (indexable, brand attribution; admin `Shell.astro` stays
   noindex). Astro template gotcha found here twice: text + `{expr}` separated

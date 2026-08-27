@@ -11,6 +11,7 @@ import {
   isRenewalWindow,
   isValidOrganisasjonsnummer,
   joinPagePath,
+  joinPageTermsPath,
   joinPageTermsUrl,
   joinPageUrl,
   MEMBERSHIP_TIER_KEY_MAX_LENGTH,
@@ -139,6 +140,7 @@ describe("joinPageUrl / joinPageTermsUrl", () => {
 
   it("exposes the bare path for same-origin links and route matching", () => {
     expect(joinPagePath("nordnes-skolekorps")).toBe("/bli-medlem/nordnes-skolekorps");
+    expect(joinPageTermsPath("nordnes-skolekorps")).toBe("/bli-medlem/nordnes-skolekorps/vilkar");
   });
 });
 

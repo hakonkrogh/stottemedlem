@@ -56,6 +56,13 @@ resolve to.
   code must never lead nowhere.
 - Anyone with the address can start joining — it requires no login or
   invitation.
+- The shareable address lives on the **environment's own** public origin.
+  Production's is the canonical `støttemedlem.no` origin; a test environment
+  (staging) hands out its own addresses everywhere the product presents the
+  address — the links the back office shows an administrator, and what the QR
+  code encodes — so a rehearsal on staging stays on staging and never sends a
+  test supporter to production. Navigation between the public pages themselves
+  keeps the visitor on whatever origin they arrived at.
 - There is **one** address per organization, never one per
   [membership tier](membership-tier.md). The product does not offer a
   shareable link to an individual membership: the organization spreads the

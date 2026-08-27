@@ -1,5 +1,5 @@
 ---
-import { formatOrganisasjonsnummer, joinPageTermsUrl, periodLabel } from "@stottemedlem/core";
+import { formatOrganisasjonsnummer, joinPageTermsPath, periodLabel } from "@stottemedlem/core";
 import { getOrganizationBySlug, listMembershipTiers } from "@stottemedlem/db";
 import Alert from "@stottemedlem/ui/components/Alert.astro";
 import Button from "@stottemedlem/ui/components/Button.astro";
@@ -138,7 +138,7 @@ const joinError = Astro.url.searchParams.get("feil");
         )
       }
       <Text variant="small">
-        <TextLink href={joinPageTermsUrl(org.slug)}>Salgsvilkår</TextLink>
+        <TextLink href={joinPageTermsPath(org.slug)}>Salgsvilkår</TextLink>
       </Text>
     </Stack>
 

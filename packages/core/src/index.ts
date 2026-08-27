@@ -145,6 +145,11 @@ export function joinPagePath(slug: string): string {
   return `/${JOIN_PAGE_PATH_SEGMENT}/${slug}`;
 }
 
+/** The sales-terms page's path, beneath the join page: `/bli-medlem/<slug>/vilkar`. */
+export function joinPageTermsPath(slug: string): string {
+  return `${joinPagePath(slug)}/vilkar`;
+}
+
 /**
  * The organization's join page (see specs/concepts/join-page.md) — the single
  * public address an organization has: what it spreads as a link and as a
@@ -164,7 +169,7 @@ export function joinPageUrl(slug: string, tierKey?: string): string {
  * join page. The second URL the payment provider verifies.
  */
 export function joinPageTermsUrl(slug: string): string {
-  return `${CANONICAL_ORIGIN}${joinPagePath(slug)}/vilkar`;
+  return `${CANONICAL_ORIGIN}${joinPageTermsPath(slug)}`;
 }
 
 /**

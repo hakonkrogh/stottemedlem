@@ -32,6 +32,13 @@ interface Env {
    */
   PUBLIC_ORIGIN?: string;
   /**
+   * The origin the shareable public addresses (dashboard join links, QR
+   * payloads) live on. Set on staging so its links point at staging's own
+   * join pages; unset means the canonical støttemedlem.no origin
+   * (src/lib/joinLinks.ts).
+   */
+  JOIN_PAGE_ORIGIN?: string;
+  /**
    * Which period scheme this environment counts memberships in (see
    * src/lib/periods.ts): unset/"calendar-year" in production, "iso-week" on
    * staging — the accelerated calendar where a week is treated as a year.
