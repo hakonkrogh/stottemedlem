@@ -44,6 +44,56 @@ export const Continuing = {
   }),
 };
 
+/**
+ * Two payments for the same period at the same price — someone who joined,
+ * left and joined again (minutes apart on the accelerated staging calendar).
+ * Period and amount alone would make these one row twice, each with a button
+ * that moves money; what they were and when says which is which.
+ */
+export const TwoPaymentsForOnePeriod = {
+  args: inFrame("m-1", {
+    entry: { ...continuing, history: [fixturePeriod("m-1", 2026, 171)] },
+    values: { name: "Ingrid Solheim", email: "ingrid@eksempel.example", phone: "4711111111" },
+    payments: [
+      fixturePayment(2026, 171, "paid", null, {
+        chargeId: "chr-b",
+        type: "INITIAL",
+        on: "2026-08-26T09:12:00Z",
+      }),
+      fixturePayment(2026, 171, "paid", null, {
+        chargeId: "chr-a",
+        type: "INITIAL",
+        on: "2026-08-25T14:03:00Z",
+      }),
+    ],
+  }),
+};
+
+/** Refunding one of the two: the year does NOT go away, and it says so. */
+export const RefundingOneOfTwo = {
+  args: inFrame("m-1", {
+    entry: { ...continuing, history: [fixturePeriod("m-1", 2026, 171)] },
+    values: { name: "Ingrid Solheim", email: "ingrid@eksempel.example", phone: "4711111111" },
+    payments: [
+      fixturePayment(2026, 171, "paid", null, {
+        chargeId: "chr-b",
+        type: "INITIAL",
+        on: "2026-08-26T09:12:00Z",
+      }),
+      fixturePayment(2026, 171, "paid", null, {
+        chargeId: "chr-a",
+        type: "INITIAL",
+        on: "2026-08-25T14:03:00Z",
+      }),
+    ],
+    confirming: fixturePayment(2026, 171, "paid", null, {
+      chargeId: "chr-b",
+      type: "INITIAL",
+      on: "2026-08-26T09:12:00Z",
+    }),
+  }),
+};
+
 /** Asking before the money moves: the refund's own step, and its way out. */
 export const ConfirmingRefund = {
   args: inFrame("m-1", {

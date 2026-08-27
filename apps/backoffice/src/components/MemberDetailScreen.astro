@@ -91,6 +91,26 @@ const refusalWord: Record<RefundRefusal, string> = {
   "not-captured": "Ingen penger å refundere",
   "too-old": "Eldre enn ett år — Vipps refunderer ikke",
 };
+// Two payments can share a period and an amount — the same person joining
+// twice, or a renewal priced like the join. What tells them apart is what kind
+// of payment each one was and the day it was taken, so both are always shown
+// beside a button that moves money.
+const typeWord: Record<PaymentView["type"], string> = {
+  INITIAL: "Innmelding",
+  RECURRING: "Fornyelse",
+};
+const dayLabel = (iso: string) => new Date(iso).toLocaleDateString("nb-NO");
+// A period paid for twice keeps standing on the payment that was not given
+// back, so the confirmation must not promise that the year disappears when
+// another payment still covers it.
+const periodSurvives =
+  confirming !== null &&
+  payments.some(
+    (payment) =>
+      payment.chargeId !== confirming.chargeId &&
+      payment.periodYear === confirming.periodYear &&
+      (payment.state === "paid" || payment.state === "partly-refunded"),
+  );
 ---
 
 <Subpage backHref={membersPath} backLabel="Tilbake til medlemslisten">
@@ -118,13 +138,18 @@ const refusalWord: Record<RefundRefusal, string> = {
        in the list opens this, and only this can send the refund. */
     confirming && (
       <section class="confirm">
-        <Heading level={3}>Refundere {confirming.amountNok} kr?</Heading>
+        <Heading level={3}>
+          Refundere {confirming.amountNok} kr — {typeWord[confirming.type].toLowerCase()}{" "}
+          {dayLabel(confirming.on)}?
+        </Heading>
         <Text>
-          Hele beløpet går tilbake til {displayName}. {periodLabel(confirming.periodYear)} teller
-          da ikke lenger som en støttet periode, og{" "}
+          Hele beløpet går tilbake til {displayName}.{" "}
+          {periodSurvives
+            ? `${periodLabel(confirming.periodYear)} er betalt en gang til, så perioden teller fortsatt. `
+            : `${periodLabel(confirming.periodYear)} teller da ikke lenger som en støttet periode. `}
           {renewing
-            ? "den årlige avtalen avsluttes, så det trekkes ingen flere betalinger."
-            : "den årlige avtalen er allerede avsluttet."}
+            ? "Den årlige avtalen avsluttes, så det trekkes ingen flere betalinger."
+            : "Den årlige avtalen er allerede avsluttet."}
         </Text>
         <Text variant="small">
           Pengene er hos medlemmet i løpet av noen dager. Vi refunderer aldri deler av et beløp —
@@ -236,7 +261,10 @@ const refusalWord: Record<RefundRefusal, string> = {
               {payments.map((payment) => (
                 <li>
                   <span class="year">{periodLabel(payment.periodYear)}</span>
-                  <span class="tier">{paymentWord[payment.state]}</span>
+                  <span class="tier">
+                    {typeWord[payment.type]} {dayLabel(payment.on)}
+                  </span>
+                  <span class="state">{paymentWord[payment.state]}</span>
                   <span class="paid">{payment.amountNok} kr</span>
                   <span class="act">
                     {payment.refusal ? (
@@ -336,5 +364,14 @@ const refusalWord: Record<RefundRefusal, string> = {
     margin-left: auto;
     font-variant-numeric: tabular-nums;
     white-space: nowrap;
+  }
+  /* What became of the payment sits with its amount, not with what it was for. */
+  .state {
+    margin-left: auto;
+    color: var(--sm-muted);
+    white-space: nowrap;
+  }
+  .state + .paid {
+    margin-left: 0;
   }
 </style>
