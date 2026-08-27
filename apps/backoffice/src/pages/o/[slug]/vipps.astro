@@ -8,22 +8,22 @@ import Stack from "@stottemedlem/ui/components/Stack.astro";
 import Text from "@stottemedlem/ui/components/Text.astro";
 import TextField from "@stottemedlem/ui/components/TextField.astro";
 import TextLink from "@stottemedlem/ui/components/TextLink.astro";
-import { RECURRING_WEBHOOK_EVENTS } from "@stottemedlem/vipps";
 import Shell from "../../../layouts/Shell.astro";
 import { getDb } from "../../../lib/db";
 import { publicOrigin } from "../../../lib/membership";
 import { getVippsForOrg } from "../../../lib/vipps";
 import {
+  ensureWebhookRegistration,
   maskSecret,
   type OrgVippsKeys,
   parseVippsKeysForm,
   readOrgVippsKeys,
   saveOrgVippsKeys,
-  saveOrgWebhookRegistration,
   type VippsKeysFieldErrors,
   type VippsKeysFormValues,
   validateVippsKeys,
   vippsEnvironmentLabel,
+  webhookReceiverUrl,
 } from "../../../lib/vippsKeys";
 import { getWorkOS, orgPath } from "../../../lib/workos";
 
@@ -70,45 +70,38 @@ let webhookError: string | null = null;
 // Where THIS deployment receives the org's payment events. Derived from the
 // request, so production, staging and a local tunnel each register their own
 // receiver against the same sales unit rather than stealing each other's.
-const webhookUrl = `${publicOrigin(Astro.request)}/api/vipps/${org.slug}`;
+const webhookUrl = webhookReceiverUrl(publicOrigin(Astro.request), org.slug);
+
+// Connecting payment events is not the administrator's job: whenever keys are
+// stored or re-proven, the registration is brought up to date on its own, and
+// the scheduled runs keep doing so afterwards (specs/concepts/vipps-api-keys.md).
+async function connectPaymentEvents(): Promise<void> {
+  const vipps = await getVippsForOrg(workos, workosOrgId);
+  try {
+    if (!vipps) throw new Error("missing Vipps client");
+    const ensured = await ensureWebhookRegistration(workos, workosOrgId, vipps, webhookUrl);
+    if (ensured.outcome === "connected" && stored) {
+      stored = { ...stored, webhook: ensured.webhook };
+      webhookConnected = true;
+    }
+  } catch (error) {
+    console.error("could not register webhooks", error);
+    webhookError =
+      "Vipps ville ikke registrere varslingsadressen nå — vi prøver igjen automatisk. " +
+      "Du kan også prøve på nytt med «Test nøklene på nytt».";
+  }
+}
 
 if (Astro.request.method === "POST") {
   const form = await Astro.request.formData();
-  if (form.get("intent") === "webhooks" && stored) {
-    // Connect payment events: register a receiver with Vipps and keep the
-    // secret it returns — it is shown once, and without it no delivery can be
-    // proved genuine. Re-registering replaces the old receiver, which is what
-    // an address change (a new tunnel, a new domain) needs.
-    const vipps = await getVippsForOrg(workos, workosOrgId);
-    try {
-      if (!vipps) throw new Error("missing Vipps client");
-      if (stored.webhook) await vipps.deleteWebhook(stored.webhook.id).catch(() => {});
-      const registration = await vipps.registerWebhook({
-        url: webhookUrl,
-        events: RECURRING_WEBHOOK_EVENTS,
-      });
-      const webhook = {
-        id: registration.id,
-        secret: registration.secret,
-        url: webhookUrl,
-        registeredAt: new Date().toISOString(),
-      };
-      await saveOrgWebhookRegistration(workos, workosOrgId, webhook);
-      stored = { ...stored, webhook };
-      webhookConnected = true;
-    } catch (error) {
-      console.error("could not register webhooks", error);
-      webhookError =
-        "Vipps ville ikke registrere varslingsadressen. Sjekk at adressen er offentlig " +
-        "tilgjengelig over https, og prøv igjen om litt.";
-    }
-  } else if (form.get("intent") === "test" && stored) {
+  if (form.get("intent") === "test" && stored) {
     // Re-run the live check against the keys already in Vault.
     const result = await validateVippsKeys(stored);
     if (result.ok) {
       stored = { ...stored, validatedAt: new Date().toISOString() };
       await saveOrgVippsKeys(workos, workosOrgId, stored);
       retested = true;
+      await connectPaymentEvents();
     } else {
       validationError = result.message;
     }
@@ -123,6 +116,7 @@ if (Astro.request.method === "POST") {
         await saveOrgVippsKeys(workos, workosOrgId, stored);
         saved = true;
         values = { clientId: "", clientSecret: "", subscriptionKey: "", merchantSerialNumber: "" };
+        await connectPaymentEvents();
       } else {
         validationError = result.message;
       }
@@ -180,8 +174,8 @@ const validatedDate = stored ? new Date(stored.validatedAt).toLocaleDateString("
           <Heading level={2}>Betalingsvarsler</Heading>
           <Text variant="small">
             For at et medlemskap skal bli aktivt av seg selv når noen betaler, må Vipps få vite
-            hvor den skal varsle oss. Adressen følger denne installasjonen, så koble til på nytt
-            hvis adressen endrer seg.
+            hvor den skal varsle oss. Dette skjer automatisk: adressen kobles til når nøklene
+            lagres, og følger installasjonen av seg selv om den endrer seg.
           </Text>
           {stored.webhook ? (
             <div class="keys">
@@ -191,25 +185,18 @@ const validatedDate = stored ? new Date(stored.validatedAt).toLocaleDateString("
                 {new Date(stored.webhook.registeredAt).toLocaleDateString("nb-NO")}
               </Text>
               {stored.webhook.url !== webhookUrl && (
-                <Alert variant="error">
-                  Varslene går til en annen adresse enn denne siden ({webhookUrl}). Koble til på
-                  nytt, ellers går betalinger tapt.
+                <Alert variant="info">
+                  Adressen har endret seg ({webhookUrl}) og kobles til på nytt automatisk. «Test
+                  nøklene på nytt» gjør det med en gang.
                 </Alert>
               )}
             </div>
           ) : (
-            <Text variant="small">Ikke koblet til ennå — betalinger vil ikke registreres.</Text>
+            <Text variant="small">
+              Ikke koblet til ennå — det skjer automatisk, og «Test nøklene på nytt» gjør det med
+              en gang.
+            </Text>
           )}
-          <form method="post">
-            <Button
-              variant={stored.webhook ? "secondary" : "primary"}
-              name="intent"
-              value="webhooks"
-              block
-            >
-              {stored.webhook ? "Koble til på nytt" : "Koble til betalingsvarsler"}
-            </Button>
-          </form>
         </Stack>
       )
     }

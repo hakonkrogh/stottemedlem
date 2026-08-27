@@ -1,5 +1,10 @@
 import { env } from "cloudflare:workers";
-import { createVippsClient, VippsApiError } from "@stottemedlem/vipps";
+import {
+  createVippsClient,
+  RECURRING_WEBHOOK_EVENTS,
+  VippsApiError,
+  type VippsClient,
+} from "@stottemedlem/vipps";
 import { NotFoundException, type WorkOS } from "@workos-inc/node";
 
 // Each organization brings its own Vipps MobilePay sales-unit credentials
@@ -91,6 +96,55 @@ export async function saveOrgWebhookRegistration(
   const keys = await readOrgVippsKeys(workos, workosOrgId);
   if (!keys) throw new Error("cannot register webhooks before the org has Vipps keys");
   await saveOrgVippsKeys(workos, workosOrgId, { ...keys, webhook });
+}
+
+/** Where one org's payment events are delivered on a given deployment. */
+export function webhookReceiverUrl(origin: string, slug: string): string {
+  return `${origin.replace(/\/+$/, "")}/api/vipps/${slug}`;
+}
+
+export type WebhookEnsureResult =
+  /** Already registered at the right address — nothing was done. */
+  | { outcome: "current"; webhook: OrgWebhookRegistration }
+  /** Registered now: first time, or moved to follow the deployment. */
+  | { outcome: "connected"; webhook: OrgWebhookRegistration }
+  /** The org has no keys of its own, so there is nothing to register. */
+  | { outcome: "no-keys" };
+
+/**
+ * Make sure the org's payment events reach `receiverUrl`. Connecting payment
+ * events is never an administrator's job: this runs whenever keys are stored
+ * or re-proven, and every scheduled run, so the registration follows the
+ * deployment on its own (specs/concepts/vipps-api-keys.md).
+ *
+ * Idempotent by comparison: a registration already pointing at the right
+ * address is left untouched. Re-registering replaces the old receiver and
+ * keeps the secret Vipps returns — it is shown once, and without it no
+ * delivery can be proved genuine. Throws when Vipps refuses; callers decide
+ * how loudly, knowing the next run tries again.
+ */
+export async function ensureWebhookRegistration(
+  workos: WorkOS,
+  workosOrgId: string,
+  vipps: VippsClient,
+  receiverUrl: string,
+): Promise<WebhookEnsureResult> {
+  const keys = await readOrgVippsKeys(workos, workosOrgId);
+  if (!keys) return { outcome: "no-keys" };
+  if (keys.webhook?.url === receiverUrl) return { outcome: "current", webhook: keys.webhook };
+  if (keys.webhook) await vipps.deleteWebhook(keys.webhook.id).catch(() => {});
+  const registration = await vipps.registerWebhook({
+    url: receiverUrl,
+    events: RECURRING_WEBHOOK_EVENTS,
+  });
+  const webhook: OrgWebhookRegistration = {
+    id: registration.id,
+    secret: registration.secret,
+    url: receiverUrl,
+    registeredAt: new Date().toISOString(),
+  };
+  await saveOrgWebhookRegistration(workos, workosOrgId, webhook);
+  return { outcome: "connected", webhook };
 }
 
 export type VippsKeysValidation = { ok: true } | { ok: false; message: string };

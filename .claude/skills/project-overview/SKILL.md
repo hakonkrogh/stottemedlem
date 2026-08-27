@@ -195,9 +195,17 @@ lives in `specs/`, kept in sync with code by a mandatory `Stop`-hook harness.
   (`startJoin`, `syncAgreement`, `applyCharge`/`syncCharge`, `applyVippsEvent`) — the
   dispatcher ALWAYS syncs the agreement first because charge-captured beats
   agreement-activated in practice, and settles captures that arrived too early.
-  Admins connect events on `/o/[slug]/vipps` ("Betalingsvarsler"), which stores
-  the registration + secret in Vault beside the keys; locally
-  `VIPPS_WEBHOOK_SECRET` in `.dev.vars` stands in (test env only).
+  **Webhook registration ("Betalingsvarsler") is AUTOMATIC since 2026-08-27**
+  (branch automate-payment-reminder — there is NO manual connect button
+  anymore): `ensureWebhookRegistration` + `webhookReceiverUrl` in
+  `src/lib/vippsKeys.ts` (idempotent by URL comparison) run right after keys
+  are saved/re-tested on `/o/[slug]/vipps` AND in every scheduled run
+  (worker.ts, before reconcile, gated on `PUBLIC_ORIGIN`, logger area
+  "webhooks"), storing the registration + one-time secret in Vault beside the
+  keys; the page section is status-only, and "Test nøklene på nytt" doubles
+  as the manual retry. Locally `VIPPS_WEBHOOK_SECRET` in `.dev.vars` stands
+  in (test env only) — save-time registration fails politely on localhost
+  (Vipps requires public https).
   **Worker cache gotcha this created:** the public-page cache now SKIPS any URL
   with a query string (an error message for one visitor must not be cached for
   all) and its key carries the date (the join page quotes a pro-rated price

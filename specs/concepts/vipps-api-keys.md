@@ -42,6 +42,20 @@ money.
   masked. Replacing them means pasting a full new set.
 - The product records when the keys last passed the live proof, and an
   administrator can re-run it at any time.
+- **Payment events connect themselves.** For memberships to update on their
+  own when someone pays, Vipps must know where to deliver the organization's
+  payment events — but arranging that is never the administrator's job. The
+  product registers the delivery address with Vipps as soon as keys are
+  stored, and keeps the registration pointing at the running product on its
+  own: a registration that is missing (the first attempt failed) or pointing
+  at an outdated address is repaired automatically no later than the
+  product's next scheduled run. Re-proving the keys also brings the
+  registration up to date at once. The back office shows the administrator
+  whether events are connected and where they go, but offers no connect
+  action — there is nothing to operate.
+- The delivery secret the payment provider issues at registration — the only
+  proof a delivery is genuine — is stored with the same per-organization
+  isolation as the keys themselves.
 
 ## Relationships
 - Belong to exactly one [organization](organization.md); managed by its
