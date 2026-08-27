@@ -144,8 +144,15 @@ lives in `specs/`, kept in sync with code by a mandatory `Stop`-hook harness.
   by a newline collapses the space ("arbeidet iNordnes") — join with `{" "}`.
   Same class, third sighting 2026-08-24: **two adjacent expressions on ONE line
   inside a component slot** — `<Text>{a} {b}</Text>` — also lose the space
-  ("var 2024.Den årlige"). Building the sentence in the frontmatter
-  (`[a, b].filter(Boolean).join(" ")`) is immune to both and reads better.
+  ("var 2024.Den årlige"). Fourth, 2026-08-27: **an expression followed by a
+  COMPONENT tag on one line** — `{msg} <TextLink>…</TextLink>` inside `<Alert>`
+  — renders "…kontakt-e-post).Fyll inn nå". Treat it as the general rule: any
+  space that touches an `{expr}` boundary inside a slot is unreliable, so write
+  `{" "}` explicitly. Corollary when EXTRACTING markup into a shared component:
+  the original probably had `{expr}{" "}` on its own line — carry it over
+  verbatim instead of "tidying" it onto one line. Building the sentence in the
+  frontmatter (`[a, b].filter(Boolean).join(" ")`) is immune to all of them and
+  reads better.
   **Org visual identity** (added 2026-08-12, branch org-image-editing):
   `logo_key`/`banner_key` columns (migration `0002_org_images.sql`) hold R2
   object keys in the backoffice `MEDIA` bucket binding; upload/validate/serve
@@ -670,7 +677,7 @@ the Donations `Schedule.interval` enum is `[MONTHLY]` only, found nowhere in pro
 | (canonical) `specs/process.md` | the spec-driven loop in full + enforcement |
 | (canonical) `specs/INDEX.md` | high-level product map / spec registry |
 | (canonical) `README.md` | monorepo layout, commands, toolchain |
-| stop-hooks.md | how the two Stop hooks compose + how to test a hook locally |
+| stop-hooks.md | how the two Stop hooks compose + how to test a hook locally. **Write `specs/**` with the Write/Edit tool, never a bash heredoc/python:** the spec hook only reads Edit/Write/MultiEdit/NotebookEdit calls out of the transcript, so Bash-written specs are invisible and it blocks the stop claiming you reconciled nothing — the default outcome in bypass-permissions mode, and it costs a turn every time (hit again 2026-08-27) |
 | qr-codes.md | @stottemedlem/qr package split, the /api/qr/[slug] embed contract (backoffice), the front-page card preview (marketing), qrcode-lib gotchas, open domain-routing item |
 | (skill) `vipps-test-rig` | drive a REAL recurring subscription on apitest from the CLI (agreement → MT-app approval → charges → webhooks → stop) + the local receiver and tunnel; the sandbox-DNS gotcha when verifying a tunnel |
 | (skill) `verify-workflow` | `node .claude/skills/verify-workflow/run-steps.mjs <workflow.yml> [job] --force-turbo` — run a GitHub Actions job's `run:` steps locally in a scrubbed, runner-like env; proves a CI change before pushing. Skips `uses:` steps and any step with a `${{ }}` expression (that guard is what stops it firing a real deploy / `--remote` D1 migration) |

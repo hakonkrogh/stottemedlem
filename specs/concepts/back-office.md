@@ -68,13 +68,19 @@ one visit and never has to be re-learned.
   repeating that would only be a second door beside the first. Anything not yet
   in order is shown here too (see below), and those *do* carry the one action
   that fixes them — a warning is worth a door, an ordinary section is not.
-- **What is not in order is stated twice, deliberately**: in full on the front
-  page, each with the one action that fixes it; and as a **count on the place
-  that fixes it**, so an administrator deep in another screen still sees that
-  something is waiting. A place with nothing wrong carries no badge, and an
-  organization in order shows none at all. A warning count and the standing
-  member count are told apart at a glance — one asks for attention, the other
-  only informs.
+- **What is not in order is stated in full on the front page**, each with the
+  one action that fixes it — and as a **count on the place that fixes it**, so
+  an administrator deep in another screen still sees that something is waiting.
+  A place with nothing wrong carries no badge, and an organization in order
+  shows none at all. A warning count and the standing member count are told
+  apart at a glance — one asks for attention, the other only informs.
+- **A count is never the only thing said.** The badge is a summons, not the
+  message: **the place it points at states the same warnings in full**, in the
+  same words and with the same action, at the top of its own screen. Following
+  a number must never leave the administrator looking around a screen for what
+  it meant. Screens *under* a place do not repeat them — they are already the
+  work of putting something right — and a form that is open to fix a warning
+  sets it aside until it closes again.
 - **The back office uses the space the display gives it.** It must work on the
   narrowest phone — that is where an administrator usually is — but a larger
   screen is not wasted on a phone-shaped column: the same screens spread into

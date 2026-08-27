@@ -4,18 +4,25 @@
 // reviewing the offer is seeing what supporters see. Each card presents the
 // stored membership and carries the one action that changes it; the form that
 // does the changing lives on its own page.
+//
+// This is also where the membership tab's badge points, so anything not in
+// order that belongs here is stated in full at the top.
 import type { MembershipTier } from "@stottemedlem/db";
 import Button from "@stottemedlem/ui/components/Button.astro";
 import Heading from "@stottemedlem/ui/components/Heading.astro";
 import Stack from "@stottemedlem/ui/components/Stack.astro";
 import Text from "@stottemedlem/ui/components/Text.astro";
+import { type OrgWarning, warningsForTab } from "../lib/orgWarnings";
 import MembershipTierCard from "./MembershipTierCard.astro";
+import OrgWarnings from "./OrgWarnings.astro";
 
 interface Props {
   orgPath: string;
   tiers: MembershipTier[];
+  /** The organization's warnings; the ones this place fixes are shown here. */
+  warnings?: OrgWarning[];
 }
-const { orgPath, tiers } = Astro.props;
+const { orgPath, tiers, warnings = [] } = Astro.props;
 ---
 
 <Stack gap="lg">
@@ -24,11 +31,13 @@ const { orgPath, tiers } = Astro.props;
     <Text variant="lead">
       {
         tiers.length === 0
-          ? "Organisasjonen har ingen medlemskap ennå. Legg til minst ett med pris, så viser den offentlige siden tilbudet Vipps skal godkjenne."
+          ? "Medlemskapene dere legger til her er tilbudet den offentlige siden viser fram."
           : "Slik ser medlemskapene ut på den offentlige siden. Prisendringer gjelder nye innmeldinger og fremtidige fornyelser."
       }
     </Text>
   </Stack>
+
+  <OrgWarnings warnings={warningsForTab(warnings, "medlemskap")} />
 
   {
     tiers.length > 0 && (

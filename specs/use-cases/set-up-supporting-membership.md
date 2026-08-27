@@ -73,7 +73,10 @@ From the organization's point of view:
 
 An organization created before a profile field was required (or before this
 behaviour existed) is **prompted in the back office** to complete the missing
-fields, and can edit its profile there at any time.
+fields, and can edit its profile there at any time. Every such prompt is shown
+in two places: on the front page, and on the place of the
+[back office](../concepts/back-office.md) that fixes it — so the count the
+place's tab carries is always spelled out once the administrator gets there.
 
 The organization can also give its join page a **visual identity**: in the
 back-office settings — which presents the stored details and opens a form only

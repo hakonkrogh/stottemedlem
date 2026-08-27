@@ -121,6 +121,7 @@ const editing = hasErrors || (Astro.url.searchParams.has("rediger") && !saved);
       saved={saved}
       vippsKeys={view.vippsKeys}
       paymentEventsConnected={view.vippsKeys?.webhook?.url === view.webhookUrl}
+      warnings={view.warnings}
     />
   </OrgScreen>
 </Shell>

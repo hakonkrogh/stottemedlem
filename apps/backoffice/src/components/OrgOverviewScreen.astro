@@ -19,6 +19,7 @@ import Text from "@stottemedlem/ui/components/Text.astro";
 import TextLink from "@stottemedlem/ui/components/TextLink.astro";
 import type { OrgWarning } from "../lib/orgWarnings";
 import MembershipTierCard from "./MembershipTierCard.astro";
+import OrgWarnings from "./OrgWarnings.astro";
 
 interface Props {
   orgPath: string;
@@ -70,19 +71,7 @@ const links = [
     )
   }
 
-  {
-    warnings.length > 0 && (
-      <Stack gap="sm">
-        <Heading level={2}>Dette bør ordnes</Heading>
-        {warnings.map((warning) => (
-          <Alert variant="info">
-            {warning.message}{" "}
-            <TextLink href={warning.href}>{warning.actionLabel}</TextLink>
-          </Alert>
-        ))}
-      </Stack>
-    )
-  }
+  <OrgWarnings warnings={warnings} />
 
   {
     tiers.length > 0 && (

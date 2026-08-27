@@ -20,6 +20,6 @@ const { org, tiers, warnings } = view;
     warnings={warnings}
     activeMembers={view.activeMembers}
   >
-    <MembershipsScreen orgPath={orgPath(org.slug)} tiers={tiers} />
+    <MembershipsScreen orgPath={orgPath(org.slug)} tiers={tiers} warnings={warnings} />
   </OrgScreen>
 </Shell>

@@ -80,3 +80,11 @@ export function orgWarnings(input: OrgWarningInput): OrgWarning[] {
 
   return warnings;
 }
+
+/**
+ * The warnings a place is where you go to fix — exactly what its tab badge
+ * counted, so the place can spell the number out.
+ */
+export function warningsForTab(warnings: OrgWarning[], tab: OrgWarningTab): OrgWarning[] {
+  return warnings.filter((warning) => warning.tab === tab);
+}
