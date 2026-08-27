@@ -115,6 +115,9 @@ async function runScheduledJobs(cron: string): Promise<void> {
       // (specs/concepts/payment-reconciliation.md).
       if (reconcileFirst) {
         const report = await reconcile.reconcileOrganization(db, vipps, org.id);
+        // A duplicate renewal has already alerted from inside the sweep, with
+        // the charge ids the report cannot carry; here it only makes the run
+        // noteworthy.
         if (report.failed > 0) {
           reconcileLog.error("reconciliation could not read some agreements back", undefined, {
             ...report,
