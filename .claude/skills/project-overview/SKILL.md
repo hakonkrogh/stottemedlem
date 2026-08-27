@@ -45,7 +45,10 @@ lives in `specs/`, kept in sync with code by a mandatory `Stop`-hook harness.
   needs, and empty secrets degrade safely. For real logged-in flows, copy a
   filled one from a sibling worktree
   (`ls ~/.superset/worktrees/*/*/apps/backoffice/.dev.vars`) or get values
-  from the user. (Public `/bli-medlem/*` pages need no auth.)
+  from the user — those are the ONLY ways to populate it: Worker secrets are
+  write-only on Cloudflare, and the user REJECTED a readable Cloudflare-side
+  copy (2026-08-25) — don't build one (see stack-docs). (Public
+  `/bli-medlem/*` pages need no auth.)
   See `docs/architecture/overview.md` + `stack-docs` (env access + per-env build gotchas).
 - `packages/core/` — `@stottemedlem/core`, shared domain types/logic (incl. org
   slugs, canonical join/landing/salgsvilkår URLs, orgnr MOD11 validation).

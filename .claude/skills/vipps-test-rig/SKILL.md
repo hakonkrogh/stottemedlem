@@ -24,6 +24,13 @@ vt status --watch          # polls until it leaves PENDING (approve in the MT ap
 vt userinfo                # consented name/email/phone — 168-hour window
 vt charges                 # INITIAL charge, then any renewal
 vt charge --days 1         # next year's charge, rehearsed one day out
+vt agreements              # list agreements by --status (default ACTIVE) — finds an old
+                           #   approved agreement without a new phone approval
+vt idempotency             # Idempotency-Key retention probe: first run creates a charge
+                           #   and saves body+key; each later run replays the identical
+                           #   request — same chargeId back = key still honoured. Replays
+                           #   accumulate in state; a duplicate is cancelled on the spot.
+                           #   --fresh new probe · --cleanup cancel probe charge + clear
 vt stop                    # merchant-side stop (irreversible)
 vt state | vt reset        # saved ids (packages/vipps/.vipps-test-state.json, gitignored)
 ```
@@ -48,7 +55,13 @@ the DNS artifact below entirely.
 
 Every command takes `--agreement <id>`; without it the last drafted one is used.
 Credentials come from `apps/backoffice/.dev.vars` (`VIPPS_CLIENT_ID`,
-`VIPPS_CLIENT_SECRET`, `VIPPS_SUBSCRIPTION_KEY`, `VIPPS_MSN`). Credentials-only
+`VIPPS_CLIENT_SECRET`, `VIPPS_SUBSCRIPTION_KEY`, `VIPPS_MSN`). **The file is
+gitignored and worktrees don't inherit it** — a fresh worktree has no
+credentials anywhere (verified 2026-08-25: absent from every checkout on this
+machine); ask the user to drop the file in before planning any live run. The
+state file (`.vipps-test-state.json`) is per-worktree too, so saved
+agreement/webhook ids from other sessions are gone — `vt agreements` finds a
+still-ACTIVE agreement without a new phone approval. Credentials-only
 check, creates nothing: `pnpm --filter @stottemedlem/vipps run smoke`.
 
 ## The two background processes
