@@ -631,10 +631,17 @@ lives in `specs/`, kept in sync with code by a mandatory `Stop`-hook harness.
   2026 membership (idempotent), 04:00 job twice = no reprice (fees aligned),
   no renewal arranged (out of Dec-window), no double-arrange. Vipps special
   test amounts are øre passed as decimal NOK (`vt charge --amount 1.51` = 151
-  øre = insufficient funds). IN FLIGHT: real failing renewal chr-TCYB7Em on
-  agr_Mt2LutK, due 2026-08-27, retryDays 7 — check with
-  `vt charges --agreement agr_Mt2LutK` from 08-27 to watch FAILED land, then
-  whether reconcile records it and what the member list shows. The
+  øre = insufficient funds). The failing-renewal charge chr-TCYB7Em SETTLED
+  2026-08-27 as CANCELLED, not FAILED — a concurrent session cancelled every
+  open charge on the shared agreement agr_Mt2LutK, so the literal FAILED
+  status was never observed (would need a dedicated agreement + ~8 days).
+  Same code path regardless: reconcile pulled CANCELLED into D1 and the
+  standing grace correctly ends with any settled status (only
+  OPEN_CHARGE_STATUSES grant it). Also observed: unapproved drafts go EXPIRED
+  on Vipps' side once their approval token dies, and reconcile corrects them —
+  the orphan-draft story resolves via EXPIRED without waiting out the 14-day
+  abandonment window. Charges stay DUE through the retry window on apitest
+  (observed 7h past due before the cancellation). The
   lapsed-while-retrying bug this rehearsal confirmed is FIXED (2026-08-26,
   commit "Lapse waits for the payment to definitively fail"):
   `membershipStanding` in @stottemedlem/db keeps a member active while an

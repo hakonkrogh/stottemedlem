@@ -96,7 +96,9 @@ Vipps' special test amounts are **øre**, and `--amount` is NOK — pass decimal
 refused by issuer, 184 withdrawal limit, 186 expired card; full list:
 developer.vippsmobilepay.com/docs/knowledge-base/test-environment/). The charge
 fails only on its due date, then Vipps retries for `--retry-days` (default 7)
-— a definitive FAILED takes due date + retry window to observe.
+— a definitive FAILED takes due date + retry window to observe. Verified on
+apitest 2026-08-27: the charge stays `DUE` well past its due date while
+retrying (no early FAILED), so the retry window is real in the test env too.
 
 ## Driving the PRODUCT's join flow from the CLI (learned 2026-08-26)
 
