@@ -360,6 +360,83 @@ Sources:
 
 ---
 
+### 13. Refunding a charge (v3): one endpoint, org-side only, 365-day window, does NOT touch the agreement — HIGH confidence
+
+Added 2026-08-27 for the refund/angrerett work (branch `refund-handling`). Verified
+against the Recurring OpenAPI spec (`redocusaurus/recurring-swagger-id.yaml`, downloaded
+and read directly) plus the API guide, FAQ, and checklist pages.
+
+- **The endpoint:** `POST:/recurring/v3/agreements/{agreementId}/charges/{chargeId}/refund`.
+  Body is `RefundRequest` — **both fields required**: `amount` (integer, **minor units**,
+  i.e. øre) and `description` (string, 1–100 chars, a human explanation such as
+  "Angrerett innen 14 dager"). `Idempotency-Key` is a **required header** (1–40 chars,
+  must not contain `#`, `?`, `/`, `\`).
+- **Returns `204 No Content`** — not the updated charge. To know the resulting status you
+  must re-read the charge (`GET .../charges/{chargeId}`) or wait for the webhook. Error
+  responses: `400`, `404`, `409`.
+- **There is no "refund it all" shorthand.** Even a full refund states an amount, so a
+  full refund means sending the captured amount — read it from `summary.captured` on the
+  charge, not from what we think we billed. Partial refunds are supported by the API
+  ("can also do a partial refund"); støttemedlem has **decided not to offer them**
+  (2026-08-27), which is a product choice, not an API limit.
+- **365-day deadline:** "REFUNDED — The charge has been refunded. **Refunds are allowed up
+  to 365 days after the capture date.**" For a yearly membership this is uncomfortably
+  tight at the anniversary: the previous period's charge falls out of the window at almost
+  exactly the moment the next renewal is taken.
+- **Refund ≠ cancel, and we only ever refund.** Cancel
+  (`DELETE:/recurring/v3/agreements/{agreementId}/charges/{chargeId}`) applies *before* the
+  user is charged (PENDING/DUE/RESERVED) and releases the reservation immediately; refund
+  applies *after* capture and "takes a few days before the amount is available in the
+  customer's account". We use `DIRECT_CAPTURE`, so our charges go straight to `CHARGED`
+  and refund is the only operation that applies to money already taken. Cancel would only
+  ever be relevant for a renewal charge created but not yet due.
+- **A refund does NOT stop the agreement.** They are unrelated operations: refunding gives
+  the money back, the standing arrangement stays `ACTIVE` and will renew. "Refund and let
+  them go" is therefore always **two** calls — refund the charge *and*
+  `PATCH:/recurring/v3/agreements/{agreementId}` to `STOPPED`. Doing only the first
+  silently re-bills the person next January. (Conversely, stopping an agreement
+  auto-cancels its DUE/PENDING charges — Vipps says "if you cancel an agreement, there is
+  no need to cancel the charges that belong to the agreement".)
+- **Vipps wants the refund button in *our* back office, not in their portal.** The guide:
+  "Refunds must always be done using the API, through the merchant's administration
+  solution." The API checklist reinforces it: customer support should have what they need
+  in the merchant's own system and "should not need to visit portal.vippsmobilepay.com for
+  normal work."
+- **…but a portal refund still reaches us.** "Merchants can also refund recurring charges
+  directly on the business portal. This will update the information provided through the
+  API and send a webhook event." So an org that refunds by hand in the portal produces a
+  real `recurring.charge-refunded.v1` for us, and the nightly reconcile would see it
+  regardless. **Following a refund we did not initiate is required either way**; building
+  our own refund action is an addition to that, never a replacement.
+- **The webhook payload is enough to classify the refund without a re-read:**
+  `recurring.charge-refunded.v1` ("Charge was fully or partially refunded") carries
+  `amount`, `amountCaptured`, `amountCanceled`, `amountRefunded`, `chargeType`, `currency`,
+  `occurred`, `msn`. Our dispatcher re-reads the charge anyway (`syncCharge`), which is the
+  more robust path and also covers the portal case.
+- **Resulting state on the charge:** status becomes `REFUNDED` (full) or
+  `PARTIALLY_REFUNDED` (part), `summary.refunded` accumulates, and a `REFUND` event with
+  its own `idempotencyKey` is appended to `history[]`. Note `PARTIALLY_REFUNDED` can arrive
+  even though we never ask for one — a portal-side partial refund by the org produces it,
+  so the product must still have an answer for that status.
+- **Rate limit:** refund is **5 per minute per `agreementId` + `chargeId`** (same as cancel
+  and capture). Not a constraint for a human-driven action, but retry loops must respect it.
+- **Known failure mode — "Refund is not possible":** per the FAQ, this error means the
+  charge was made to a sales unit using the special **"single settlement"** setup. Since
+  every org brings its own sales unit/MSN, an org can be configured such that refunds
+  simply fail, and the back office has to say something truthful when that happens.
+- **Not documented anywhere:** whether the merchant needs a positive settlement balance for
+  a refund to go through, and what a `409` on refund actually means (double refund? amount
+  over captured?). Both are worth proving on apitest with the `vipps-test-rig` skill before
+  relying on them.
+
+Sources:
+- https://developer.vippsmobilepay.com/redocusaurus/recurring-swagger-id.yaml (`RefundChargeV3`, `RefundRequest`, `ChargeStatus`, `ChargeSummary`, `ChargeEvent`)
+- https://developer.vippsmobilepay.com/docs/APIs/recurring-api/recurring-api-guide/ (Cancel a charge, Refund a charge, Charge states, Charge webhooks, Rate limiting)
+- https://developer.vippsmobilepay.com/docs/APIs/recurring-api/recurring-api-faq/ ("Why do I get the error 'Refund is not possible'?")
+- https://developer.vippsmobilepay.com/docs/APIs/recurring-api/recurring-api-checklist/
+
+---
+
 ## Implementation sketch for the yearly støttemedlem product
 
 Derived from the verified findings above (design guidance, not itself a verified claim):

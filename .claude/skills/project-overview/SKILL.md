@@ -242,6 +242,35 @@ lives in `specs/`, kept in sync with code by a mandatory `Stop`-hook harness.
   all) and its key carries the date (the join page quotes a pro-rated price
   that changes daily) — `publicPageCache.ts` purge keys must match, incl. the
   date fragment.
+  **Refunds** (built 2026-08-27, branch `refund-handling`, specs
+  `problems/honouring-a-refund-request.md` + `use-cases/refund-a-payment.md`):
+  ORG-INITIATED ONLY, never partial, offered on the member's page under
+  Medlemmer. `refundMembershipPayment` in `src/lib/membership.ts` is the whole
+  action, and the ORDER IS DELIBERATE: it stops the agreement FIRST, then
+  refunds — money handed back on an agreement that renews anyway is the one
+  state this must never leave behind, and a failure after the stop is
+  retryable while a failure after the refund would not be. The amount is never
+  ours: it refunds `summary.captured` read back from Vipps (`Charge.summary`,
+  added to `packages/vipps`), and the 204 answer means the outcome is read back
+  with `syncCharge`. Idempotency keys are DERIVED via `stableUuid`
+  (`refund:<chargeId>`, `stop:<agreementId>`) — Vipps validates the key as a
+  UUID, so a random one would let a double-press ask for a second refund.
+  **The follow path is the half that is not optional:** `applyCharge` revokes
+  on `REFUNDED` (`revokeMembershipForRefundedCharge` in `@stottemedlem/db` —
+  nulls the charge's `membershipId`, then deletes the `memberships` row unless
+  another charge still points at it), so a refund made in Vipps' PORTAL lands
+  the same way, via webhook or the nightly sweep. `PARTIALLY_REFUNDED` is
+  recorded and deliberately does NOT revoke (the year was still paid for); it
+  can only ever arrive from the portal. Stars need no code — the scorecard
+  derives from membership periods, so a revoked period takes its star with it.
+  Policy lives in `@stottemedlem/core` (`refundRefusal`, `paymentState`,
+  `REFUND_WINDOW_DAYS` = a real 365 days, NOT a period-scheme day) so it is
+  unit-tested and so the member screen can import it without dragging in
+  `cloudflare:workers`; the screen's shaping is `src/lib/refunds.ts`.
+  **Known edge, accepted:** reconciliation's `rotation` group only revisits
+  ACTIVE agreements, so a portal refund whose webhook was ALSO lost on an
+  agreement stopped in the portal is never re-read. Webhook delivery or a
+  still-active agreement covers every other case.
   **Renewals + repricing** (added 2026-08-20): `src/lib/renewals.ts`
   (`repriceAgreements`, `createDueRenewalCharges`) driven by `worker.ts`
   `scheduled` — 02:00 reconcile-then-reprice, 04:00 reprice-then-renew — with the jobs
@@ -669,6 +698,13 @@ lives in `specs/`, kept in sync with code by a mandatory `Stop`-hook harness.
 the OpenAPI specs (`developer.vippsmobilepay.com/redocusaurus/<api>-swagger-id.yaml`,
 rendered at `/api/<name>/`) — marketing and help-center pages omit hard limits (e.g.
 the Donations `Schedule.interval` enum is `[MONTHLY]` only, found nowhere in prose).
+**Method that works (2026-08-27): `curl` the yaml to a file and grep it, and `curl` the
+doc page + strip tags rather than WebFetch it.** WebFetch summarizes with a small model
+and DROPS things — asked about refunds it answered "no information available" for a page
+that had none, while the yaml (`recurring-swagger-id.yaml`, 128 KB, 200 OK) carried the
+whole `RefundChargeV3` + `RefundRequest` contract, and grepping the guide's stripped HTML
+produced the exact quotes (365-day refund window, rate limits) that the summary missed.
+Hard rules and exact wording live in the yaml and in the guide's own tables — go there.
 
 ## Index
 | doc | covers |
@@ -690,6 +726,6 @@ the Donations `Schedule.interval` enum is `[MONTHLY]` only, found nowhere in pro
 | (skill) `dev-logs` | `bash .claude/skills/dev-logs/devlog.sh start\|tail\|grep` — read the dev server's stdout (console.log/error, request lines, SSR stack traces) via `astro dev --background` + `.astro/dev.log`; foreground `pnpm dev` output is unreadable to agents |
 | (skill) `cloud-logs` | search the DEPLOYED backoffice Workers' stored logs (staging + prod, 7-day retention) via `node .claude/skills/cloud-logs/cloudlogs.mjs` — search/filter/count/invocations over the Cloudflare observability query API (needs the dashboard-minted read token in `~/.config/stottemedlem/cloudflare-logs-token`; wrangler OAuth can't do it) + `wrangler tail` for live; errors also in Sentry (~90 d) via the Sentry MCP |
 | (canonical) `docs/vipps-local-recurring-test.md` | runbook for rehearsing a real recurring subscription on apitest from the CLI: prerequisites (test keys, MT app + test users, cloudflared), the tunnel and why it's needed, the lifecycle commands, what to look for at each step, cleanup, troubleshooting |
-| (canonical) `docs/research/vipps-recurring-payments.md` | verified Vipps Recurring API v3 research (yearly agreements, tiers via LEGACY pricing PATCH, 10 webhook events, local DB as system of record, NO onboarding/retention rules); Appendix A rules out Vipps Donasjoner definitively (monthly-only enum, no API amount control) — read before any payment work; not yet fed into `specs/` |
+| (canonical) `docs/research/vipps-recurring-payments.md` | verified Vipps Recurring API v3 research (yearly agreements, tiers via LEGACY pricing PATCH, 10 webhook events, local DB as system of record, NO onboarding/retention rules); **§13 = refunds** (endpoint + required amount/description/Idempotency-Key, 204 not the charge, 365-day window, refund≠cancel, refund does NOT stop the agreement, portal refunds still webhook us, `PARTIALLY_REFUNDED` arrives unasked, "Refund is not possible" = single-settlement sales unit, 5/min rate limit); Appendix A rules out Vipps Donasjoner definitively (monthly-only enum, no API amount control) — read before any payment work; not yet fed into `specs/` |
 | (canonical) `docs/vipps-portal-walkthrough/README.md` | IN-PROGRESS (started 2026-07-28) recorded click-through of portal.vippsmobilepay.com with user-supplied screenshots (→ `images/`) — verifies onboarding checklist open question 6 and collects MSN + test API keys; session log is empty until the first screenshot lands — continue the recording there, one numbered entry per screen |
 | (canonical) `docs/vipps-org-onboarding.md` | iterable checklist of what an org must do to get Vipps live — baseline assumes an EXISTING standard Vipps business account; steps = add Faste betalinger to the agreement, approval, then org pastes its own MSN + API keys (DECIDED 2026-07-28: no Vipps platform-partner model to begin with) — in two forms: detailed post-org-creation instructions + 3-step marketing-site headlines — the source for future onboarding UI/marketing copy; not yet fed into `specs/` |
