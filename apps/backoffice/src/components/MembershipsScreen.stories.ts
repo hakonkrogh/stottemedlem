@@ -14,7 +14,7 @@ const memberships = (props: Record<string, unknown> = {}, warnings: OrgWarning[]
   slots: {
     default: {
       component: MembershipsScreen,
-      props: { orgPath: ORG_PATH, tiers: TIERS, ...props },
+      props: { orgPath: ORG_PATH, tiers: TIERS, warnings, ...props },
     },
   },
 });
@@ -22,7 +22,10 @@ const memberships = (props: Record<string, unknown> = {}, warnings: OrgWarning[]
 /** The offer, as the same cards the public join page shows. */
 export const Default = { args: memberships() };
 
-/** Before the first membership exists there is nothing to show supporters. */
+/**
+ * Before the first membership exists there is nothing to show supporters — the
+ * tab's badge is spelled out here, with the action that fixes it.
+ */
 export const NoMembershipsYet = {
   args: memberships(
     { tiers: [] },

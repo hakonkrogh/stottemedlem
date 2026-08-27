@@ -144,8 +144,15 @@ lives in `specs/`, kept in sync with code by a mandatory `Stop`-hook harness.
   by a newline collapses the space ("arbeidet iNordnes") — join with `{" "}`.
   Same class, third sighting 2026-08-24: **two adjacent expressions on ONE line
   inside a component slot** — `<Text>{a} {b}</Text>` — also lose the space
-  ("var 2024.Den årlige"). Building the sentence in the frontmatter
-  (`[a, b].filter(Boolean).join(" ")`) is immune to both and reads better.
+  ("var 2024.Den årlige"). Fourth, 2026-08-27: **an expression followed by a
+  COMPONENT tag on one line** — `{msg} <TextLink>…</TextLink>` inside `<Alert>`
+  — renders "…kontakt-e-post).Fyll inn nå". Treat it as the general rule: any
+  space that touches an `{expr}` boundary inside a slot is unreliable, so write
+  `{" "}` explicitly. Corollary when EXTRACTING markup into a shared component:
+  the original probably had `{expr}{" "}` on its own line — carry it over
+  verbatim instead of "tidying" it onto one line. Building the sentence in the
+  frontmatter (`[a, b].filter(Boolean).join(" ")`) is immune to all of them and
+  reads better.
   **Org visual identity** (added 2026-08-12, branch org-image-editing):
   `logo_key`/`banner_key` columns (migration `0002_org_images.sql`) hold R2
   object keys in the backoffice `MEDIA` bucket binding; upload/validate/serve

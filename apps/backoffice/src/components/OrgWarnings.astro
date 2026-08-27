@@ -1,0 +1,33 @@
+---
+// What is not yet in order, stated in full — each warning with the one action
+// that puts it right (specs/use-cases/set-up-supporting-membership.md).
+//
+// The same block is used by the front page, which shows the organization's
+// warnings all together, and by the frame, which shows a place its own ones
+// when you stand in it — so a badge on a tab always leads to a screen that
+// says what it counted.
+import Alert from "@stottemedlem/ui/components/Alert.astro";
+import Heading from "@stottemedlem/ui/components/Heading.astro";
+import Stack from "@stottemedlem/ui/components/Stack.astro";
+import TextLink from "@stottemedlem/ui/components/TextLink.astro";
+import type { OrgWarning } from "../lib/orgWarnings";
+
+interface Props {
+  warnings: OrgWarning[];
+}
+const { warnings } = Astro.props;
+---
+
+{
+  warnings.length > 0 && (
+    <Stack gap="sm">
+      <Heading level={2}>Dette bør ordnes</Heading>
+      {warnings.map((warning) => (
+        <Alert variant="info">
+          {warning.message}{" "}
+          <TextLink href={warning.href}>{warning.actionLabel}</TextLink>
+        </Alert>
+      ))}
+    </Stack>
+  )
+}
