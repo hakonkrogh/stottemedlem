@@ -527,7 +527,19 @@ lives in `specs/`, kept in sync with code by a mandatory `Stop`-hook harness.
   REPLACES the long-standing "nothing runs on a pull request", true through PR
   #27). One `check` job on `pull_request` + `push: main` runs
   `pnpm turbo run test typecheck build` on ubuntu-latest with no secrets, so it
-  works on forked PRs too. Cold run ~9s for 22 tasks.
+  works on forked PRs too. **Confirmed green on a real runner** (PR #43, run
+  33067643844, 43s) — a workflow added *inside* a PR does run on that same PR,
+  so a CI change proves itself. Cold run ~9s for 22 tasks locally.
+  - **`main` is NOT branch-protected** (`gh api repos/.../branches/main/protection`
+    → 404 "Branch not protected", checked 2026-08-27), so `check` is ADVISORY:
+    a red PR is still mergeable and nothing blocks a merge. Making it a required
+    status check is a repo setting, not a file — it has to be done via
+    `gh api` / the dashboard, and has NOT been done.
+  - **All three workflows pin actions that target Node 20**
+    (`actions/checkout@v4`, `actions/setup-node@v4`, `pnpm/action-setup@v4`).
+    Every run now carries a deprecation annotation — GitHub force-runs them on
+    Node 24; it is a warning, not a failure. Kept at v4 so the new workflow
+    matches the two deploy ones; bumping all three to v5 is a separate change.
   - **It seeds `.dev.vars` first** (`cp apps/backoffice/.dev.vars.example
     apps/backoffice/.dev.vars`). Without that the backoffice typecheck fails on
     a runner for exactly the reason it fails in a fresh worktree — `wrangler
