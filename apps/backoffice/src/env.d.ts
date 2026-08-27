@@ -32,6 +32,12 @@ interface Env {
    */
   PUBLIC_ORIGIN?: string;
   /**
+   * Which period scheme this environment counts memberships in (see
+   * src/lib/periods.ts): unset/"calendar-year" in production, "iso-week" on
+   * staging — the accelerated calendar where a week is treated as a year.
+   */
+  PERIOD_SCHEME?: string;
+  /**
    * Resend API key (secret). Absent = member notices are logged, not sent, and
    * nothing is recorded as having told anyone (see src/lib/email.ts).
    */

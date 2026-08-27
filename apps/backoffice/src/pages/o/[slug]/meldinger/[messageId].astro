@@ -1,14 +1,11 @@
 ---
-import {
-  getOrgMessage,
-  listOrganizationMembers,
-  listOrgMessageRecipients,
-} from "@stottemedlem/db";
+import { getOrgMessage, listOrganizationMembers, listOrgMessageRecipients } from "@stottemedlem/db";
 import MessageResultScreen from "../../../../components/MessageResultScreen.astro";
 import Shell from "../../../../layouts/Shell.astro";
 import { getDb } from "../../../../lib/db";
 import { summarizeDelivery } from "../../../../lib/messages";
 import { requireOrgAccess } from "../../../../lib/orgAccess";
+import { periods } from "../../../../lib/periods";
 import { orgPath } from "../../../../lib/workos";
 
 // What became of one message (specs/concepts/org-message.md): read entirely
@@ -29,7 +26,7 @@ const report = summarizeDelivery(recipients);
 
 // Names for the members the message did not reach, so the org can act.
 const names = new Map(
-  (await listOrganizationMembers(db, org.id)).map((entry) => [
+  (await listOrganizationMembers(db, org.id, periods.periodFor().year)).map((entry) => [
     entry.member.id,
     entry.member.name,
   ]),

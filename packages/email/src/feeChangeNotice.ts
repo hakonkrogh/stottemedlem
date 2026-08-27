@@ -13,8 +13,12 @@ export interface FeeChangeNotice {
   tierName: string;
   previousFeeNok: number;
   newFeeNok: number;
-  /** The first annual period charged at the new fee. */
-  effectiveYear: number;
+  /**
+   * The first annual period charged at the new fee, as people read it —
+   * "2027", or "uke 36/2026" on the accelerated staging calendar
+   * (periodLabel in @stottemedlem/core).
+   */
+  effectivePeriod: string;
   /** The member's own page — where they can stop, which is the point. */
   manageUrl: string;
 }
@@ -35,7 +39,7 @@ const kr = (nok: number) => `${nok.toLocaleString("nb-NO").replace(/ /g, " ")} 
  * nothing about is a nuisance (specs/concepts/member-notice.md).
  */
 export function feeChangeNotice(notice: FeeChangeNotice): EmailMessage {
-  const { orgName, memberName, tierName, previousFeeNok, newFeeNok, effectiveYear, manageUrl } =
+  const { orgName, memberName, tierName, previousFeeNok, newFeeNok, effectivePeriod, manageUrl } =
     notice;
 
   const greeting = memberName?.trim() ? `Hei ${memberName.trim()},` : "Hei,";
@@ -45,7 +49,7 @@ export function feeChangeNotice(notice: FeeChangeNotice): EmailMessage {
     greeting,
     "",
     `Du er støttemedlem i ${orgName} med medlemskapet «${tierName}». Prisen ${direction}:`,
-    `fra ${effectiveYear} koster medlemskapet ${kr(newFeeNok)} i året. I dag betaler du ${kr(previousFeeNok)}.`,
+    `fra ${effectivePeriod} koster medlemskapet ${kr(newFeeNok)} i året. I dag betaler du ${kr(previousFeeNok)}.`,
     "",
     "Den nye prisen gjelder fra fornyelsen ved årsskiftet. Det du har betalt for i år står,",
     "og du blir ikke belastet noe ekstra nå.",
@@ -64,7 +68,7 @@ export function feeChangeNotice(notice: FeeChangeNotice): EmailMessage {
   const html = `<div style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif;font-size:16px;line-height:1.6;color:#2b2118;max-width:34rem">
 <p>${escapeHtml(greeting)}</p>
 <p>Du er støttemedlem i ${org} med medlemskapet «${escapeHtml(tierName)}». Prisen ${direction}:
-fra <strong>${effectiveYear}</strong> koster medlemskapet <strong>${kr(newFeeNok)}</strong> i året.
+fra <strong>${escapeHtml(effectivePeriod)}</strong> koster medlemskapet <strong>${kr(newFeeNok)}</strong> i året.
 I dag betaler du ${kr(previousFeeNok)}.</p>
 <p>Den nye prisen gjelder fra fornyelsen ved årsskiftet. Det du har betalt for i år står, og du
 blir ikke belastet noe ekstra nå.</p>
@@ -79,7 +83,7 @@ på vegne av ${org}. Du får denne meldingen fordi du betaler for et medlemskap 
     to: notice.memberEmail,
     fromName: orgName,
     replyTo: notice.orgContactEmail ?? undefined,
-    subject: `${orgName}: støttemedlemskapet koster ${kr(newFeeNok)} fra ${effectiveYear}`,
+    subject: `${orgName}: støttemedlemskapet koster ${kr(newFeeNok)} fra ${effectivePeriod}`,
     text: lines.join("\n"),
     html,
   };

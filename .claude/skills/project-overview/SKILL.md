@@ -202,6 +202,42 @@ lives in `specs/`, kept in sync with code by a mandatory `Stop`-hook harness.
   that creates the charge and then fails to write it down cannot bill the member
   twice tomorrow. The tier form also reprices immediately on save so
   members' apps match at once.
+  **Period schemes / accelerated staging** (added 2026-08-27, branch
+  vip-staging-accelerated, spec section in `concepts/annual-period.md`): the
+  "year" is now a `PeriodScheme` in core (`getPeriodScheme`,
+  `calendarYearScheme`/`isoWeekScheme`, `periodLabel`), selected by the
+  `PERIOD_SCHEME` wrangler var and exposed to app code as `periods` from
+  `src/lib/periods.ts` — STAGING runs `iso-week` (week-as-year: period =
+  ISO week Mon–Sun, key `isoYear*100+week` e.g. 202635, fits `period_year`
+  with no migration; crons HOURLY :00 renew/:30 reconcile, worker.ts matches
+  both cron sets; agreements drafted with `interval: WEEK`; fee-notice rule
+  ≈6.4 real hours, retryDays 1, lookbacks 2/1 days), production stays
+  `calendar-year`. Renewal window on iso-week opens SATURDAY, not a
+  proportional "Dec 1" — Vipps requires a charge's `due` ≥1 REAL day out, so
+  the accelerated December (~13 h) can't hold it; any future compressed
+  calendar hits the same floor. Don't call the old core functions
+  (`annualPeriodFor`/`proratedJoinFeeNok`/`isRenewalWindow`/
+  `renewalPeriodYear`) from app code — go through `periods`; db functions
+  deriving member status now REQUIRE a `currentPeriodKey` arg
+  (`membershipStatus`, `listOrganizationMembers`, `getOrganizationMember`,
+  `listMessageableMembers`), pass `periods.periodFor().year`. Local smoke of
+  the accelerated mode: append `PERIOD_SCHEME="iso-week"` to `.dev.vars`,
+  restart dev, seed a FRESH slug (public-page cache!), then the join page
+  quotes "resten av uke NN/YYYY" with day-granular proration (Thursday =
+  4/7 of the fee); remove the line afterwards — seeded `period_year: 2026`
+  rows read as "Utløpt" under iso-week, which also happens to staging's old
+  D1 rows when this deploys (expected). **Remote staging runs iso-week since
+  2026-08-27** (manual branch deploy of vip-staging-accelerated; a later
+  main-merge REVERTS it unless that branch merges first). Remote test
+  baseline: staging D1 was empty, now seeded with the same fictitious org as
+  seed.sh (`eksempel-musikkorps`, tok-seed-1) — seed.sh is local-only, the
+  remote variant is its SQL via `CI=1 wrangler d1 execute DB --remote --env
+  staging --command "..."` with `period_year` as the CURRENT ISO-week key,
+  not `strftime('%Y')`. Manual staging deploy recipe (verified):
+  `CLOUDFLARE_ENV=staging turbo build` → `CI=1 wrangler deploy --env
+  staging` from apps/backoffice; the seeded `agr_seed_1` matches nothing at
+  Vipps, so staging reconciliation logs one failed read per run — expected
+  noise, not a bug.
   **Member list** (added 2026-08-24, spec `use-cases/curate-member-list.md`):
   `/o/[slug]/medlemmer` (list, `?sok=` search) + `/o/[slug]/medlemmer/[memberId]`
   (history + the one editable thing, contact details). Queries live in
@@ -233,10 +269,10 @@ lives in `specs/`, kept in sync with code by a mandatory `Stop`-hook harness.
   audience from the live register at delivery time (`deliverOrgMessage` in
   `src/lib/messages.ts`) and records one outcome row per member
   (`org_message_recipients`, unique per message+member = retry idempotency;
-  only provider-accepted sends count as `sent`). **Provision the queues
-  before deploy** — `wrangler queues create org-messages` (+
-  `org-messages-staging`); deploy validates consumers and fails otherwise
-  (still pending as of PR #32). Proving the send job needs no auth and no
+  only provider-accepted sends count as `sent`). Deploy validates queue
+  consumers and fails without the queues; `org-messages` +
+  `org-messages-staging` ARE provisioned (2026-08-27 — `wrangler queues
+  create` did NOT auto-edit wrangler.jsonc this time, unlike r2). Proving the send job needs no auth and no
   queue: a scratch `pnpm dlx tsx` script in `apps/backoffice` with wrangler's
   `getPlatformProxy({ configPath: "./wrangler.jsonc", persist: true })` (same
   live local D1 as `astro dev`) calling `deliverOrgMessage` with

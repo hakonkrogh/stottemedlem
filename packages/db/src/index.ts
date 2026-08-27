@@ -301,12 +301,18 @@ export async function archiveMembershipTier(
 // reported — never to a supporter merely arriving back on a page — and every
 // write is idempotent, because webhook delivery is at-least-once.
 
-/** A membership is active while its calendar year is the current one. */
+/**
+ * A membership is active while its period is the current one. What the current
+ * period IS depends on the environment's period scheme (calendar year in
+ * production, the ISO week on accelerated staging — see PeriodScheme in
+ * @stottemedlem/core), so the caller supplies today's period key rather than
+ * this package asking the calendar.
+ */
 export function membershipStatus(
   periodYear: number,
-  today: Date = new Date(),
+  currentPeriodKey: number,
 ): "active" | "lapsed" {
-  return periodYear >= today.getUTCFullYear() ? "active" : "lapsed";
+  return periodYear >= currentPeriodKey ? "active" : "lapsed";
 }
 
 /** What a supporter agreed to, before Vipps has confirmed anything. */
@@ -709,7 +715,8 @@ export interface MemberListEntry {
 export async function listMembersForPeriod(
   db: Db,
   orgId: string,
-  periodYear: number = new Date().getUTCFullYear(),
+  periodYear: number,
+  currentPeriodKey: number = periodYear,
 ): Promise<MemberListEntry[]> {
   const rows = await db
     .select({ member: supportingMembers, membership: memberships })
@@ -717,7 +724,10 @@ export async function listMembersForPeriod(
     .innerJoin(supportingMembers, eq(memberships.memberId, supportingMembers.id))
     .where(and(eq(memberships.orgId, orgId), eq(memberships.periodYear, periodYear)))
     .orderBy(asc(supportingMembers.name), asc(memberships.createdAt));
-  return rows.map((row) => ({ ...row, status: membershipStatus(row.membership.periodYear) }));
+  return rows.map((row) => ({
+    ...row,
+    status: membershipStatus(row.membership.periodYear, currentPeriodKey),
+  }));
 }
 
 /** Every period a supporter has ever paid for, newest first — their history. */
@@ -929,7 +939,7 @@ export interface MemberOverview {
 export async function listOrganizationMembers(
   db: Db,
   orgId: string,
-  today: Date = new Date(),
+  currentPeriodKey: number,
 ): Promise<MemberOverview[]> {
   const rows = await db
     .select({ member: supportingMembers, membership: memberships })
@@ -962,7 +972,7 @@ export async function listOrganizationMembers(
       // No completed period at all reads as lapsed: nothing has been paid, so
       // nothing is current. It is a brief state — a supporter is recorded on
       // approval, seconds before the first payment lands.
-      status: latest ? membershipStatus(latest.periodYear, today) : "lapsed",
+      status: latest ? membershipStatus(latest.periodYear, currentPeriodKey) : "lapsed",
       renewing: live.has(member.id),
     });
   }
@@ -996,7 +1006,7 @@ export async function getOrganizationMember(
   db: Db,
   orgId: string,
   memberId: string,
-  today: Date = new Date(),
+  currentPeriodKey: number,
 ): Promise<(MemberOverview & { history: Membership[] }) | null> {
   const [member] = await db
     .select()
@@ -1016,7 +1026,7 @@ export async function getOrganizationMember(
   return {
     member,
     latest,
-    status: latest ? membershipStatus(latest.periodYear, today) : "lapsed",
+    status: latest ? membershipStatus(latest.periodYear, currentPeriodKey) : "lapsed",
     renewing: Boolean(live),
     history,
   };
@@ -1095,6 +1105,9 @@ export async function listMemberFeeStandings(
   db: Db,
   orgId: string,
   today: Date = new Date(),
+  // The accelerated staging calendar scales the rule with everything else
+  // (PeriodScheme.feeNoticeDays); real days, may be fractional.
+  noticeDays: number = FEE_NOTICE_DAYS,
 ): Promise<MemberFeeStanding[]> {
   const rows = await db
     .select({ agreement: membershipAgreements, tier: membershipTiers, member: supportingMembers })
@@ -1126,7 +1139,7 @@ export async function listMemberFeeStandings(
   for (const row of paid)
     if (!lastPaidFee.has(row.memberId)) lastPaidFee.set(row.memberId, row.annualFeeNok);
 
-  const cutoff = isoDaysAgo(FEE_NOTICE_DAYS, today);
+  const cutoff = isoDaysAgo(noticeDays, today);
   const key = (memberId: string, tierId: string) => `${memberId}:${tierId}`;
   const newest = new Map<string, MemberNotice>();
   const newestRipe = new Map<string, MemberNotice>();
@@ -1236,9 +1249,9 @@ export interface MessageableMember {
 export async function listMessageableMembers(
   db: Db,
   orgId: string,
-  today: Date = new Date(),
+  currentPeriodKey: number,
 ): Promise<MessageableMember[]> {
-  const members = await listOrganizationMembers(db, orgId, today);
+  const members = await listOrganizationMembers(db, orgId, currentPeriodKey);
 
   // The member's own page belongs to their arrangement; prefer the live one,
   // fall back to the newest, so a lapsed member can still be reached.

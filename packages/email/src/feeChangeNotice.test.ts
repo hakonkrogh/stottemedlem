@@ -9,7 +9,7 @@ const base = {
   tierName: "Støttemedlem",
   previousFeeNok: 250,
   newFeeNok: 300,
-  effectiveYear: 2027,
+  effectivePeriod: "2027",
   manageUrl: "https://example.test/bli-medlem/fjellbygda/min-side?n=abc",
 };
 

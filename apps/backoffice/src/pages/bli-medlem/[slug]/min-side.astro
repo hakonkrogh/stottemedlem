@@ -1,5 +1,5 @@
 ---
-import { memberUnsubscribePath } from "@stottemedlem/core";
+import { memberUnsubscribePath, periodLabel } from "@stottemedlem/core";
 import {
   closeAgreement,
   findAgreementByManageToken,
@@ -78,8 +78,8 @@ const title = `Ditt støttemedlemskap — ${org.name}`;
       {
         current ? (
           <Text variant="lead">
-            {current.tierName} i {org.name} — {current.paidNok} kr betalt for {current.periodYear},
-            gyldig ut året.
+            {current.tierName} i {org.name} — {current.paidNok} kr betalt for{" "}
+            {periodLabel(current.periodYear)}, gyldig ut perioden.
           </Text>
         ) : (
           <Text variant="lead">Medlemskapet i {org.name} er ikke bekreftet ennå.</Text>
@@ -94,7 +94,7 @@ const title = `Ditt støttemedlemskap — ${org.name}`;
         <Stack gap="sm">
           <Alert variant="success">Medlemskapet er sagt opp.</Alert>
           <Text>
-            Du blir ikke belastet igjen. {current && `Du er støttemedlem ut ${current.periodYear}.`}
+            Du blir ikke belastet igjen. {current && `Du er støttemedlem ut ${periodLabel(current.periodYear)}.`}
           </Text>
         </Stack>
       ) : (

@@ -3,7 +3,8 @@
 // the one thing an administrator may change — how to reach them
 // (specs/use-cases/curate-member-list.md). Nothing here can make somebody a
 // member or stop them being one; that follows from payment alone.
-import type { Membership, MemberOverview } from "@stottemedlem/db";
+import { periodLabel } from "@stottemedlem/core";
+import type { MemberOverview, Membership } from "@stottemedlem/db";
 import Alert from "@stottemedlem/ui/components/Alert.astro";
 import Button from "@stottemedlem/ui/components/Button.astro";
 import Card from "@stottemedlem/ui/components/Card.astro";
@@ -28,9 +29,9 @@ const { member, latest, status, renewing, history } = entry;
 const displayName = member.name || member.email || member.phone || "Uten navn";
 const standing =
   status === "active"
-    ? `Aktivt støttemedlem, betalt for ${latest?.periodYear}.`
+    ? `Aktivt støttemedlem, betalt for ${latest ? periodLabel(latest.periodYear) : ""}.`
     : latest
-      ? `Utløpt medlemskap — siste betalte periode var ${latest.periodYear}.`
+      ? `Utløpt medlemskap — siste betalte periode var ${periodLabel(latest.periodYear)}.`
       : "Ingen betalt periode ennå.";
 // Whether support continues is a different question from whether it is current:
 // someone who has ended the arrangement stays a member until the year runs out.
@@ -96,7 +97,7 @@ const totalPaid = history.reduce((sum, period) => sum + period.paidNok, 0);
             <ul class="history">
               {history.map((period) => (
                 <li>
-                  <span class="year">{period.periodYear}</span>
+                  <span class="year">{periodLabel(period.periodYear)}</span>
                   <span class="tier">{period.tierName}</span>
                   <span class="paid">{period.paidNok} kr</span>
                 </li>

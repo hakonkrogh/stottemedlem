@@ -3,7 +3,8 @@
 // product exists to give an organization. Everything shown is derived: a member
 // is current because this year's fee was paid, never because somebody said so,
 // and this screen offers no way to change that.
-import { countMembersByStatus, matchesMemberSearch, type MemberOverview } from "@stottemedlem/db";
+import { periodLabel } from "@stottemedlem/core";
+import { countMembersByStatus, type MemberOverview, matchesMemberSearch } from "@stottemedlem/db";
 import Button from "@stottemedlem/ui/components/Button.astro";
 import CardFooter from "@stottemedlem/ui/components/CardFooter.astro";
 import Heading from "@stottemedlem/ui/components/Heading.astro";
@@ -28,7 +29,7 @@ const shown = members.filter((entry) => matchesMemberSearch(entry, search));
 const summary =
   members.length === 0
     ? "Ingen støttemedlemmer ennå. Den første dukker opp her av seg selv når noen melder seg inn."
-    : `${active} ${active === 1 ? "aktivt medlem" : "aktive medlemmer"} i ${currentYear}` +
+    : `${active} ${active === 1 ? "aktivt medlem" : "aktive medlemmer"} i ${periodLabel(currentYear)}` +
       (lapsed > 0 ? `, ${lapsed} utløpt.` : ".");
 ---
 

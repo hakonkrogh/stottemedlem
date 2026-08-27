@@ -18,10 +18,15 @@ const PUBLIC_ORG_PAGE = new RegExp(`^/${JOIN_PAGE_PATH_SEGMENT}/[a-z0-9-]+(?:/vi
 // and image endpoints alike — is redirected permanently rather than dropped.
 const FORMER_ORG_PAGE_PREFIX = "/org/";
 const PUBLIC_ORG_PAGE_CACHE = "public-org-pages";
-/** The nightly run that also arranges next year's payments (wrangler.jsonc). */
-const RENEWAL_CRON = "0 4 * * *";
-/** The earlier nightly run, which reads memberships back from Vipps first. */
-const RECONCILE_CRON = "0 2 * * *";
+/**
+ * The run that also arranges the coming period's payments (wrangler.jsonc):
+ * nightly at 04:00 in production, on the hour on staging — whose accelerated
+ * calendar treats the week as a year, so "nightly" relative to the period
+ * means hourly (specs/concepts/annual-period.md).
+ */
+const RENEWAL_CRONS = ["0 4 * * *", "0 * * * *"];
+/** The earlier run, which reads memberships back from Vipps first. */
+const RECONCILE_CRONS = ["0 2 * * *", "30 * * * *"];
 // Backstop for how long an unvisited copy may keep serving; every visit
 // refreshes it long before this matters.
 const CACHE_MAX_AGE_SECONDS = 7 * 24 * 60 * 60;
@@ -89,8 +94,8 @@ async function runScheduledJobs(cron: string): Promise<void> {
 
   const db = getDb();
   const workos = getWorkOS();
-  const arrangeRenewals = cron === RENEWAL_CRON;
-  const reconcileFirst = cron === RECONCILE_CRON;
+  const arrangeRenewals = RENEWAL_CRONS.includes(cron);
+  const reconcileFirst = RECONCILE_CRONS.includes(cron);
   // Stable messages, moving numbers in context: the alerting sink groups
   // recurrences of the same problem by message, so one bad week is one issue,
   // not seven. Each job logs under its own area (specs/concepts/operational-alerting.md).
@@ -210,11 +215,11 @@ const handler = {
    * Cron Triggers (wrangler.jsonc `triggers.crons`). What keeps memberships
    * running without anybody touching them:
    *
-   *   02:00  reconcile — read memberships back from Vipps, then reprice
-   *   04:00  renew     — reprice, then arrange next year's payments
+   *   02:00 (staging :30)  reconcile — read memberships back from Vipps, then reprice
+   *   04:00 (staging :00)  renew     — reprice, then arrange the next period's payments
    *
-   * Reconciliation comes first in the night so the renewal run two hours later
-   * is deciding against a corrected record. Both jobs are idempotent, so a
+   * Reconciliation comes first so the renewal run that follows is deciding
+   * against a corrected record. Both jobs are idempotent, so a
    * missed night costs nothing and a repeated one changes nothing. Every
    * organization is visited; one organization's failure never stops the others.
    */

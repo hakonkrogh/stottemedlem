@@ -1,8 +1,7 @@
 import { env } from "cloudflare:workers";
 import {
-  annualPeriodFor,
   memberSelfServicePath,
-  proratedJoinFeeNok,
+  periodLabel,
   tierAgreementExternalId,
   VIPPS_PRODUCT_NAME_MAX_LENGTH,
   vippsProductDescription,
@@ -21,6 +20,7 @@ import {
   recordDraftedAgreement,
 } from "@stottemedlem/db";
 import type { Agreement, Charge, ChargeStatus, VippsClient } from "@stottemedlem/vipps";
+import { periods } from "./periods";
 
 // Joining, and everything that happens afterwards (specs/use-cases/
 // join-as-supporting-member.md). Both entry points — the webhook receiver and
@@ -65,8 +65,8 @@ export async function startJoin(
   tier: MembershipTier,
   origin: string,
 ): Promise<JoinDraft> {
-  const period = annualPeriodFor();
-  const paidNok = proratedJoinFeeNok(tier.annualFeeNok, new Date());
+  const period = periods.periodFor();
+  const paidNok = periods.proratedJoinFeeNok(tier.annualFeeNok, new Date());
   // Our own id for this arrangement, carried on the Vipps agreement so a
   // delivery we have never seen before can still be traced back.
   const externalId = tierAgreementExternalId(tier.key, crypto.randomUUID());
@@ -80,7 +80,9 @@ export async function startJoin(
       // cost and what the member sees in their app. Only this first charge is
       // reduced, because only part of the year remains.
       pricing: { type: "LEGACY", amount: toOre(tier.annualFeeNok), currency: "NOK" },
-      interval: { unit: "YEAR", count: 1 },
+      // YEAR in production; the accelerated staging calendar signs members up
+      // by the week, so its agreements must permit a charge every week.
+      interval: periods.agreementInterval,
       merchantRedirectUrl: `${origin}/bli-medlem/${org.slug}/kvittering`,
       // The member's own page, reached from their Vipps app. The token is what
       // makes it theirs — see the manage_token column.
@@ -93,8 +95,8 @@ export async function startJoin(
         amount: toOre(paidNok),
         description:
           paidNok === tier.annualFeeNok
-            ? `${tier.name} ${period.year}`
-            : `${tier.name} — resten av ${period.year}`,
+            ? `${tier.name} ${periodLabel(period.year)}`
+            : `${tier.name} — resten av ${periodLabel(period.year)}`,
         transactionType: "DIRECT_CAPTURE",
       },
       // The minimum identity needed to list someone as a supporting member.
@@ -179,7 +181,11 @@ export async function syncAgreement(
  * without waiting to be told (specs/concepts/payment-reconciliation.md).
  */
 export async function applyCharge(db: Db, vippsAgreementId: string, charge: Charge): Promise<void> {
-  const periodYear = Number(charge.due.slice(0, 4));
+  // The period a payment belongs to follows from when it was due, read
+  // through the environment's period scheme — a calendar year in production,
+  // an ISO week on accelerated staging.
+  const period = periods.periodFor(new Date(charge.due));
+  const periodYear = period.year;
 
   await recordCharge(db, vippsAgreementId, {
     vippsChargeId: charge.id,
@@ -196,13 +202,12 @@ export async function applyCharge(db: Db, vippsAgreementId: string, charge: Char
 
   const local = await findAgreementByVippsId(db, vippsAgreementId);
   if (!local) return;
-  const period = annualPeriodFor(new Date(charge.due));
   await grantMembershipForCapturedCharge(db, charge.id, {
     periodYear,
-    // A renewal covers the whole year; a first, pro-rated charge covers from
-    // the day it was paid.
-    periodStart: charge.type === "RECURRING" ? `${periodYear}-01-01` : period.start,
-    periodEnd: `${periodYear}-12-31`,
+    // A renewal covers the whole period; a first, pro-rated charge covers
+    // from the day it was paid.
+    periodStart: charge.type === "RECURRING" ? periods.fullPeriod(periodYear).start : period.start,
+    periodEnd: period.end,
     annualFeeNok: local.annualFeeNok,
     paidNok: fromOre(charge.amount),
   });

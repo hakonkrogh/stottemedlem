@@ -2,6 +2,7 @@
 // One line of the member list (specs/use-cases/curate-member-list.md). Status
 // is the loudest thing on the row, because "who is current" is the question
 // the list exists to answer; the whole row is the link to the member.
+import { periodLabel } from "@stottemedlem/core";
 import type { MemberOverview } from "@stottemedlem/db";
 
 interface Props {
@@ -21,8 +22,8 @@ const standing = latest ? status : "unpaid";
 const label = { active: "Aktiv", lapsed: "Utløpt", unpaid: "Ikke betalt" }[standing];
 const period = latest
   ? status === "active"
-    ? `Betalt for ${latest.periodYear}`
-    : `Siste periode ${latest.periodYear}`
+    ? `Betalt for ${periodLabel(latest.periodYear)}`
+    : `Siste periode ${periodLabel(latest.periodYear)}`
   : "Ingen periode betalt ennå";
 // A member with no address is one the product cannot tell about a price
 // change, so the organization has to (specs/concepts/member-notice.md). It is

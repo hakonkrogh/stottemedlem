@@ -6,9 +6,9 @@ import {
   isProfileComplete,
   type MemberFeeStanding,
   type MemberOverview,
+  type MessageableMember,
   matchesMemberSearch,
   membershipStatus,
-  type MessageableMember,
   messageReach,
   owesFeeChangeNotice,
   renewalFeeNok,
@@ -36,23 +36,27 @@ describe("isProfileComplete", () => {
 });
 
 describe("membershipStatus", () => {
-  const today = new Date("2026-08-20T12:00:00Z");
-
-  it("is active for the current calendar year", () => {
-    expect(membershipStatus(2026, today)).toBe("active");
+  it("is active for the current period", () => {
+    expect(membershipStatus(2026, 2026)).toBe("active");
   });
 
-  it("is lapsed once the year has passed", () => {
-    expect(membershipStatus(2025, today)).toBe("lapsed");
+  it("is lapsed once the period has passed", () => {
+    expect(membershipStatus(2025, 2026)).toBe("lapsed");
   });
 
   it("treats a period already paid for next year as active", () => {
-    expect(membershipStatus(2027, today)).toBe("active");
+    expect(membershipStatus(2027, 2026)).toBe("active");
   });
 
-  it("flips on 1 January without anything being written", () => {
-    expect(membershipStatus(2026, new Date("2026-12-31T23:59:59Z"))).toBe("active");
-    expect(membershipStatus(2026, new Date("2027-01-01T00:00:00Z"))).toBe("lapsed");
+  it("flips the moment the caller's current period moves on, nothing written", () => {
+    expect(membershipStatus(2026, 2026)).toBe("active");
+    expect(membershipStatus(2026, 2027)).toBe("lapsed");
+  });
+
+  it("works the same for accelerated ISO-week keys, across the year turn", () => {
+    expect(membershipStatus(202635, 202635)).toBe("active");
+    expect(membershipStatus(202653, 202701)).toBe("lapsed");
+    expect(membershipStatus(202701, 202653)).toBe("active");
   });
 });
 

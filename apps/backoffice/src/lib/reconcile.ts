@@ -9,6 +9,7 @@ import {
 import type { Charge, ChargeStatus, VippsClient } from "@stottemedlem/vipps";
 import { logger } from "./log";
 import { applyCharge, syncAgreement } from "./membership";
+import { periods } from "./periods";
 
 // Reconciliation (specs/concepts/payment-reconciliation.md): the nightly pass
 // that reads memberships back from Vipps instead of waiting to be told about
@@ -22,10 +23,13 @@ import { applyCharge, syncAgreement } from "./membership";
 // makes our record say the same. That makes it safe to run every night, safe
 // to run twice, and safe to have skipped.
 
-/** How far back an unresolved payment is worth chasing. */
-const CHARGE_LOOKBACK_DAYS = 60;
-/** How long an unapproved draft is still worth asking about. */
-const DRAFT_LOOKBACK_DAYS = 14;
+/**
+ * How far back an unresolved payment is worth chasing, and how long an
+ * unapproved draft is still worth asking about. Real days, from the period
+ * scheme: the accelerated staging calendar shortens both with everything else.
+ */
+const CHARGE_LOOKBACK_DAYS = periods.chargeLookbackDays;
+const DRAFT_LOOKBACK_DAYS = periods.draftLookbackDays;
 /**
  * Agreements visited per organization per run. The sweep is bounded so a night
  * costs a predictable amount however large the organization grows; agreements
@@ -94,10 +98,10 @@ function reportDuplicateRenewals(
   remoteCharges: Charge[],
   report: ReconcileReport,
 ): void {
-  const byPeriod = new Map<string, Charge[]>();
+  const byPeriod = new Map<number, Charge[]>();
   for (const charge of remoteCharges) {
     if (charge.type !== "RECURRING" || !CAN_TAKE_MONEY.has(charge.status)) continue;
-    const periodYear = charge.due.slice(0, 4);
+    const periodYear = periods.periodFor(new Date(charge.due)).year;
     byPeriod.set(periodYear, [...(byPeriod.get(periodYear) ?? []), charge]);
   }
   for (const [periodYear, charges] of byPeriod) {

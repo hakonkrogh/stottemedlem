@@ -1,10 +1,5 @@
 ---
-import {
-  annualPeriodFor,
-  formatOrganisasjonsnummer,
-  joinPageTermsUrl,
-  proratedJoinFeeNok,
-} from "@stottemedlem/core";
+import { formatOrganisasjonsnummer, joinPageTermsUrl, periodLabel } from "@stottemedlem/core";
 import { getOrganizationBySlug, listMembershipTiers } from "@stottemedlem/db";
 import Alert from "@stottemedlem/ui/components/Alert.astro";
 import Button from "@stottemedlem/ui/components/Button.astro";
@@ -16,6 +11,7 @@ import MembershipTierCard from "../../../components/MembershipTierCard.astro";
 import PublicShell from "../../../layouts/PublicShell.astro";
 import { getDb } from "../../../lib/db";
 import { orgImageUrl } from "../../../lib/orgImages";
+import { periods } from "../../../lib/periods";
 
 // PUBLIC join page (specs/concepts/join-page.md): the page an
 // admin registers as the organization's website in the Vipps portal, so it
@@ -33,12 +29,12 @@ if (!org) return new Response("Fant ikke organisasjonen", { status: 404 });
 // prompts to fix.
 const tiers = await listMembershipTiers(db, org.id);
 
-// What joining costs today: the rest of this calendar year, pro-rated
+// What joining costs today: the rest of the current period, pro-rated
 // (specs/concepts/annual-period.md). The page states both numbers, so nobody
-// is surprised by either the amount now or the full fee in January.
-const period = annualPeriodFor();
+// is surprised by either the amount now or the full fee at renewal.
+const period = periods.periodFor();
 const priceToday = new Map(
-  tiers.map((tier) => [tier.id, proratedJoinFeeNok(tier.annualFeeNok, new Date())]),
+  tiers.map((tier) => [tier.id, periods.proratedJoinFeeNok(tier.annualFeeNok, new Date())]),
 );
 
 const title = `${org.name} — bli støttemedlem`;
@@ -117,7 +113,7 @@ const joinError = Astro.url.searchParams.get("feil");
           {
             priceToday.get(tier.id) !== tier.annualFeeNok && (
               <Text variant="small">
-                Du betaler {priceToday.get(tier.id)} kr nå for resten av {period.year}, deretter{" "}
+                Du betaler {priceToday.get(tier.id)} kr nå for resten av {periodLabel(period.year)}, deretter{" "}
                 {tier.annualFeeNok} kr i året.
               </Text>
             )
