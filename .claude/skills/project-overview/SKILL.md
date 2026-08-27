@@ -38,7 +38,11 @@ lives in `specs/`, kept in sync with code by a mandatory `Stop`-hook harness.
   project `backoffice-server`, region de.sentry.io — the Sentry MCP's
   `find_dsns` can read the DSN, no need to ask the user), told apart by the
   `SENTRY_ENVIRONMENT` var stamped as the event environment; operator email
-  alerts stay production-scoped, local dev never has the DSN. Do NOT
+  alerts stay production-scoped, local dev never has the DSN. To prove
+  wiring without waiting for a real error: POST a 3-line event envelope to
+  `https://<host>/api/<projectId>/envelope/?sentry_key=<key>` with
+  `environment` set, then search `environment:staging` via the MCP and
+  resolve the test issue (done 2026-08-27, BACKOFFICE-SERVER-5). Do NOT
   copy the bare `console.error` style still in older lib files (renewals.ts) —
   console lines die in the Workers log. Env/secrets come from `import { env } from
   "cloudflare:workers"` (NOT `Astro.locals.runtime.env` — removed in Astro v6+);
