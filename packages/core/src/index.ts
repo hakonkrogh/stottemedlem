@@ -48,14 +48,17 @@ export const MEMBERSHIP_TIER_DESCRIPTION_MAX_LENGTH = 200;
  * characters are dropped, and runs of blank lines collapse to one.
  */
 export function normalizeMembershipTierDescription(input: string): string {
-  return input
-    .replaceAll("\r\n", "\n")
-    .replaceAll("\r", "\n")
-    .replaceAll("\t", " ")
-    .replaceAll(/[\u0000-\u0008\u000B-\u001F\u007F]/g, "")
-    .replaceAll(/ +\n/g, "\n")
-    .replaceAll(/\n{3,}/g, "\n\n")
-    .trim();
+  return (
+    input
+      .replaceAll("\r\n", "\n")
+      .replaceAll("\r", "\n")
+      .replaceAll("\t", " ")
+      // biome-ignore lint/suspicious/noControlCharactersInRegex: dropping control characters is this function's job (see the doc comment); the range spares \n, which the lines above normalize to.
+      .replaceAll(/[\u0000-\u0008\u000B-\u001F\u007F]/g, "")
+      .replaceAll(/ +\n/g, "\n")
+      .replaceAll(/\n{3,}/g, "\n\n")
+      .trim()
+  );
 }
 
 /**

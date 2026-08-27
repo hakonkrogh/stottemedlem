@@ -1,5 +1,5 @@
-import { CANONICAL_ORIGIN, joinPagePath, joinPageTermsPath } from "@stottemedlem/core";
 import { env } from "cloudflare:workers";
+import { CANONICAL_ORIGIN, joinPagePath, joinPageTermsPath } from "@stottemedlem/core";
 
 /**
  * The origin this environment's shareable public addresses live on

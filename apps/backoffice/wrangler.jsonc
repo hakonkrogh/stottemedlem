@@ -1,254 +1,246 @@
 {
-	"$schema": "node_modules/wrangler/config-schema.json",
-	"name": "stottemedlem-backoffice",
-	"compatibility_date": "2026-06-01",
-	"compatibility_flags": [
-		"nodejs_compat"
-	],
-	// Custom worker entry: re-exports Astro's fetch handler and adds the
-	// scheduled (cron) and queue (webhook consumer) handlers.
-	"main": "./src/worker.ts",
-	// Custom domain (app.støttemedlem.no in punycode) — wrangler manages DNS +
-	// certs on deploy; the CI token needs zone-level permission (same as marketing).
-	// The apex /bli-medlem/* zone route serves the canonical public join pages
-	// (packages/core joinPageUrl → https://støttemedlem.no/bli-medlem/<slug>);
-	// zone routes take precedence over the marketing Worker's apex custom domain.
-	// /org/* is the join page's former address and MUST stay routed here — the
-	// 301 in src/worker.ts only fires on requests this Worker actually receives.
-	"routes": [
-		{
-			"pattern": "app.xn--stttemedlem-hgb.no",
-			"custom_domain": true
-		},
-		{
-			"pattern": "xn--stttemedlem-hgb.no/bli-medlem/*",
-			"zone_name": "xn--stttemedlem-hgb.no"
-		},
-		{
-			"pattern": "xn--stttemedlem-hgb.no/org/*",
-			"zone_name": "xn--stttemedlem-hgb.no"
-		}
-	],
-	"assets": {
-		"binding": "ASSETS",
-		"directory": "./dist"
-	},
-	"observability": {
-		"enabled": true
-	},
-	// ── WorkOS AuthKit (production) ───────────────────────────────────────
-	// Non-secret config lives here (per-env, non-inheritable — repeat under
-	// env.staging). The two secrets WORKOS_API_KEY and WORKOS_COOKIE_PASSWORD
-	// are set out-of-band per environment:
-	//   wrangler secret put WORKOS_API_KEY            (production)
-	//   wrangler secret put WORKOS_API_KEY --env staging
-	//   wrangler secret put WORKOS_COOKIE_PASSWORD    (+ --env staging)
-	// Locally, all four come from .dev.vars (see .dev.vars.example).
-	"vars": {
-		"WORKOS_CLIENT_ID": "client_01KX0YS9099GNV5GP0A6B2KVDD",
-		"WORKOS_REDIRECT_URI": "https://app.xn--stttemedlem-hgb.no/callback",
-		// ── Vipps MobilePay ─────────────────────────────────────────────────
-		// Only production talks to api.vipps.no; staging + local use the test
-		// environment. This base URL is the ONLY per-environment Vipps config:
-		// each org adds its own sales-unit keys in the backoffice
-		// (/o/[slug]/vipps), stored per org in WorkOS Vault.
-		"VIPPS_API_BASE_URL": "https://api.vipps.no",
-		// The origin Vipps sends supporters back to and delivers payment events
-		// to. Stated rather than derived, because a scheduled job has no incoming
-		// request to derive it from. Empty locally (.dev.vars) = use the request's.
-		"PUBLIC_ORIGIN": "https://app.xn--stttemedlem-hgb.no",
-		// Where member notices come from (specs/concepts/member-notice.md). The
-		// domain must be verified with Resend; the RESEND_API_KEY secret is set
-		// out of band (`wrangler secret put RESEND_API_KEY [--env staging]`).
-		// Without that secret notices are logged instead of sent.
-		"EMAIL_FROM_ADDRESS": "varsel@xn--stttemedlem-hgb.no",
-		// Production counts memberships in calendar years. Staging runs the
-		// accelerated ISO-week calendar instead (see its own vars below).
-		"PERIOD_SCHEME": "calendar-year",
-		// Stamped on every Sentry event so the operator can filter production
-		// from staging (specs/concepts/operational-alerting.md).
-		"SENTRY_ENVIRONMENT": "production"
-		// The Sentry DSN for operational alerting is deliberately NOT a var:
-		// local dev inherits these vars, and a developer's machine must never
-		// report into the operator's alerting (specs/concepts/operational-alerting.md).
-		// It is set out of band, like the secrets, per DEPLOYED environment
-		// (same Sentry project; events are told apart by SENTRY_ENVIRONMENT):
-		//   wrangler secret put SENTRY_DSN [--env staging]
-		// Absent = errors are logged, not reported.
-	},
-	// ── Bindings ──────────────────────────────────────────────────────────
-	// Real resource ids (provisioned 2026-08-12 via `wrangler d1 create`,
-	// `wrangler kv namespace create`, `wrangler queues create`). Local dev does
-	// not touch them — `astro dev` runs against local Miniflare resources.
-	"d1_databases": [
-		{
-			"binding": "DB",
-			"database_name": "stottemedlem",
-			"database_id": "d7d2afff-7d1e-4df5-987b-9974676550df",
-			"migrations_dir": "../../packages/db/migrations"
-		}
-	],
-	"kv_namespaces": [
-		{
-			"binding": "VIPPS_TOKENS",
-			"id": "6c00a9db7bf3426e8fb2df05a4d24f71"
-		},
-		// Astro's session store. Declared explicitly (namespace "sessions") so the
-		// adapter's auto-injected SESSION binding resolves to a known namespace
-		// instead of relying on deploy-time auto-provisioning.
-		{
-			"binding": "SESSION",
-			"id": "00b21f6f734b4d4cb673c78159cd4b60"
-		}
-	],
-	"queues": {
-		"producers": [
-			{
-				"binding": "VIPPS_EVENTS",
-				"queue": "vipps-events"
-			},
-			// Org messages to supporting members (specs/concepts/org-message.md):
-			// the compose page enqueues, the queue handler in src/worker.ts walks
-			// the register and sends. Provision once per environment BEFORE the
-			// next deploy: `wrangler queues create org-messages`
-			// (+ `wrangler queues create org-messages-staging`).
-			{
-				"binding": "ORG_MESSAGES",
-				"queue": "org-messages"
-			}
-		],
-		"consumers": [
-			{
-				"queue": "vipps-events",
-				"max_batch_size": 10,
-				"max_retries": 5
-			},
-			{
-				"queue": "org-messages",
-				// One message walks the whole audience; small batches keep a slow
-				// provider from starving the next organization's message.
-				"max_batch_size": 5,
-				"max_retries": 5
-			}
-		]
-	},
-	// Uploaded org media (logo/banner images), served via /org/<slug>/logo|banner.
-	// Provision once per environment: `wrangler r2 bucket create stottemedlem-media`
-	// (+ `stottemedlem-media-staging`). Local dev uses Miniflare's local R2.
-	"r2_buckets": [
-		{
-			"binding": "MEDIA",
-			"bucket_name": "stottemedlem-media"
-		}
-	],
-	// Cron Triggers — handled in src/worker.ts `scheduled` (switch on
-	// controller.cron): 04:00 renewal-charge job, 02:00 nightly reconciliation.
-	"triggers": {
-		"crons": [
-			"0 4 * * *",
-			"0 2 * * *"
-		]
-	},
-	// ── Environments ──────────────────────────────────────────────────────
-	// Top-level config is production. `staging` mirrors it against the Vipps
-	// test environment; bindings are non-inheritable so they repeat here.
-	"env": {
-		"staging": {
-			"routes": [
-				{
-					"pattern": "staging.app.xn--stttemedlem-hgb.no",
-					"custom_domain": true
-				}
-			],
-			"assets": {
-				"binding": "ASSETS",
-				"directory": "./dist"
-			},
-			"observability": {
-				"enabled": true
-			},
-			// WorkOS AuthKit (staging). Uses a separate WorkOS environment's
-			// client id; secrets set with `wrangler secret put <NAME> --env staging`.
-			"vars": {
-				"WORKOS_CLIENT_ID": "client_01KX0YS8HXEWRF32JBT371231A",
-				"WORKOS_REDIRECT_URI": "https://staging.app.xn--stttemedlem-hgb.no/callback",
-				// Vipps TEST environment — orgs add their own test sales-unit keys
-				// through the backoffice, so only the base URL differs from prod.
-				"VIPPS_API_BASE_URL": "https://apitest.vipps.no",
-				"PUBLIC_ORIGIN": "https://staging.app.xn--stttemedlem-hgb.no",
-				// Shareable public addresses (join links the back office shows, QR
-				// payloads) live on staging's own origin — unset elsewhere, where
-				// they default to the canonical støttemedlem.no origin from core.
-				"JOIN_PAGE_ORIGIN": "https://staging.app.xn--stttemedlem-hgb.no",
-				"EMAIL_FROM_ADDRESS": "varsel@xn--stttemedlem-hgb.no",
-				// The accelerated staging calendar (specs/concepts/annual-period.md):
-				// the ISO week is treated as the annual period, so a full membership
-				// lifecycle — join, notice, reprice, renewal, lapse — can be
-				// rehearsed against Vipps test in days instead of years.
-				"PERIOD_SCHEME": "iso-week",
-				// Staging reports to the SAME Sentry project as production; this
-				// tag is what keeps the two filterable apart. The DSN is a secret:
-				// `wrangler secret put SENTRY_DSN --env staging` (set 2026-08-27).
-				"SENTRY_ENVIRONMENT": "staging"
-			},
-			"d1_databases": [
-				{
-					"binding": "DB",
-					"database_name": "stottemedlem-staging",
-					"database_id": "0da9883a-7f06-4234-b5d8-3c3f5e9473ac",
-					"migrations_dir": "../../packages/db/migrations"
-				}
-			],
-			"kv_namespaces": [
-				{
-					"binding": "VIPPS_TOKENS",
-					"id": "ece345d0f22d4298a6def93ce9b503fe"
-				},
-				{
-					"binding": "SESSION",
-					"id": "1d6aa5e34e6d4977b47c1ffa97ca9e71"
-				}
-			],
-			"queues": {
-				"producers": [
-					{
-						"binding": "VIPPS_EVENTS",
-						"queue": "vipps-events-staging"
-					},
-					{
-						"binding": "ORG_MESSAGES",
-						"queue": "org-messages-staging"
-					}
-				],
-				"consumers": [
-					{
-						"queue": "vipps-events-staging",
-						"max_batch_size": 10,
-						"max_retries": 5
-					},
-					{
-						"queue": "org-messages-staging",
-						"max_batch_size": 5,
-						"max_retries": 5
-					}
-				]
-			},
-			"r2_buckets": [
-				{
-					"binding": "MEDIA",
-					"bucket_name": "stottemedlem-media-staging"
-				}
-			],
-			// Hourly, not nightly: on the week-as-year calendar an accelerated
-			// day is ~28 real minutes, so hourly keeps the same cadence relative
-			// to the period as production's nightly runs. worker.ts recognizes
-			// these strings alongside the production ones.
-			"triggers": {
-				"crons": [
-					"0 * * * *",
-					"30 * * * *"
-				]
-			}
-		}
-	}
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "stottemedlem-backoffice",
+  "compatibility_date": "2026-06-01",
+  "compatibility_flags": ["nodejs_compat"],
+  // Custom worker entry: re-exports Astro's fetch handler and adds the
+  // scheduled (cron) and queue (webhook consumer) handlers.
+  "main": "./src/worker.ts",
+  // Custom domain (app.støttemedlem.no in punycode) — wrangler manages DNS +
+  // certs on deploy; the CI token needs zone-level permission (same as marketing).
+  // The apex /bli-medlem/* zone route serves the canonical public join pages
+  // (packages/core joinPageUrl → https://støttemedlem.no/bli-medlem/<slug>);
+  // zone routes take precedence over the marketing Worker's apex custom domain.
+  // /org/* is the join page's former address and MUST stay routed here — the
+  // 301 in src/worker.ts only fires on requests this Worker actually receives.
+  "routes": [
+    {
+      "pattern": "app.xn--stttemedlem-hgb.no",
+      "custom_domain": true
+    },
+    {
+      "pattern": "xn--stttemedlem-hgb.no/bli-medlem/*",
+      "zone_name": "xn--stttemedlem-hgb.no"
+    },
+    {
+      "pattern": "xn--stttemedlem-hgb.no/org/*",
+      "zone_name": "xn--stttemedlem-hgb.no"
+    }
+  ],
+  "assets": {
+    "binding": "ASSETS",
+    "directory": "./dist"
+  },
+  "observability": {
+    "enabled": true
+  },
+  // ── WorkOS AuthKit (production) ───────────────────────────────────────
+  // Non-secret config lives here (per-env, non-inheritable — repeat under
+  // env.staging). The two secrets WORKOS_API_KEY and WORKOS_COOKIE_PASSWORD
+  // are set out-of-band per environment:
+  //   wrangler secret put WORKOS_API_KEY            (production)
+  //   wrangler secret put WORKOS_API_KEY --env staging
+  //   wrangler secret put WORKOS_COOKIE_PASSWORD    (+ --env staging)
+  // Locally, all four come from .dev.vars (see .dev.vars.example).
+  "vars": {
+    "WORKOS_CLIENT_ID": "client_01KX0YS9099GNV5GP0A6B2KVDD",
+    "WORKOS_REDIRECT_URI": "https://app.xn--stttemedlem-hgb.no/callback",
+    // ── Vipps MobilePay ─────────────────────────────────────────────────
+    // Only production talks to api.vipps.no; staging + local use the test
+    // environment. This base URL is the ONLY per-environment Vipps config:
+    // each org adds its own sales-unit keys in the backoffice
+    // (/o/[slug]/vipps), stored per org in WorkOS Vault.
+    "VIPPS_API_BASE_URL": "https://api.vipps.no",
+    // The origin Vipps sends supporters back to and delivers payment events
+    // to. Stated rather than derived, because a scheduled job has no incoming
+    // request to derive it from. Empty locally (.dev.vars) = use the request's.
+    "PUBLIC_ORIGIN": "https://app.xn--stttemedlem-hgb.no",
+    // Where member notices come from (specs/concepts/member-notice.md). The
+    // domain must be verified with Resend; the RESEND_API_KEY secret is set
+    // out of band (`wrangler secret put RESEND_API_KEY [--env staging]`).
+    // Without that secret notices are logged instead of sent.
+    "EMAIL_FROM_ADDRESS": "varsel@xn--stttemedlem-hgb.no",
+    // Production counts memberships in calendar years. Staging runs the
+    // accelerated ISO-week calendar instead (see its own vars below).
+    "PERIOD_SCHEME": "calendar-year",
+    // Stamped on every Sentry event so the operator can filter production
+    // from staging (specs/concepts/operational-alerting.md).
+    "SENTRY_ENVIRONMENT": "production"
+    // The Sentry DSN for operational alerting is deliberately NOT a var:
+    // local dev inherits these vars, and a developer's machine must never
+    // report into the operator's alerting (specs/concepts/operational-alerting.md).
+    // It is set out of band, like the secrets, per DEPLOYED environment
+    // (same Sentry project; events are told apart by SENTRY_ENVIRONMENT):
+    //   wrangler secret put SENTRY_DSN [--env staging]
+    // Absent = errors are logged, not reported.
+  },
+  // ── Bindings ──────────────────────────────────────────────────────────
+  // Real resource ids (provisioned 2026-08-12 via `wrangler d1 create`,
+  // `wrangler kv namespace create`, `wrangler queues create`). Local dev does
+  // not touch them — `astro dev` runs against local Miniflare resources.
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "stottemedlem",
+      "database_id": "d7d2afff-7d1e-4df5-987b-9974676550df",
+      "migrations_dir": "../../packages/db/migrations"
+    }
+  ],
+  "kv_namespaces": [
+    {
+      "binding": "VIPPS_TOKENS",
+      "id": "6c00a9db7bf3426e8fb2df05a4d24f71"
+    },
+    // Astro's session store. Declared explicitly (namespace "sessions") so the
+    // adapter's auto-injected SESSION binding resolves to a known namespace
+    // instead of relying on deploy-time auto-provisioning.
+    {
+      "binding": "SESSION",
+      "id": "00b21f6f734b4d4cb673c78159cd4b60"
+    }
+  ],
+  "queues": {
+    "producers": [
+      {
+        "binding": "VIPPS_EVENTS",
+        "queue": "vipps-events"
+      },
+      // Org messages to supporting members (specs/concepts/org-message.md):
+      // the compose page enqueues, the queue handler in src/worker.ts walks
+      // the register and sends. Provision once per environment BEFORE the
+      // next deploy: `wrangler queues create org-messages`
+      // (+ `wrangler queues create org-messages-staging`).
+      {
+        "binding": "ORG_MESSAGES",
+        "queue": "org-messages"
+      }
+    ],
+    "consumers": [
+      {
+        "queue": "vipps-events",
+        "max_batch_size": 10,
+        "max_retries": 5
+      },
+      {
+        "queue": "org-messages",
+        // One message walks the whole audience; small batches keep a slow
+        // provider from starving the next organization's message.
+        "max_batch_size": 5,
+        "max_retries": 5
+      }
+    ]
+  },
+  // Uploaded org media (logo/banner images), served via /org/<slug>/logo|banner.
+  // Provision once per environment: `wrangler r2 bucket create stottemedlem-media`
+  // (+ `stottemedlem-media-staging`). Local dev uses Miniflare's local R2.
+  "r2_buckets": [
+    {
+      "binding": "MEDIA",
+      "bucket_name": "stottemedlem-media"
+    }
+  ],
+  // Cron Triggers — handled in src/worker.ts `scheduled` (switch on
+  // controller.cron): 04:00 renewal-charge job, 02:00 nightly reconciliation.
+  "triggers": {
+    "crons": ["0 4 * * *", "0 2 * * *"]
+  },
+  // ── Environments ──────────────────────────────────────────────────────
+  // Top-level config is production. `staging` mirrors it against the Vipps
+  // test environment; bindings are non-inheritable so they repeat here.
+  "env": {
+    "staging": {
+      "routes": [
+        {
+          "pattern": "staging.app.xn--stttemedlem-hgb.no",
+          "custom_domain": true
+        }
+      ],
+      "assets": {
+        "binding": "ASSETS",
+        "directory": "./dist"
+      },
+      "observability": {
+        "enabled": true
+      },
+      // WorkOS AuthKit (staging). Uses a separate WorkOS environment's
+      // client id; secrets set with `wrangler secret put <NAME> --env staging`.
+      "vars": {
+        "WORKOS_CLIENT_ID": "client_01KX0YS8HXEWRF32JBT371231A",
+        "WORKOS_REDIRECT_URI": "https://staging.app.xn--stttemedlem-hgb.no/callback",
+        // Vipps TEST environment — orgs add their own test sales-unit keys
+        // through the backoffice, so only the base URL differs from prod.
+        "VIPPS_API_BASE_URL": "https://apitest.vipps.no",
+        "PUBLIC_ORIGIN": "https://staging.app.xn--stttemedlem-hgb.no",
+        // Shareable public addresses (join links the back office shows, QR
+        // payloads) live on staging's own origin — unset elsewhere, where
+        // they default to the canonical støttemedlem.no origin from core.
+        "JOIN_PAGE_ORIGIN": "https://staging.app.xn--stttemedlem-hgb.no",
+        "EMAIL_FROM_ADDRESS": "varsel@xn--stttemedlem-hgb.no",
+        // The accelerated staging calendar (specs/concepts/annual-period.md):
+        // the ISO week is treated as the annual period, so a full membership
+        // lifecycle — join, notice, reprice, renewal, lapse — can be
+        // rehearsed against Vipps test in days instead of years.
+        "PERIOD_SCHEME": "iso-week",
+        // Staging reports to the SAME Sentry project as production; this
+        // tag is what keeps the two filterable apart. The DSN is a secret:
+        // `wrangler secret put SENTRY_DSN --env staging` (set 2026-08-27).
+        "SENTRY_ENVIRONMENT": "staging"
+      },
+      "d1_databases": [
+        {
+          "binding": "DB",
+          "database_name": "stottemedlem-staging",
+          "database_id": "0da9883a-7f06-4234-b5d8-3c3f5e9473ac",
+          "migrations_dir": "../../packages/db/migrations"
+        }
+      ],
+      "kv_namespaces": [
+        {
+          "binding": "VIPPS_TOKENS",
+          "id": "ece345d0f22d4298a6def93ce9b503fe"
+        },
+        {
+          "binding": "SESSION",
+          "id": "1d6aa5e34e6d4977b47c1ffa97ca9e71"
+        }
+      ],
+      "queues": {
+        "producers": [
+          {
+            "binding": "VIPPS_EVENTS",
+            "queue": "vipps-events-staging"
+          },
+          {
+            "binding": "ORG_MESSAGES",
+            "queue": "org-messages-staging"
+          }
+        ],
+        "consumers": [
+          {
+            "queue": "vipps-events-staging",
+            "max_batch_size": 10,
+            "max_retries": 5
+          },
+          {
+            "queue": "org-messages-staging",
+            "max_batch_size": 5,
+            "max_retries": 5
+          }
+        ]
+      },
+      "r2_buckets": [
+        {
+          "binding": "MEDIA",
+          "bucket_name": "stottemedlem-media-staging"
+        }
+      ],
+      // Hourly, not nightly: on the week-as-year calendar an accelerated
+      // day is ~28 real minutes, so hourly keeps the same cadence relative
+      // to the period as production's nightly runs. worker.ts recognizes
+      // these strings alongside the production ones.
+      "triggers": {
+        "crons": ["0 * * * *", "30 * * * *"]
+      }
+    }
+  }
 }

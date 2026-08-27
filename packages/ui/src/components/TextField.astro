@@ -13,8 +13,17 @@ interface Props {
   autofocus?: boolean;
   error?: string | null;
 }
-const { label, name, type = "text", id = name, value, placeholder, required, autofocus, error } =
-  Astro.props;
+const {
+  label,
+  name,
+  type = "text",
+  id = name,
+  value,
+  placeholder,
+  required,
+  autofocus,
+  error,
+} = Astro.props;
 const errorId = `${id}-error`;
 ---
 
