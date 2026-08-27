@@ -1,5 +1,9 @@
 ---
-import { findAgreementByVippsId, getOrganizationBySlug } from "@stottemedlem/db";
+import {
+  findAgreementByManageToken,
+  findAgreementByVippsId,
+  getOrganizationBySlug,
+} from "@stottemedlem/db";
 import Heading from "@stottemedlem/ui/components/Heading.astro";
 import Stack from "@stottemedlem/ui/components/Stack.astro";
 import Text from "@stottemedlem/ui/components/Text.astro";
@@ -19,9 +23,16 @@ const db = getDb();
 const org = slug ? await getOrganizationBySlug(db, slug) : null;
 if (!org) return new Response("Fant ikke organisasjonen", { status: 404 });
 
-// Vipps appends the agreement id it redirected for; without it there is
-// nothing to confirm and the visitor is simply sent back to the join page.
-const agreementId = Astro.url.searchParams.get("agreementId");
+// Vipps appends NOTHING to the redirect, so the return address carries our
+// own reference: the same unguessable manage token that addresses the
+// member's own page (specs/concepts/member-self-service.md). An explicit
+// agreementId is still honored — it is how an operator or an older
+// registered redirect can point the page at a specific arrangement. With
+// neither there is nothing to confirm and the visitor is simply sent back
+// to the join page.
+const token = Astro.url.searchParams.get("n");
+const tokenAgreement = token ? await findAgreementByManageToken(db, token) : null;
+const agreementId = tokenAgreement?.vippsAgreementId ?? Astro.url.searchParams.get("agreementId");
 if (!agreementId) return Astro.redirect(`/bli-medlem/${org.slug}`);
 
 let status: "active" | "pending" | "stopped" | "unknown" = "unknown";
