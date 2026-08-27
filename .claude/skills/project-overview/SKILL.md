@@ -455,6 +455,19 @@ lives in `specs/`, kept in sync with code by a mandatory `Stop`-hook harness.
   MERGED, the push needs a NEW PR (same branch works — it diffs against
   main), and audit `git log origin/main..HEAD` for what's stranded.
 - Single package: `pnpm turbo run <task> --filter=@stottemedlem/<name>`.
+- **A green `pnpm test` does NOT prove the tests ran here** (hit 2026-08-27).
+  The first `pnpm test` in a freshly-installed worktree reported `12 cached,
+  12 total >>> FULL TURBO` in ~100ms and replayed cached stdout captured in
+  OTHER worktrees — the log lines carried sibling worktree paths
+  (`.../grateful-band/packages/vipps`, `.../petalite-sting/packages/qr`). Turbo
+  keeps replay logs in per-package `.turbo/turbo-<task>.log` and restores task
+  output by content hash; the hash does not include the worktree path, so
+  identical sources replay across worktrees. (Observed directly; the exact
+  sharing mechanism was not pinned down — deleting the `.turbo` dirs did not
+  stop it.) **When you need real proof a task executed — before claiming tests
+  pass, or when validating a CI change — add `--force`:**
+  `pnpm turbo run test --force` (cold: 12 tasks, 119 tests, ~2.4s). `pnpm test
+  -- --force` does NOT work; the `--` swallows the flag and turbo runs 0 tasks.
 - Build-order gotcha: the apps consume `@stottemedlem/core` / `@stottemedlem/qr`
   from their built `dist/`, so an app build needs those packages built first.
   `pnpm --filter @stottemedlem/marketing run build` alone fails with
@@ -475,27 +488,73 @@ lives in `specs/`, kept in sync with code by a mandatory `Stop`-hook harness.
   stashing to get a Biome baseline): swapping files under the daemon takes it
   down silently, and every later curl returns `000` — looks like a routing bug
   you just introduced, isn't. Restart via `devlog.sh start` and re-verify.
-  `pnpm lint` (Biome) is RED even on a clean tree (verified 2026-08-12): Biome
-  only parses `.astro` frontmatter, so imports/props used solely in the
-  template trip noUnusedImports/noUnusedVariables (Shell, PublicShell,
-  CreateOrgScreen, …). Pre-existing — judge your change by whether it adds NEW
-  findings (compare against `git stash` if unsure), and never "fix" these by
-  deleting the imports.
+  **`pnpm lint` (Biome) is GREEN as of 2026-08-27 and is enforced in CI** — this
+  REPLACES the long-standing "lint is red even on a clean tree" (true
+  2026-08-12 → 2026-08-27). It exits 0 with **0 errors and ~296 warnings**:
+  `biome check` fails on errors only, and the warnings are the known false
+  positives — Biome parses only `.astro` frontmatter, so imports/props used
+  solely in the template trip noUnusedImports/noUnusedVariables (Shell,
+  PublicShell, CreateOrgScreen, …). **Never "fix" those by deleting the
+  imports**, and don't add `--error-on-warnings`. The 8 errors that used to
+  make it red were cleared like this: 4 `noControlCharactersInRegex` in
+  `packages/core/src/index.ts` were a FALSE POSITIVE — stripping control
+  characters is what `normalizeMembershipTierDescription` is for — so they got
+  a `// biome-ignore` with a reason, not a rewritten regex; the other 4 were
+  formatting/import-order, fixed by `biome check --write` (safe fixes only,
+  which is why it did not touch the `.astro` imports above). **Gotcha:** a
+  `biome-ignore` comment must be a SINGLE line immediately above the node —
+  continuing the reason onto further `//` lines silently breaks the
+  suppression and the rule still fires.
+  **Biome checks `.claude/` too, so a new SKILL SCRIPT can turn CI red** —
+  `.claude/` is not gitignored and biome.json has no exclude for it (proved
+  2026-08-27: dropping one sloppily-formatted `.mjs` under `.claude/skills/`
+  flipped `pnpm lint` from 0 to 1; two of the eight original errors were
+  exactly this, in `cloudlogs.mjs` and a script written that same session).
+  After writing or editing anything under `.claude/skills/`, run
+  `pnpm lint` — or just `npx biome check --write .claude/` — before pushing.
+  **Reformatting a long-unformatted config is safe but noisy** (`wrangler.jsonc`
+  was tab-indented → 496-line whitespace diff). Prove such a diff is
+  semantics-preserving rather than eyeballing it: parse both revisions with
+  comments stripped and deep-compare their JSON, and check the comment count
+  survives (`grep -c '^\s*//'`).
 - **Brand attribution (rule, 2026-07-28):** every public-facing surface carries a
   subtle "støttemedlem.no" (ø in visible text, punycode in hrefs; admin-only
   backoffice screens exempt; bare QR images exempt — the card around them carries
   it, via `qrCardSvg`'s default `footer`). Spec: `specs/concepts/brand-attribution.md`.
 
 ## Deployment (as of 2026-07-07)
-- **Nothing runs on a pull request.** `.github/workflows/` holds only
-  `deploy-marketing.yml` and `deploy-backoffice.yml`, both `on: push` to `main`
-  — `gh pr checks <n>` reports "no checks reported" on every branch (confirmed
-  2026-08-24 on PR #27). So a PR is unverified until it merges, and the first
-  thing that runs the build is the deploy itself: run
-  `pnpm turbo run build typecheck test` locally before opening one, and don't
-  read a green PR page as a green build. Merging also applies remote D1
-  migrations (each deploy job runs `wrangler d1 migrations apply --remote`
-  first), so merge is when schema changes land for real — keep them additive.
+- **PRs now run checks** (`.github/workflows/ci.yml`, added 2026-08-27 — this
+  REPLACES the long-standing "nothing runs on a pull request", true through PR
+  #27). One `check` job on `pull_request` + `push: main` runs
+  `pnpm turbo run test typecheck build` on ubuntu-latest with no secrets, so it
+  works on forked PRs too. **Confirmed green on a real runner** (PR #43, run
+  33067643844, 43s) — a workflow added *inside* a PR does run on that same PR,
+  so a CI change proves itself. Cold run ~9s for 22 tasks locally.
+  - **`main` is NOT branch-protected** (`gh api repos/.../branches/main/protection`
+    → 404 "Branch not protected", checked 2026-08-27), so `check` is ADVISORY:
+    a red PR is still mergeable and nothing blocks a merge. Making it a required
+    status check is a repo setting, not a file — it has to be done via
+    `gh api` / the dashboard, and has NOT been done.
+  - **All three workflows pin actions that target Node 20**
+    (`actions/checkout@v4`, `actions/setup-node@v4`, `pnpm/action-setup@v4`).
+    Every run now carries a deprecation annotation — GitHub force-runs them on
+    Node 24; it is a warning, not a failure. Kept at v4 so the new workflow
+    matches the two deploy ones; bumping all three to v5 is a separate change.
+  - **It seeds `.dev.vars` first** (`cp apps/backoffice/.dev.vars.example
+    apps/backoffice/.dev.vars`). Without that the backoffice typecheck fails on
+    a runner for exactly the reason it fails in a fresh worktree — `wrangler
+    types` folds `.dev.vars` keys into `Env`, and the file is gitignored (see
+    the `.dev.vars` note in the backoffice section). Placeholder values are
+    enough for types and are useless as credentials.
+  - **`lint` IS in CI** (added 2026-08-27, after fixing the 8 errors that had
+    kept it out — see the `pnpm lint` note under Tooling gotchas). It runs
+    AFTER test/typecheck/build on purpose: lint is ~50ms, but running it first
+    would let a formatting nit mask a genuinely broken test.
+  - Deploy still only happens on merge to `main`, and merging still applies
+    remote D1 migrations (each deploy job runs `wrangler d1 migrations apply
+    --remote` first), so merge is when schema changes land for real — keep them
+    additive. CI does NOT cover anything needing a real remote: no deploys, no
+    D1 migrations, no Vipps rig, no public-route checks.
 - Marketing auto-deploys to Cloudflare Workers on push to `main` via
   `.github/workflows/deploy-marketing.yml` (build with turbo filter, then
   `pnpm --filter @stottemedlem/marketing run deploy` — `run` is mandatory, see
@@ -579,6 +638,7 @@ the Donations `Schedule.interval` enum is `[MONTHLY]` only, found nowhere in pro
 | stop-hooks.md | how the two Stop hooks compose + how to test a hook locally |
 | qr-codes.md | @stottemedlem/qr package split, the /api/qr/[slug] embed contract (backoffice), the front-page card preview (marketing), qrcode-lib gotchas, open domain-routing item |
 | (skill) `vipps-test-rig` | drive a REAL recurring subscription on apitest from the CLI (agreement → MT-app approval → charges → webhooks → stop) + the local receiver and tunnel; the sandbox-DNS gotcha when verifying a tunnel |
+| (skill) `verify-workflow` | `node .claude/skills/verify-workflow/run-steps.mjs <workflow.yml> [job] --force-turbo` — run a GitHub Actions job's `run:` steps locally in a scrubbed, runner-like env; proves a CI change before pushing. Skips `uses:` steps and any step with a `${{ }}` expression (that guard is what stops it firing a real deploy / `--remote` D1 migration) |
 | (skill) `verify-qr` | decode a generated QR PNG (file or URL) + assert payload — real scan-level proof |
 | (skill) `verify-public-routes` | + `d1.sh "<SQL>"` — read local D1 rows as JSON (the member-registry tables incl.); assert the public join pages over real HTTP (status, `/org/*` 301s, `x-sm-cache` miss→hit, brand attribution) + `seed.sh`, the tier-aware local D1 seed |
 | (canonical) `docs/architecture/overview.md` | proposed architecture: 2 deployables (Astro static marketing + one Astro-SSR Worker for backoffice/API/webhooks/cron/queues), D1 as system of record, WorkOS org-gated admin, Vipps Login for members, 11-step scaffolding plan |
