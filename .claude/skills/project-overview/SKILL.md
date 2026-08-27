@@ -33,7 +33,12 @@ lives in `specs/`, kept in sync with code by a mandatory `Stop`-hook harness.
   `purgeOrgPublicPages` so the public copy refreshes. Backoffice logging goes
   through `logger("<area>")` from `src/lib/log`
   (specs/concepts/operational-alerting.md): stable message, ids/counts in
-  context — that's what reaches the operator via Sentry in production. Do NOT
+  context — that's what reaches the operator via Sentry. Since 2026-08-27
+  BOTH deployed envs report to the ONE Sentry project (org `stottemedlem`,
+  project `backoffice-server`, region de.sentry.io — the Sentry MCP's
+  `find_dsns` can read the DSN, no need to ask the user), told apart by the
+  `SENTRY_ENVIRONMENT` var stamped as the event environment; operator email
+  alerts stay production-scoped, local dev never has the DSN. Do NOT
   copy the bare `console.error` style still in older lib files (renewals.ts) —
   console lines die in the Workers log. Env/secrets come from `import { env } from
   "cloudflare:workers"` (NOT `Astro.locals.runtime.env` — removed in Astro v6+);
@@ -235,9 +240,10 @@ lives in `specs/`, kept in sync with code by a mandatory `Stop`-hook harness.
   staging --command "..."` with `period_year` as the CURRENT ISO-week key,
   not `strftime('%Y')`. Manual staging deploy recipe (verified):
   `CLOUDFLARE_ENV=staging turbo build` → `CI=1 wrangler deploy --env
-  staging` from apps/backoffice; the seeded `agr_seed_1` matches nothing at
-  Vipps, so staging reconciliation logs one failed read per run — expected
-  noise, not a bug.
+  staging` from apps/backoffice; the seeded org has NO Vipps keys, so the
+  hourly crons SKIP it silently (`getVippsForOrg` → null → continue) — no
+  log noise, no renewals; only a real org with keys exercises the cron path
+  (an earlier note claiming reconcile noise here was wrong).
   **Member list** (added 2026-08-24, spec `use-cases/curate-member-list.md`):
   `/o/[slug]/medlemmer` (list, `?sok=` search) + `/o/[slug]/medlemmer/[memberId]`
   (history + the one editable thing, contact details). Queries live in
