@@ -2,6 +2,8 @@ import { env } from "cloudflare:workers";
 import {
   memberSelfServicePath,
   periodLabel,
+  refundRefusal,
+  stableUuid,
   tierAgreementExternalId,
   VIPPS_PRODUCT_NAME_MAX_LENGTH,
   vippsProductDescription,
@@ -14,13 +16,16 @@ import {
   grantMembershipForCapturedCharge,
   listUnappliedCaptures,
   type MembershipAgreement,
+  type MembershipCharge,
   type MembershipTier,
   type Organization,
   recordCharge,
   recordDraftedAgreement,
+  revokeMembershipForRefundedCharge,
 } from "@stottemedlem/db";
 import type { Agreement, Charge, ChargeStatus, VippsClient } from "@stottemedlem/vipps";
 import { periods } from "./periods";
+import { RefundNotPossible } from "./refunds";
 
 // Joining, and everything that happens afterwards (specs/use-cases/
 // join-as-supporting-member.md). Both entry points — the webhook receiver and
@@ -202,6 +207,16 @@ export async function applyCharge(db: Db, vippsAgreementId: string, charge: Char
     failureReason: charge.failureDescription ?? charge.failureReason ?? null,
   });
 
+  // Money given back in full takes its period with it, whoever gave it back:
+  // our own refund action, Vipps' portal, or a refund the sweep discovered
+  // (specs/use-cases/refund-a-payment.md). A PARTIALLY_REFUNDED charge — which
+  // can only come from the portal, since the product never offers one — leaves
+  // the membership standing: the year was still paid for.
+  if (charge.status === "REFUNDED") {
+    await revokeMembershipForRefundedCharge(db, charge.id);
+    return;
+  }
+
   if (charge.status !== "CHARGED") return;
 
   const local = await findAgreementByVippsId(db, vippsAgreementId);
@@ -264,4 +279,80 @@ export async function applyVippsEvent(
   for (const pending of await listUnappliedCaptures(db, local.id)) {
     await syncCharge(db, vipps, event.agreementId, pending.vippsChargeId);
   }
+}
+
+// ── Refunds (specs/use-cases/refund-a-payment.md) ───────────────────────────
+
+export interface RefundResult {
+  /** What actually went back, as Vipps reported having captured it. */
+  refundedNok: number;
+  /** Whether a still-running yearly arrangement was ended along with it. */
+  arrangementEnded: boolean;
+}
+
+/**
+ * Give one payment back, and let the year it bought go with it.
+ *
+ * Two things move, in this order for a reason. **The arrangement is ended
+ * first**, because the state this must never leave behind is money handed back
+ * on an agreement that renews anyway — the same mistake taken again next year.
+ * A failure after the stop leaves a member who is not being re-billed and a
+ * refund the administrator can simply try again; a failure after the refund,
+ * with the stop still to come, would not be recoverable by retrying.
+ *
+ * The amount is never ours to choose: Vipps is authoritative for money, so we
+ * refund what it says was captured (specs/concepts/membership.md). And nothing
+ * is written down until the provider has confirmed it — the resulting status
+ * and the period's disappearance both come from reading the charge back.
+ */
+export async function refundMembershipPayment(
+  db: Db,
+  vipps: VippsClient,
+  agreement: MembershipAgreement,
+  charge: MembershipCharge,
+): Promise<RefundResult> {
+  const refusal = refundRefusal(charge);
+  if (refusal) throw new RefundNotPossible(refusal);
+
+  const remote = await vipps.getCharge(agreement.vippsAgreementId, charge.vippsChargeId);
+  const capturedOre = remote.summary?.captured ?? remote.amount;
+  if (remote.status !== "CHARGED" || capturedOre <= 0) {
+    // Vipps knows something we did not; believe it rather than the local row.
+    await applyCharge(db, agreement.vippsAgreementId, remote);
+    throw new RefundNotPossible(
+      remote.status === "REFUNDED" || remote.status === "PARTIALLY_REFUNDED"
+        ? "already-refunded"
+        : "not-captured",
+    );
+  }
+
+  let arrangementEnded = false;
+  if (agreement.status === "ACTIVE") {
+    await vipps.updateAgreement(
+      agreement.vippsAgreementId,
+      { status: "STOPPED" },
+      await stableUuid(`stop:${agreement.vippsAgreementId}`),
+    );
+    await closeAgreement(db, agreement.vippsAgreementId, "STOPPED");
+    arrangementEnded = true;
+  }
+
+  await vipps.refundCharge(
+    agreement.vippsAgreementId,
+    charge.vippsChargeId,
+    {
+      // Vipps requires an amount even for a full refund, and 1–100 characters
+      // of description that end up in the organization's own books.
+      amount: capturedOre,
+      description: `Refundert støttemedlemskap ${periodLabel(charge.periodYear)}`.slice(0, 100),
+    },
+    // Derived, not random: an administrator who presses again after a timeout
+    // must land on the same refund rather than ask for a second one.
+    await stableUuid(`refund:${charge.vippsChargeId}`),
+  );
+
+  // The refund answers 204 with no body, so the outcome is read back: this is
+  // what records the refunded status and takes the period away.
+  await syncCharge(db, vipps, agreement.vippsAgreementId, charge.vippsChargeId);
+  return { refundedNok: fromOre(capturedOre), arrangementEnded };
 }

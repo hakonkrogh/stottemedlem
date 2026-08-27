@@ -119,6 +119,7 @@ const STORY_ROUTES: Record<string, string> = {
   [`${ORG_PATH}/medlemmer`]: "backoffice-medlemsliste--default",
   [`${ORG_PATH}/medlemmer/m-1`]: "backoffice-medlem--continuing",
   [`${ORG_PATH}/medlemmer/m-1?rediger=1`]: "backoffice-medlem--editing",
+  [`${ORG_PATH}/medlemmer/m-1?refunder=chr-2026`]: "backoffice-medlem--confirming-refund",
   [`${ORG_PATH}/medlemmer/m-2`]: "backoffice-medlem--continuing",
   [`${ORG_PATH}/medlemmer/m-3`]: "backoffice-medlem--lapsed-with-history",
   [`${ORG_PATH}/medlemmer/m-4`]: "backoffice-medlem--without-name",

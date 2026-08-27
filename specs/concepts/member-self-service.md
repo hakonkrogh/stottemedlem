@@ -25,7 +25,10 @@ the organization and without the organization having to answer.
   follows what the provider confirms.
 - Ending is not the same as a refund: the period already paid for runs to its
   end, and the member stays on the organization's list for it. Only the
-  continuation stops.
+  continuation stops. Getting money back is a separate thing, and not the
+  member's to perform — they ask, and the organization decides
+  ([refund a payment](../use-cases/refund-a-payment.md)). The page therefore
+  offers ending and never refunding.
 - The member is not asked to create an account or a password. The address
   itself is what identifies them, so it must be **unguessable** and is only
   ever given to that member through their payment app.

@@ -44,7 +44,13 @@ From the organization's point of view:
 7. The list reflects payments automatically — a new join or renewal appears
    without manual entry, and keeps doing so even when the product was never
    notified that the payment happened
-   ([payment reconciliation](../concepts/payment-reconciliation.md)).
+   ([payment reconciliation](../concepts/payment-reconciliation.md)). It follows
+   money leaving too: a payment refunded in full stops being a supported period,
+   here as everywhere else ([refund a payment](refund-a-payment.md)).
+8. Alongside a member's history, the administrator sees the **payments** behind
+   it, and can give one back. That is the only way a member stops being current
+   before their year runs out — and it is still not a status action: the money
+   moves, and the status follows it.
 
 ## Acceptance criteria
 - [ ] The list shows every supporting member with their current status and valid
@@ -65,6 +71,8 @@ From the organization's point of view:
 - Manually marking someone as paid/active without an actual payment (kept out to
   preserve "status follows payment"); any exception path is a separate, explicit
   use case if needed later.
+- Refunding itself, which is its own use case:
+  [Refund a supporting member's payment](refund-a-payment.md).
 - Bulk import/export and external CRM sync.
 - Messaging/emailing members in bulk — that is its own use case:
   [Keep supporting members in the loop](keep-supporters-in-the-loop.md).

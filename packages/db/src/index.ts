@@ -355,6 +355,18 @@ export async function findAgreementByVippsId(
   return row ?? null;
 }
 
+/** One agreement by our own id — the one a recorded payment was taken under. */
+export async function getMembershipAgreement(
+  db: Db,
+  agreementId: string,
+): Promise<MembershipAgreement | null> {
+  const [row] = await db
+    .select()
+    .from(membershipAgreements)
+    .where(eq(membershipAgreements.id, agreementId));
+  return row ?? null;
+}
+
 /**
  * The agreement behind a management token — how the member's own page knows
  * whose membership it is showing, without a login. An unknown token yields
@@ -701,6 +713,18 @@ export async function findChargeForPeriod(
   return row ?? null;
 }
 
+/** One recorded payment, by the id Vipps knows it as. */
+export async function findChargeByVippsId(
+  db: Db,
+  vippsChargeId: string,
+): Promise<MembershipCharge | null> {
+  const [row] = await db
+    .select()
+    .from(membershipCharges)
+    .where(eq(membershipCharges.vippsChargeId, vippsChargeId));
+  return row ?? null;
+}
+
 /** One row of the organization's member list. */
 export interface MemberListEntry {
   member: SupportingMember;
@@ -737,6 +761,70 @@ export async function listMembershipHistory(db: Db, memberId: string): Promise<M
     .from(memberships)
     .where(eq(memberships.memberId, memberId))
     .orderBy(desc(memberships.periodYear));
+}
+
+/**
+ * Every payment ever attempted for one supporter, newest first — the money
+ * behind their history, including the attempts that bought nothing. This is
+ * what an administrator is shown before giving one back
+ * (specs/use-cases/refund-a-payment.md).
+ */
+export async function listChargesForMember(db: Db, memberId: string): Promise<MembershipCharge[]> {
+  return db
+    .select({ charge: membershipCharges })
+    .from(membershipCharges)
+    .innerJoin(membershipAgreements, eq(membershipCharges.agreementId, membershipAgreements.id))
+    .where(eq(membershipAgreements.memberId, memberId))
+    .orderBy(desc(membershipCharges.due), desc(membershipCharges.createdAt))
+    .then((rows) => rows.map((row) => row.charge));
+}
+
+/**
+ * The money went back, so the year it bought was not supported after all: the
+ * membership ceases to exist (specs/concepts/membership.md — the period follows
+ * the money in both directions).
+ *
+ * The mirror of grantMembershipForCapturedCharge, and idempotent in the same
+ * way: whoever reports the refund first — our own refund action, the webhook,
+ * the nightly sweep, or an administrator refunding in Vipps' portal — every
+ * later report finds the period already gone and changes nothing.
+ *
+ * Only a FULL refund revokes. The books are untouched: the charge row keeps its
+ * amount and its now-refunded status, so "what happened to this person's money"
+ * stays answerable, and the supporter themselves is never deleted.
+ */
+export async function revokeMembershipForRefundedCharge(
+  db: Db,
+  vippsChargeId: string,
+): Promise<Membership | null> {
+  const [charge] = await db
+    .select()
+    .from(membershipCharges)
+    .where(eq(membershipCharges.vippsChargeId, vippsChargeId));
+  if (!charge?.membershipId) return null;
+
+  const [membership] = await db
+    .select()
+    .from(memberships)
+    .where(eq(memberships.id, charge.membershipId));
+
+  // Let go of the period first: a charge row may not point at a membership
+  // that is about to stop existing.
+  await db
+    .update(membershipCharges)
+    .set({ membershipId: null, updatedAt: new Date().toISOString() })
+    .where(eq(membershipCharges.id, charge.id));
+
+  // A period paid for twice keeps standing on the payment that was not given
+  // back — refunding one of them buys nobody's year away.
+  const others = await db
+    .select({ id: membershipCharges.id })
+    .from(membershipCharges)
+    .where(eq(membershipCharges.membershipId, charge.membershipId));
+  if (others.length > 0) return null;
+
+  await db.delete(memberships).where(eq(memberships.id, charge.membershipId));
+  return membership ?? null;
 }
 
 // ── Reconciliation (specs/concepts/payment-reconciliation.md) ───────────────

@@ -19,8 +19,11 @@ import {
   memberUnsubscribePath,
   nextAnnualPeriod,
   normalizeMembershipTierDescription,
+  paymentState,
   periodLabel,
   proratedJoinFeeNok,
+  REFUND_WINDOW_DAYS,
+  refundRefusal,
   renewalPeriodYear,
   slugifyOrganizationName,
   stableUuid,
@@ -326,5 +329,54 @@ describe("iso-week period scheme (the accelerated staging calendar)", () => {
       end: "2026-12-31",
     });
     expect(calendarYearScheme.nextPeriodKey(2026)).toBe(2027);
+  });
+});
+
+describe("refundRefusal", () => {
+  const captured = (capturedAt: string) => ({ status: "CHARGED", capturedAt });
+
+  it("allows a captured payment inside the provider's window", () => {
+    expect(refundRefusal(captured("2026-08-01T10:00:00Z"), new Date("2026-08-27T10:00:00Z"))).toBe(
+      null,
+    );
+  });
+
+  it("refuses a payment that never took money", () => {
+    expect(refundRefusal({ status: "PENDING", capturedAt: null })).toBe("not-captured");
+    expect(refundRefusal({ status: "FAILED", capturedAt: null })).toBe("not-captured");
+    // Recorded as charged but with no capture time is still nothing to give back.
+    expect(refundRefusal({ status: "CHARGED", capturedAt: null })).toBe("not-captured");
+  });
+
+  it("refuses a payment already given back, in part or in full", () => {
+    expect(refundRefusal({ status: "REFUNDED", capturedAt: "2026-08-01T10:00:00Z" })).toBe(
+      "already-refunded",
+    );
+    expect(
+      refundRefusal({ status: "PARTIALLY_REFUNDED", capturedAt: "2026-08-01T10:00:00Z" }),
+    ).toBe("already-refunded");
+  });
+
+  it("refuses a payment past the 365-day window, and allows one on the last day", () => {
+    const capturedAt = "2025-08-27T10:00:00Z";
+    const lastDay = new Date("2026-08-27T09:00:00Z");
+    const dayAfter = new Date(
+      new Date(capturedAt).getTime() + (REFUND_WINDOW_DAYS + 1) * 86_400_000,
+    );
+    expect(refundRefusal(captured(capturedAt), lastDay)).toBe(null);
+    expect(refundRefusal(captured(capturedAt), dayAfter)).toBe("too-old");
+  });
+});
+
+describe("paymentState", () => {
+  it("collapses the provider's statuses to what an administrator reads", () => {
+    expect(paymentState("CHARGED")).toBe("paid");
+    expect(paymentState("PARTIALLY_CAPTURED")).toBe("paid");
+    expect(paymentState("REFUNDED")).toBe("refunded");
+    expect(paymentState("PARTIALLY_REFUNDED")).toBe("partly-refunded");
+    expect(paymentState("FAILED")).toBe("failed");
+    expect(paymentState("CANCELLED")).toBe("failed");
+    expect(paymentState("DUE")).toBe("pending");
+    expect(paymentState("PROCESSING")).toBe("pending");
   });
 });

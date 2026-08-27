@@ -1,11 +1,13 @@
 ---
-// One supporting member: who they are, every period they have supported, and
-// the one thing an administrator may change — how to reach them
-// (specs/use-cases/curate-member-list.md). Nothing here can make somebody a
-// member or stop them being one; that follows from payment alone.
+// One supporting member: who they are, every period they have supported, what
+// was actually paid, and what an administrator may do about it — correct how
+// to reach them (specs/use-cases/curate-member-list.md), and give a payment
+// back (specs/use-cases/refund-a-payment.md). Nothing here sets a status by
+// hand: a refund moves money, and the status follows it.
 //
-// The recorded details are PRESENTED; correcting them is a deliberate action
-// behind an edit button, so looking someone up never means facing a form.
+// The recorded details are PRESENTED; correcting them and refunding are
+// deliberate actions behind a button, so looking someone up never means facing
+// a form — and never means being one slip away from moving money.
 import { periodLabel } from "@stottemedlem/core";
 import type { MemberOverview, Membership } from "@stottemedlem/db";
 import Alert from "@stottemedlem/ui/components/Alert.astro";
@@ -17,6 +19,8 @@ import Text from "@stottemedlem/ui/components/Text.astro";
 import TextField from "@stottemedlem/ui/components/TextField.astro";
 import TextLink from "@stottemedlem/ui/components/TextLink.astro";
 import type { MemberContactFieldErrors, MemberContactFormValues } from "../lib/memberContact";
+import type { RefundResult } from "../lib/membership";
+import type { PaymentView, RefundRefusal } from "../lib/refunds";
 import Subpage from "./Subpage.astro";
 
 interface Props {
@@ -26,6 +30,14 @@ interface Props {
   saved?: boolean;
   /** Open the contact form instead of presenting what is recorded. */
   editing?: boolean;
+  /** Every payment ever attempted for this member, newest first. */
+  payments?: PaymentView[];
+  /** The payment whose refund is waiting to be confirmed, if any. */
+  confirming?: PaymentView | null;
+  /** What a refund just did, once it has actually happened. */
+  refunded?: RefundResult | null;
+  /** Why a refund did not happen, in words the administrator can act on. */
+  refundError?: string | null;
   membersPath: string;
   /** This member's own address, which the edit action opens. */
   memberPath: string;
@@ -36,6 +48,10 @@ const {
   fieldErrors = {},
   saved = false,
   editing = false,
+  payments = [],
+  confirming = null,
+  refunded = null,
+  refundError = null,
   membersPath,
   memberPath,
 } = Astro.props;
@@ -59,6 +75,22 @@ const continuation = renewing
 // text and an expression that a formatter has put on separate lines.
 const lead = [standing, continuation].filter(Boolean).join(" ");
 const totalPaid = history.reduce((sum, period) => sum + period.paidNok, 0);
+
+// What became of each payment, and — where it cannot be given back — why not.
+// Both are stated, because a missing button with no explanation reads as a
+// product that forgot rather than one that knows.
+const paymentWord: Record<PaymentView["state"], string> = {
+  paid: "Betalt",
+  refunded: "Refundert",
+  "partly-refunded": "Delvis refundert",
+  pending: "Underveis",
+  failed: "Mislyktes",
+};
+const refusalWord: Record<RefundRefusal, string> = {
+  "already-refunded": "Allerede refundert",
+  "not-captured": "Ingen penger å refundere",
+  "too-old": "Eldre enn ett år — Vipps refunderer ikke",
+};
 ---
 
 <Subpage backHref={membersPath} backLabel="Tilbake til medlemslisten">
@@ -68,6 +100,48 @@ const totalPaid = history.reduce((sum, period) => sum + period.paidNok, 0);
   </Stack>
 
   {saved && <Alert variant="success">Kontaktopplysningene er oppdatert.</Alert>}
+
+  {
+    refunded && (
+      <Alert variant="success">
+        {refunded.refundedNok} kr er refundert.{" "}
+        {refunded.arrangementEnded
+          ? "Den årlige avtalen er avsluttet, så det trekkes ingen flere betalinger."
+          : "Den årlige avtalen var allerede avsluttet, så det trekkes ingen flere betalinger."}
+      </Alert>
+    )
+  }
+  {refundError && <Alert variant="error">{refundError}</Alert>}
+
+  {
+    /* Money leaving is irreversible, so it is never one click away: the button
+       in the list opens this, and only this can send the refund. */
+    confirming && (
+      <section class="confirm">
+        <Heading level={3}>Refundere {confirming.amountNok} kr?</Heading>
+        <Text>
+          Hele beløpet går tilbake til {displayName}. {periodLabel(confirming.periodYear)} teller
+          da ikke lenger som en støttet periode, og{" "}
+          {renewing
+            ? "den årlige avtalen avsluttes, så det trekkes ingen flere betalinger."
+            : "den årlige avtalen er allerede avsluttet."}
+        </Text>
+        <Text variant="small">
+          Pengene er hos medlemmet i løpet av noen dager. Vi refunderer aldri deler av et beløp —
+          skal dere avtale noe annet, ta det direkte med medlemmet.
+        </Text>
+        <form method="post">
+          <input type="hidden" name="refunder" value={confirming.chargeId} />
+          <Stack gap="sm">
+            <Button variant="danger">Refunder {confirming.amountNok} kr</Button>
+            <Text variant="small">
+              <TextLink href={memberPath}>Avbryt</TextLink>
+            </Text>
+          </Stack>
+        </form>
+      </section>
+    )
+  }
 
   <div class="columns">
     <section class="section">
@@ -146,6 +220,40 @@ const totalPaid = history.reduce((sum, period) => sum + period.paidNok, 0);
         )
       }
     </section>
+
+    <section class="section payments-section">
+      <Heading level={3}>Betalinger</Heading>
+      {
+        payments.length === 0 ? (
+          <Text variant="muted">Ingen betalinger er forsøkt ennå.</Text>
+        ) : (
+          <>
+            <Text variant="small">
+              Pengene bak historikken. Refunderer dere en betaling, går hele beløpet tilbake,
+              perioden slutter å telle, og den årlige avtalen avsluttes.
+            </Text>
+            <ul class="payments">
+              {payments.map((payment) => (
+                <li>
+                  <span class="year">{periodLabel(payment.periodYear)}</span>
+                  <span class="tier">{paymentWord[payment.state]}</span>
+                  <span class="paid">{payment.amountNok} kr</span>
+                  <span class="act">
+                    {payment.refusal ? (
+                      <Text variant="muted">{refusalWord[payment.refusal]}</Text>
+                    ) : (
+                      <Button variant="secondary" href={`${memberPath}?refunder=${payment.chargeId}`}>
+                        Refunder
+                      </Button>
+                    )}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </>
+        )
+      }
+    </section>
   </div>
 
 </Subpage>
@@ -170,7 +278,8 @@ const totalPaid = history.reduce((sum, period) => sum + period.paidNok, 0);
     justify-content: space-between;
     gap: var(--sm-space-sm);
   }
-  .history {
+  .history,
+  .payments {
     list-style: none;
     margin: 0;
     padding: 0.9rem 1rem;
@@ -180,10 +289,40 @@ const totalPaid = history.reduce((sum, period) => sum + period.paidNok, 0);
     border: 1px solid var(--sm-border);
     border-radius: var(--sm-radius-md);
   }
-  .history li {
+  .history li,
+  .payments li {
     display: flex;
     align-items: baseline;
     gap: var(--sm-space-sm);
+  }
+  /* The payments run the full width beneath both columns: their rows carry an
+     action, and an action needs room to sit at the end of what it acts on. */
+  .payments-section {
+    grid-column: 1 / -1;
+  }
+  /* The refund sits at the end of its own row, and wraps under it rather than
+     squeezing the amount when there is no room. */
+  .payments li {
+    flex-wrap: wrap;
+    align-items: center;
+    row-gap: 0.4rem;
+  }
+  .act {
+    display: flex;
+    justify-content: flex-end;
+  }
+  /* Confirming a refund is a step of its own, not a line in a list. */
+  .confirm {
+    display: grid;
+    gap: var(--sm-space-sm);
+    padding: var(--sm-space-md);
+    background: var(--sm-danger-bg);
+    border: 1px solid var(--sm-danger-border);
+    border-radius: var(--sm-radius-md);
+  }
+  /* The button is as wide as its words, not as wide as the warning it sits in. */
+  .confirm form {
+    justify-self: start;
   }
   .year {
     font-weight: 600;
