@@ -43,7 +43,12 @@ From the supporter's point of view:
    supporter returning from Vipps is not by itself proof that anything was
    paid, and the product never treats it as such.
 5. The supporter receives confirmation that they are now a supporting member and
-   until when their support is valid.
+   until when their support is valid. The return address itself must identify
+   which arrangement the supporter is coming back from — the payment provider
+   appends nothing to it (learned 2026-08-27, when supporters bounced back to
+   the join page instead of a receipt) — and the product reuses the same
+   unguessable token that addresses the member's
+   [own page](../concepts/member-self-service.md) for this.
 
 ## Acceptance criteria
 - [ ] A supporter can complete joining and payment without the administrator

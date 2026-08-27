@@ -295,6 +295,16 @@ real account. Source: developer.vippsmobilepay.com/docs/knowledge-base/test-envi
 
 ### Vipps API mechanics (verified 2026-08-10, implemented in `packages/vipps`)
 
+- **Vipps appends NOTHING to `merchantRedirectUrl`** (verified the hard way
+  2026-08-27: a bare `/kvittering` URL bounced a real staging supporter back
+  to the join page — the page waited for an `?agreementId=` that never
+  comes). The return address must carry the merchant's OWN reference, baked
+  in at draft time; this product reuses the manage token
+  (`kvittering?n=<manageToken>`), which exists before the draft precisely
+  because Vipps needs the management URL in the draft itself. Never assume a
+  Vipps redirect carries parameters, and never treat arrival as payment
+  proof (the page syncs from Vipps regardless).
+
 - **No product-catalogue API anywhere in Vipps** (verified 2026-08-19 against
   the Recurring v3 + Management OpenAPI specs): the Recurring surface is
   agreements + charges only — `productName` (≤45) / `productDescription`

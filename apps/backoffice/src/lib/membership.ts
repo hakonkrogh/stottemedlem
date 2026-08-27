@@ -83,7 +83,11 @@ export async function startJoin(
       // YEAR in production; the accelerated staging calendar signs members up
       // by the week, so its agreements must permit a charge every week.
       interval: periods.agreementInterval,
-      merchantRedirectUrl: `${origin}/bli-medlem/${org.slug}/kvittering`,
+      // Vipps appends NOTHING to the redirect (verified 2026-08-27: a bare
+      // URL bounced real supporters back to the join page), so the address
+      // itself must say which arrangement the supporter returns from — the
+      // manage token, minted just above, is already that reference.
+      merchantRedirectUrl: `${origin}/bli-medlem/${org.slug}/kvittering?n=${encodeURIComponent(manageToken)}`,
       // The member's own page, reached from their Vipps app. The token is what
       // makes it theirs — see the manage_token column.
       merchantAgreementUrl: `${origin}${memberSelfServicePath(org.slug, manageToken)}`,
