@@ -6,7 +6,7 @@ import {
   markAgreementReconciled,
   selectAgreementsToReconcile,
 } from "@stottemedlem/db";
-import type { VippsClient } from "@stottemedlem/vipps";
+import type { Charge, ChargeStatus, VippsClient } from "@stottemedlem/vipps";
 import { applyCharge, syncAgreement } from "./membership";
 
 // Reconciliation (specs/concepts/payment-reconciliation.md): the nightly pass
@@ -32,6 +32,20 @@ const DRAFT_LOOKBACK_DAYS = 14;
  */
 const AGREEMENTS_PER_RUN = 250;
 
+/**
+ * Statuses in which a charge can still take money, or already has. A cancelled
+ * or definitively failed charge can double-bill nobody and is not a duplicate.
+ */
+const CAN_TAKE_MONEY: ReadonlySet<ChargeStatus> = new Set([
+  "PENDING",
+  "DUE",
+  "RESERVED",
+  "PROCESSING",
+  "CHARGED",
+  "PARTIALLY_CAPTURED",
+  "PARTIALLY_REFUNDED",
+]);
+
 export interface ReconcileReport {
   /** Agreements read back from Vipps. */
   visited: number;
@@ -41,6 +55,13 @@ export interface ReconcileReport {
   chargesCorrected: number;
   /** Payments Vipps knew about and we did not — the ones nothing would find. */
   chargesUnknown: number;
+  /**
+   * Periods with more than one renewal charge that can take money. One year,
+   * one renewal — a second live charge for the same period is the double
+   * charge the product promises never to make, so it is shouted about, never
+   * absorbed quietly into the books.
+   */
+  duplicateRenewals: number;
   /** Agreements that could not be read; tomorrow's run tries again. */
   failed: number;
   /** Drafts too old to keep asking about, reported rather than dropped quietly. */
@@ -52,9 +73,36 @@ const emptyReport = (): ReconcileReport => ({
   agreementsCorrected: 0,
   chargesCorrected: 0,
   chargesUnknown: 0,
+  duplicateRenewals: 0,
   failed: 0,
   abandonedDrafts: 0,
 });
+
+/**
+ * Say so, loudly, when one period holds two renewal charges that can both
+ * take money. Reconciliation only reads — the discrepancy is for a person to
+ * resolve — but a double charge must never look like ordinary bookkeeping.
+ */
+function reportDuplicateRenewals(
+  vippsAgreementId: string,
+  remoteCharges: Charge[],
+  report: ReconcileReport,
+): void {
+  const byPeriod = new Map<string, Charge[]>();
+  for (const charge of remoteCharges) {
+    if (charge.type !== "RECURRING" || !CAN_TAKE_MONEY.has(charge.status)) continue;
+    const periodYear = charge.due.slice(0, 4);
+    byPeriod.set(periodYear, [...(byPeriod.get(periodYear) ?? []), charge]);
+  }
+  for (const [periodYear, charges] of byPeriod) {
+    if (charges.length < 2) continue;
+    report.duplicateRenewals++;
+    console.error(
+      `DUPLICATE RENEWAL on ${vippsAgreementId}: ${charges.length} charges can take money for ${periodYear}: ` +
+        charges.map((charge) => `${charge.id} (${charge.status})`).join(", "),
+    );
+  }
+}
 
 /**
  * Re-read one agreement and everything paid against it, and correct our record
@@ -75,6 +123,7 @@ async function reconcileAgreement(
   // we have no row for at all — a charge created against Vipps whose response
   // never made it back to us.
   const remoteCharges = await vipps.listCharges(agreement.vippsAgreementId);
+  reportDuplicateRenewals(agreement.vippsAgreementId, remoteCharges, report);
   const known = new Map(
     (await listChargesForAgreement(db, agreement.id)).map((row) => [row.vippsChargeId, row]),
   );
@@ -141,6 +190,7 @@ export function isNoteworthy(report: ReconcileReport): boolean {
     report.agreementsCorrected > 0 ||
     report.chargesCorrected > 0 ||
     report.chargesUnknown > 0 ||
+    report.duplicateRenewals > 0 ||
     report.failed > 0
   );
 }

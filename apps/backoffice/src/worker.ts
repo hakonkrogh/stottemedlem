@@ -115,7 +115,18 @@ async function runScheduledJobs(cron: string): Promise<void> {
       // (specs/concepts/payment-reconciliation.md).
       if (reconcileFirst) {
         const report = await reconcile.reconcileOrganization(db, vipps, org.id);
-        if (report.failed > 0) {
+        if (report.duplicateRenewals > 0) {
+          // The double charge the product promises never to make — a person
+          // must look at this, so it is an error, not a line item.
+          reconcileLog.error(
+            "more than one renewal charge can take money for the same period",
+            undefined,
+            {
+              ...report,
+              ...ctx,
+            },
+          );
+        } else if (report.failed > 0) {
           reconcileLog.error("reconciliation could not read some agreements back", undefined, {
             ...report,
             ...ctx,

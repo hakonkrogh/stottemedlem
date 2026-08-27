@@ -52,6 +52,13 @@ schedule, not merely *accumulated* from notifications.
   recorded as a check — the next run tries it first.
 - What the sweep stops chasing, it reports. An arrangement abandoned long enough
   to be dropped from the sweep is counted and surfaced, never silently forgotten.
+- One year, one renewal. A second charge that can still take — or has taken —
+  money for the same arrangement and period is the double charge the product
+  promises never to make ([renewal](../use-cases/renew-annual-membership.md)).
+  Should reconciliation ever see one, it raises the alarm for a person to
+  resolve rather than absorbing both payments quietly into the books; a charge
+  that was cancelled or definitively failed can double-bill nobody and raises
+  none.
 - Reconciliation runs before anything else that acts on the record that night,
   so the night's decisions are made against a corrected picture.
 
