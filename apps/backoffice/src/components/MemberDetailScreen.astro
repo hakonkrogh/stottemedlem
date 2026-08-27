@@ -99,7 +99,19 @@ const typeWord: Record<PaymentView["type"], string> = {
   INITIAL: "Innmelding",
   RECURRING: "Fornyelse",
 };
-const dayLabel = (iso: string) => new Date(iso).toLocaleDateString("nb-NO");
+// The day is usually enough to tell payments apart — but two joins on the same
+// day are exactly the case this is here for (staging, 27.8.2026: two agreements
+// 72 minutes apart). When a day is shared, the clock is what separates them, so
+// it is shown only then and the common case stays quiet.
+const paymentsPerDay = new Map<string, number>();
+for (const payment of payments) {
+  const day = payment.on.slice(0, 10);
+  paymentsPerDay.set(day, (paymentsPerDay.get(day) ?? 0) + 1);
+}
+const whenLabel = (iso: string) =>
+  (paymentsPerDay.get(iso.slice(0, 10)) ?? 0) > 1
+    ? new Date(iso).toLocaleString("nb-NO", { dateStyle: "short", timeStyle: "short" })
+    : new Date(iso).toLocaleDateString("nb-NO");
 // A period paid for twice keeps standing on the payment that was not given
 // back, so the confirmation must not promise that the year disappears when
 // another payment still covers it.
@@ -140,7 +152,7 @@ const periodSurvives =
       <section class="confirm">
         <Heading level={3}>
           Refundere {confirming.amountNok} kr — {typeWord[confirming.type].toLowerCase()}{" "}
-          {dayLabel(confirming.on)}?
+          {whenLabel(confirming.on)}?
         </Heading>
         <Text>
           Hele beløpet går tilbake til {displayName}.{" "}
@@ -262,7 +274,7 @@ const periodSurvives =
                 <li>
                   <span class="year">{periodLabel(payment.periodYear)}</span>
                   <span class="tier">
-                    {typeWord[payment.type]} {dayLabel(payment.on)}
+                    {typeWord[payment.type]} {whenLabel(payment.on)}
                   </span>
                   <span class="state">{paymentWord[payment.state]}</span>
                   <span class="paid">{payment.amountNok} kr</span>

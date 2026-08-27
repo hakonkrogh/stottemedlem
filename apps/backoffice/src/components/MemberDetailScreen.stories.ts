@@ -45,10 +45,11 @@ export const Continuing = {
 };
 
 /**
- * Two payments for the same period at the same price — someone who joined,
- * left and joined again (minutes apart on the accelerated staging calendar).
- * Period and amount alone would make these one row twice, each with a button
- * that moves money; what they were and when says which is which.
+ * The real staging shape (read back from the deployed D1, 27.8.2026): one
+ * member, two agreements, two joining payments for the same period at the same
+ * price, captured 72 minutes apart on the SAME DAY. Period and amount alone
+ * would make these one row twice, each with a button that moves money — and
+ * the day alone would too, which is why the clock appears when a day is shared.
  */
 export const TwoPaymentsForOnePeriod = {
   args: inFrame("m-1", {
@@ -58,12 +59,12 @@ export const TwoPaymentsForOnePeriod = {
       fixturePayment(2026, 171, "paid", null, {
         chargeId: "chr-b",
         type: "INITIAL",
-        on: "2026-08-26T09:12:00Z",
+        on: "2026-08-27T10:10:32.992Z",
       }),
       fixturePayment(2026, 171, "paid", null, {
         chargeId: "chr-a",
         type: "INITIAL",
-        on: "2026-08-25T14:03:00Z",
+        on: "2026-08-27T08:58:14.670Z",
       }),
     ],
   }),
@@ -78,18 +79,18 @@ export const RefundingOneOfTwo = {
       fixturePayment(2026, 171, "paid", null, {
         chargeId: "chr-b",
         type: "INITIAL",
-        on: "2026-08-26T09:12:00Z",
+        on: "2026-08-27T10:10:32.992Z",
       }),
       fixturePayment(2026, 171, "paid", null, {
         chargeId: "chr-a",
         type: "INITIAL",
-        on: "2026-08-25T14:03:00Z",
+        on: "2026-08-27T08:58:14.670Z",
       }),
     ],
     confirming: fixturePayment(2026, 171, "paid", null, {
       chargeId: "chr-b",
       type: "INITIAL",
-      on: "2026-08-26T09:12:00Z",
+      on: "2026-08-27T10:10:32.992Z",
     }),
   }),
 };

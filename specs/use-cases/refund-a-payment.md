@@ -25,8 +25,10 @@ that year.
 2. **No two payments may read the same.** A member can have two payments for the
    same period at the same price — someone who joined, left and joined again —
    and each one carries a button that moves money. So every payment says which
-   one it is: what kind of payment it was, and the day it was taken. A person
-   about to give money back must never have to guess which money.
+   one it is: what kind of payment it was, and when it was taken, told **finely
+   enough to separate it from the others**. Two joins on the same day need the
+   hour; a year apart does not. A person about to give money back must never
+   have to guess which money.
 3. Beside a payment that can still be given back, the administrator is offered
    to refund it. A payment that cannot be refunded does not offer it, and says
    why rather than failing when pressed.

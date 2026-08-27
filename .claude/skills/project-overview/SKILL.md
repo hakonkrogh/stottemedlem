@@ -271,6 +271,19 @@ lives in `specs/`, kept in sync with code by a mandatory `Stop`-hook harness.
   ACTIVE agreements, so a portal refund whose webhook was ALSO lost on an
   agreement stopped in the portal is never re-read. Webhook delivery or a
   still-active agreement covers every other case.
+  **One member can hold SEVERAL agreements** (confirmed against staging D1
+  2026-08-27, and it surprised us): joining, stopping and joining again drafts a
+  NEW agreement with its own INITIAL charge, so one supporter can have two
+  captured charges for the SAME period at the same price — on the accelerated
+  calendar, minutes apart. `grantMembershipForCapturedCharge` is
+  `onConflictDoNothing` per member+period, so BOTH charges end up pointing at
+  ONE `memberships` row. Consequences that are easy to get wrong: refunding one
+  of them must NOT delete the period (`revokeMembershipForRefundedCharge` checks
+  for other charges first), and any UI listing payments must tell them apart —
+  period + amount is not enough, and neither is the DAY (see the member screen's
+  `whenLabel`, which adds the clock only when a day is shared). The
+  duplicate-renewal alarm does NOT fire here: it only looks at RECURRING charges
+  within one agreement.
   **Renewals + repricing** (added 2026-08-20): `src/lib/renewals.ts`
   (`repriceAgreements`, `createDueRenewalCharges`) driven by `worker.ts`
   `scheduled` — 02:00 reconcile-then-reprice, 04:00 reprice-then-renew — with the jobs
@@ -718,7 +731,7 @@ Hard rules and exact wording live in the yaml and in the guide's own tables — 
 | (skill) `vipps-test-rig` | drive a REAL recurring subscription on apitest from the CLI (agreement → MT-app approval → charges → webhooks → stop) + the local receiver and tunnel; the sandbox-DNS gotcha when verifying a tunnel |
 | (skill) `verify-workflow` | `node .claude/skills/verify-workflow/run-steps.mjs <workflow.yml> [job] --force-turbo` — run a GitHub Actions job's `run:` steps locally in a scrubbed, runner-like env; proves a CI change before pushing. Skips `uses:` steps and any step with a `${{ }}` expression (that guard is what stops it firing a real deploy / `--remote` D1 migration) |
 | (skill) `verify-qr` | decode a generated QR PNG (file or URL) + assert payload — real scan-level proof |
-| (skill) `verify-public-routes` | + `d1.sh "<SQL>"` — read local D1 rows as JSON (the member-registry tables incl.); assert the public join pages over real HTTP (status, `/org/*` 301s, `x-sm-cache` miss→hit, brand attribution) + `seed.sh`, the tier-aware local D1 seed |
+| (skill) `verify-public-routes` | + `d1.sh "<SQL>" [local\|staging\|production]` — read D1 rows as JSON, now including the DEPLOYED databases (SELECT-only off local; ask staging what shapes it really holds before trusting a fixture) (the member-registry tables incl.); assert the public join pages over real HTTP (status, `/org/*` 301s, `x-sm-cache` miss→hit, brand attribution) + `seed.sh`, the tier-aware local D1 seed |
 | (canonical) `docs/architecture/overview.md` | proposed architecture: 2 deployables (Astro static marketing + one Astro-SSR Worker for backoffice/API/webhooks/cron/queues), D1 as system of record, WorkOS org-gated admin, Vipps Login for members, 11-step scaffolding plan |
 | (skill) `stack-docs` | verified platform gotchas: Astro CF adapter custom worker entry, WorkOS SDK on Workers |
 | (skill) `spec-lint` | `node .claude/skills/spec-lint/check.mjs` — validates spec links + INDEX registration after any specs/ edit |
