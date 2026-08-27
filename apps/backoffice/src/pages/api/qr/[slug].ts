@@ -1,7 +1,7 @@
-import { joinPageUrl } from "@stottemedlem/core";
 import { qrCardSvg, qrSvg } from "@stottemedlem/qr";
 import { qrPngBuffer } from "@stottemedlem/qr/node";
 import type { APIRoute } from "astro";
+import { shareableJoinUrl } from "../../../lib/joinLinks";
 
 /**
  * An organization's QR code card (and plain QR code) as an image.
@@ -16,8 +16,10 @@ import type { APIRoute } from "astro";
  *                the name travels in the URL; the slug is the fallback)
  *   ?download=1  serve as attachment
  *
- * The QR code always encodes the canonical join page, never a local or
- * per-deploy origin — printed codes must survive any move of this Worker.
+ * The QR code encodes this environment's shareable join-page address (the
+ * canonical støttemedlem.no origin in production, staging's own on staging —
+ * see lib/joinLinks.ts), never the request's origin — printed codes must
+ * survive any move of this Worker.
  */
 
 const SLUG_PATTERN = /^[a-z0-9](?:[a-z0-9-]{0,62})$/;
@@ -41,7 +43,7 @@ export const GET: APIRoute = async ({ params, url }) => {
   const format = url.searchParams.get("format") ?? (variant === "qr" ? "png" : "svg");
   const name = url.searchParams.get("name")?.trim() || nameFromSlug(slug);
   const download = url.searchParams.get("download") === "1";
-  const joinUrl = joinPageUrl(slug);
+  const joinUrl = shareableJoinUrl(slug);
 
   const headers = new Headers({ "Cache-Control": CACHE_HEADER });
   const attach = (filename: string) => {

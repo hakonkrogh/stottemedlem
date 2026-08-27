@@ -25,8 +25,10 @@ Prints the decoded payload; exits non-zero if nothing decodes or `--expect` mism
 ## Typical flow against the running app
 1. Start backoffice (`pnpm --filter @stottemedlem/backoffice dev`, port 4322 —
    remember `astro dev stop` afterwards, see stack-docs).
-2. Decode straight from the endpoint (payload is always the canonical punycode
-   origin, regardless of where the server runs):
+2. Decode straight from the endpoint. The payload origin is env-aware since
+   2026-08-27: `JOIN_PAGE_ORIGIN` from `.dev.vars`/wrangler vars if set (staging
+   sets its own origin), else the canonical punycode origin — never the
+   request's origin:
 
        node .claude/skills/verify-qr/decode.mjs \
          "http://localhost:4322/api/qr/<slug>?variant=qr&format=png" \

@@ -1,5 +1,5 @@
 ---
-import { formatOrganisasjonsnummer, joinPageUrl } from "@stottemedlem/core";
+import { formatOrganisasjonsnummer, joinPagePath } from "@stottemedlem/core";
 import { getOrganizationBySlug, listMembershipTiers } from "@stottemedlem/db";
 import Heading from "@stottemedlem/ui/components/Heading.astro";
 import Stack from "@stottemedlem/ui/components/Stack.astro";
@@ -113,7 +113,7 @@ const singleTier = tiers.length === 1 ? tiers[0] : undefined;
     </section>
 
     <Text variant="small">
-      <TextLink href={joinPageUrl(org.slug)}>Tilbake til {org.name}</TextLink>
+      <TextLink href={joinPagePath(org.slug)}>Tilbake til {org.name}</TextLink>
     </Text>
   </Stack>
 </PublicShell>

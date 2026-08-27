@@ -176,6 +176,10 @@
 				// through the backoffice, so only the base URL differs from prod.
 				"VIPPS_API_BASE_URL": "https://apitest.vipps.no",
 				"PUBLIC_ORIGIN": "https://staging.app.xn--stttemedlem-hgb.no",
+				// Shareable public addresses (join links the back office shows, QR
+				// payloads) live on staging's own origin — unset elsewhere, where
+				// they default to the canonical støttemedlem.no origin from core.
+				"JOIN_PAGE_ORIGIN": "https://staging.app.xn--stttemedlem-hgb.no",
 				"EMAIL_FROM_ADDRESS": "varsel@xn--stttemedlem-hgb.no",
 				// The accelerated staging calendar (specs/concepts/annual-period.md):
 				// the ISO week is treated as the annual period, so a full membership

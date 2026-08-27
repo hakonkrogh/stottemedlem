@@ -54,6 +54,12 @@ VIPPS_TEST_PUBLIC_URL=""
 # in front rewrites the Host header. Must be HTTPS: Vipps rejects anything else.
 PUBLIC_ORIGIN=""
 
+# The origin shown in shareable public addresses (the dashboard's join links,
+# QR payloads). Leave empty: they show the canonical støttemedlem.no address,
+# like production. Staging sets this to its own origin in wrangler.jsonc; set
+# it to e.g. http://localhost:4322 to make them point at this dev server.
+JOIN_PAGE_ORIGIN=""
+
 # ── Member notices (email) ──────────────────────────────────────────────
 # What the product tells a member about their own membership — today, that a
 # tier's price changed (specs/concepts/member-notice.md). Leave RESEND_API_KEY

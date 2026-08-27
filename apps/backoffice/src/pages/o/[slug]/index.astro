@@ -1,5 +1,5 @@
 ---
-import { joinPageTermsUrl, joinPageUrl, periodLabel } from "@stottemedlem/core";
+import { periodLabel } from "@stottemedlem/core";
 import {
   countMembersByStatus,
   ensureOrganization,
@@ -17,6 +17,7 @@ import TextLink from "@stottemedlem/ui/components/TextLink.astro";
 import MembershipTierCard from "../../../components/MembershipTierCard.astro";
 import Shell from "../../../layouts/Shell.astro";
 import { getDb } from "../../../lib/db";
+import { shareableJoinTermsUrl, shareableJoinUrl } from "../../../lib/joinLinks";
 import { periods } from "../../../lib/periods";
 import { readOrgVippsKeys } from "../../../lib/vippsKeys";
 import {
@@ -89,8 +90,8 @@ const members = await listOrganizationMembers(db, org.id, currentPeriod);
 const { active, lapsed } = countMembersByStatus(members);
 const profileComplete = org.orgnr !== null && org.contactEmail !== null;
 const vippsKeys = await readOrgVippsKeys(workos, org.workosOrgId);
-const joinUrl = joinPageUrl(org.slug);
-const termsUrl = joinPageTermsUrl(org.slug);
+const joinUrl = shareableJoinUrl(org.slug);
+const termsUrl = shareableJoinTermsUrl(org.slug);
 
 // Set by the membership form after a price change: how many members were told,
 // and how many still have to be told by the organization itself
