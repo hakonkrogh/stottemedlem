@@ -429,7 +429,13 @@ lives in `specs/`, kept in sync with code by a mandatory `Stop`-hook harness.
   files simply are not there. **Delete the base branch when merging the lower
   PR** — that is what makes GitHub retarget the dependent one to `main`. To
   check for an already-stranded PR: `git ls-tree origin/main --name-only <path>`
-  for a file the PR added, not the PR's own merged/unmerged status.
+  for a file the PR added, not the PR's own merged/unmerged status. **Second
+  stranding variant (cost the kvittering fix a near-miss, 2026-08-27):
+  commits pushed to a branch AFTER its PR merged go nowhere** — GitHub
+  ignores them, `git push` still says success. In a long session, before
+  pushing more work to the same branch, check `gh pr view --json state`; if
+  MERGED, the push needs a NEW PR (same branch works — it diffs against
+  main), and audit `git log origin/main..HEAD` for what's stranded.
 - Single package: `pnpm turbo run <task> --filter=@stottemedlem/<name>`.
 - Build-order gotcha: the apps consume `@stottemedlem/core` / `@stottemedlem/qr`
   from their built `dist/`, so an app build needs those packages built first.
