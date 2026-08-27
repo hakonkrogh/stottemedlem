@@ -100,6 +100,14 @@ fails only on its due date, then Vipps retries for `--retry-days` (default 7)
 apitest 2026-08-27: the charge stays `DUE` well past its due date while
 retrying (no early FAILED), so the retry window is real in the test env too.
 
+## Sharing agreements between sessions
+
+An agreement found in another worktree's state file may be in live use by that
+session, and its cleanup can `cancel-charge` every open charge — including
+yours (observed 2026-08-27: a multi-day failing-charge observation was wiped
+mid-flight). For any observation that must survive days, draft a dedicated
+agreement; share one only for quick reads, and never `stop` a shared one.
+
 ## Driving the PRODUCT's join flow from the CLI (learned 2026-08-26)
 
 To rehearse product-side flows (min-side stop, kvittering) you need an
