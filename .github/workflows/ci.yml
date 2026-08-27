@@ -1,0 +1,62 @@
+name: CI
+
+# Every pull request runs the checks that need nothing but the runner: unit
+# tests, type-checking and the production builds. No Cloudflare/Vipps/WorkOS
+# credentials are used — anything that needs a real remote (deploys, D1
+# migrations, the Vipps test rig) stays out of this workflow.
+on:
+  pull_request:
+  # Also on main, so a merge that breaks the build is caught before the deploy
+  # workflows push it to staging/production.
+  push:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  WRANGLER_SEND_METRICS: false
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # The backoffice type-checks against the `Env` interface that
+      # `wrangler types` generates, and wrangler folds the keys of `.dev.vars`
+      # into it. That file is gitignored (it holds real values locally), so
+      # without this the worker tsconfig fails on every secret it reads. The
+      # committed template has the same keys with placeholder values — enough
+      # for types, useless as credentials.
+      - name: Seed .dev.vars template (needed for `wrangler types`)
+        run: cp apps/backoffice/.dev.vars.example apps/backoffice/.dev.vars
+
+      # `test` and `typecheck` both depend on `^build`, so turbo builds the
+      # packages first; naming `build` too also covers the two Astro apps.
+      - name: Test, typecheck and build
+        run: pnpm turbo run test typecheck build
+
+      # Deliberately AFTER the step above: lint is ~50ms, but if it ran first a
+      # formatting nit would mask a genuinely broken test. `biome check` exits
+      # non-zero on errors only — the ~296 warnings are the known false
+      # positives from Biome parsing only `.astro` frontmatter, so imports and
+      # props used solely in the template read as unused. Do not "fix" those by
+      # deleting the imports, and do not add --error-on-warnings until they are
+      # genuinely resolved.
+      - name: Lint
+        run: pnpm lint
