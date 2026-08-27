@@ -7,6 +7,7 @@ import {
   selectAgreementsToReconcile,
 } from "@stottemedlem/db";
 import type { Charge, ChargeStatus, VippsClient } from "@stottemedlem/vipps";
+import { logger } from "./log";
 import { applyCharge, syncAgreement } from "./membership";
 
 // Reconciliation (specs/concepts/payment-reconciliation.md): the nightly pass
@@ -78,6 +79,11 @@ const emptyReport = (): ReconcileReport => ({
   abandonedDrafts: 0,
 });
 
+// The alarm below alerts the operator directly (stable message, ids in
+// context — specs/concepts/operational-alerting.md); the per-agreement
+// console lines elsewhere stay detail under the nightly job's own reporting.
+const log = logger("reconcile");
+
 /**
  * Say so, loudly, when one period holds two renewal charges that can both
  * take money. Reconciliation only reads — the discrepancy is for a person to
@@ -97,10 +103,11 @@ function reportDuplicateRenewals(
   for (const [periodYear, charges] of byPeriod) {
     if (charges.length < 2) continue;
     report.duplicateRenewals++;
-    console.error(
-      `DUPLICATE RENEWAL on ${vippsAgreementId}: ${charges.length} charges can take money for ${periodYear}: ` +
-        charges.map((charge) => `${charge.id} (${charge.status})`).join(", "),
-    );
+    log.error("more than one renewal charge can take money for the same period", undefined, {
+      vippsAgreementId,
+      periodYear,
+      charges: charges.map((charge) => `${charge.id} ${charge.status}`),
+    });
   }
 }
 
