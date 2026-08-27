@@ -283,13 +283,16 @@ const handler = {
 
 // Sentry wraps every handler (fetch, scheduled, queue): an unhandled throw is
 // reported before the response goes out, and the captures behind
-// src/lib/log.ts's sink land on the right event. The DSN is a secret set only
-// on production — local dev and staging never have it, so there the SDK
-// initializes disabled and this wrapper is a pass-through
+// src/lib/log.ts's sink land on the right event. The DSN is a secret set per
+// DEPLOYED environment (production and staging, same Sentry project) — every
+// event carries SENTRY_ENVIRONMENT so the operator can filter one from the
+// other. Local dev never has the secret, so there the SDK initializes
+// disabled and this wrapper is a pass-through
 // (specs/concepts/operational-alerting.md).
 export default Sentry.withSentry(
   (env: Env) => ({
     dsn: (env as Env & { SENTRY_DSN?: string }).SENTRY_DSN || undefined,
+    environment: env.SENTRY_ENVIRONMENT || "development",
     // Error monitoring only: the free plan's quota is spent on errors, and
     // tracing is what the Workers observability dashboard already covers.
     tracesSampleRate: 0,

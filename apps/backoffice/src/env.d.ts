@@ -51,6 +51,13 @@ interface Env {
    */
   SENTRY_DSN?: string;
   /**
+   * The environment name stamped on every Sentry event ("production" /
+   * "staging"), so the operator can filter one environment's noise from the
+   * other's. A wrangler var per env; unset (local dev) reports as
+   * "development" — moot, since local dev never has the DSN.
+   */
+  SENTRY_ENVIRONMENT?: string;
+  /**
    * The address member notices are sent from. Must be on a domain verified
    * with the provider, so it is always ours — the organization's own address
    * is the reply-to instead (specs/concepts/member-notice.md).
