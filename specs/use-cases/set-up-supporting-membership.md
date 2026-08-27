@@ -57,7 +57,11 @@ From the organization's point of view:
 5. The administrator connects the organization's own Vipps agreement by adding
    its [Vipps API keys](../concepts/vipps-api-keys.md). The product proves the
    keys work with a live check against Vipps before keeping them; until they
-   are added, the back office prompts for them.
+   are added, the back office prompts for them. Storing the keys is the last
+   thing the administrator does: the product then connects payment-event
+   delivery with Vipps by itself and keeps it connected (see
+   [Vipps API keys](../concepts/vipps-api-keys.md)) — there is no separate
+   connect step.
 6. Once configured, the organization is ready to receive supporting members; no
    further setup is required to take the first payment.
 
@@ -108,6 +112,9 @@ immediately. A name change never changes the slug or the public addresses.
       [Vipps API keys](../concepts/vipps-api-keys.md); a set Vipps rejects is
       not stored, and the administrator is told why. Stored secrets are only
       ever shown masked.
+- [ ] Once keys are stored, payment events are connected without any further
+      administrator action, and stay connected on their own; the back office
+      shows the connection status but offers no manual connect action.
 - [ ] A supporter using that address can complete
       [joining](join-as-supporting-member.md) without further admin action.
 - [ ] A tier's annual fee can be changed later; the change applies to future

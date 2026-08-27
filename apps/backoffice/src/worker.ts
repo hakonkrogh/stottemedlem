@@ -37,6 +37,7 @@ const reconcileLog = logger("reconcile");
 const noticesLog = logger("notices");
 const renewalsLog = logger("renewals");
 const scheduledLog = logger("scheduled");
+const webhooksLog = logger("webhooks");
 
 function withCacheStatus(response: Response, status: "hit" | "miss"): Response {
   const tagged = new Response(response.body, response);
@@ -81,6 +82,7 @@ async function runScheduledJobs(cron: string): Promise<void> {
     reconcile,
     notices,
     { getEmailSender },
+    { ensureWebhookRegistration, webhookReceiverUrl },
   ] = await Promise.all([
     import("./lib/db"),
     import("./lib/vipps"),
@@ -90,6 +92,7 @@ async function runScheduledJobs(cron: string): Promise<void> {
     import("./lib/reconcile"),
     import("./lib/notices"),
     import("./lib/email"),
+    import("./lib/vippsKeys"),
   ]);
 
   const db = getDb();
@@ -105,6 +108,11 @@ async function runScheduledJobs(cron: string): Promise<void> {
   // than skipping in silence.
   if (!env.PUBLIC_ORIGIN) {
     noticesLog.warn("PUBLIC_ORIGIN not set — member notices skipped this run", { cron });
+    // The webhook check needs it too: without it a run cannot know what
+    // address the registrations should point at.
+    webhooksLog.warn("PUBLIC_ORIGIN not set — webhook registrations not checked this run", {
+      cron,
+    });
   }
 
   for (const org of await listOrganizations(db)) {
@@ -113,6 +121,29 @@ async function runScheduledJobs(cron: string): Promise<void> {
       const vipps = await getVippsForOrg(workos, org.workosOrgId);
       // An organization that has not connected Vipps has nothing to renew.
       if (!vipps) continue;
+
+      // Payment events must reach THIS deployment for memberships to update
+      // on their own, and connecting them is never an administrator's job
+      // (specs/concepts/vipps-api-keys.md): a registration that is missing —
+      // the save-time attempt failed — or pointing at an old address is
+      // repaired here, before tonight's work depends on it. A failure only
+      // logs: reconciliation still reads Vipps directly, and the next run
+      // tries again.
+      if (env.PUBLIC_ORIGIN) {
+        try {
+          const ensured = await ensureWebhookRegistration(
+            workos,
+            org.workosOrgId,
+            vipps,
+            webhookReceiverUrl(env.PUBLIC_ORIGIN, org.slug),
+          );
+          if (ensured.outcome === "connected") {
+            webhooksLog.info("payment events reconnected", { url: ensured.webhook.url, ...ctx });
+          }
+        } catch (error) {
+          webhooksLog.error("could not keep payment events connected", error, ctx);
+        }
+      }
 
       // Reconciliation runs before anything else acts on our record, so the
       // night's decisions are made against what Vipps actually holds rather
