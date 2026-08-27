@@ -47,6 +47,27 @@ description: Render any local URL (marketing/backoffice dev or preview server) t
   serving old code; `pnpm --filter @stottemedlem/backoffice exec astro dev stop`
   then restart, and stop it the same way when done. The dark pill at the bottom
   of astro-dev screenshots is Astro's dev toolbar, not the page.
+- **Reviewing the org back office**: every screen has a story that renders
+  inside the real tab chrome (`StoryScreen` wraps `OrgScreen`), and every
+  in-app link is rewritten to the story behind it
+  (`apps/backoffice/src/components/storyFixtures.ts` holds the path→story-id
+  map). So the whole tabbed back office is **clickable in Storybook** — start at
+  `iframe.html?viewMode=story&id=backoffice-oversikt--default` and click through
+  tabs, edit buttons and back links; no dev server, login or D1 needed. Add a
+  route to that map whenever a screen gains a new link, or it goes dead (`#`).
+- **Inspecting a story's DOM (not just its pixels)** — e.g. proving a link
+  points where you think: Storybook renders client-side, so `curl` returns the
+  empty shell. Use Chrome's DOM dump with a LONG budget (a short one returns the
+  shell and looks like a bug):
+  `"/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" --headless=new
+  --disable-gpu --virtual-time-budget=20000 --dump-dom "<iframe url>" | grep -o
+  'href="[^"]*"'`. List every story id with
+  `curl -s localhost:6006/index.json | python3 -c "import json,sys;
+  print('\n'.join(sorted(json.load(sys.stdin)['entries'])))"` — cheaper and
+  surer than guessing the title→id slug (Norwegian letters slugify oddly; keep
+  new story titles/exports ASCII). Note `playwright` is NOT an installed
+  package — `import { chromium } from "playwright"` fails; only the `npx
+  playwright screenshot` CLI path works.
 - **PUBLIC backoffice pages** (`/bli-medlem/<slug>`, `/bli-medlem/<slug>/vilkar`, `/api/qr/*`)
   need no login and no `.dev.vars` — screenshoot them against `astro dev`
   directly. Pages that read D1 need the local DB prepared first (from

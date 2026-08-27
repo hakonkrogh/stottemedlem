@@ -1,0 +1,159 @@
+---
+// The front tab of an organization's back office: what the organization
+// offers and the public addresses it shares — plus anything that is not yet in
+// order, each with the one place it is put right
+// (specs/use-cases/set-up-supporting-membership.md).
+//
+// The offer comes first, as the very same membership cards supporters see
+// (specs/concepts/membership-tier.md, one-presentation rule) — the cards say
+// what they are, so nothing introduces them and nothing follows them: the
+// membership tab is right there when the offer needs changing. The members are
+// deliberately NOT a section here either: how many are current is carried on
+// their tab from every screen, and the list itself is one click away. Nothing
+// is edited here.
+import type { MembershipTier } from "@stottemedlem/db";
+import Alert from "@stottemedlem/ui/components/Alert.astro";
+import Heading from "@stottemedlem/ui/components/Heading.astro";
+import Stack from "@stottemedlem/ui/components/Stack.astro";
+import Text from "@stottemedlem/ui/components/Text.astro";
+import TextLink from "@stottemedlem/ui/components/TextLink.astro";
+import type { OrgWarning } from "../lib/orgWarnings";
+import MembershipTierCard from "./MembershipTierCard.astro";
+
+interface Props {
+  orgPath: string;
+  joinUrl: string;
+  termsUrl: string;
+  qrCardUrl: string;
+  warnings?: OrgWarning[];
+  /** The offer itself, shown as the cards supporters see. */
+  tiers: MembershipTier[];
+  /** Set after a price change: who was told, and who the org must tell itself. */
+  feeNotice?: { told: number; unreached: number };
+}
+const { orgPath, joinUrl, termsUrl, qrCardUrl, warnings = [], tiers, feeNotice } = Astro.props;
+
+const links = [
+  {
+    label: "Innmeldingslenke",
+    url: joinUrl,
+    hint: "Del denne. Den er «nettsted» i Vipps-bestillingen.",
+  },
+  {
+    label: "Salgsvilkår",
+    url: termsUrl,
+    hint: "Denne limer du inn som «salgsvilkår» i Vipps-bestillingen.",
+  },
+  {
+    label: "QR-kode",
+    url: qrCardUrl,
+    hint: "Kortet du kan henge opp eller legge på nettsidene deres.",
+  },
+];
+---
+
+<Stack gap="lg">
+  {
+    feeNotice && (
+      <Alert variant={feeNotice.unreached > 0 ? "info" : "success"}>
+        {feeNotice.told === 0
+          ? "Ingen medlemmer trengte varsel om den nye prisen."
+          : `${feeNotice.told} støttemedlem${feeNotice.told === 1 ? "" : "mer"} har fått e-post om den nye prisen.`}
+        {feeNotice.unreached > 0 && (
+          <>
+            {" "}
+            {feeNotice.unreached} nådde vi ikke fram til — de blir stående på prisen de kjenner til
+            dere får sagt fra. <TextLink href={`${orgPath}/medlemmer`}>Se medlemslisten</TextLink>
+          </>
+        )}
+      </Alert>
+    )
+  }
+
+  {
+    warnings.length > 0 && (
+      <Stack gap="sm">
+        <Heading level={2}>Dette bør ordnes</Heading>
+        {warnings.map((warning) => (
+          <Alert variant="info">
+            {warning.message}{" "}
+            <TextLink href={warning.href}>{warning.actionLabel}</TextLink>
+          </Alert>
+        ))}
+      </Stack>
+    )
+  }
+
+  {
+    tiers.length > 0 && (
+      <Stack gap="sm">
+        <Heading level={2}>Medlemskap</Heading>
+        <div class="tiers">
+          {tiers.map((tier) => (
+            <MembershipTierCard
+              name={tier.name}
+              annualFeeNok={tier.annualFeeNok}
+              description={tier.description}
+              headingLevel={3}
+            />
+          ))}
+        </div>
+      </Stack>
+    )
+  }
+
+  <Stack gap="sm">
+    <Heading level={2}>Offentlige lenker</Heading>
+    <Text variant="small">
+      Innmeldingslenken er organisasjonens ene offentlige adresse — den du deler, og den QR-koden
+      peker på.
+    </Text>
+    <div class="links">
+      {
+        links.map((link) => (
+          <div class="link">
+            <span class="label">{link.label}</span>
+            <TextLink href={link.url}>{link.url}</TextLink>
+            <span class="hint">{link.hint}</span>
+          </div>
+        ))
+      }
+    </div>
+  </Stack>
+</Stack>
+
+<style>
+  /* One column on a phone; side by side as soon as there is room for it. */
+  .links {
+    display: grid;
+    gap: var(--sm-space-md);
+    grid-template-columns: repeat(auto-fit, minmax(17rem, 1fr));
+  }
+  /* The cards need real room around them to read as separate offers. */
+  .tiers {
+    display: grid;
+    gap: var(--sm-space-lg) var(--sm-space-xl);
+    grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr));
+    align-items: start;
+    margin-block: var(--sm-space-xs) var(--sm-space-sm);
+  }
+  .link {
+    display: grid;
+    gap: 0.15rem;
+    align-content: start;
+    min-width: 0;
+  }
+  .link :global(a) {
+    overflow-wrap: anywhere;
+    font-size: 0.9rem;
+  }
+  .label {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--sm-muted);
+  }
+  .hint {
+    font-size: 0.85rem;
+    color: var(--sm-muted);
+  }
+</style>

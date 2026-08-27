@@ -1,0 +1,25 @@
+---
+import MembershipsScreen from "../../../../components/MembershipsScreen.astro";
+import OrgScreen from "../../../../components/OrgScreen.astro";
+import Shell from "../../../../layouts/Shell.astro";
+import { requireOrgView } from "../../../../lib/orgView";
+import { orgPath } from "../../../../lib/workos";
+
+// The membership tab: the organization's whole offer in one place
+// (specs/use-cases/set-up-supporting-membership.md).
+const view = await requireOrgView(Astro.locals.session, Astro.params.slug, Astro.request);
+if (!view) return Astro.redirect("/orgs");
+const { org, tiers, warnings } = view;
+---
+
+<Shell title={`Medlemskap — ${org.name}`} frame={false}>
+  <OrgScreen
+    orgName={org.name}
+    orgPath={orgPath(org.slug)}
+    active="medlemskap"
+    warnings={warnings}
+    activeMembers={view.activeMembers}
+  >
+    <MembershipsScreen orgPath={orgPath(org.slug)} tiers={tiers} />
+  </OrgScreen>
+</Shell>

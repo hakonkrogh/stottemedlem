@@ -1,15 +1,18 @@
 ---
-// Back-office chrome: a vertically centered ScreenFrame on the warm brand
-// background. All styling of the content itself comes from @stottemedlem/ui
-// primitives — Shell only owns the page-level frame.
+// Back-office chrome: the warm brand background, and by default a single
+// centered ScreenFrame for the narrow one-thing-at-a-time screens (sign-in,
+// create org). Screens that bring their own frame — the organization's tabbed
+// back office, which uses whatever width the display offers — pass
+// `frame={false}` and lay themselves out from the top.
 import "@stottemedlem/ui/tokens.css";
 import "@stottemedlem/ui/base.css";
 import ScreenFrame from "../components/ScreenFrame.astro";
 
 interface Props {
   title: string;
+  frame?: boolean;
 }
-const { title } = Astro.props;
+const { title, frame = true } = Astro.props;
 ---
 
 <html lang="no">
@@ -20,11 +23,17 @@ const { title } = Astro.props;
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <title>{title} — støttemedlem backoffice</title>
   </head>
-  <body>
+  <body class:list={[{ centered: frame }]}>
     <main>
-      <ScreenFrame>
-        <slot />
-      </ScreenFrame>
+      {
+        frame ? (
+          <ScreenFrame>
+            <slot />
+          </ScreenFrame>
+        ) : (
+          <slot />
+        )
+      }
     </main>
   </body>
 </html>
@@ -33,7 +42,12 @@ const { title } = Astro.props;
   body {
     min-height: 100dvh;
     display: grid;
-    place-items: center;
+    align-items: start;
+    justify-items: center;
+    padding: 1.5rem 1rem 3rem;
+  }
+  body.centered {
+    align-items: center;
     padding: 2rem 1rem;
   }
   main {

@@ -1,29 +1,19 @@
 ---
-import { getOrganizationBySlug } from "@stottemedlem/db";
-import Alert from "@stottemedlem/ui/components/Alert.astro";
-import Button from "@stottemedlem/ui/components/Button.astro";
-import CardFooter from "@stottemedlem/ui/components/CardFooter.astro";
-import Heading from "@stottemedlem/ui/components/Heading.astro";
-import Stack from "@stottemedlem/ui/components/Stack.astro";
-import Text from "@stottemedlem/ui/components/Text.astro";
-import TextField from "@stottemedlem/ui/components/TextField.astro";
-import TextLink from "@stottemedlem/ui/components/TextLink.astro";
+import OrgScreen from "../../../components/OrgScreen.astro";
+import VippsKeysScreen from "../../../components/VippsKeysScreen.astro";
 import Shell from "../../../layouts/Shell.astro";
-import { getDb } from "../../../lib/db";
-import { publicOrigin } from "../../../lib/membership";
+import { orgView, requireOrgView } from "../../../lib/orgView";
 import { getVippsForOrg } from "../../../lib/vipps";
 import {
   ensureWebhookRegistration,
   maskSecret,
   type OrgVippsKeys,
   parseVippsKeysForm,
-  readOrgVippsKeys,
   saveOrgVippsKeys,
   type VippsKeysFieldErrors,
   type VippsKeysFormValues,
   validateVippsKeys,
   vippsEnvironmentLabel,
-  webhookReceiverUrl,
 } from "../../../lib/vippsKeys";
 import { getWorkOS, orgPath } from "../../../lib/workos";
 
@@ -33,27 +23,13 @@ import { getWorkOS, orgPath } from "../../../lib/workos";
 // read-only call to Vipps before storing them encrypted per org in WorkOS
 // Vault. One set of keys per org — which Vipps environment they must belong
 // to follows from where this app runs (test everywhere except production).
-const session = Astro.locals.session;
-if (!session) return Astro.redirect("/login");
-const slug = Astro.params.slug;
-if (!slug) return Astro.redirect("/orgs");
-
-const db = getDb();
-const org = await getOrganizationBySlug(db, slug);
-if (!org) return Astro.redirect("/orgs");
+let view = await requireOrgView(Astro.locals.session, Astro.params.slug, Astro.request);
+if (!view) return Astro.redirect("/orgs");
+const org = view.org;
 const workosOrgId = org.workosOrgId;
-
 const workos = getWorkOS();
-const { data: memberships } = await workos.userManagement.listOrganizationMemberships({
-  userId: session.userId,
-  statuses: ["active"],
-  limit: 100,
-});
-if (!memberships.some((m) => m.organizationId === workosOrgId)) {
-  return Astro.redirect("/orgs");
-}
 
-let stored: OrgVippsKeys | null = await readOrgVippsKeys(workos, workosOrgId);
+let stored: OrgVippsKeys | null = view.vippsKeys;
 let values: VippsKeysFormValues = {
   clientId: "",
   clientSecret: "",
@@ -66,15 +42,19 @@ let retested = false;
 let validationError: string | null = null;
 let webhookConnected = false;
 let webhookError: string | null = null;
+// Only a rejected submission keeps the key form open; a failed re-test does not.
+let formRejected = false;
 
 // Where THIS deployment receives the org's payment events. Derived from the
 // request, so production, staging and a local tunnel each register their own
 // receiver against the same sales unit rather than stealing each other's.
-const webhookUrl = webhookReceiverUrl(publicOrigin(Astro.request), org.slug);
+const webhookUrl = view.webhookUrl;
 
 // Connecting payment events is not the administrator's job: whenever keys are
 // stored or re-proven, the registration is brought up to date on its own, and
 // the scheduled runs keep doing so afterwards (specs/concepts/vipps-api-keys.md).
+// An administrator who is looking at a broken connection can also ask for it
+// now rather than waiting for the next run.
 async function connectPaymentEvents(): Promise<void> {
   const vipps = await getVippsForOrg(workos, workosOrgId);
   try {
@@ -88,13 +68,16 @@ async function connectPaymentEvents(): Promise<void> {
     console.error("could not register webhooks", error);
     webhookError =
       "Vipps ville ikke registrere varslingsadressen nå — vi prøver igjen automatisk. " +
-      "Du kan også prøve på nytt med «Test nøklene på nytt».";
+      "Du kan også prøve på nytt om litt.";
   }
 }
 
 if (Astro.request.method === "POST") {
   const form = await Astro.request.formData();
-  if (form.get("intent") === "test" && stored) {
+  const intent = form.get("intent");
+  if (intent === "webhook" && stored) {
+    await connectPaymentEvents();
+  } else if (intent === "test" && stored) {
     // Re-run the live check against the keys already in Vault.
     const result = await validateVippsKeys(stored);
     if (result.ok) {
@@ -109,6 +92,7 @@ if (Astro.request.method === "POST") {
     const parsed = parseVippsKeysForm(form);
     values = parsed.values;
     fieldErrors = parsed.fieldErrors;
+    formRejected = true;
     if (parsed.keys) {
       const result = await validateVippsKeys(parsed.keys);
       if (result.ok) {
@@ -116,142 +100,56 @@ if (Astro.request.method === "POST") {
         await saveOrgVippsKeys(workos, workosOrgId, stored);
         saved = true;
         values = { clientId: "", clientSecret: "", subscriptionKey: "", merchantSerialNumber: "" };
+        formRejected = false;
         await connectPaymentEvents();
       } else {
         validationError = result.message;
       }
     }
   }
+  // Keys or their event delivery may have changed — the chrome's badges say so.
+  view = await orgView(org, Astro.request);
 }
 
-const envLabel = vippsEnvironmentLabel();
-const validatedDate = stored ? new Date(stored.validatedAt).toLocaleDateString("nb-NO") : null;
+const date = (iso: string) => new Date(iso).toLocaleDateString("nb-NO");
+const storedView = stored
+  ? {
+      merchantSerialNumber: stored.merchantSerialNumber,
+      clientId: stored.clientId,
+      clientSecretMasked: maskSecret(stored.clientSecret),
+      subscriptionKeyMasked: maskSecret(stored.subscriptionKey),
+      validatedDate: date(stored.validatedAt),
+      webhookUrl: stored.webhook?.url ?? null,
+      webhookRegisteredDate: stored.webhook ? date(stored.webhook.registeredAt) : null,
+    }
+  : null;
+// A successful save closes the form; a rejected one keeps it open with what
+// was typed.
+const editing = formRejected || (Astro.url.searchParams.has("rediger") && !saved);
 ---
 
-<Shell title={`Vipps-nøkler — ${org.name}`}>
-  <Stack gap="lg">
-    <Stack gap="sm">
-      <Heading>Vipps-nøkler</Heading>
-      <Text variant="lead">
-        API-nøklene til salgsenheten {org.name} bruker for Faste betalinger. Du finner dem i
-        Vipps-portalen under «For utviklere». Nøklene må høre til {envLabel}.
-      </Text>
-    </Stack>
-
-    {saved && <Alert variant="info">Nøklene virker og er lagret. Vipps er koblet til.</Alert>}
-    {webhookConnected && (
-      <Alert variant="success">
-        Betalingsvarsler er koblet til. Medlemskap blir nå oppdatert automatisk når noen betaler.
-      </Alert>
-    )}
-    {webhookError && <Alert variant="error">{webhookError}</Alert>}
-    {retested && <Alert variant="info">Nøklene virker fortsatt.</Alert>}
-    {validationError && <Alert variant="error">{validationError}</Alert>}
-
-    {
-      stored && (
-        <Stack gap="sm">
-          <Heading level={2}>Lagrede nøkler</Heading>
-          <div class="keys">
-            <Text variant="small">MSN (salgsenhet): {stored.merchantSerialNumber}</Text>
-            <Text variant="small">client_id: {stored.clientId}</Text>
-            <Text variant="small">client_secret: {maskSecret(stored.clientSecret)}</Text>
-            <Text variant="small">Subscription key: {maskSecret(stored.subscriptionKey)}</Text>
-            <Text variant="small">Sist bekreftet mot Vipps: {validatedDate}</Text>
-          </div>
-          <form method="post">
-            <Button variant="secondary" name="intent" value="test" block>
-              Test nøklene på nytt
-            </Button>
-          </form>
-        </Stack>
-      )
-    }
-
-    {
-      stored && (
-        <Stack gap="sm">
-          <Heading level={2}>Betalingsvarsler</Heading>
-          <Text variant="small">
-            For at et medlemskap skal bli aktivt av seg selv når noen betaler, må Vipps få vite
-            hvor den skal varsle oss. Dette skjer automatisk: adressen kobles til når nøklene
-            lagres, og følger installasjonen av seg selv om den endrer seg.
-          </Text>
-          {stored.webhook ? (
-            <div class="keys">
-              <Text variant="small">Varsler går til: {stored.webhook.url}</Text>
-              <Text variant="small">
-                Koblet til:{" "}
-                {new Date(stored.webhook.registeredAt).toLocaleDateString("nb-NO")}
-              </Text>
-              {stored.webhook.url !== webhookUrl && (
-                <Alert variant="info">
-                  Adressen har endret seg ({webhookUrl}) og kobles til på nytt automatisk. «Test
-                  nøklene på nytt» gjør det med en gang.
-                </Alert>
-              )}
-            </div>
-          ) : (
-            <Text variant="small">
-              Ikke koblet til ennå — det skjer automatisk, og «Test nøklene på nytt» gjør det med
-              en gang.
-            </Text>
-          )}
-        </Stack>
-      )
-    }
-
-    <Stack gap="sm">
-      <Heading level={2}>{stored ? "Bytt nøkler" : "Legg inn nøkler"}</Heading>
-      <Text variant="small">
-        Vi tester nøklene mot Vipps før de lagres — ingenting lagres hvis de ikke virker.
-        {stored && " Nye nøkler erstatter de lagrede."}
-      </Text>
-      <form method="post">
-        <Stack gap="lg">
-          <TextField
-            label="client_id"
-            name="clientId"
-            value={values.clientId}
-            error={fieldErrors.clientId}
-            required
-          />
-          <TextField
-            label="client_secret"
-            name="clientSecret"
-            value={values.clientSecret}
-            error={fieldErrors.clientSecret}
-            required
-          />
-          <TextField
-            label="Subscription key (Ocp-Apim-Subscription-Key)"
-            name="subscriptionKey"
-            value={values.subscriptionKey}
-            error={fieldErrors.subscriptionKey}
-            required
-          />
-          <TextField
-            label="MSN (Merchant Serial Number)"
-            name="merchantSerialNumber"
-            value={values.merchantSerialNumber}
-            error={fieldErrors.merchantSerialNumber}
-            required
-          />
-          <Button block>Test og lagre</Button>
-        </Stack>
-      </form>
-    </Stack>
-
-    <CardFooter>
-      <TextLink href={orgPath(org.slug)}>Tilbake til oversikten</TextLink>
-    </CardFooter>
-  </Stack>
+<Shell title={`Vipps-nøkler — ${org.name}`} frame={false}>
+  <OrgScreen
+    orgName={org.name}
+    orgPath={orgPath(org.slug)}
+    active="innstillinger"
+    warnings={view.warnings}
+    activeMembers={view.activeMembers}
+  >
+    <VippsKeysScreen
+      orgName={org.name}
+      orgPath={orgPath(org.slug)}
+      envLabel={vippsEnvironmentLabel()}
+      stored={storedView}
+      editing={editing}
+      values={values}
+      fieldErrors={fieldErrors}
+      expectedWebhookUrl={webhookUrl}
+      saved={saved}
+      retested={retested}
+      validationError={validationError}
+      webhookConnected={webhookConnected}
+      webhookError={webhookError}
+    />
+  </OrgScreen>
 </Shell>
-
-<style>
-  .keys {
-    display: grid;
-    gap: 0.35rem;
-    word-break: break-all;
-  }
-</style>

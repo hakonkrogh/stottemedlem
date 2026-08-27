@@ -1,25 +1,15 @@
 ---
-import { periodLabel } from "@stottemedlem/core";
-import {
-  countMembersByStatus,
-  ensureOrganization,
-  getOrganizationBySlug,
-  listMembershipTiers,
-  listOrganizationMembers,
-} from "@stottemedlem/db";
-import Alert from "@stottemedlem/ui/components/Alert.astro";
-import Button from "@stottemedlem/ui/components/Button.astro";
-import CardFooter from "@stottemedlem/ui/components/CardFooter.astro";
-import Heading from "@stottemedlem/ui/components/Heading.astro";
-import Stack from "@stottemedlem/ui/components/Stack.astro";
-import Text from "@stottemedlem/ui/components/Text.astro";
-import TextLink from "@stottemedlem/ui/components/TextLink.astro";
-import MembershipTierCard from "../../../components/MembershipTierCard.astro";
+import { ensureOrganization, getOrganizationBySlug } from "@stottemedlem/db";
+import OrgOverviewScreen from "../../../components/OrgOverviewScreen.astro";
+import OrgScreen from "../../../components/OrgScreen.astro";
 import Shell from "../../../layouts/Shell.astro";
 import { getDb } from "../../../lib/db";
-import { shareableJoinTermsUrl, shareableJoinUrl } from "../../../lib/joinLinks";
-import { periods } from "../../../lib/periods";
-import { readOrgVippsKeys } from "../../../lib/vippsKeys";
+import {
+  shareableJoinTermsUrl,
+  shareableJoinUrl,
+  shareableQrCardUrl,
+} from "../../../lib/joinLinks";
+import { orgView } from "../../../lib/orgView";
 import {
   env,
   getWorkOS,
@@ -29,11 +19,10 @@ import {
   sessionCookieOptions,
 } from "../../../lib/workos";
 
-// Org dashboard. Resolves the persisted slug to the org row (backfilling rows
-// for orgs that predate persisted slugs), verifies the signed-in user is a
-// member, and surfaces the org's public URLs — the join page + salgsvilkår
-// links the admin pastes into the Vipps portal — plus a prompt to complete the
-// public profile when required fields are missing.
+// The front tab of the org's back office. Resolves the persisted slug to the
+// org row (backfilling rows for orgs that predate persisted slugs), verifies
+// the signed-in user is a member, and shows the org's public URLs — the join
+// page, salgsvilkår and QR card — plus everything that is not yet in order.
 const session = Astro.locals.session;
 if (!session) return Astro.redirect("/login");
 const slug = Astro.params.slug;
@@ -83,15 +72,7 @@ if (session.organizationId !== membership.organizationId) {
 
 const displayName =
   [session.firstName, session.lastName].filter(Boolean).join(" ") || session.email;
-const canSwitch = memberships.length > 1;
-const tiers = await listMembershipTiers(db, org.id);
-const currentPeriod = periods.periodFor().year;
-const members = await listOrganizationMembers(db, org.id, currentPeriod);
-const { active, lapsed } = countMembersByStatus(members);
-const profileComplete = org.orgnr !== null && org.contactEmail !== null;
-const vippsKeys = await readOrgVippsKeys(workos, org.workosOrgId);
-const joinUrl = shareableJoinUrl(org.slug);
-const termsUrl = shareableJoinTermsUrl(org.slug);
+const view = await orgView(org, Astro.request);
 
 // Set by the membership form after a price change: how many members were told,
 // and how many still have to be told by the organization itself
@@ -99,160 +80,27 @@ const termsUrl = shareableJoinTermsUrl(org.slug);
 const [told = 0, unreached = 0] = (Astro.url.searchParams.get("varslet") ?? "")
   .split(".")
   .map((part) => Number.parseInt(part, 10) || 0);
-const showNoticeResult = Astro.url.searchParams.has("varslet");
+const feeNotice = Astro.url.searchParams.has("varslet") ? { told, unreached } : undefined;
 ---
 
-<Shell title={org.name}>
-  <Stack gap="lg">
-    <Stack gap="sm">
-      <Heading>{org.name}</Heading>
-      <Text variant="lead">Innlogget som {displayName}.</Text>
-    </Stack>
-    {
-      showNoticeResult && (
-        <Alert variant={unreached > 0 ? "info" : "success"}>
-          {told === 0
-            ? "Ingen medlemmer trengte varsel om den nye prisen."
-            : `${told} støttemedlem${told === 1 ? "" : "mer"} har fått e-post om den nye prisen.`}
-          {unreached > 0 && (
-            <>
-              {" "}
-              {unreached} nådde vi ikke fram til — de blir stående på prisen de kjenner til dere
-              får sagt fra.{" "}
-              <TextLink href={`${orgPath(org.slug)}/medlemmer`}>Se medlemslisten</TextLink>
-            </>
-          )}
-        </Alert>
-      )
-    }
-    {
-      !profileComplete && (
-        <Alert variant="info">
-          Den offentlige siden mangler informasjon Vipps krever (organisasjonsnummer og
-          kontakt-e-post).{" "}
-          <TextLink href={`${orgPath(org.slug)}/innstillinger`}>Fyll inn nå</TextLink>
-        </Alert>
-      )
-    }
-    {
-      tiers.length === 0 && (
-        <Alert variant="info">
-          Organisasjonen har ingen medlemskap ennå — legg til minst ett med pris, så viser den
-          offentlige siden tilbudet Vipps skal godkjenne.{" "}
-          <TextLink href={`${orgPath(org.slug)}/medlemskap/ny`}>Sett opp medlemskap</TextLink>
-        </Alert>
-      )
-    }
-    <Stack gap="sm">
-      <Heading level={2}>Medlemmer</Heading>
-      <Text variant="small">
-        {
-          members.length === 0
-            ? "Ingen støttemedlemmer ennå — de dukker opp her av seg selv når noen melder seg inn."
-            : `${active} ${active === 1 ? "aktivt medlem" : "aktive medlemmer"} i ${periodLabel(currentPeriod)}${lapsed > 0 ? `, ${lapsed} utløpt` : ""}.`
-        }
-      </Text>
-      <Button variant="secondary" href={`${orgPath(org.slug)}/medlemmer`} block>
-        Åpne medlemslisten
-      </Button>
-      {
-        members.length > 0 && (
-          <Button variant="secondary" href={`${orgPath(org.slug)}/meldinger`} block>
-            Skriv til medlemmene
-          </Button>
-        )
-      }
-    </Stack>
-    <Stack gap="sm">
-      <Heading level={2}>Medlemskap</Heading>
-      {
-        tiers.length > 0 && (
-          <Text variant="small">
-            Slik vises medlemskapene på den offentlige siden. Trykk på et medlemskap for å endre
-            det.
-          </Text>
-        )
-      }
-      {
-        tiers.map((tier) => (
-          <a class="tier-link" href={`${orgPath(org.slug)}/medlemskap/${tier.id}`}>
-            <MembershipTierCard
-              name={tier.name}
-              annualFeeNok={tier.annualFeeNok}
-              description={tier.description}
-              headingLevel={3}
-            >
-              <Text variant="small">Endre medlemskapet →</Text>
-            </MembershipTierCard>
-          </a>
-        ))
-      }
-      <Button variant="secondary" href={`${orgPath(org.slug)}/medlemskap/ny`} block>
-        Legg til medlemskap
-      </Button>
-    </Stack>
-    {
-      !vippsKeys && (
-        <Alert variant="info">
-          Vipps er ikke koblet til ennå — legg inn salgsenhetens API-nøkler for å kunne ta
-          betalt.{" "}
-          <TextLink href={`${orgPath(org.slug)}/vipps`}>Legg inn Vipps-nøkler</TextLink>
-        </Alert>
-      )
-    }
-    <Stack gap="sm">
-      <Heading level={2}>Offentlige lenker</Heading>
-      <Text variant="small">
-        Innmeldingslenken er organisasjonens ene offentlige adresse — den du deler, og den QR-koden
-        peker på.
-      </Text>
-      <div class="links">
-        <Text variant="small">
-          Innmeldingslenke: <TextLink href={joinUrl}>{joinUrl}</TextLink>
-        </Text>
-        <Text variant="small">
-          Salgsvilkår: <TextLink href={termsUrl}>{termsUrl}</TextLink>
-        </Text>
-      </div>
-      <Text variant="small">
-        Når du bestiller Faste betalinger i Vipps-portalen, limer du inn innmeldingslenken som
-        «nettsted» og lenken til salgsvilkårene som «salgsvilkår».
-      </Text>
-    </Stack>
-    <Button variant="secondary" href={`${orgPath(org.slug)}/innstillinger`} block>
-      Innstillinger
-    </Button>
-    <Button variant="secondary" href={`${orgPath(org.slug)}/vipps`} block>
-      Vipps-nøkler{vippsKeys ? ` (MSN ${vippsKeys.merchantSerialNumber})` : ""}
-    </Button>
-    {canSwitch && <Button variant="secondary" href="/orgs" block>Bytt organisasjon</Button>}
-    <CardFooter>
-      <TextLink href="/logout">Logg ut</TextLink>
-    </CardFooter>
-  </Stack>
+<Shell title={org.name} frame={false}>
+  <OrgScreen
+    orgName={org.name}
+    orgPath={orgPath(org.slug)}
+    active="oversikt"
+    warnings={view.warnings}
+    activeMembers={view.activeMembers}
+    displayName={displayName}
+    canSwitch={memberships.length > 1}
+  >
+    <OrgOverviewScreen
+      orgPath={orgPath(org.slug)}
+      joinUrl={shareableJoinUrl(org.slug)}
+      termsUrl={shareableJoinTermsUrl(org.slug)}
+      qrCardUrl={shareableQrCardUrl(org.slug)}
+      warnings={view.warnings}
+      tiers={view.tiers}
+      feeNotice={feeNotice}
+    />
+  </OrgScreen>
 </Shell>
-
-<style>
-  .links {
-    display: grid;
-    gap: 0.35rem;
-  }
-  .links :global(a) {
-    word-break: break-all;
-  }
-  /* The whole membership card is the link to its edit page. */
-  .tier-link {
-    display: block;
-    color: inherit;
-    text-decoration: none;
-    border-radius: var(--sm-radius-lg);
-  }
-  .tier-link:hover :global(.card),
-  .tier-link:focus-visible :global(.card) {
-    border-color: var(--sm-accent);
-  }
-  .tier-link:focus-visible {
-    outline: none;
-    box-shadow: 0 0 0 3px var(--sm-focus-ring);
-  }
-</style>

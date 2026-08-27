@@ -8,10 +8,11 @@ import {
   recordOrgMessage,
 } from "@stottemedlem/db";
 import ComposeMessageScreen from "../../../../components/ComposeMessageScreen.astro";
+import OrgScreen from "../../../../components/OrgScreen.astro";
 import Shell from "../../../../layouts/Shell.astro";
 import { getDb } from "../../../../lib/db";
 import type { OrgMessageJob } from "../../../../lib/messages";
-import { requireOrgAccess } from "../../../../lib/orgAccess";
+import { requireOrgView } from "../../../../lib/orgView";
 import { periods } from "../../../../lib/periods";
 import { orgPath } from "../../../../lib/workos";
 
@@ -19,8 +20,9 @@ import { orgPath } from "../../../../lib/workos";
 // This page only writes the message down and hands it to the queue — walking
 // the whole register is the queue consumer's job (src/worker.ts), because
 // sending to everyone is bigger than one request wants to be.
-const org = await requireOrgAccess(Astro.locals.session, Astro.params.slug);
-if (!org) return Astro.redirect("/orgs");
+const view = await requireOrgView(Astro.locals.session, Astro.params.slug, Astro.request);
+if (!view) return Astro.redirect("/orgs");
+const { org, warnings } = view;
 
 const db = getDb();
 const messagesPath = `${orgPath(org.slug)}/meldinger`;
@@ -82,16 +84,18 @@ const reach = {
 const previous = (await listOrgMessages(db, org.id)).slice(0, 20);
 ---
 
-<Shell title={`Meldinger — ${org.name}`}>
-  <ComposeMessageScreen
-    orgName={org.name}
-    values={values}
-    fieldErrors={fieldErrors}
-    reach={reach}
-    mode={mode}
-    previous={previous}
-    messagesPath={messagesPath}
-    backPath={orgPath(org.slug)}
-    error={error}
-  />
+<Shell title={`Meldinger — ${org.name}`} frame={false}>
+  <OrgScreen orgName={org.name} orgPath={orgPath(org.slug)} active="medlemmer" warnings={warnings} activeMembers={view.activeMembers}>
+    <ComposeMessageScreen
+      orgName={org.name}
+      values={values}
+      fieldErrors={fieldErrors}
+      reach={reach}
+      mode={mode}
+      previous={previous}
+      messagesPath={messagesPath}
+      backPath={`${orgPath(org.slug)}/medlemmer`}
+      error={error}
+    />
+  </OrgScreen>
 </Shell>

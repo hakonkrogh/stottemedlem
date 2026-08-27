@@ -39,7 +39,9 @@ money.
   keys an administrator connected can move an organization's money.
 - Stored keys are encrypted, isolated per organization, and never leave the
   back office: after saving, the two secret values are only ever shown
-  masked. Replacing them means pasting a full new set.
+  masked. Stored keys are **presented, not offered as a form**
+  ([presenting and editing](presenting-and-editing.md)); replacing them is a
+  deliberate action and means pasting a full new set.
 - The product records when the keys last passed the live proof, and an
   administrator can re-run it at any time.
 - **Payment events connect themselves.** For memberships to update on their
@@ -50,9 +52,20 @@ money.
   own: a registration that is missing (the first attempt failed) or pointing
   at an outdated address is repaired automatically no later than the
   product's next scheduled run. Re-proving the keys also brings the
-  registration up to date at once. The back office shows the administrator
-  whether events are connected and where they go, but offers no connect
-  action — there is nothing to operate.
+  registration up to date at once.
+- **Connected payment events are not worth saying.** Because the connection
+  looks after itself, the back office says nothing about it while it is
+  working — an administrator has nothing to do and nothing to check.
+- **A connection that is not working is said out loud**: when the product has
+  no registration for the organization, or the registration points somewhere
+  other than where this deployment receives events, the back office says so, in
+  terms of the consequence (a payment may not update a membership by itself),
+  and shows where the events should go and where they go today. There the
+  administrator **can ask for it to be connected now** — the same repair the
+  next scheduled run would make anyway, brought forward, because waiting is the
+  only alternative and it is not obvious how long that is. It is a retry, never
+  a setup step: nothing about it is the administrator's to configure, and if it
+  fails they are told it will still be retried on its own.
 - The delivery secret the payment provider issues at registration — the only
   proof a delivery is genuine — is stored with the same per-organization
   isolation as the keys themselves.

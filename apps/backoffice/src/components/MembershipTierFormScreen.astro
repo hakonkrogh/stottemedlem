@@ -1,0 +1,144 @@
+---
+// Creating and editing a membership tier are ONE mechanism
+// (specs/use-cases/set-up-supporting-membership.md), kept apart from the list
+// on the membership tab so the stored offer is never confused with a
+// half-filled form.
+import { MEMBERSHIP_TIER_DESCRIPTION_MAX_LENGTH } from "@stottemedlem/core";
+import Alert from "@stottemedlem/ui/components/Alert.astro";
+import Button from "@stottemedlem/ui/components/Button.astro";
+import Heading from "@stottemedlem/ui/components/Heading.astro";
+import Stack from "@stottemedlem/ui/components/Stack.astro";
+import Text from "@stottemedlem/ui/components/Text.astro";
+import TextArea from "@stottemedlem/ui/components/TextArea.astro";
+import TextField from "@stottemedlem/ui/components/TextField.astro";
+import { TIER_TEMPLATES, type TierFieldErrors, type TierFormValues } from "../lib/membershipTiers";
+import Subpage from "./Subpage.astro";
+
+interface Props {
+  orgName: string;
+  tiersPath: string;
+  title: string;
+  isNew: boolean;
+  values: TierFormValues;
+  fieldErrors?: TierFieldErrors;
+  /** The template's suggested amount — a hint, never a value. */
+  feePlaceholder: string;
+  archiveError?: string | null;
+  canArchive?: boolean;
+  /** What a price change would move: who pays this tier today, at what fee. */
+  activeMembers?: number;
+  currentFeeNok?: number;
+  /** Of those, how many the organization has no address for. */
+  unreachable?: number;
+}
+const {
+  orgName,
+  tiersPath,
+  title,
+  isNew,
+  values,
+  fieldErrors = {},
+  feePlaceholder,
+  archiveError = null,
+  canArchive = false,
+  activeMembers = 0,
+  currentFeeNok,
+  unreachable = 0,
+} = Astro.props;
+---
+
+<Subpage backHref={tiersPath} backLabel="Tilbake til medlemskapene">
+  <Stack gap="sm">
+    <Heading level={2}>{title}</Heading>
+    <Text variant="lead">
+      Medlemskapet vises på den offentlige siden til {orgName}, og navnet er det støttemedlemmet ser
+      på avtalen i Vipps-appen. Prisendringer gjelder nye innmeldinger og fremtidige fornyelser.
+    </Text>
+  </Stack>
+  {archiveError && <Alert variant="error">{archiveError}</Alert>}
+  {
+    activeMembers > 0 && (
+      <Alert variant="info">
+        {activeMembers} støttemedlem{activeMembers === 1 ? "" : "mer"} betaler i dag {currentFeeNok}{" "}
+        kr i året for dette medlemskapet. Endrer du prisen, gjelder den for dem fra neste fornyelse
+        ved årsskiftet — det de har betalt for i år, står. Vi sender dem en e-post om endringen med
+        én gang, og ingen blir belastet en ny pris de ikke har visst om i minst to uker.
+        {
+          unreachable > 0 &&
+            ` ${unreachable} av dem har vi ingen e-postadresse til — dem må dere si fra til selv.`
+        }
+      </Alert>
+    )
+  }
+  {
+    isNew && (
+      <div class="templates">
+        <Text variant="small">
+          Start fra en mal — fyller ut navn og standardtekst, prisen setter du selv:
+        </Text>
+        <div class="template-buttons">
+          {TIER_TEMPLATES.map((t) => (
+            <Button variant="secondary" href={`?mal=${t.key}`}>
+              {t.name}
+            </Button>
+          ))}
+        </div>
+      </div>
+    )
+  }
+  <form method="post" class="form-column">
+    <Stack gap="lg">
+      <TextField label="Navn" name="name" value={values.name} required error={fieldErrors.name} />
+      <TextArea
+        label="Beskrivelse (valgfritt)"
+        name="description"
+        value={values.description}
+        placeholder="F.eks. hva medlemskapet betyr for organisasjonen"
+        maxlength={MEMBERSHIP_TIER_DESCRIPTION_MAX_LENGTH}
+        hint={`Maks ${MEMBERSHIP_TIER_DESCRIPTION_MAX_LENGTH} tegn. Linjeskift er lov — teksten vises slik du skriver den på den offentlige siden, og forkortes til én linje på avtalen i Vipps-appen.`}
+        error={fieldErrors.description}
+      />
+      <TextField
+        label="Årlig kontingent (kr)"
+        name="annualFee"
+        value={values.annualFee}
+        placeholder={feePlaceholder}
+        required
+        error={fieldErrors.annualFee}
+      />
+      <Button name="action" value="save" block>{isNew ? "Legg til" : "Lagre"}</Button>
+    </Stack>
+  </form>
+  {
+    canArchive && (
+      <form method="post" class="form-column">
+        <Stack gap="sm">
+          <Button variant="secondary" name="action" value="archive" block>
+            Arkiver medlemskapet
+          </Button>
+          <Text variant="small">
+            Arkivering fjerner medlemskapet fra den offentlige siden — historikken og eksisterende
+            medlemmer beholdes.
+          </Text>
+        </Stack>
+      </form>
+    )
+  }
+</Subpage>
+
+<style>
+  /* Wide screens give the panel room; a form still reads best in one column. */
+  .form-column {
+    max-width: 34rem;
+  }
+  .templates {
+    display: grid;
+    gap: 0.5rem;
+    max-width: 34rem;
+  }
+  .template-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+  }
+</style>

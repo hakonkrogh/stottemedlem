@@ -7,12 +7,11 @@
 import type { OrgMessage, OrgMessageOutcome } from "@stottemedlem/db";
 import { bodyParagraphs } from "@stottemedlem/email";
 import Alert from "@stottemedlem/ui/components/Alert.astro";
-import CardFooter from "@stottemedlem/ui/components/CardFooter.astro";
 import Heading from "@stottemedlem/ui/components/Heading.astro";
 import Stack from "@stottemedlem/ui/components/Stack.astro";
 import Text from "@stottemedlem/ui/components/Text.astro";
-import TextLink from "@stottemedlem/ui/components/TextLink.astro";
 import type { MessageDeliveryReport } from "../lib/messages";
+import Subpage from "./Subpage.astro";
 
 interface Props {
   message: OrgMessage;
@@ -31,9 +30,9 @@ const problemLabel = (outcome: OrgMessageOutcome) =>
   outcome === "failed" ? "sending feilet" : "ingen e-postadresse";
 ---
 
-<Stack gap="lg">
+<Subpage backHref={messagesPath} backLabel="Tilbake til meldinger">
   <Stack gap="sm">
-    <Heading>«{message.subject}»</Heading>
+    <Heading level={3}>«{message.subject}»</Heading>
     <Text variant="lead">{`Til ${audienceLabel}.`}</Text>
   </Stack>
 
@@ -68,7 +67,7 @@ const problemLabel = (outcome: OrgMessageOutcome) =>
   {
     problems.length > 0 && (
       <Stack gap="sm">
-        <Heading level={2}>Ikke nådd</Heading>
+        <Heading level={3}>Ikke nådd</Heading>
         {problems.map((problem) => (
           <Text variant="small">
             {[problem.name ?? "Uten navn", " — ", problemLabel(problem.outcome)].join("")}
@@ -79,16 +78,13 @@ const problemLabel = (outcome: OrgMessageOutcome) =>
   }
 
   <Stack gap="sm">
-    <Heading level={2}>Meldingen</Heading>
+    <Heading level={3}>Meldingen</Heading>
     <div class="body">
       {paragraphs.map((paragraph) => <p>{paragraph}</p>)}
     </div>
   </Stack>
 
-  <CardFooter>
-    <TextLink href={messagesPath}>← Tilbake til meldinger</TextLink>
-  </CardFooter>
-</Stack>
+</Subpage>
 
 <style>
   .body {

@@ -979,6 +979,23 @@ export async function listOrganizationMembers(
   return [...byMember.values()];
 }
 
+/**
+ * How many supporting members are current — one number, without reading the
+ * whole register. The back office carries it on the member tab from every
+ * screen (specs/concepts/back-office.md), so it must stay cheap.
+ */
+export async function countActiveMembers(
+  db: Db,
+  orgId: string,
+  currentPeriodKey: number,
+): Promise<number> {
+  const rows = await db
+    .select({ memberId: memberships.memberId })
+    .from(memberships)
+    .where(and(eq(memberships.orgId, orgId), eq(memberships.periodYear, currentPeriodKey)));
+  return new Set(rows.map((row) => row.memberId)).size;
+}
+
 /** How many supporters are current and how many have lapsed. */
 export function countMembersByStatus(members: MemberOverview[]): {
   active: number;

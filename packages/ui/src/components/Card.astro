@@ -11,7 +11,8 @@
     background: var(--sm-surface);
     border: 1px solid var(--sm-border);
     border-radius: var(--sm-radius-lg);
-    padding: 2rem;
+    /* Narrow screens spend their width on content, not on gutters. */
+    padding: clamp(1.25rem, 4vw, 2rem);
     box-shadow: var(--sm-shadow-card);
   }
 </style>

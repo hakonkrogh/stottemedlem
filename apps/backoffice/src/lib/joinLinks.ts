@@ -21,3 +21,9 @@ export function shareableJoinUrl(slug: string): string {
 export function shareableJoinTermsUrl(slug: string): string {
   return `${shareableOrigin()}${joinPageTermsPath(slug)}`;
 }
+
+/** The organization's QR code card address — the image posters and other
+ *  websites embed (specs/use-cases/promote-with-qr-card.md). */
+export function shareableQrCardUrl(slug: string): string {
+  return `${shareableOrigin()}/api/qr/${slug}`;
+}

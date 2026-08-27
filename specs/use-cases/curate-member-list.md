@@ -37,7 +37,10 @@ From the organization's point of view:
    a contact detail but no name is still listed, by something a person can
    recognize — never by an internal id.
 6. The administrator can correct a member's recorded identity/contact details,
-   including clearing one: a wrong address is worse than none.
+   including clearing one: a wrong address is worse than none. Looking someone
+   up never means facing a form: the list and the member's own page **present**
+   what is recorded, and correcting it is a separate action the administrator
+   asks for ([presenting and editing](../concepts/presenting-and-editing.md)).
 7. The list reflects payments automatically — a new join or renewal appears
    without manual entry, and keeps doing so even when the product was never
    notified that the payment happened
@@ -50,7 +53,8 @@ From the organization's point of view:
 - [ ] Status is derived from whether the annual fee is paid for the current
       period — the administrator never sets status by hand.
 - [ ] The administrator can correct a member's contact details without changing
-      their payment/membership record.
+      their payment/membership record, from an edit action rather than a form
+      that is open by default.
 - [ ] A supporter with no completed payment is distinguishable from one whose
       membership has lapsed, and is counted as neither active.
 - [ ] A supporter who consented to no name is still findable and recognizable in
@@ -66,6 +70,7 @@ From the organization's point of view:
   [Keep supporting members in the loop](keep-supporters-in-the-loop.md).
 
 ## Related
+- [Concept: Presenting and editing](../concepts/presenting-and-editing.md)
 - [Concept: Membership](../concepts/membership.md)
 - [Concept: Supporting member](../concepts/supporting-member.md)
 - [Concept: Payment reconciliation](../concepts/payment-reconciliation.md) — what

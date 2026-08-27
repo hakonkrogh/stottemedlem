@@ -63,6 +63,8 @@ scope.
 |---------|--------|
 | [Organization](concepts/organization.md) | Draft |
 | [Administrator](concepts/administrator.md) | Draft |
+| [Back office](concepts/back-office.md) | Draft |
+| [Presenting and editing](concepts/presenting-and-editing.md) | Draft |
 | [Supporting member](concepts/supporting-member.md) | Draft |
 | [Membership](concepts/membership.md) | Draft |
 | [Membership tier](concepts/membership-tier.md) | Draft |

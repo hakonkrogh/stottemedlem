@@ -23,14 +23,38 @@ lives in `specs/`, kept in sync with code by a mandatory `Stop`-hook harness.
   placeholders until first deploy. **WorkOS AuthKit login exists (step 3, done
   2026-07-08):** `src/middleware.ts` gates every route on a sealed-session cookie;
   `src/lib/workos.ts` + `src/pages/{login,callback,logout}.ts` + `orgs/` (selector,
-  create) + `o/[slug]/` (org dashboard) implement the org rule (0 orgs →
+  create) + `o/[slug]/` (the org's back office) implement the org rule (0 orgs →
   create, 1 → straight in, many → pick). **Route map — two parallel `[slug]`
   trees, easy to confuse:** `src/pages/o/[slug]/**` is the AUTHED admin back
-  office (dashboard `index.astro`, `medlemskap/[tierId].astro` = the one
-  add/edit membership form where `ny` means create); `src/pages/bli-medlem/[slug]/**`
+  office (`medlemskap/[tierId].astro` = the one add/edit membership form where
+  `ny` means create); `src/pages/bli-medlem/[slug]/**`
   is the PUBLIC surface (landing `index.astro`, `vilkar.astro`, `banner.ts`,
   `logo.ts`), plus `src/pages/api/qr/[slug].ts`. Admin edits call
-  `purgeOrgPublicPages` so the public copy refreshes. Backoffice logging goes
+  `purgeOrgPublicPages` so the public copy refreshes.
+  **Back-office shape (2026-08-27, specs/concepts/back-office.md):** an org is
+  FOUR tabbed pages — `index.astro` (Oversikt: public links + warnings),
+  `innstillinger.astro`, `medlemmer/`, `medlemskap/` — each a real page, no
+  client-side tab widget. Every org page is thin: it loads `requireOrgView()`
+  (`lib/orgView.ts` — access check + tiers + Vipps keys + derived warnings, one
+  Vault read) and renders
+  `<Shell frame={false}><OrgScreen …><SomeScreen …/></OrgScreen></Shell>`.
+  `OrgScreen` owns the chrome (org name as the page's ONE h1 — screens start at
+  `level={2}` — account links, and tabs with warning-count badges from
+  `lib/orgNav.ts` + `lib/orgWarnings.ts`). Vipps keys sit under the
+  Innstillinger tab, meldinger under Medlemmer.
+  **Editable surfaces present first** (specs/concepts/presenting-and-editing.md):
+  a screen shows stored values via `@stottemedlem/ui/components/InfoList.astro`
+  plus an "Endre" action opening `?rediger=1`; a save closes the form, a
+  rejected save keeps it open. Follow that for any new editable screen.
+  Screen markup lives in `src/components/*Screen.astro` with a `.stories.ts`
+  beside it — pages hold only data + POST handling, so every screen is
+  reviewable in Storybook (see `preview-screenshot`'s click-through note).
+  **A screen UNDER a tab (a member, a tier form, the Vipps keys, a message)
+  wraps its content in `components/Subpage.astro`** (`backHref` + `backLabel`)
+  instead of a `<Stack gap="lg">` root: that renders `@stottemedlem/ui`'s
+  `BackLink` above AND below the content, which the spec requires of every
+  subpage — don't hand-roll a bottom-only `CardFooter` link.
+  Backoffice logging goes
   through `logger("<area>")` from `src/lib/log`
   (specs/concepts/operational-alerting.md): stable message, ids/counts in
   context — that's what reaches the operator via Sentry. Since 2026-08-27
@@ -431,6 +455,17 @@ lives in `specs/`, kept in sync with code by a mandatory `Stop`-hook harness.
 
 ## Run / build / test
 - `pnpm install` · `pnpm dev` · `pnpm build` · `pnpm test` (vitest) · `pnpm typecheck` · `pnpm lint` (Biome) · `pnpm format`.
+- **Never pipe a check into `head`/`tail` — you read the pager's exit code, not
+  the check's.** `pnpm typecheck 2>&1 | tail -20` exits 0 while typecheck fails
+  (cost a false "typecheck ✓" on 2026-08-27). Run
+  `pnpm --filter <pkg> typecheck > /tmp/tc.log 2>&1; echo $?` and grep the log,
+  or end the pipeline with `; echo exit=${PIPESTATUS[0]}`.
+- **`astro check` typechecks `.stories.ts` too**, and nothing else does —
+  `pnpm test` and `astro build` both pass with broken story types. After
+  touching stories, run the backoffice `typecheck`, not just the build. Two
+  traps there: `const [x] = FIXTURES` is `possibly undefined` (export named
+  fixture consts instead of indexing an array), and a helper default
+  `(warnings = [])` infers `never[]` — annotate it (`warnings: OrgWarning[] = []`).
 - **A fresh worktree has NO `node_modules`** (nothing is shared with the main
   checkout): `pnpm lint`/`typecheck`/`test` fail up front with `sh: biome:
   command not found` / `turbo: command not found`, which is a missing install,

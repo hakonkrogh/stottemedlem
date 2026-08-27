@@ -1,0 +1,25 @@
+---
+// A screen that lives UNDER one of the back office's four places
+// (specs/concepts/back-office.md) — a single member, a membership's form, the
+// Vipps keys, a message.
+//
+// The way back is offered at BOTH ends of the panel: at the top, where someone
+// who opened the wrong thing looks first, and at the bottom, where someone who
+// read to the end has arrived. Wrapping the content is what guarantees it —
+// a new subpage cannot forget one of them.
+import BackLink from "@stottemedlem/ui/components/BackLink.astro";
+import Stack from "@stottemedlem/ui/components/Stack.astro";
+
+interface Props {
+  backHref: string;
+  /** The place it returns to, named — "Tilbake til medlemslisten". */
+  backLabel: string;
+}
+const { backHref, backLabel } = Astro.props;
+---
+
+<Stack gap="lg">
+  <BackLink href={backHref}>{backLabel}</BackLink>
+  <slot />
+  <BackLink href={backHref}>{backLabel}</BackLink>
+</Stack>

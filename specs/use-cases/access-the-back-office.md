@@ -26,7 +26,11 @@ From the administrator's point of view:
    - **More than one** → they are shown a selector and choose which organization
      to enter.
 3. The chosen or created organization becomes the **active** organization — the
-   one whose data every subsequent action reads and changes.
+   one whose data every subsequent action reads and changes. The administrator
+   lands on its **front page** and can reach any of the
+   [back office](../concepts/back-office.md)'s four places — overview,
+   settings, members, memberships — from every screen, seeing at a glance
+   which of them has something waiting.
 4. The administrator can switch to another organization they administer, or create
    an additional one, at any time.
 5. The administrator can sign out, ending the session.
@@ -37,7 +41,13 @@ From the administrator's point of view:
       it as its administrator.
 - [ ] An administrator with exactly one organization is taken directly into it.
 - [ ] An administrator with several organizations chooses which one to enter.
-- [ ] The active organization can be switched, and further organizations created.
+- [ ] The active organization can be switched, and further organizations created,
+      from anywhere in the back office.
+- [ ] From every screen the administrator can see the organization's four
+      places, which one they are in, and which of them has something that is
+      not yet in order.
+- [ ] Every place is its own address: it can be linked to, bookmarked and
+      reloaded.
 - [ ] An administrator only ever sees organizations they administer.
 - [ ] An administrator can sign out.
 
@@ -50,6 +60,9 @@ From the administrator's point of view:
   [Set up a supporting membership](set-up-supporting-membership.md).
 
 ## Related
+- [Concept: Back office](../concepts/back-office.md) — the four places an
+  organization is, and how they are presented
+- [Concept: Presenting and editing](../concepts/presenting-and-editing.md)
 - [Concept: Administrator](../concepts/administrator.md)
 - [Concept: Organization](../concepts/organization.md)
 - [Use case: Set up a supporting membership](set-up-supporting-membership.md)
