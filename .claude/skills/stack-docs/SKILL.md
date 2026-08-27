@@ -255,6 +255,14 @@ Two load-bearing facts the scaffold proved (2026-07-08), both easy to get wrong:
     **flattened build** (so the env is chosen by `CLOUDFLARE_ENV` at build, not `--env`).
     Secrets attach to the running Worker immediately (no redeploy); the Worker must exist
     first (deploy once, or let the `secret put` prompt create it).
+  - **Worker secrets are WRITE-ONLY** (verified 2026-08-25): `wrangler secret
+    list` shows names only; no wrangler command or API returns a value, and the
+    Secrets Store is equally unreadable. So deployed-env secrets can never seed
+    a local `.dev.vars` — and the user explicitly REJECTED working around this
+    with a readable Cloudflare-side copy (a dev-secrets KV namespace was built,
+    then rolled back and deleted the same day). If pulling secrets from
+    Cloudflare comes up again: state the write-only constraint and stop;
+    `.dev.vars` is populated by copying from the main checkout.
 
 ## Vipps MobilePay test environment (verified 2026-07-29)
 
@@ -377,6 +385,18 @@ real account. Source: developer.vippsmobilepay.com/docs/knowledge-base/test-envi
   `<tierKey>:<uuid>` — gets `400 … "Invalid value for Idempotency-Key"`. The
   colon is the problem; the docs' "1–40 chars" understates the validation.
   Pass `crypto.randomUUID()`; the business key belongs in `externalId`.
+  **Idempotency-Key retention on charge creation VERIFIED LIVE 2026-08-26
+  (rig: `vt idempotency`): a byte-identical `createCharge` replay with the
+  same key returned the SAME `chargeId` at 0m, 1h, 6.5h and 24h19m — no
+  duplicate at any point. A second probe (2026-08-27) added a 12h5m
+  data point, same result.** This is what `createDueRenewalCharges`
+  (`apps/backoffice/src/lib/renewals.ts`) leans on: its deterministic key
+  (`stableUuid("renewal:<agreementId>:<periodYear>")`) makes the next night's
+  retry land on the charge a crashed run created but never recorded. The
+  nightly window (~24 h) is proven; the Recurring docs still state no formal
+  retention limit, so a retry *months* later is unproven — irrelevant for the
+  nightly job, and reconciliation (`GET /agreements/{id}/charges`, see below)
+  closes that residual gap within its 60-day lookback anyway.
 - **Testing the app through a tunnel needs two non-Vipps unlocks** (both cost
   an hour on 2026-08-20):
   1. Vite blocks unfamiliar Host headers — a tunnel gets

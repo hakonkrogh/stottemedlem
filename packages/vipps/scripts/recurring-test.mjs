@@ -292,6 +292,130 @@ async function createCharge() {
   console.log("\nVipps processes it on the due date — it stays PENDING/DUE until then.");
 }
 
+/** List agreements by status — Vipps has no all-statuses listing. */
+async function listAgreements() {
+  const status = typeof flags.status === "string" ? flags.status : "ACTIVE";
+  const agreements = await client.listAgreements(status).catch(reportApiError);
+  if (agreements.length === 0) {
+    console.log(`No ${status} agreements on this sales unit.`);
+    return;
+  }
+  for (const agreement of agreements) {
+    console.log(
+      [
+        agreement.id,
+        agreement.status.padEnd(8),
+        `${fromOre(agreement.pricing.amount)} NOK`.padStart(12),
+        agreement.productName,
+        agreement.externalId ? `(${agreement.externalId})` : "",
+      ].join("  "),
+    );
+  }
+}
+
+/** Milliseconds as a human "3h 20m" — the number the retention answer is in. */
+function formatElapsed(ms) {
+  const minutes = Math.round(ms / 60000);
+  return minutes < 60 ? `${minutes}m` : `${Math.floor(minutes / 60)}h ${minutes % 60}m`;
+}
+
+/**
+ * Probe how long Vipps remembers an Idempotency-Key on charge creation — the
+ * guarantee `createDueRenewalCharges` leans on when a run creates a charge at
+ * Vipps and dies before recording it: the next night's retry sends the same
+ * key and must land on the SAME charge, not create a second one
+ * (apps/backoffice/src/lib/renewals.ts).
+ *
+ * First run creates a probe charge and saves the exact body + key. Every later
+ * run replays that identical request and records the outcome in the state file
+ * (`idempotencyProbe.checks`), so replays hours or days apart accumulate into
+ * the retention answer. A replay that yields a NEW chargeId means retention
+ * expired — the duplicate is cancelled on the spot so the agreement stays
+ * clean.
+ */
+async function runIdempotencyProbe() {
+  const state = readState();
+  let probe = state.idempotencyProbe;
+
+  if (flags.cleanup === true) {
+    if (!probe) {
+      console.log("No probe to clean up.");
+      return;
+    }
+    for (const id of probe.chargeIds ?? [probe.chargeId]) {
+      await client
+        .cancelCharge(probe.agreementId, id, idempotencyKey())
+        .then(() => console.log(`Cancelled probe charge ${id}.`))
+        .catch((error) => console.log(`Could not cancel ${id}: ${error.message}`));
+    }
+    writeState({ idempotencyProbe: null });
+    console.log("Probe cleared.");
+    return;
+  }
+
+  if (!probe || flags.fresh === true) {
+    const agreementId = currentAgreementId();
+    const body = {
+      amount: toOre(flags.amount ?? state.amountNok ?? 250),
+      description: "Idempotency probe",
+      // Far enough out never to capture by accident; `--cleanup` cancels it.
+      due: dueDate(60),
+      retryDays: 7,
+      transactionType: "DIRECT_CAPTURE",
+      externalId: `idem-probe:${Date.now()}`,
+    };
+    const key = idempotencyKey();
+    const { chargeId } = await client.createCharge(agreementId, body, key).catch(reportApiError);
+    probe = {
+      agreementId,
+      key,
+      body,
+      chargeId,
+      chargeIds: [chargeId],
+      createdAt: new Date().toISOString(),
+      checks: [],
+    };
+    writeState({ idempotencyProbe: probe });
+    print("probe chargeId", chargeId);
+    print("Idempotency-Key", key);
+    print("created", probe.createdAt);
+    console.log("\nRun `idempotency` again later (hours, then next day) to replay the");
+    console.log("identical request and see whether the key is still honoured.");
+    console.log("Finish with `idempotency --cleanup` to cancel the probe charge.");
+    return;
+  }
+
+  // Replay: byte-for-byte the same body, same key. Only time has passed.
+  const elapsedMs = Date.now() - Date.parse(probe.createdAt);
+  const check = { at: new Date().toISOString(), elapsed: formatElapsed(elapsedMs) };
+  try {
+    const { chargeId } = await client.createCharge(probe.agreementId, probe.body, probe.key);
+    check.chargeId = chargeId;
+    if (chargeId === probe.chargeId) {
+      check.outcome = "same-charge";
+      console.log(`SAME charge back after ${check.elapsed} — key still honoured, no duplicate.`);
+    } else {
+      check.outcome = "DUPLICATE";
+      probe.chargeIds.push(chargeId);
+      console.log(`NEW charge ${chargeId} after ${check.elapsed} — key forgotten, DUPLICATE made.`);
+      await client
+        .cancelCharge(probe.agreementId, chargeId, idempotencyKey())
+        .then(() => console.log("Duplicate cancelled."))
+        .catch((error) => console.log(`Could not cancel duplicate: ${error.message}`));
+    }
+  } catch (error) {
+    if (!(error instanceof VippsApiError)) throw error;
+    // A refusal (409 etc.) still answers the question: no duplicate was made.
+    check.outcome = `error ${error.status}`;
+    check.detail = error.message.slice(0, 300);
+    console.log(`Replay refused after ${check.elapsed}: ${error.message}`);
+  }
+  probe.checks.push(check);
+  writeState({ idempotencyProbe: probe });
+  print("probe chargeId", probe.chargeId);
+  print("checks so far", probe.checks.map((c) => `${c.elapsed}:${c.outcome}`).join("  "));
+}
+
 async function cancelCharge() {
   const agreementId = currentAgreementId();
   const chargeId = typeof flags.charge === "string" ? flags.charge : readState().renewalChargeId;
@@ -570,6 +694,10 @@ function help() {
   charges         List the agreement's charges
   charge          Create next year's charge  --days 1 | --due YYYY-MM-DD  --amount 250
   cancel-charge   Cancel a PENDING/DUE charge  --charge <id>
+  agreements      List agreements  --status ACTIVE (one status per call)
+  idempotency     Create a probe charge, then replay the identical request + key on
+                  every later run to measure Idempotency-Key retention
+                    --fresh (new probe)  --cleanup (cancel probe charge, clear)
   stop            Stop the agreement (irreversible)
   webhooks        list | register | delete <id>
   deliver         Post a signed event at a receiver, as Vipps would sign it
@@ -590,6 +718,8 @@ const commands = {
   charges: listCharges,
   charge: createCharge,
   "cancel-charge": cancelCharge,
+  agreements: listAgreements,
+  idempotency: runIdempotencyProbe,
   stop: stopAgreement,
   webhooks,
   deliver,
