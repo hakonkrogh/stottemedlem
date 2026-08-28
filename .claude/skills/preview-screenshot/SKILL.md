@@ -53,9 +53,15 @@ description: Render any local URL (marketing/backoffice dev or preview server) t
   0 — a no-op scroll doesn't re-seat the visual viewport). Next experiment
   shipped: an early (DOMContentLoaded + pageshow) `scrollTo(0,1); scrollTo(0,0)`
   nudge, guarded to bail after any touchstart or when scrollY > 0 so it can
-  never yank a reader. To READ such a phone video: no ffmpeg here — dump
-  frames with a Swift AVAssetImageGenerator script (see scratchpad pattern),
-  then Read the PNGs.
+  never yank a reader. On-device retest: the nudge did NOT cure the arrival
+  clip either — the pageTop>0-at-scrollY-0 premise is unproven. When a mobile
+  bug defies fixes like this, STOP guessing and instrument: PublicShell
+  carries a staging-only (`SENTRY_ENVIRONMENT === "staging"`) `#vv-debug`
+  overlay showing live scrollY / visualViewport pageTop/offsetTop/height /
+  innerHeight / safe-area-top plus first-seconds timeline — ask the user for
+  a screen recording and read the numbers off the frames. To READ such a
+  phone video: no ffmpeg here — dump frames with a Swift
+  AVAssetImageGenerator script (see scratchpad pattern), then Read the PNGs.
 - Typical loop (marketing, static): `pnpm turbo build --filter=@stottemedlem/marketing
   && pnpm --filter @stottemedlem/marketing preview --port 4399 &` → shot → Read →
   iterate. (astro preview serves `dist/` live, so rebuild + reload is enough;
