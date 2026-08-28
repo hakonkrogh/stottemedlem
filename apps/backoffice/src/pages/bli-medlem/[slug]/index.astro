@@ -8,9 +8,9 @@ import Stack from "@stottemedlem/ui/components/Stack.astro";
 import Text from "@stottemedlem/ui/components/Text.astro";
 import TextLink from "@stottemedlem/ui/components/TextLink.astro";
 import MembershipTierCard from "../../../components/MembershipTierCard.astro";
+import OrgIdentityHeader from "../../../components/OrgIdentityHeader.astro";
 import PublicShell from "../../../layouts/PublicShell.astro";
 import { getDb } from "../../../lib/db";
-import { orgImageUrl } from "../../../lib/orgImages";
 import { periods } from "../../../lib/periods";
 
 // PUBLIC join page (specs/concepts/join-page.md): the page an
@@ -57,17 +57,6 @@ const subheadIntro =
 const subheadPromise =
   "Medlemskapet fornyes år for år så lenge du vil være med: du står på organisasjonens liste over støttemedlemmer, hører fra dem gjennom året, og støtten din teller for hvert år som går.";
 
-// The org's uploaded visual identity, Facebook-style: a wide banner backdrop
-// with the circular logo overlapping its bottom edge and the org name beside
-// it. The banner stays bounded in height so the membership offer is never
-// pushed far down the page. Either image is simply omitted when the org has
-// not uploaded it.
-const logoUrl = org.logoKey ? orgImageUrl(org.slug, "logo", org.logoKey) : null;
-const bannerUrl = org.bannerKey ? orgImageUrl(org.slug, "banner", org.bannerKey) : null;
-// The admin-chosen focal point decides which part of the banner survives the
-// crop to the wide backdrop (settings page picker); center when unset.
-const bannerFocus = `${org.bannerFocusX ?? 50}% ${org.bannerFocusY ?? 50}%`;
-
 // Set when the join attempt bounced back here (see start.ts). Query strings are
 // not part of the page's cache key, so this never gets cached onto anyone else.
 const joinError = Astro.url.searchParams.get("feil");
@@ -76,15 +65,7 @@ const joinError = Astro.url.searchParams.get("feil");
 <PublicShell title={title} description={description}>
   <Stack gap="xl">
     <Stack gap="md">
-      <header class:list={["identity", { "has-banner": bannerUrl }]}>
-        {bannerUrl && (
-          <img class="banner" src={bannerUrl} alt="" style={`object-position: ${bannerFocus}`} />
-        )}
-        <div class="head">
-          {logoUrl && <img class="logo" src={logoUrl} alt="" />}
-          <p class="org-name">{org.name}</p>
-        </div>
-      </header>
+      <OrgIdentityHeader org={org} />
       {
         joinError && (
           <Alert variant="error">
@@ -171,76 +152,6 @@ const joinError = Astro.url.searchParams.get("feil");
 </PublicShell>
 
 <style>
-  .identity {
-    margin-bottom: 0.5rem;
-  }
-  .banner {
-    display: block;
-    width: 100%;
-    /* A wide backdrop, not a hero — bounded so the offer stays near the top. */
-    aspect-ratio: 12 / 5;
-    min-height: 7.5rem;
-    max-height: 15rem;
-    object-fit: cover;
-    border-radius: var(--sm-radius-lg);
-  }
-  .head {
-    display: flex;
-    align-items: flex-end;
-    gap: 1.1rem;
-  }
-  /* The org name is the identity mark beside the logo, not the page headline —
-     the h1 is the "Bli støttemedlem" invitation below. Styled like a display
-     heading so the identity header keeps its weight. */
-  .org-name {
-    margin: 0;
-    font-family: var(--sm-font-display);
-    font-weight: var(--sm-font-display-weight, 600);
-    font-variation-settings: var(--sm-font-display-variation, normal);
-    letter-spacing: -0.01em;
-    line-height: 1.2;
-    font-size: 1.75rem;
-    /* Long single-word org names can't wrap at spaces; allow shrinking below
-       content width with mid-word wrapping as the extreme backstop. */
-    min-width: 0;
-    overflow-wrap: anywhere;
-  }
-  /* On narrow screens the whole identity row scales down so a typical
-     compound org name still fits on one line beside the logo. */
-  @media (max-width: 480px) {
-    .logo {
-      width: 4.5rem;
-      height: 4.5rem;
-      padding: 0.35rem;
-    }
-    .has-banner .logo {
-      margin-top: -2.25rem;
-    }
-    .org-name {
-      font-size: 1.3rem;
-    }
-  }
-  /* Logos are always framed in a circle with a subtle outline, so mixed logo
-     shapes still read as one consistent identity mark. */
-  .logo {
-    display: block;
-    flex-shrink: 0;
-    width: 6.5rem;
-    height: 6.5rem;
-    object-fit: contain;
-    padding: 0.5rem;
-    background: var(--sm-surface);
-    border-radius: 50%;
-    box-shadow:
-      0 0 0 1px var(--sm-border),
-      var(--sm-shadow-card);
-  }
-  /* With a banner, the circle overlaps its bottom edge (Facebook-style) with
-     the name sitting beside it below the banner. */
-  .has-banner .logo {
-    margin-top: -3.25rem;
-    margin-left: 1rem;
-  }
   dl {
     margin: 0;
     display: grid;

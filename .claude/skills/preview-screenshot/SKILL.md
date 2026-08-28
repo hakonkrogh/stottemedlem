@@ -85,7 +85,10 @@ description: Render any local URL (marketing/backoffice dev or preview server) t
   Astro dev may come up on a DIFFERENT port than 4322 (another worktree's
   daemon holds it; vite logs "Port 4322 is in use, trying another one") — read
   the port from the start/logs output before shooting.
-  Local R2 shares the same `.wrangler/state`: seed org media with
+  Local R2 shares the same `.wrangler/state`. **Seed org logo + banner with
+  `bash .claude/skills/verify-public-routes/seed-images.sh [slug]`** (generates
+  fixture PNGs, uploads, sets the hashed keys — the whole recipe below,
+  scripted). By hand:
   `pnpm exec wrangler r2 object put "stottemedlem-media/<key>" --file <img>
   --content-type image/jpeg --local` where `<key>` matches the row's
   `logo_key`/`banner_key` (format `org/<id>/<kind>-<sha256-first-16-hex>.<ext>`

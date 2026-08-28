@@ -1,0 +1,106 @@
+---
+import type { OrganizationImages } from "@stottemedlem/db";
+import { orgImageUrl } from "../lib/orgImages";
+
+// The org's uploaded visual identity, Facebook-style: a wide banner backdrop
+// with the circular logo overlapping its bottom edge and the org name beside
+// it (specs/concepts/join-page.md). Shared by every public page that presents
+// the organization — the join page and the receipt — so a supporter sees the
+// same identity throughout. The banner stays bounded in height so the page's
+// real content is never pushed far down. Either image is simply omitted when
+// the org has not uploaded it.
+interface Props {
+  org: OrganizationImages & { name: string; slug: string };
+}
+
+const { org } = Astro.props;
+
+const logoUrl = org.logoKey ? orgImageUrl(org.slug, "logo", org.logoKey) : null;
+const bannerUrl = org.bannerKey ? orgImageUrl(org.slug, "banner", org.bannerKey) : null;
+// The admin-chosen focal point decides which part of the banner survives the
+// crop to the wide backdrop (settings page picker); center when unset.
+const bannerFocus = `${org.bannerFocusX ?? 50}% ${org.bannerFocusY ?? 50}%`;
+---
+
+<header class:list={["identity", { "has-banner": bannerUrl }]}>
+  {bannerUrl && (
+    <img class="banner" src={bannerUrl} alt="" style={`object-position: ${bannerFocus}`} />
+  )}
+  <div class="head">
+    {logoUrl && <img class="logo" src={logoUrl} alt="" />}
+    <p class="org-name">{org.name}</p>
+  </div>
+</header>
+
+<style>
+  .identity {
+    margin-bottom: 0.5rem;
+  }
+  .banner {
+    display: block;
+    width: 100%;
+    /* A wide backdrop, not a hero — bounded so the offer stays near the top. */
+    aspect-ratio: 12 / 5;
+    min-height: 7.5rem;
+    max-height: 15rem;
+    object-fit: cover;
+    border-radius: var(--sm-radius-lg);
+  }
+  .head {
+    display: flex;
+    align-items: flex-end;
+    gap: 1.1rem;
+  }
+  /* The org name is the identity mark beside the logo, not the page headline —
+     the h1 is the page's own invitation or confirmation below. Styled like a
+     display heading so the identity header keeps its weight. */
+  .org-name {
+    margin: 0;
+    font-family: var(--sm-font-display);
+    font-weight: var(--sm-font-display-weight, 600);
+    font-variation-settings: var(--sm-font-display-variation, normal);
+    letter-spacing: -0.01em;
+    line-height: 1.2;
+    font-size: 1.75rem;
+    /* Long single-word org names can't wrap at spaces; allow shrinking below
+       content width with mid-word wrapping as the extreme backstop. */
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+  /* On narrow screens the whole identity row scales down so a typical
+     compound org name still fits on one line beside the logo. */
+  @media (max-width: 480px) {
+    .logo {
+      width: 4.5rem;
+      height: 4.5rem;
+      padding: 0.35rem;
+    }
+    .has-banner .logo {
+      margin-top: -2.25rem;
+    }
+    .org-name {
+      font-size: 1.3rem;
+    }
+  }
+  /* Logos are always framed in a circle with a subtle outline, so mixed logo
+     shapes still read as one consistent identity mark. */
+  .logo {
+    display: block;
+    flex-shrink: 0;
+    width: 6.5rem;
+    height: 6.5rem;
+    object-fit: contain;
+    padding: 0.5rem;
+    background: var(--sm-surface);
+    border-radius: 50%;
+    box-shadow:
+      0 0 0 1px var(--sm-border),
+      var(--sm-shadow-card);
+  }
+  /* With a banner, the circle overlaps its bottom edge (Facebook-style) with
+     the name sitting beside it below the banner. */
+  .has-banner .logo {
+    margin-top: -3.25rem;
+    margin-left: 1rem;
+  }
+</style>
