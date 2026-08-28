@@ -54,6 +54,12 @@ From the supporter's point of view:
    the join page instead of a receipt) — and the product reuses the same
    unguessable token that addresses the member's
    [own page](../concepts/member-self-service.md) for this.
+6. The confirmation is also a **[payment receipt](../concepts/payment-receipt.md)**:
+   once the payment is confirmed, the page shows the documentation Norwegian
+   bookkeeping rules ask of a membership-fee payment (bokføringsforskriften
+   § 5-1-6b, jf. § 5-1-1 nr. 2–5 — the parties, what was paid for, the period,
+   the amount and its date), and the same receipt is emailed to the member.
+   The email cannot be declined; a member with no address still has the page.
 
 ## Acceptance criteria
 - [ ] A supporter can complete joining and payment without the administrator
@@ -62,6 +68,8 @@ From the supporter's point of view:
       of the chosen [tier](../concepts/membership-tier.md) for the current
       annual period, attributed to the named supporter.
 - [ ] The supporter is told their membership is active and its valid-until date.
+- [ ] A confirmed payment yields a [receipt](../concepts/payment-receipt.md) —
+      on the confirmation page, and by email when the member has an address.
 - [ ] A failed or abandoned payment does not create an active membership.
 - [ ] A payment that succeeded creates the membership even if the product was
       never notified of it.
@@ -77,6 +85,8 @@ From the supporter's point of view:
 - [Concept: Member self-service page](../concepts/member-self-service.md) — the
   member's own page, whose address every membership carries
 - [Concept: Annual fee](../concepts/annual-fee.md)
+- [Concept: Payment receipt](../concepts/payment-receipt.md) — what the
+  confirmation documents, and the email that carries the same thing
 - [Concept: Payment reconciliation](../concepts/payment-reconciliation.md) — the
   safety net when the payment succeeds but word of it never reaches us
 - [Use case: Earn stars and recruit new members](earn-stars-and-recruit.md) — a

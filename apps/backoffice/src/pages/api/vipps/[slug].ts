@@ -2,8 +2,10 @@ import { getOrganizationBySlug } from "@stottemedlem/db";
 import { verifyWebhookDelivery } from "@stottemedlem/vipps";
 import type { APIRoute } from "astro";
 import { getDb } from "../../../lib/db";
+import { getEmailSender } from "../../../lib/email";
 import { logger } from "../../../lib/log";
-import { applyVippsEvent, type VippsEvent } from "../../../lib/membership";
+import { applyVippsEvent, publicOrigin, type VippsEvent } from "../../../lib/membership";
+import { isNoteworthy, sendOwedReceipts } from "../../../lib/receipts";
 import { getVippsForOrg, testEnvironmentWebhookSecret } from "../../../lib/vipps";
 import { readOrgVippsKeys } from "../../../lib/vippsKeys";
 import { getWorkOS } from "../../../lib/workos";
@@ -81,6 +83,20 @@ export const POST: APIRoute = async ({ params, request }) => {
       eventType: event.eventType,
     });
     return new Response("could not apply event", { status: 500 });
+  }
+
+  // The event is applied, so the delivery is a success from here on: a receipt
+  // that would not send must not make Vipps redeliver the payment event — the
+  // nightly sweep is the retry (specs/concepts/payment-receipt.md).
+  try {
+    const receipts = await sendOwedReceipts(db, org, publicOrigin(request), getEmailSender());
+    if (receipts.failed > 0) {
+      log.error("receipts failed to send", undefined, { ...receipts, org: org.slug });
+    } else if (isNoteworthy(receipts)) {
+      log.info("receipts sent", { ...receipts, org: org.slug });
+    }
+  } catch (error) {
+    log.error("could not send receipts", error, { org: org.slug });
   }
 
   return new Response(null, { status: 200 });
