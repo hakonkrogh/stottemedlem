@@ -100,13 +100,12 @@ public surface owes.
   form-encoded POSTs whose Origin doesn't match. Browsers always send it; curl
   needs `-H "Origin: http://localhost:4322"`. The 403 arrives in ~1ms with no
   log line hinting at CSRF, so it looks like a routing/auth bug (cost a loop
-  2026-08-25 driving `/bli-medlem/<slug>/meldinger-av`).
+  2026-08-25 driving the since-removed `/bli-medlem/<slug>/meldinger-av`).
 - **The seeded member's manage token is `tok-seed-1`** — it drives every
   token-addressed member page without any login:
-  `/bli-medlem/<slug>/min-side?n=tok-seed-1` and the org-message decline page
-  `/bli-medlem/<slug>/meldinger-av?n=tok-seed-1` (POST `handling=av|pa` with
-  the Origin header above; wrong token must 404). Decline state is
-  `supporting_members.messages_declined_at` — assert it with `d1.sh`.
+  `/bli-medlem/<slug>/min-side?n=tok-seed-1` (wrong token must 404). The
+  org-message decline page `/bli-medlem/<slug>/meldinger-av` was REMOVED with
+  the org-messages feature (2026-08-28) — it must now 404.
 - **The Worker cache survives the whole dev-server run**, so a path you already
   visited reports `hit` on request #1 and you never see the `miss` → `hit`
   transition. To prove caching genuinely works, seed a *fresh* slug

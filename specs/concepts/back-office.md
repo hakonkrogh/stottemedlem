@@ -102,7 +102,7 @@ one visit and never has to be re-learned.
 - Holds the surfaces described by
   [Set up a supporting membership](../use-cases/set-up-supporting-membership.md),
   [Curate the member list](../use-cases/curate-member-list.md) and
-  [Keep supporting members in the loop](../use-cases/keep-supporters-in-the-loop.md).
+  [Export the member list](../use-cases/export-member-list.md).
 
 ## Referenced by
 - [Use case: Access the back office](../use-cases/access-the-back-office.md)

@@ -24,13 +24,7 @@ import {
   memberships,
   membershipTiers,
   type Organization,
-  type OrgMessage,
-  type OrgMessageAudience,
-  type OrgMessageOutcome,
-  type OrgMessageRecipient,
   organizations,
-  orgMessageRecipients,
-  orgMessages,
   type SupportingMember,
   supportingMembers,
 } from "./schema.js";
@@ -55,17 +49,9 @@ export {
   type NewMembershipCharge,
   type NewMembershipTier,
   type NewOrganization,
-  type NewOrgMessage,
-  type NewOrgMessageRecipient,
   type NewSupportingMember,
   type Organization,
-  type OrgMessage,
-  type OrgMessageAudience,
-  type OrgMessageOutcome,
-  type OrgMessageRecipient,
   organizations,
-  orgMessageRecipients,
-  orgMessages,
   type SupportingMember,
   supportingMembers,
 } from "./schema.js";
@@ -82,8 +68,6 @@ export function createDb(d1: D1Database) {
       membershipAgreements,
       memberships,
       membershipCharges,
-      orgMessages,
-      orgMessageRecipients,
     },
   });
 }
@@ -1330,175 +1314,6 @@ export async function agreementsChargedForPeriod(
   return new Set(rows.map((row) => row.agreementId));
 }
 
-// ── Organization messages (specs/concepts/org-message.md) ───────────────────
-
-/** One supporting member as an organization message sees them. */
-export interface MessageableMember {
-  member: SupportingMember;
-  /** Same derivation as the member list — never stored, never settable. */
-  status: "active" | "lapsed";
-  /**
-   * Token for the member's own page, doubling as the unsubscribe link's
-   * identity. A member without one cannot be offered the one-click decline
-   * every message must carry, so they count as unreachable.
-   */
-  manageToken: string | null;
-}
-
-/**
- * Everyone an organization message *could* concern, with the facts the
- * audience rules act on. Derived from the live register at the moment it is
- * asked — there is no stored recipient list to go stale
- * (specs/use-cases/keep-supporters-in-the-loop.md).
- */
-export async function listMessageableMembers(
-  db: Db,
-  orgId: string,
-  currentPeriodKey: number,
-): Promise<MessageableMember[]> {
-  const members = await listOrganizationMembers(db, orgId, currentPeriodKey);
-
-  // The member's own page belongs to their arrangement; prefer the live one,
-  // fall back to the newest, so a lapsed member can still be reached.
-  const agreements = await db
-    .select({
-      memberId: membershipAgreements.memberId,
-      manageToken: membershipAgreements.manageToken,
-      status: membershipAgreements.status,
-    })
-    .from(membershipAgreements)
-    .where(eq(membershipAgreements.orgId, orgId))
-    .orderBy(desc(membershipAgreements.createdAt));
-  const tokens = new Map<string, string>();
-  for (const pass of ["ACTIVE", "any"] as const) {
-    for (const row of agreements) {
-      if (!row.memberId || !row.manageToken) continue;
-      if (pass === "ACTIVE" && row.status !== "ACTIVE") continue;
-      if (!tokens.has(row.memberId)) tokens.set(row.memberId, row.manageToken);
-    }
-  }
-
-  return members.map((entry) => ({
-    member: entry.member,
-    status: entry.status,
-    manageToken: tokens.get(entry.member.id) ?? null,
-  }));
-}
-
-/** Whether the chosen audience includes this member at all. */
-export function inMessageAudience(entry: MessageableMember, audience: OrgMessageAudience): boolean {
-  return audience === "all" || entry.status === "active";
-}
-
-/** Whether a message to this member can actually leave the building. */
-export function isMessageReachable(entry: MessageableMember): boolean {
-  return Boolean(entry.member.email?.trim() && entry.manageToken);
-}
-
-export interface MessageReach {
-  /** Members the message would actually go to. */
-  reached: number;
-  /** In the audience, but with no address (or no page) to send to. */
-  unreachable: number;
-  /** In the audience, but they declined — excluded whatever the choice. */
-  declined: number;
-}
-
-/**
- * What a chosen audience amounts to, shown while choosing: who a message goes
- * to, who it cannot reach, and who asked not to get it. Counted rather than
- * hidden — a member the organization cannot reach is its problem to solve.
- */
-export function messageReach(
-  entries: MessageableMember[],
-  audience: OrgMessageAudience,
-): MessageReach {
-  const reach: MessageReach = { reached: 0, unreachable: 0, declined: 0 };
-  for (const entry of entries) {
-    if (!inMessageAudience(entry, audience)) continue;
-    if (entry.member.messagesDeclinedAt) reach.declined++;
-    else if (isMessageReachable(entry)) reach.reached++;
-    else reach.unreachable++;
-  }
-  return reach;
-}
-
-/** Write down what the administrator asked to send. The send job reads this. */
-export async function recordOrgMessage(
-  db: Db,
-  input: { orgId: string; subject: string; body: string; audience: OrgMessageAudience },
-): Promise<OrgMessage> {
-  const [row] = await db
-    .insert(orgMessages)
-    .values({ id: crypto.randomUUID(), ...input })
-    .returning();
-  if (!row) throw new Error("insert returned no row");
-  return row;
-}
-
-/** One message, only within its own organization. */
-export async function getOrgMessage(
-  db: Db,
-  orgId: string,
-  messageId: string,
-): Promise<OrgMessage | null> {
-  const [row] = await db
-    .select()
-    .from(orgMessages)
-    .where(and(eq(orgMessages.orgId, orgId), eq(orgMessages.id, messageId)));
-  return row ?? null;
-}
-
-/** Everything the organization has sent (or queued), newest first. */
-export async function listOrgMessages(db: Db, orgId: string): Promise<OrgMessage[]> {
-  return db
-    .select()
-    .from(orgMessages)
-    .where(eq(orgMessages.orgId, orgId))
-    .orderBy(desc(orgMessages.createdAt));
-}
-
-/**
- * Write down how the send job left one member. Idempotent on (message, member):
- * a retried job records nothing new for a member already dealt with, which is
- * also what stops it contacting them twice.
- */
-export async function recordOrgMessageRecipient(
-  db: Db,
-  input: {
-    messageId: string;
-    orgId: string;
-    memberId: string;
-    outcome: OrgMessageOutcome;
-    detail?: string;
-  },
-): Promise<void> {
-  await db
-    .insert(orgMessageRecipients)
-    .values({ id: crypto.randomUUID(), ...input })
-    .onConflictDoNothing();
-}
-
-/** How the send job left every member it has dealt with so far. */
-export async function listOrgMessageRecipients(
-  db: Db,
-  messageId: string,
-): Promise<OrgMessageRecipient[]> {
-  return db
-    .select()
-    .from(orgMessageRecipients)
-    .where(eq(orgMessageRecipients.messageId, messageId))
-    .orderBy(asc(orgMessageRecipients.createdAt));
-}
-
-/** The send job finished walking the audience; the message is done. */
-export async function markOrgMessageSent(db: Db, messageId: string): Promise<void> {
-  await db
-    .update(orgMessages)
-    .set({ sentAt: sql`(datetime('now'))` })
-    .where(eq(orgMessages.id, messageId));
-}
-
 /** One supporting member by id — the row behind a manage token. */
 export async function getSupportingMember(
   db: Db,
@@ -1506,20 +1321,4 @@ export async function getSupportingMember(
 ): Promise<SupportingMember | null> {
   const [row] = await db.select().from(supportingMembers).where(eq(supportingMembers.id, memberId));
   return row ?? null;
-}
-
-/**
- * The member's standing choice about organization messages — set from the
- * one-click decline in every message, reversed from their own page. Notices
- * about their own money ignore it (specs/concepts/member-notice.md).
- */
-export async function setMessagesDeclined(
-  db: Db,
-  memberId: string,
-  declined: boolean,
-): Promise<void> {
-  await db
-    .update(supportingMembers)
-    .set({ messagesDeclinedAt: declined ? sql`(datetime('now'))` : null })
-    .where(eq(supportingMembers.id, memberId));
 }

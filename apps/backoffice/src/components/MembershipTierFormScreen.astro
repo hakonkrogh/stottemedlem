@@ -11,8 +11,22 @@ import Stack from "@stottemedlem/ui/components/Stack.astro";
 import Text from "@stottemedlem/ui/components/Text.astro";
 import TextArea from "@stottemedlem/ui/components/TextArea.astro";
 import TextField from "@stottemedlem/ui/components/TextField.astro";
+import TextLink from "@stottemedlem/ui/components/TextLink.astro";
 import { TIER_TEMPLATES, type TierFieldErrors, type TierFormValues } from "../lib/membershipTiers";
 import Subpage from "./Subpage.astro";
+
+/**
+ * A parsed, valid fee change waiting for the administrator's word — mirrors
+ * lib/notices' FeeChangeReach (kept structural so this screen stays
+ * Storybook-renderable without the worker-only libs).
+ */
+export interface FeeChangeConfirm {
+  newFeeNok: number;
+  /** Members the product will email about the change, with no way to opt out. */
+  toEmail: number;
+  /** Members moved by the change with no address — the organization's to reach. */
+  unreachable: number;
+}
 
 interface Props {
   orgName: string;
@@ -30,6 +44,13 @@ interface Props {
   currentFeeNok?: number;
   /** Of those, how many the organization has no address for. */
   unreachable?: number;
+  /**
+   * When set, the save is on hold: the screen shows what pressing save sets in
+   * motion — the members the product will email, with no opt-out — and offers
+   * exactly two ways out: confirm, or cancel the whole update
+   * (specs/use-cases/change-the-annual-fee.md).
+   */
+  confirmFeeChange?: FeeChangeConfirm | null;
 }
 const {
   orgName,
@@ -44,7 +65,21 @@ const {
   activeMembers = 0,
   currentFeeNok,
   unreachable = 0,
+  confirmFeeChange = null,
 } = Astro.props;
+
+// Built in the frontmatter so no space is lost at an {expr} boundary.
+const confirmLines = confirmFeeChange
+  ? [
+      `Du endrer årsbeløpet fra ${currentFeeNok} kr til ${confirmFeeChange.newFeeNok} kr.`,
+      confirmFeeChange.toEmail > 0 &&
+        `Vi sender e-post om endringen til ${confirmFeeChange.toEmail} ${
+          confirmFeeChange.toEmail === 1 ? "støttemedlem" : "støttemedlemmer"
+        } med én gang. Varselet kan ikke velges bort — hverken av deg eller av dem.`,
+      confirmFeeChange.unreachable > 0 &&
+        `${confirmFeeChange.unreachable} av de berørte har vi ingen e-postadresse til — dem må dere varsle selv.`,
+    ].filter((line): line is string => Boolean(line))
+  : [];
 ---
 
 <Subpage backHref={tiersPath} backLabel="Tilbake til medlemskapene">
@@ -55,9 +90,35 @@ const {
       på avtalen i Vipps-appen. Prisendringer gjelder nye innmeldinger og fremtidige fornyelser.
     </Text>
   </Stack>
+  {
+    /* The one decision point of a price change: nothing is saved yet, and the
+       administrator chooses between exactly two doors — confirm knowing the
+       members will be emailed, or cancel the whole update. The editable form
+       stays hidden so the numbers being confirmed cannot drift meanwhile. */
+    confirmFeeChange && (
+      <section class="confirm">
+        <Heading level={3}>Bekreft prisendringen</Heading>
+        {confirmLines.map((line) => (
+          <Text>{line}</Text>
+        ))}
+        <form method="post">
+          <input type="hidden" name="name" value={values.name} />
+          <input type="hidden" name="description" value={values.description} />
+          <input type="hidden" name="annualFee" value={values.annualFee} />
+          <input type="hidden" name="bekreft" value="1" />
+          <Stack gap="sm">
+            <Button name="action" value="save">Bekreft og lagre</Button>
+            <Text variant="small">
+              <TextLink href={tiersPath}>Avbryt — ingenting endres</TextLink>
+            </Text>
+          </Stack>
+        </form>
+      </section>
+    )
+  }
   {archiveError && <Alert variant="error">{archiveError}</Alert>}
   {
-    activeMembers > 0 && (
+    !confirmFeeChange && activeMembers > 0 && (
       <Alert variant="info">
         {activeMembers} støttemedlem{activeMembers === 1 ? "" : "mer"} betaler i dag {currentFeeNok}{" "}
         kr i året for dette medlemskapet. Endrer du prisen, gjelder den for dem fra neste fornyelse
@@ -86,31 +147,43 @@ const {
       </div>
     )
   }
-  <form method="post" class="form-column">
-    <Stack gap="lg">
-      <TextField label="Navn" name="name" value={values.name} required error={fieldErrors.name} />
-      <TextArea
-        label="Beskrivelse (valgfritt)"
-        name="description"
-        value={values.description}
-        placeholder="F.eks. hva medlemskapet betyr for organisasjonen"
-        maxlength={MEMBERSHIP_TIER_DESCRIPTION_MAX_LENGTH}
-        hint={`Maks ${MEMBERSHIP_TIER_DESCRIPTION_MAX_LENGTH} tegn. Linjeskift er lov — teksten vises slik du skriver den på den offentlige siden, og forkortes til én linje på avtalen i Vipps-appen.`}
-        error={fieldErrors.description}
-      />
-      <TextField
-        label="Årlig kontingent (kr)"
-        name="annualFee"
-        value={values.annualFee}
-        placeholder={feePlaceholder}
-        required
-        error={fieldErrors.annualFee}
-      />
-      <Button name="action" value="save" block>{isNew ? "Legg til" : "Lagre"}</Button>
-    </Stack>
-  </form>
   {
-    canArchive && (
+    !confirmFeeChange && (
+      <form method="post" class="form-column">
+        <Stack gap="lg">
+          <TextField
+            label="Navn"
+            name="name"
+            value={values.name}
+            required
+            error={fieldErrors.name}
+          />
+          <TextArea
+            label="Beskrivelse (valgfritt)"
+            name="description"
+            value={values.description}
+            placeholder="F.eks. hva medlemskapet betyr for organisasjonen"
+            maxlength={MEMBERSHIP_TIER_DESCRIPTION_MAX_LENGTH}
+            hint={`Maks ${MEMBERSHIP_TIER_DESCRIPTION_MAX_LENGTH} tegn. Linjeskift er lov — teksten vises slik du skriver den på den offentlige siden, og forkortes til én linje på avtalen i Vipps-appen.`}
+            error={fieldErrors.description}
+          />
+          <TextField
+            label="Årlig kontingent (kr)"
+            name="annualFee"
+            value={values.annualFee}
+            placeholder={feePlaceholder}
+            required
+            error={fieldErrors.annualFee}
+          />
+          <Button name="action" value="save" block>
+            {isNew ? "Legg til" : "Lagre"}
+          </Button>
+        </Stack>
+      </form>
+    )
+  }
+  {
+    !confirmFeeChange && canArchive && (
       <form method="post" class="form-column">
         <Stack gap="sm">
           <Button variant="secondary" name="action" value="archive" block>
@@ -130,6 +203,20 @@ const {
   /* Wide screens give the panel room; a form still reads best in one column. */
   .form-column {
     max-width: 34rem;
+  }
+  /* Same shape as the refund confirmation on the member page: a decision box,
+     not an error — hence the accent palette rather than the danger one. */
+  .confirm {
+    display: grid;
+    gap: var(--sm-space-sm);
+    padding: var(--sm-space-md);
+    max-width: 34rem;
+    background: var(--sm-accent-soft);
+    border: 1px solid var(--sm-border-strong);
+    border-radius: var(--sm-radius-md);
+  }
+  .confirm form {
+    justify-self: start;
   }
   .templates {
     display: grid;

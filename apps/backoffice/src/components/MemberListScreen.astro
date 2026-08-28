@@ -21,11 +21,15 @@ interface Props {
   /** What the administrator typed; filtering happens here so counts don't move. */
   search?: string;
   membersPath: string;
-  /** Where writing to the members starts, when there is anybody to write to. */
-  messagesPath?: string;
+  /**
+   * The CSV download (specs/use-cases/export-member-list.md) — the register is
+   * the organization's own data, and a spreadsheet is how they take it with
+   * them into whatever tool they manage members in.
+   */
+  exportHref?: string;
   currentYear: number;
 }
-const { members, search = "", membersPath, messagesPath, currentYear } = Astro.props;
+const { members, search = "", membersPath, exportHref, currentYear } = Astro.props;
 
 const { active, lapsed } = countMembersByStatus(members);
 const shown = members.filter((entry) => matchesMemberSearch(entry, search));
@@ -43,9 +47,9 @@ const summary =
       <Text variant="lead">{summary}</Text>
     </Stack>
     {
-      messagesPath && members.length > 0 && (
-        <Button variant="secondary" href={messagesPath}>
-          Skriv til medlemmene
+      exportHref && members.length > 0 && (
+        <Button variant="secondary" href={exportHref}>
+          Last ned som regneark (CSV)
         </Button>
       )
     }

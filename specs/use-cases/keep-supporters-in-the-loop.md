@@ -1,7 +1,19 @@
 # Use case: Keep supporting members in the loop
 
-**Status:** Draft
-**Solves:** [Problem: Supporters never hear back from the organization](../problems/supporters-never-hear-back.md)
+**Status:** Retired (2026-08-28)
+**Solves:** [Problem: Supporters never hear back from the organization](../problems/supporters-never-hear-back.md) (also retired)
+
+> **Retired.** The product no longer sends the organization's own messages to
+> its members. In-product messaging was built (2026-08-25) and then removed:
+> the product's one job is the register and the annual fee, and carrying an
+> organization's outbound email — deliverability, spam complaints, opt-outs —
+> pulled it toward being a newsletter tool. Instead the organization takes the
+> register with it: [Export the member list](export-member-list.md) and reach
+> members through whatever channel the organization already uses. The
+> product's own [member notices](../concepts/member-notice.md) (fee changes —
+> what a member is owed about their own money) are unaffected and remain the
+> only email the product sends to members. The text below is kept as the
+> record of what was built and why.
 
 ## Goal
 An organization thanks its supporting members and keeps them informed and

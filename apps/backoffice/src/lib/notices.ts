@@ -33,6 +33,39 @@ export function isNoteworthy(report: NoticeReport): boolean {
   return report.told > 0 || report.unreachable > 0 || report.failed > 0;
 }
 
+/** Who a proposed fee would move, counted before the administrator commits. */
+export interface FeeChangeReach {
+  /** Members the product will email about the change, with no way to opt out. */
+  toEmail: number;
+  /** Members moved by the change with no address — the organization's to reach. */
+  unreachable: number;
+}
+
+/**
+ * What saving a tier at a proposed fee would set in motion: exactly who ends
+ * up on a price they have not heard about, and of those, who the product can
+ * actually tell. Computed against the PROPOSED fee, before anything is saved —
+ * this is the number the save-confirmation shows, so it must be the same
+ * comparison sendOwedFeeChangeNotices will make afterwards
+ * (specs/use-cases/change-the-annual-fee.md).
+ */
+export async function feeChangeReach(
+  db: Db,
+  orgId: string,
+  tierId: string,
+  proposedFeeNok: number,
+  today: Date = new Date(),
+): Promise<FeeChangeReach> {
+  const standings = await listMemberFeeStandings(db, orgId, today, periods.feeNoticeDays);
+  const reach: FeeChangeReach = { toEmail: 0, unreachable: 0 };
+  for (const standing of standings) {
+    if (standing.tier.id !== tierId || standing.knownFeeNok === proposedFeeNok) continue;
+    if (standing.member.email && standing.agreement.manageToken) reach.toEmail++;
+    else reach.unreachable++;
+  }
+  return reach;
+}
+
 /**
  * Which members are on a price they have not heard about. Exported because the
  * back office shows this before and after a change: an organization is told

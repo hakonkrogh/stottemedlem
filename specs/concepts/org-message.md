@@ -1,6 +1,14 @@
 # Concept: Organization message
 
-**Status:** Draft
+**Status:** Retired (2026-08-28)
+
+> **Retired.** The product no longer delivers an organization's own messages;
+> see the retirement note in
+> [Keep supporting members in the loop](../use-cases/keep-supporters-in-the-loop.md).
+> Organizations reach their members through their own channels, using
+> [Export the member list](../use-cases/export-member-list.md). Member
+> notices ([member notice](member-notice.md)) are unaffected. The definition
+> below is kept as the record of what this was.
 
 ## Definition
 An **organization message** is a message an [administrator](administrator.md)

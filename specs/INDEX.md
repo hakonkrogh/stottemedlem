@@ -13,14 +13,15 @@ simple **supporting membership**: people pay a yearly fee to back the
 organization they care about.
 
 The product has **one job**: let an organization curate its list of supporting
-members, and let supporters join and pay their annual fee. Around that core, the
-organization can also thank its supporting members and keep them informed and
-involved — the register is worth having because you can act on it. It is
+members, and let supporters join and pay their annual fee. The register is the
+organization's own data — it can always be taken along as an export, so the
+organization can thank and inform its members through its own channels. It is
 **B2C** — an organization onboards and configures its membership, then its
 community signs up and pays directly. It is deliberately *not* a full CRM,
-accounting suite, or event platform; everything outside curating supporting
-members, collecting their annual fee, and keeping them in the loop is out of
-scope.
+accounting suite, event platform, or messaging tool; everything outside
+curating supporting members and collecting their annual fee is out of scope.
+The one message the product itself sends a member is the necessary
+[member notice](concepts/member-notice.md) about their own money.
 
 **Primary actors:** the **organization** (an admin acting on its behalf) and the
 **supporting member** (a person from the community).
@@ -40,7 +41,7 @@ scope.
 |---------|--------|-----------|
 | [Collecting annual support is manual and leaky](problems/collecting-annual-support.md) | Draft | [Join as a supporting member](use-cases/join-as-supporting-member.md) |
 | [Keeping an accurate list of who has paid](problems/keeping-an-accurate-member-list.md) | Draft | [Curate the member list](use-cases/curate-member-list.md), [Renew annual membership](use-cases/renew-annual-membership.md) |
-| [Supporters never hear back from the organization](problems/supporters-never-hear-back.md) | Draft | [Keep supporting members in the loop](use-cases/keep-supporters-in-the-loop.md) |
+| [Supporters never hear back from the organization](problems/supporters-never-hear-back.md) | Retired (out of scope) | [Export the member list](use-cases/export-member-list.md) — through the organization's own channels |
 | [Loyalty is invisible and word of mouth goes untracked](problems/invisible-loyalty-and-word-of-mouth.md) | Draft | [Earn stars and recruit new members](use-cases/earn-stars-and-recruit.md) |
 | [A payment that should never have happened cannot be undone](problems/honouring-a-refund-request.md) | Draft | [Refund a supporting member's payment](use-cases/refund-a-payment.md) |
 
@@ -53,10 +54,11 @@ scope.
 | [Join as a supporting member](use-cases/join-as-supporting-member.md) | Draft | [Collecting annual support](problems/collecting-annual-support.md) |
 | [Change the annual fee](use-cases/change-the-annual-fee.md) | Draft | [Collecting annual support](problems/collecting-annual-support.md) |
 | [Curate the member list](use-cases/curate-member-list.md) | Draft | [Keeping an accurate list](problems/keeping-an-accurate-member-list.md) |
+| [Export the member list](use-cases/export-member-list.md) | Draft | [Keeping an accurate list](problems/keeping-an-accurate-member-list.md) |
 | [Renew annual membership](use-cases/renew-annual-membership.md) | Draft | [Keeping an accurate list](problems/keeping-an-accurate-member-list.md) |
 | [Refund a supporting member's payment](use-cases/refund-a-payment.md) | Draft | [A payment that should never have happened](problems/honouring-a-refund-request.md) |
 | [Promote membership with a QR code card](use-cases/promote-with-qr-card.md) | Draft | [Collecting annual support](problems/collecting-annual-support.md) |
-| [Keep supporting members in the loop](use-cases/keep-supporters-in-the-loop.md) | Draft | [Supporters never hear back](problems/supporters-never-hear-back.md) |
+| [Keep supporting members in the loop](use-cases/keep-supporters-in-the-loop.md) | Retired | [Supporters never hear back](problems/supporters-never-hear-back.md) |
 | [Earn stars and recruit new members](use-cases/earn-stars-and-recruit.md) | Draft | [Invisible loyalty and word of mouth](problems/invisible-loyalty-and-word-of-mouth.md) |
 
 ## Concepts — *shared vocabulary*
@@ -75,7 +77,7 @@ scope.
 | [Join page](concepts/join-page.md) | Draft |
 | [Member self-service page](concepts/member-self-service.md) | Draft |
 | [Member notice](concepts/member-notice.md) | Draft |
-| [Organization message](concepts/org-message.md) | Draft |
+| [Organization message](concepts/org-message.md) | Retired |
 | [Payment reconciliation](concepts/payment-reconciliation.md) | Draft |
 | [Operational alerting](concepts/operational-alerting.md) | Draft |
 | [Vipps API keys](concepts/vipps-api-keys.md) | Draft |

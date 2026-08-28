@@ -1,7 +1,15 @@
 # Problem: Supporters never hear back from the organization
 
-**Status:** Draft
+**Status:** Retired — out of scope (2026-08-28)
 **Owner:** Small organizations (marching bands, choirs, sports teams, community groups)
+
+> **Retired.** The problem is real, but the product decided (2026-08-28) not
+> to solve it in-product: carrying an organization's outbound communication is
+> a different product than curating supporting members and collecting the
+> annual fee. What the product offers instead is the register itself —
+> accurate, always current, and exportable
+> ([Export the member list](../use-cases/export-member-list.md)) — so the
+> organization can stay in touch through its own channels.
 
 ## Who has this problem
 Organizations with supporting members, and the supporters themselves. A
