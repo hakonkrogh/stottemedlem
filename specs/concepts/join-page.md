@@ -122,6 +122,12 @@ resolve to.
   authority). Organizations do not write their own terms.
 - Both pages carry the [brand attribution](brand-attribution.md) and must be
   indexable (payment-provider verification must be able to read them).
+- The pages are usually **arrived at from another app** — a link in an email, a
+  chat message, or the hand-back from Vipps — and must open **readable from
+  the top** and remain fully scrollable there. Some phone browsers hand such a
+  page over with its top tucked under the system status bar; the page must
+  always leave the visitor a way to pull it back into view, and must never
+  fight the visitor's own scrolling to do so.
 - Both pages are served **instantly from a saved copy** rather than assembled
   on every request, so they stay fast and stay up even when the rest of the
   product is busy. Every visit refreshes the saved copy in the background:

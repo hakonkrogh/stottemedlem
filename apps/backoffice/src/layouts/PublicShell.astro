@@ -42,6 +42,18 @@ const { title, description, noindex } = Astro.props;
 </html>
 
 <style>
+  body {
+    /* WebKit (every iPhone browser) can lay out a page arriving from another
+     * app — an email link, the Vipps redirect — against the collapsed browser
+     * chrome, hiding the page top under the status bar. The document is not
+     * scrolled (scrollY is 0; scripts cannot fix it, and a pageshow scrollTo
+     * once shipped here yanked real readers instead — see PR #55's revert).
+     * The one lever that helps is height: filling the largest-viewport size
+     * guarantees a sliver of scroll range on even the shortest page, and that
+     * first scroll snaps the chrome back and reveals the top. */
+    min-height: 100vh;
+    min-height: 100lvh;
+  }
   main {
     width: 100%;
     max-width: 38rem;
