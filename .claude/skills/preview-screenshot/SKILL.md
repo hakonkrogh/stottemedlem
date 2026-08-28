@@ -54,12 +54,24 @@ description: Render any local URL (marketing/backoffice dev or preview server) t
   shipped: an early (DOMContentLoaded + pageshow) `scrollTo(0,1); scrollTo(0,0)`
   nudge, guarded to bail after any touchstart or when scrollY > 0 so it can
   never yank a reader. On-device retest: the nudge did NOT cure the arrival
-  clip either — the pageTop>0-at-scrollY-0 premise is unproven. When a mobile
-  bug defies fixes like this, STOP guessing and instrument: PublicShell
-  carries a staging-only (`SENTRY_ENVIRONMENT === "staging"`) `#vv-debug`
-  overlay showing live scrollY / visualViewport pageTop/offsetTop/height /
-  innerHeight / safe-area-top plus first-seconds timeline — ask the user for
-  a screen recording and read the numbers off the frames. To READ such a
+  clip either. When a mobile bug defies fixes like this, STOP guessing and
+  instrument: PublicShell carries a staging-only
+  (`SENTRY_ENVIRONMENT === "staging"`) `#vv-debug` overlay showing live
+  scrollY / visualViewport pageTop/offsetTop/height / innerHeight /
+  safe-area-top plus first-seconds timeline — ask the user for a screen
+  recording and read the numbers off the frames. The overlay video SOLVED
+  the diagnosis (2026-08-28, Proton Mail → Chrome iOS): ~150ms after load
+  the LAYOUT viewport grows upward under the status bar (innerHeight
+  683→757) with scrollY=0, pageTop=0, offsetTop=0 AND
+  safe-area-inset-top=0 — no scroll offset exists anywhere, which is why
+  every scroll-reset failed, and the default viewport-fit reports inset 0
+  even while covering the status bar. Fix shipped from that data:
+  `viewport-fit=cover` (makes the reported inset real) + main
+  `padding-top: calc(3rem + env(safe-area-inset-top, 0px))` (absorbs
+  exactly the covered area, 0 in the normal state), plus the nudge
+  re-triggered on the real signature (innerHeight grew past its initial
+  value) at 250–2000ms timers instead of DOMContentLoaded (which fires
+  BEFORE the ~150ms growth). To READ such a
   phone video: no ffmpeg here — dump frames with a Swift
   AVAssetImageGenerator script (see scratchpad pattern), then Read the PNGs.
 - Typical loop (marketing, static): `pnpm turbo build --filter=@stottemedlem/marketing
