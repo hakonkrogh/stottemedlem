@@ -36,7 +36,14 @@ description: Render any local URL (marketing/backoffice dev or preview server) t
   import @stottemedlem/core". Fresh worktrees also need `pnpm install` first
   (node_modules is not shared across worktrees).
 - Backoffice/UI loop (SSR app is auth-gated): don't fight the login wall — use
-  Storybook in packages/ui. `pnpm --filter @stottemedlem/ui run storybook --ci`
+  Storybook in packages/ui. **In a fresh worktree, run
+  `pnpm turbo build --filter=@stottemedlem/core` BEFORE starting Storybook**:
+  backoffice screen stories import `storyFixtures.ts` → `@stottemedlem/core`,
+  and without its dist every backoffice story shows "Failed to fetch
+  dynamically imported module" (primitives still render, so it looks
+  story-specific). Building core afterwards does NOT heal it — Vite keeps
+  serving the failed resolution; kill and restart Storybook (hit 2026-08-28).
+  `pnpm --filter @stottemedlem/ui run storybook --ci`
   (port 6006, ready in seconds, hot-reloads), then shoot a story's iframe URL
   directly: `http://localhost:6006/iframe.html?id=<story-id>&viewMode=story`.
   Story ids slugify title + export: "Primitives/Button" + `Primary` →
