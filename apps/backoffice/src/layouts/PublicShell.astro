@@ -34,30 +34,41 @@ const { title, description, noindex } = Astro.props;
 <html lang="no">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    {/* viewport-fit=cover makes WebKit REPORT the real safe-area insets. The
+        arrival bug (overlay-diagnosed 2026-08-28): the layout viewport grows
+        upward under the status bar ~150ms after load while safe-area-inset-top
+        stays 0 under the default viewport-fit, so content sits under the
+        status bar with no scroll offset anywhere. With cover the inset reads
+        true, and main's padding absorbs exactly the covered area. */}
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     {description && <meta name="description" content={description} />}
     {noindex && <meta name="robots" content="noindex" />}
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <title>{title}</title>
     <script is:inline>
-      // A page arriving from another app can be laid out against WebKit's
-      // collapsed browser chrome, hiding the top under the status bar while
-      // scrollY is 0 — so scrollTo(0,0) alone is a no-op (PR #55's mistake).
-      // A real scroll change (1px down, then back) makes the browser re-seat
-      // the visual viewport; body's min-height guarantees that 1px exists.
-      // Guarded so it can never fight the reader: it runs only before any
-      // touch and only while the page sits untouched at scroll 0.
+      // The arrival bug's on-device signature (overlay diagnosis 2026-08-28):
+      // ~150ms after load the layout viewport GROWS upward under the status
+      // bar (innerHeight jumps by the status-bar height) with scrollY and
+      // every visualViewport offset at 0 — so only a real scroll change can
+      // ask the browser to re-seat its chrome, and it must run AFTER the
+      // growth, not at DOMContentLoaded. A manual scroll provably restores
+      // the layout (first on-device video). Guarded so it can never fight
+      // the reader: only before any touch, only at scroll 0, and only when
+      // the growth signature (or a visual-viewport offset) is present.
       (function () {
-        let touched = false;
-        addEventListener("touchstart", () => { touched = true; }, { once: true, passive: true });
-        const reseat = () => {
-          const vv = window.visualViewport;
-          if (touched || window.scrollY > 0 || !vv || vv.pageTop <= 0) return;
+        var touched = false;
+        var h0 = window.innerHeight;
+        addEventListener("touchstart", function () { touched = true; }, { once: true, passive: true });
+        var reseat = function () {
+          var vv = window.visualViewport;
+          var offset = vv && vv.pageTop > 0;
+          var grewUnderBar = window.innerHeight > h0;
+          if (touched || window.scrollY > 0 || !(offset || grewUnderBar)) return;
           window.scrollTo(0, 1);
           window.scrollTo(0, 0);
         };
-        addEventListener("DOMContentLoaded", reseat);
         addEventListener("pageshow", reseat);
+        [250, 500, 1000, 2000].forEach(function (ms) { setTimeout(reseat, ms); });
       })();
     </script>
   </head>
@@ -140,11 +151,17 @@ const { title, description, noindex } = Astro.props;
     max-width: 38rem;
     margin-inline: auto;
     padding: 3rem 1.25rem 2rem;
+    /* Absorb whatever unsafe area the viewport actually covers (see the
+     * viewport-fit note in <head>): 0 in the normal state, the status-bar
+     * height when the arrival bug lays the page out under it. */
+    padding-top: calc(3rem + env(safe-area-inset-top, 0px));
   }
   footer {
     max-width: 38rem;
     margin-inline: auto;
     padding: 1rem 1.25rem 2.5rem;
+    /* Same guard for the bottom edge under viewport-fit=cover. */
+    padding-bottom: calc(2.5rem + env(safe-area-inset-bottom, 0px));
     font-size: 0.85rem;
     color: var(--sm-muted);
   }
