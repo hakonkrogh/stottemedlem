@@ -44,6 +44,57 @@ export const Continuing = {
   }),
 };
 
+/**
+ * The real staging shape (read back from the deployed D1, 27.8.2026): one
+ * member, two agreements, two joining payments for the same period at the same
+ * price, captured 72 minutes apart on the SAME DAY. Period and amount alone
+ * would make these one row twice, each with a button that moves money — and
+ * the day alone would too, which is why the clock appears when a day is shared.
+ */
+export const TwoPaymentsForOnePeriod = {
+  args: inFrame("m-1", {
+    entry: { ...continuing, history: [fixturePeriod("m-1", 2026, 171)] },
+    values: { name: "Ingrid Solheim", email: "ingrid@eksempel.example", phone: "4711111111" },
+    payments: [
+      fixturePayment(2026, 171, "paid", null, {
+        chargeId: "chr-b",
+        type: "INITIAL",
+        on: "2026-08-27T10:10:32.992Z",
+      }),
+      fixturePayment(2026, 171, "paid", null, {
+        chargeId: "chr-a",
+        type: "INITIAL",
+        on: "2026-08-27T08:58:14.670Z",
+      }),
+    ],
+  }),
+};
+
+/** Refunding one of the two: the year does NOT go away, and it says so. */
+export const RefundingOneOfTwo = {
+  args: inFrame("m-1", {
+    entry: { ...continuing, history: [fixturePeriod("m-1", 2026, 171)] },
+    values: { name: "Ingrid Solheim", email: "ingrid@eksempel.example", phone: "4711111111" },
+    payments: [
+      fixturePayment(2026, 171, "paid", null, {
+        chargeId: "chr-b",
+        type: "INITIAL",
+        on: "2026-08-27T10:10:32.992Z",
+      }),
+      fixturePayment(2026, 171, "paid", null, {
+        chargeId: "chr-a",
+        type: "INITIAL",
+        on: "2026-08-27T08:58:14.670Z",
+      }),
+    ],
+    confirming: fixturePayment(2026, 171, "paid", null, {
+      chargeId: "chr-b",
+      type: "INITIAL",
+      on: "2026-08-27T10:10:32.992Z",
+    }),
+  }),
+};
+
 /** Asking before the money moves: the refund's own step, and its way out. */
 export const ConfirmingRefund = {
   args: inFrame("m-1", {

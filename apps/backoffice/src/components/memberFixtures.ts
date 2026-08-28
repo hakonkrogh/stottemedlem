@@ -99,8 +99,18 @@ export function fixturePayment(
   amountNok: number,
   state: PaymentView["state"] = "paid",
   refusal: PaymentView["refusal"] = null,
+  extra: Partial<PaymentView> = {},
 ): PaymentView {
-  return { chargeId: `chr-${year}`, periodYear: year, amountNok, state, refusal };
+  return {
+    chargeId: `chr-${year}`,
+    periodYear: year,
+    amountNok,
+    type: "RECURRING",
+    on: `${year}-01-02`,
+    state,
+    refusal,
+    ...extra,
+  };
 }
 
 export const everyone: MemberOverview[] = [

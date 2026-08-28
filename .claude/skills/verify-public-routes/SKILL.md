@@ -1,6 +1,6 @@
 ---
 name: verify-public-routes
-description: Assert the HTTP contract of the public join pages (status, redirects, x-sm-cache, body text) the way a browser, a QR scanner, or Vipps' website verification sees it — plus a tier-aware local D1 seed. Use after touching routes, middleware, worker.ts caching/redirects, or anything under src/pages/bli-medlem/.
+description: Query the LOCAL, STAGING or PRODUCTION D1 as data (d1.sh), and assert the HTTP contract of the public join pages (status, redirects, x-sm-cache, body text) the way a browser, a QR scanner, or Vipps' website verification sees it — plus a tier-aware local D1 seed. Use after touching routes, middleware, worker.ts caching/redirects, or anything under src/pages/bli-medlem/.
 ---
 
 # Verify public routes
@@ -13,6 +13,8 @@ with the query intact, and the stale-while-revalidate cache must go
 ## Read what's actually in local D1
 
     bash .claude/skills/verify-public-routes/d1.sh "<SQL>"     # rows as JSON, nothing else
+    bash .claude/skills/verify-public-routes/d1.sh "<SQL>" staging     # the DEPLOYED staging D1
+    bash .claude/skills/verify-public-routes/d1.sh "<SQL>" production  # real members, real money
 
 Wrangler wraps every result in banners and a table, so ad-hoc `d1 execute`
 calls need re-quoting and grepping each time; this prints just the rows, and
@@ -23,6 +25,13 @@ Since migration 0005 the interesting tables are the member registry:
 holds rather than assuming it:
 
     d1.sh "SELECT count(*) AS n FROM memberships WHERE period_year = 2026"
+
+**Ask the deployed database what shapes it actually holds before trusting a
+story.** Local fixtures are what you imagined; staging is what the product
+produced. A member with TWO joining payments for one period — same price, same
+day, 72 minutes apart, both pointing at one membership — was invisible in
+Storybook and obvious in one staging query (2026-08-27). Non-local targets
+refuse anything but SELECT/WITH; they read, never write.
 
 `seed.sh` also writes ONE supporting member with an ACTIVE agreement, a
 captured charge and a current-year membership, so member-list queries have a
