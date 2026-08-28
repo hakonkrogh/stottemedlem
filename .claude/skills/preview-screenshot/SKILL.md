@@ -80,8 +80,12 @@ description: Render any local URL (marketing/backoffice dev or preview server) t
   the covered area as the measured growth delta (innerHeight − initial
   innerHeight, clamped 20–120px) and apply it as `--sm-arrival-inset` top
   padding while untouched at scroll 0, withdrawing it only when innerHeight
-  shrinks back. Overlay now also shows `pad=` (main's computed padding-top)
-  to verify. To READ such a
+  shrinks back. FIXED — fourth on-device video confirmed: heading below the
+  status bar, pad 48→122 at ~150ms (the visualViewport resize listener
+  catches the growth before the timers). The staging overlay is REMOVED from
+  PublicShell; to instrument a future mobile mystery the same way, resurrect
+  it from git history (search `vv-debug` in this file's log) and read the
+  numbers off user screen-recording frames. To READ such a
   phone video: no ffmpeg here — dump frames with a Swift
   AVAssetImageGenerator script (see scratchpad pattern), then Read the PNGs.
 - Typical loop (marketing, static): `pnpm turbo build --filter=@stottemedlem/marketing
