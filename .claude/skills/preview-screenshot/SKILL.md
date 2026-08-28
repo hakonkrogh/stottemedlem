@@ -36,7 +36,14 @@ description: Render any local URL (marketing/backoffice dev or preview server) t
   `curl | grep`, then say plainly that the real proof is the user opening the
   staging URL from the actual app handoff on their phone. Playwright's bundled
   WebKit is NOT installed and downloads a browser — don't reach for it without
-  asking.
+  asking. Epilogue (2026-08-28): that bug's shipped-unproven fix (PR #55) was
+  REVERTED — on a real phone it locked the page to the top. Known-bad patterns
+  from it: a `pageshow` scroll-to-top (fires at load-complete, often seconds
+  after the reader started scrolling, and `visualViewport.pageTop > 0` is true
+  for ANY user scroll, so it yanks them back), and `body { display:flex;
+  min-height:100lvh }` (WebKit overflow quirks). The nudge bug itself is still
+  OPEN and needs on-device diagnosis first (candidate: layout shift when the
+  Fraunces font loads).
 - Typical loop (marketing, static): `pnpm turbo build --filter=@stottemedlem/marketing
   && pnpm --filter @stottemedlem/marketing preview --port 4399 &` → shot → Read →
   iterate. (astro preview serves `dist/` live, so rebuild + reload is enough;
