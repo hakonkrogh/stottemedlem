@@ -27,6 +27,16 @@ description: Render any local URL (marketing/backoffice dev or preview server) t
 - Responsive checks: `... 375 812` (iPhone 12 mini), `... 390 844` (iPhone 14),
   `... 768 1024` (tablet), default desktop. Verify mobile PNGs' pixelWidth
   matches the requested width before judging the layout.
+- **Mobile-Safari-SPECIFIC behaviour cannot be verified on this machine**
+  (found 2026-08-28 fixing the "page opens scrolled down under the status bar
+  when arriving from Vipps/an email app" bug): Chrome emulation only fakes the
+  viewport size, not WebKit's toolbar-collapse/visual-viewport quirks, and
+  `xcrun simctl` HANGS INDEFINITELY here (no usable CoreSimulator; kill it,
+  don't wait). For such fixes, validate the layout/script landed via shot.sh +
+  `curl | grep`, then say plainly that the real proof is the user opening the
+  staging URL from the actual app handoff on their phone. Playwright's bundled
+  WebKit is NOT installed and downloads a browser — don't reach for it without
+  asking.
 - Typical loop (marketing, static): `pnpm turbo build --filter=@stottemedlem/marketing
   && pnpm --filter @stottemedlem/marketing preview --port 4399 &` → shot → Read →
   iterate. (astro preview serves `dist/` live, so rebuild + reload is enough;
@@ -55,7 +65,15 @@ description: Render any local URL (marketing/backoffice dev or preview server) t
   xargs kill`. If the astro dev server is needed instead (port 4322): it's a
   persistent daemon — "already running" may be a stale one from another session
   serving old code; `pnpm --filter @stottemedlem/backoffice exec astro dev stop`
-  then restart, and stop it the same way when done. The dark pill at the bottom
+  then restart, and stop it the same way when done. A stale daemon can also
+  belong to a DIFFERENT worktree: `astro dev stop` then says "No dev server is
+  running" while 4322 still answers with the other worktree's code — just start
+  yours and read the port it actually got. In a fresh worktree the daemon dies
+  with only "Dev server process exited before becoming ready" — the real error
+  (e.g. `Failed to resolve entry for package "@stottemedlem/core"` … then
+  `/log`, one unbuilt workspace dep at a time) is in `devlog.sh tail`; fix all
+  at once with `pnpm turbo build --filter='@stottemedlem/backoffice^...'`
+  (hit 2026-08-28). The dark pill at the bottom
   of astro-dev screenshots is Astro's dev toolbar, not the page.
 - **Reviewing the org back office**: every screen has a story that renders
   inside the real tab chrome (`StoryScreen` wraps `OrgScreen`), and every

@@ -30,6 +30,17 @@ const { title, description, noindex } = Astro.props;
     {noindex && <meta name="robots" content="noindex" />}
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <title>{title}</title>
+    <script is:inline>
+      // iOS Safari can hand over a page arriving from another app (an email
+      // link, the Vipps redirect) with the viewport nudged down so the heading
+      // sits under the status bar. On a page shorter than the screen there is
+      // no scroll range to pull it back, so put the top back ourselves.
+      addEventListener("pageshow", (event) => {
+        if (event.persisted) return;
+        const offset = window.visualViewport ? window.visualViewport.pageTop : 0;
+        if (window.scrollY > 0 || offset > 0) window.scrollTo(0, 0);
+      });
+    </script>
   </head>
   <body>
     <main>
@@ -42,13 +53,24 @@ const { title, description, noindex } = Astro.props;
 </html>
 
 <style>
+  body {
+    /* Fill the largest viewport state so mobile browsers always leave enough
+     * scroll range to recover from a mis-restored offset (see the pageshow
+     * handler), and the attribution footer sits at the bottom of the screen. */
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    min-height: 100lvh;
+  }
   main {
     width: 100%;
     max-width: 38rem;
     margin-inline: auto;
     padding: 3rem 1.25rem 2rem;
+    flex-grow: 1;
   }
   footer {
+    width: 100%;
     max-width: 38rem;
     margin-inline: auto;
     padding: 1rem 1.25rem 2.5rem;
