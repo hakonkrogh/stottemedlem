@@ -47,6 +47,10 @@ describe("membershipReceipt", () => {
     // It cannot be declined, and says so — the way out is the membership itself.
     expect(message.text).toContain("kan ikke avmeldes");
     expect(message.text).toContain(base.manageUrl);
+    // Questions go to the organization, not the unread noreply sender.
+    expect(message.text).toContain("adresse som ikke leses");
+    expect(message.text).toContain("kontakt Eksempel Musikkorps på post@eksempel.example");
+    expect(message.html).toContain("post@eksempel.example");
   });
 
   it("reads as a renewal when the payment was one", () => {
@@ -69,6 +73,7 @@ describe("membershipReceipt", () => {
     // A nameless buyer is still identified — by the address the receipt went to.
     expect(message.text).toContain("Medlem: kari@eksempel.example");
     expect(message.replyTo).toBeUndefined();
+    expect(message.text).toContain("ta kontakt med Eksempel Musikkorps direkte");
     expect(message.html).not.toContain("org.nr.");
   });
 });

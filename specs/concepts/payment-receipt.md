@@ -49,7 +49,8 @@ reconstruct one.
   documents money already taken — and says so; the way out is ending the
   membership, offered in the same message. It follows every
   [member notice](member-notice.md) rule: attributable to the organization,
-  reply reaches the organization, recorded when sent, brand-attributed.
+  sent from a noreply address with questions pointed at the organization's
+  own contact address, recorded when sent, brand-attributed.
 - **A receipt that failed to send is still owed.** The product decides who is
   owed one by comparing captured payments against recorded receipts, not by
   remembering to send — so the send is retried until it succeeds, from

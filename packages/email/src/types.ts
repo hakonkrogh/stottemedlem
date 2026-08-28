@@ -10,8 +10,8 @@ export interface EmailMessage {
   to: string;
   /**
    * Who the member should think this is from. A notice is the organization's
-   * word, carried by us: the address stays ours (only we can prove we own it),
-   * the name is theirs.
+   * word, carried by us: the address stays ours — an unread noreply address,
+   * since only we can prove we own it — the name is theirs.
    */
   fromName: string;
   /** Where a reply goes — the organization, never the product. */

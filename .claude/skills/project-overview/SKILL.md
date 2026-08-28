@@ -476,7 +476,7 @@ lives in `specs/`, kept in sync with code by a mandatory `Stop`-hook harness.
   product speaks to a member — Resend REST client (fetch-only, batched at 100,
   a rejected batch counts as nobody told) plus the notice copy itself
   (`feeChangeNotice`, Norwegian). **The sending address is always ours**
-  (`EMAIL_FROM_ADDRESS` var, `varsel@xn--stttemedlem-hgb.no`) — a provider only
+  (`EMAIL_FROM_ADDRESS` var, `noreply@xn--stttemedlem-hgb.no`) — a provider only
   sends from a domain we own; the org is the display name + `reply_to`.
   `RESEND_API_KEY` is a secret; **absent = `createLoggingSender()`**, which
   prints the notice and reports `sent: false`, so nothing is recorded as told

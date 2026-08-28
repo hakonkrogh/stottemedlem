@@ -19,14 +19,14 @@ describe("createResendSender", () => {
     const fetchMock = vi.fn(async () => okResponse(["id-1"]));
     const sender = createResendSender({
       apiKey: "re_test",
-      from: "varsel@xn--stttemedlem-hgb.no",
+      from: "noreply@xn--stttemedlem-hgb.no",
       fetch: fetchMock as unknown as typeof fetch,
     });
 
     await sender.send([message("ingrid@eksempel.no")]);
 
     const body = JSON.parse(String(fetchMock.mock.calls[0]?.[1]?.body));
-    expect(body[0].from).toBe('"Fjellbygda Musikklag" <varsel@xn--stttemedlem-hgb.no>');
+    expect(body[0].from).toBe('"Fjellbygda Musikklag" <noreply@xn--stttemedlem-hgb.no>');
     expect(body[0].reply_to).toBe("post@fjellbygda-eksempel.no");
     expect(body[0].to).toEqual(["ingrid@eksempel.no"]);
   });
@@ -35,7 +35,7 @@ describe("createResendSender", () => {
     const fetchMock = vi.fn(async () => okResponse(["id-1", "id-2"]));
     const sender = createResendSender({
       apiKey: "re_test",
-      from: "varsel@xn--stttemedlem-hgb.no",
+      from: "noreply@xn--stttemedlem-hgb.no",
       fetch: fetchMock as unknown as typeof fetch,
     });
 
@@ -47,10 +47,10 @@ describe("createResendSender", () => {
     ]);
 
     const body = JSON.parse(String(fetchMock.mock.calls[0]?.[1]?.body));
-    expect(body[0].from).toBe('"Ondt  <ondt@angriper.no> x" <varsel@xn--stttemedlem-hgb.no>');
-    expect(body[1].from).toBe('"To Bcc: alle@angriper.no" <varsel@xn--stttemedlem-hgb.no>');
+    expect(body[0].from).toBe('"Ondt  <ondt@angriper.no> x" <noreply@xn--stttemedlem-hgb.no>');
+    expect(body[1].from).toBe('"To Bcc: alle@angriper.no" <noreply@xn--stttemedlem-hgb.no>');
     for (const sent of body) {
-      expect(sent.from.endsWith("<varsel@xn--stttemedlem-hgb.no>")).toBe(true);
+      expect(sent.from.endsWith("<noreply@xn--stttemedlem-hgb.no>")).toBe(true);
       expect(sent.from).not.toMatch(/[\r\n]/);
     }
   });
@@ -62,7 +62,7 @@ describe("createResendSender", () => {
     });
     const sender = createResendSender({
       apiKey: "re_test",
-      from: "varsel@xn--stttemedlem-hgb.no",
+      from: "noreply@xn--stttemedlem-hgb.no",
       fetch: fetchMock as unknown as typeof fetch,
     });
 
@@ -80,7 +80,7 @@ describe("createResendSender", () => {
     const fetchMock = vi.fn(async () => new Response("rate limited", { status: 429 }));
     const sender = createResendSender({
       apiKey: "re_test",
-      from: "varsel@xn--stttemedlem-hgb.no",
+      from: "noreply@xn--stttemedlem-hgb.no",
       fetch: fetchMock as unknown as typeof fetch,
     });
 
@@ -96,7 +96,7 @@ describe("createResendSender", () => {
     });
     const sender = createResendSender({
       apiKey: "re_test",
-      from: "varsel@xn--stttemedlem-hgb.no",
+      from: "noreply@xn--stttemedlem-hgb.no",
       fetch: fetchMock as unknown as typeof fetch,
     });
 
@@ -108,7 +108,7 @@ describe("createResendSender", () => {
     const fetchMock = vi.fn(async () => okResponse(["id-1"]));
     const sender = createResendSender({
       apiKey: "re_test",
-      from: "varsel@xn--stttemedlem-hgb.no",
+      from: "noreply@xn--stttemedlem-hgb.no",
       fetch: fetchMock as unknown as typeof fetch,
     });
 

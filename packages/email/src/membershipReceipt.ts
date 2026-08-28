@@ -9,7 +9,11 @@ export interface MembershipReceipt {
   orgName: string;
   /** Norwegian organisasjonsnummer, already formatted for reading. */
   orgNumber?: string | null;
-  /** The organization's public address, so a reply reaches them and not us. */
+  /**
+   * The organization's public address. The receipt is sent from an unread
+   * noreply address, so this is where the member is told to take questions —
+   * and where a reply lands, when the organization has one.
+   */
   orgContactEmail?: string | null;
   /** The buying party (§ 5-1-1 nr. 2). */
   memberName?: string | null;
@@ -62,6 +66,9 @@ export function membershipReceipt(receipt: MembershipReceipt): EmailMessage {
   const { orgName, orgNumber, memberName, tierName, periodText, paidNok, manageUrl } = receipt;
 
   const greeting = memberName?.trim() ? `Hei ${memberName.trim()},` : "Hei,";
+  const contactNote = receipt.orgContactEmail
+    ? `E-posten er sendt fra en adresse som ikke leses. Har du spørsmål, kontakt ${orgName} på ${receipt.orgContactEmail}.`
+    : `E-posten er sendt fra en adresse som ikke leses. Har du spørsmål, ta kontakt med ${orgName} direkte.`;
   const lead =
     receipt.kind === "join"
       ? `Takk for støtten! Du er nå støttemedlem i ${orgName}. Dette er kvitteringen din — ta vare på den.`
@@ -91,6 +98,7 @@ export function membershipReceipt(receipt: MembershipReceipt): EmailMessage {
     "—",
     `Sendt via ${BRAND_NAME} på vegne av ${orgName}. Dette er kvitteringen for en`,
     "gjennomført betaling og sendes ved hver betaling — den kan ikke avmeldes.",
+    contactNote,
   ];
 
   const org = escapeHtml(orgName);
@@ -113,7 +121,7 @@ ${htmlRows}
 <hr style="border:0;border-top:1px solid #e6ddd1;margin:2rem 0 1rem">
 <p style="font-size:13px;color:#6b5d4d">Sendt via <a href="${BRAND_URL}" style="color:#6b5d4d">${BRAND_NAME}</a>
 på vegne av ${org}. Dette er kvitteringen for en gjennomført betaling og sendes ved hver betaling
-— den kan ikke avmeldes.</p>
+— den kan ikke avmeldes. ${escapeHtml(contactNote)}</p>
 </div>`;
 
   return {

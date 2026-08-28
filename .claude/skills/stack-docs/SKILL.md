@@ -517,7 +517,7 @@ Asked every time someone proposes "just send it through Vipps". Vipps pushes
 
 ## Resend sending domain (verified 2026-08-25 against resend.com/docs)
 
-Member notices go out from `varsel@xn--stttemedlem-hgb.no` — the apex, in
+Member notices go out from `noreply@xn--stttemedlem-hgb.no` — the apex, in
 punycode (derive it, never retype it). Add the domain in Resend as
 `xn--stttemedlem-hgb.no` and pick the **EU (Ireland)** region: the region is
 what decides the bounce hostname below, and the members are Norwegian.
