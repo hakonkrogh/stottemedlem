@@ -637,7 +637,13 @@ lives in `specs/`, kept in sync with code by a mandatory `Stop`-hook harness.
   status was never observed (would need a dedicated agreement + ~8 days).
   Same code path regardless: reconcile pulled CANCELLED into D1 and the
   standing grace correctly ends with any settled status (only
-  OPEN_CHARGE_STATUSES grant it). Also observed: unapproved drafts go EXPIRED
+  OPEN_CHARGE_STATUSES grant it). Remaining before go-live (assessed
+  2026-08-28): apitest — rejoin-after-stop rehearsal, live lapse flip in the
+  member list; December-only (or faked clock) — in-window renewal
+  arrangement, double-arrange guard, turn-of-year flip; production-only —
+  real Vault key reads (local always uses the .dev.vars fallback), deployed
+  cron actually firing, webhook registration on the prod domain,
+  PUBLIC_ORIGIN set, one real-money join+stop. Also observed: unapproved drafts go EXPIRED
   on Vipps' side once their approval token dies, and reconcile corrects them —
   the orphan-draft story resolves via EXPIRED without waiting out the 14-day
   abandonment window. Charges stay DUE through the retry window on apitest
