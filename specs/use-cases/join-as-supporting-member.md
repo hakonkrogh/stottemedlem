@@ -43,7 +43,12 @@ From the supporter's point of view:
    supporter returning from Vipps is not by itself proof that anything was
    paid, and the product never treats it as such.
 5. The supporter receives confirmation that they are now a supporting member and
-   until when their support is valid. The return address itself must identify
+   until when their support is valid. The confirmation presents the
+   organization's identity the same way the [join page](../concepts/join-page.md)
+   does — name and, when uploaded, the visual identity in the same banner-and-
+   circled-logo arrangement — so the receipt visibly confirms *whom* the
+   supporter now supports, not merely that a payment went through, and the two
+   pages read as one place. The return address itself must identify
    which arrangement the supporter is coming back from — the payment provider
    appends nothing to it (learned 2026-08-27, when supporters bounced back to
    the join page instead of a receipt) — and the product reuses the same

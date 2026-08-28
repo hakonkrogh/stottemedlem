@@ -8,6 +8,7 @@ import Heading from "@stottemedlem/ui/components/Heading.astro";
 import Stack from "@stottemedlem/ui/components/Stack.astro";
 import Text from "@stottemedlem/ui/components/Text.astro";
 import TextLink from "@stottemedlem/ui/components/TextLink.astro";
+import OrgIdentityHeader from "../../../components/OrgIdentityHeader.astro";
 import PublicShell from "../../../layouts/PublicShell.astro";
 import { getDb } from "../../../lib/db";
 import { syncAgreement, syncCharge } from "../../../lib/membership";
@@ -68,6 +69,10 @@ const title = `Takk for støtten — ${org.name}`;
 
 <PublicShell title={title} description={`Kvittering for støttemedlemskap i ${org.name}.`} noindex>
   <Stack gap="lg">
+    {/* The same identity the supporter just joined under on the join page
+        (specs/concepts/join-page.md) — the receipt confirms WHO you now
+        support, not just that a payment happened. */}
+    <OrgIdentityHeader org={org} />
     {
       status === "active" && (
         <Stack gap="sm">

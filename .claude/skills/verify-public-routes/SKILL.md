@@ -53,6 +53,16 @@ tiers**. The tiers matter: since tiering landed (2026-08-19)
 `membership_tiers` rows renders the *zero-tier degraded* page, not the real
 offer — a silently wrong baseline for screenshots and assertions.
 
+    bash .claude/skills/verify-public-routes/seed-images.sh [slug]  # after seed.sh
+
+`seed-images.sh` gives the seeded org a fixture **logo + banner** (visual
+identity on the join page AND the receipt via `OrgIdentityHeader.astro`):
+generates fictitious PNGs with python3 stdlib, uploads them to local R2
+(`stottemedlem-media`, same `.wrangler` state as astro dev), and updates the
+org row with the correctly hashed keys (`org/<id>/<kind>-<sha256[:16]>.png`).
+Without it those pages render the no-imagery fallback (name only) — fine for
+route assertions, wrong as a screenshot baseline for identity work.
+
 It also applies pending D1 migrations first (`CI=1 wrangler d1 migrations
 apply DB --local`), so a fresh worktree seeds instead of dying with `no such
 table: organizations`. The `CI=1` is load-bearing everywhere wrangler is
