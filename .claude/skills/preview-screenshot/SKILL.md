@@ -37,12 +37,15 @@ description: Render any local URL (marketing/backoffice dev or preview server) t
   (node_modules is not shared across worktrees).
 - Backoffice/UI loop (SSR app is auth-gated): don't fight the login wall — use
   Storybook in packages/ui. **In a fresh worktree, run
-  `pnpm turbo build --filter=@stottemedlem/core` BEFORE starting Storybook**:
-  backoffice screen stories import `storyFixtures.ts` → `@stottemedlem/core`,
-  and without its dist every backoffice story shows "Failed to fetch
-  dynamically imported module" (primitives still render, so it looks
-  story-specific). Building core afterwards does NOT heal it — Vite keeps
-  serving the failed resolution; kill and restart Storybook (hit 2026-08-28).
+  `pnpm turbo build --filter=@stottemedlem/core --filter=@stottemedlem/db`
+  BEFORE starting Storybook**: backoffice screen stories import workspace
+  packages (`storyFixtures.ts` → `@stottemedlem/core`; screens also import
+  `@stottemedlem/db`), and without a package's dist every backoffice story
+  errors — "Failed to fetch dynamically imported module", or a red "Failed to
+  resolve entry for package \"@stottemedlem/db\"" story box (primitives still
+  render, so it looks story-specific). Building afterwards does NOT heal it —
+  Vite keeps serving the failed resolution; kill and restart Storybook (hit
+  2026-08-28, again with db 2026-08-28).
   `pnpm --filter @stottemedlem/ui run storybook --ci`
   (port 6006, ready in seconds, hot-reloads), then shoot a story's iframe URL
   directly: `http://localhost:6006/iframe.html?id=<story-id>&viewMode=story`.

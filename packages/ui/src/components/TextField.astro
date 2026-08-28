@@ -1,6 +1,9 @@
 ---
 // Labeled single-line text input with optional inline error. Owns the
 // label/input/error wiring (ids, aria) so screens never hand-roll it.
+// An optional `action` slot puts a control (typically a button) on the same
+// line as the input, vertically centered on the input itself — never on the
+// label or the error text.
 interface Props {
   label: string;
   name: string;
@@ -29,17 +32,20 @@ const errorId = `${id}-error`;
 
 <div class="field">
   <label for={id}>{label}</label>
-  <input
-    type={type}
-    id={id}
-    name={name}
-    value={value}
-    placeholder={placeholder}
-    required={required}
-    autofocus={autofocus}
-    aria-invalid={error ? "true" : undefined}
-    aria-describedby={error ? errorId : undefined}
-  />
+  <div class="control">
+    <input
+      type={type}
+      id={id}
+      name={name}
+      value={value}
+      placeholder={placeholder}
+      required={required}
+      autofocus={autofocus}
+      aria-invalid={error ? "true" : undefined}
+      aria-describedby={error ? errorId : undefined}
+    />
+    <slot name="action" />
+  </div>
   {error && <p class="error" id={errorId}>{error}</p>}
 </div>
 
@@ -51,6 +57,15 @@ const errorId = `${id}-error`;
   label {
     font-size: 0.9rem;
     font-weight: 600;
+  }
+  .control {
+    display: flex;
+    align-items: center;
+    gap: var(--sm-space-sm);
+  }
+  .control input {
+    flex: 1;
+    min-width: 0;
   }
   input {
     width: 100%;

@@ -64,8 +64,11 @@ const summary =
           type="search"
           value={search}
           placeholder="Navn, e-post eller telefon"
-        />
-        <Button variant="secondary">Søk</Button>
+        >
+          <Button slot="action" variant="secondary">
+            Søk
+          </Button>
+        </TextField>
       </form>
     )
   }
@@ -97,17 +100,9 @@ const summary =
     justify-content: space-between;
     gap: var(--sm-space-sm) var(--sm-space-md);
   }
-  /* The search field and its button sit on one line once there is room. */
+  /* The search field carries its own button (TextField's action slot). */
   .search {
-    display: grid;
-    gap: var(--sm-space-sm);
-    align-items: end;
     max-width: 34rem;
-  }
-  @media (min-width: 30rem) {
-    .search {
-      grid-template-columns: 1fr auto;
-    }
   }
   /* One member per row on a phone; several columns when the display allows. */
   .rows {
