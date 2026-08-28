@@ -36,8 +36,14 @@ decides what they may be charged.
   notices ends the membership instead — which is always offered in the same
   breath.
 - A notice is **attributable to the organization** the member supports: it
-  carries that organization's name, and a reply reaches the organization, not
-  the product. The member decided to support *them*, not us.
+  carries that organization's name. The member decided to support *them*, not
+  us.
+- A notice is **sent from an unread noreply address** — the product carries the
+  message, it does not converse. Every notice therefore tells the member where
+  questions belong: the organization's own contact address, named in the
+  notice itself (or, for an organization without one, the organization
+  directly). A reply still reaches the organization, never the product, when
+  the organization has an address.
 - The product sends a notice **once per thing worth knowing**. Repeating a
   change the member has already been told about is noise, and noise is how a
   notice stops being read.

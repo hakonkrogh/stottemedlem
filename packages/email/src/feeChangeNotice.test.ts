@@ -34,6 +34,19 @@ describe("feeChangeNotice", () => {
     expect(message.replyTo).toBe("post@fjellbygda-eksempel.no");
   });
 
+  it("points questions at the organization's own address, not the noreply sender", () => {
+    const message = feeChangeNotice(base);
+    expect(message.text).toContain("adresse som ikke leses");
+    expect(message.text).toContain("kontakt Fjellbygda Musikklag på post@fjellbygda-eksempel.no");
+    expect(message.html).toContain("post@fjellbygda-eksempel.no");
+  });
+
+  it("still points at the organization when it has no contact address", () => {
+    const message = feeChangeNotice({ ...base, orgContactEmail: null });
+    expect(message.text).toContain("ta kontakt med Fjellbygda Musikklag direkte");
+    expect(message.replyTo).toBeUndefined();
+  });
+
   it("greets a member who shared no name without an empty gap", () => {
     const message = feeChangeNotice({ ...base, memberName: null });
     expect(message.text.startsWith("Hei,")).toBe(true);

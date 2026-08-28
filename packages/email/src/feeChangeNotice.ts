@@ -6,7 +6,11 @@ const BRAND_NAME = "støttemedlem.no";
 
 export interface FeeChangeNotice {
   orgName: string;
-  /** The organization's public address, so a reply reaches them and not us. */
+  /**
+   * The organization's public address. The notice is sent from an unread
+   * noreply address, so this is where the member is told to take questions —
+   * and where a reply lands, when the organization has one.
+   */
   orgContactEmail?: string | null;
   memberName?: string | null;
   memberEmail: string;
@@ -44,6 +48,9 @@ export function feeChangeNotice(notice: FeeChangeNotice): EmailMessage {
 
   const greeting = memberName?.trim() ? `Hei ${memberName.trim()},` : "Hei,";
   const direction = newFeeNok > previousFeeNok ? "øker" : "settes ned";
+  const contactNote = notice.orgContactEmail
+    ? `E-posten er sendt fra en adresse som ikke leses. Har du spørsmål, kontakt ${orgName} på ${notice.orgContactEmail}.`
+    : `E-posten er sendt fra en adresse som ikke leses. Har du spørsmål, ta kontakt med ${orgName} direkte.`;
 
   const lines = [
     greeting,
@@ -62,6 +69,7 @@ export function feeChangeNotice(notice: FeeChangeNotice): EmailMessage {
     "—",
     `Sendt via ${BRAND_NAME} på vegne av ${orgName}. Du får denne meldingen fordi du`,
     "betaler for et medlemskap som endrer pris.",
+    contactNote,
   ];
 
   const org = escapeHtml(orgName);
@@ -76,7 +84,8 @@ blir ikke belastet noe ekstra nå.</p>
 <p>Hilsen ${org}</p>
 <hr style="border:0;border-top:1px solid #e6ddd1;margin:2rem 0 1rem">
 <p style="font-size:13px;color:#6b5d4d">Sendt via <a href="${BRAND_URL}" style="color:#6b5d4d">${BRAND_NAME}</a>
-på vegne av ${org}. Du får denne meldingen fordi du betaler for et medlemskap som endrer pris.</p>
+på vegne av ${org}. Du får denne meldingen fordi du betaler for et medlemskap som endrer pris.
+${escapeHtml(contactNote)}</p>
 </div>`;
 
   return {

@@ -14,8 +14,9 @@ const secrets = env as typeof env & { RESEND_API_KEY?: string };
  *
  * The sending address is ours in every environment — a provider will only send
  * from a domain we have proved we own, so an organization's own address can
- * never be the sender. It is the reply address instead, which is what actually
- * matters to a member wanting to answer.
+ * never be the sender. Notices go out from an unread noreply address; each
+ * notice tells the member to take questions to the organization's own contact
+ * address, which is also the reply address when the organization has one.
  *
  * With no key configured — local development, or a deploy where sending is not
  * set up yet — notices are written to the log and reported as unsent, so
