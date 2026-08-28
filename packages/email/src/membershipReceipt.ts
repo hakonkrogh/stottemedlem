@@ -54,7 +54,9 @@ const dato = (iso: string) =>
  * documentation for membership fees (the information in § 5-1-1 nr. 2–5):
  * both parties, what the payment was for, the period it covers, and the
  * amount with its payment date. Membership fees in ideal organizations are
- * exempt from VAT (merverdiavgiftsloven § 3-13), and the receipt says so.
+ * exempt from VAT (merverdiavgiftsloven § 3-13), and the receipt says so —
+ * in plain words. The member never sees a statute cited: the receipt adheres
+ * to the law without referring to it (specs/concepts/payment-receipt.md).
  */
 export function membershipReceipt(receipt: MembershipReceipt): EmailMessage {
   const { orgName, orgNumber, memberName, tierName, periodText, paidNok, manageUrl } = receipt;
@@ -66,17 +68,13 @@ export function membershipReceipt(receipt: MembershipReceipt): EmailMessage {
       : `Støttemedlemskapet ditt i ${orgName} er fornyet. Dette er kvitteringen din — ta vare på den.`;
 
   const rows: Array<[string, string]> = [
-    ["Selger", orgNumber ? `${orgName} (org.nr. ${orgNumber})` : orgName],
+    ["Organisasjon", orgNumber ? `${orgName} (org.nr. ${orgNumber})` : orgName],
     ["Medlem", memberName?.trim() || receipt.memberEmail],
-    ["Ytelse", `Medlemskontingent — «${tierName}»`],
+    ["Gjelder", `Medlemskontingent — «${tierName}»`],
     ["Periode", `${dato(receipt.periodStart)} – ${dato(receipt.periodEnd)} (${periodText})`],
     ["Betalt", `${kr(paidNok)} den ${dato(receipt.paidDate)}, via Vipps`],
-    ["Merverdiavgift", "0 kr — medlemskontingent er unntatt mva (merverdiavgiftsloven § 3-13)"],
+    ["Merverdiavgift", "0 kr — medlemskontingent er unntatt mva"],
   ];
-
-  const legalNote =
-    "Kvitteringen inneholder opplysningene som kreves for betalingsdokumentasjon " +
-    "av medlemskontingent etter bokføringsforskriften § 5-1-6b, jf. § 5-1-1 nr. 2–5.";
 
   const lines = [
     greeting,
@@ -84,8 +82,6 @@ export function membershipReceipt(receipt: MembershipReceipt): EmailMessage {
     lead,
     "",
     ...rows.map(([label, value]) => `${label}: ${value}`),
-    "",
-    legalNote,
     "",
     "Medlemskapet fornyes automatisk. Vil du ikke fortsette, kan du stoppe det her:",
     manageUrl,
@@ -111,7 +107,6 @@ export function membershipReceipt(receipt: MembershipReceipt): EmailMessage {
 <table style="border-collapse:collapse;font-size:15px">
 ${htmlRows}
 </table>
-<p style="font-size:13px;color:#6b5d4d">${escapeHtml(legalNote)}</p>
 <p>Medlemskapet fornyes automatisk. Vil du ikke fortsette, kan du
 <a href="${escapeHtml(manageUrl)}">stoppe det her</a>.</p>
 <p>Hilsen ${org}</p>

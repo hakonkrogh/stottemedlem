@@ -29,9 +29,11 @@ describe("membershipReceipt", () => {
     expect(message.text).toContain("14. mars 2026 – 31. desember 2026 (2026)");
     // nr. 5 — amount and payment date.
     expect(message.text).toContain("240 kr den 14. mars 2026, via Vipps");
-    // The exemption, and the rule the receipt satisfies.
-    expect(message.text).toContain("merverdiavgiftsloven § 3-13");
-    expect(message.text).toContain("bokføringsforskriften § 5-1-6b");
+    // The VAT exemption is stated in plain words — the receipt adheres to
+    // the law without citing it at the member.
+    expect(message.text).toContain("medlemskontingent er unntatt mva");
+    expect(message.text).not.toContain("§");
+    expect(message.html).not.toContain("§");
   });
 
   it("addresses and attributes like every member notice", () => {
@@ -63,7 +65,7 @@ describe("membershipReceipt", () => {
       orgContactEmail: null,
       memberName: null,
     });
-    expect(message.text).toContain("Selger: Eksempel Musikkorps\n");
+    expect(message.text).toContain("Organisasjon: Eksempel Musikkorps\n");
     // A nameless buyer is still identified — by the address the receipt went to.
     expect(message.text).toContain("Medlem: kari@eksempel.example");
     expect(message.replyTo).toBeUndefined();

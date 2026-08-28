@@ -35,10 +35,16 @@ reconstruct one.
     payment bought, first day to last.
   - **nr. 5, the amount and its payment date** — what was actually paid
     (pro-rated on a mid-year join), when, and by which means (Vipps).
-- The receipt states that a membership fee in an ideal organization is
-  **exempt from VAT** (merverdiavgiftsloven § 3-13), and names the rule the
-  documentation satisfies (§ 5-1-6b jf. § 5-1-1 nr. 2–5). No sequential
-  document number is required for membership fees, and none is invented.
+- The receipt states that the membership fee is **exempt from VAT**
+  (merverdiavgiftsloven § 3-13) — in plain words, "medlemskontingent er
+  unntatt mva". No sequential document number is required for membership
+  fees, and none is invented.
+- **The receipt adheres to the law without referring to it.** The statutes
+  above ground what the receipt must contain; they are never cited at the
+  member. A receipt is a thank-you that happens to be complete
+  documentation, not a bookkeeping exhibit — labels and wording are the
+  member's everyday language (the organization, the member, what it was
+  for), never bookkeeping terms like "selger" or "ytelse".
 - **One payment, one receipt.** The receipt email cannot be declined — it
   documents money already taken — and says so; the way out is ending the
   membership, offered in the same message. It follows every

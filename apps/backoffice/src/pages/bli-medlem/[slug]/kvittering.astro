@@ -147,21 +147,20 @@ const title = `Takk for støtten — ${org.name}`;
           <Heading level={2}>Kvittering</Heading>
           <InfoList
             items={[
-              { label: "Selger", value: receipt.seller },
+              { label: "Organisasjon", value: receipt.seller },
               { label: "Medlem", value: receipt.memberLabel },
-              { label: "Ytelse", value: receipt.what },
+              { label: "Gjelder", value: receipt.what },
               { label: "Periode", value: receipt.period },
               { label: "Betalt", value: receipt.paid },
               {
                 label: "Merverdiavgift",
                 value: "0 kr",
-                hint: "Medlemskontingent er unntatt mva (merverdiavgiftsloven § 3-13).",
+                hint: "Medlemskontingent er unntatt mva.",
               },
             ]}
           />
           <Text variant="small">
-            Kvitteringen inneholder opplysningene som kreves for betalingsdokumentasjon av
-            medlemskontingent etter bokføringsforskriften § 5-1-6b, jf. § 5-1-1 nr. 2–5.
+            Ta gjerne vare på kvitteringen.
             {receipt.emailedTo ? ` Den er også sendt til ${receipt.emailedTo}.` : ""}
           </Text>
         </Stack>
