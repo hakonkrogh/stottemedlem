@@ -109,6 +109,29 @@ description: Render any local URL (marketing/backoffice dev or preview server) t
   `table _cf_ALARM has 3 columns but 2 values` on every later local command).
   Fix: `rm -rf apps/backoffice/.wrangler` and redo migrations/seeding with the
   workspace wrangler (hit 2026-08-12).
+- **Storybook serves Astro component `<script>` blocks UNTRANSPILED** (found
+  2026-08-28 validating the member-list search): a TS generic like
+  `querySelectorAll<HTMLElement>(...)` reaches the browser verbatim, where it
+  parses as COMPARISON OPERATORS (`qsa < HTMLElement > ("...")` → `false`) —
+  no syntax error, the line just yields garbage silently, while generic-free
+  lines in the same handler work. The real app (astro dev/build) transpiles
+  correctly, so the breakage is Storybook-only — but Storybook is the
+  validation loop, so **write component `<script>`s in plain JS with
+  `instanceof` narrowing** (`if (!(el instanceof HTMLElement)) continue;`)
+  instead of TS generics; `astro check` is equally happy. Related timing rule:
+  the script module runs BEFORE the story's DOM mounts, so top-level
+  `querySelector` wiring finds nothing in Storybook — use event DELEGATION on
+  `document` (works in both worlds). And Vite can serve a STALE script after
+  an edit even to a fresh browser — `curl` the script URL (listed in
+  `document.scripts`) to confirm the served version before debugging it;
+  restart Storybook if stale. To drive interactions (type, click, then assert
+  DOM state) use the puppeteer-core recipe below against the story iframe.
+- **`<noscript>` styles APPLY inside Storybook stories** (same session): story
+  markup is inserted client-side, so a `<style is:inline>` inside `<noscript>`
+  becomes live CSS and (e.g.) hides the element it was meant to hide only for
+  no-JS visitors — the element measures 0×0 while computed `display` still
+  reads normal (the parent is what collapsed). Don't use noscript-hide
+  patterns in screens that must be reviewable in Storybook.
 - **Storybook compiles Astro `<style>` blocks UNSCOPED** (community
   `@storybook-astro`, seen 2026-08-25): the markup keeps its `data-astro-cid`
   attributes but the injected CSS has plain selectors, so one component's

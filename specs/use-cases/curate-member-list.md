@@ -80,7 +80,24 @@ From the organization's point of view:
   the export is how the organization reaches its members through its own
   channels.
 
-## Related
+## Open questions
+- **Search terms carry personal data into web addresses.** Finding a member is
+  a plain form submission, so a phone number or email the administrator types
+  becomes part of the page's address — and from there reaches browser history,
+  Referer headers, and the platform's request logs. That brushes against the
+  spirit of the alerting invariant that member contact data never leaves
+  through vendor sinks
+  ([operational alerting](../concepts/operational-alerting.md)). Known and
+  currently **accepted** (2026-08-28): no law requires otherwise, the audience
+  is the organization's own administrators, and the simple, bookmarkable,
+  reload-safe search was judged worth more than the leak. A browser-side
+  filter was prototyped and reverted the same day (worse to use). Precedent
+  research (2026-08-28, `docs/research/pii-in-admin-urls-and-phone-masking.md`)
+  found this is the documented industry norm — Stripe and Zendesk advertise
+  PII-carrying search URLs as a sharing feature, no comparable membership tool
+  documents URL hygiene, and no GDPR enforcement on the pattern exists — so
+  the acceptance stands; that document also lists the hardening options if
+  this is ever revisited.
 - [Concept: Presenting and editing](../concepts/presenting-and-editing.md)
 - [Concept: Membership](../concepts/membership.md)
 - [Concept: Supporting member](../concepts/supporting-member.md)
