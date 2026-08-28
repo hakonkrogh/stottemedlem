@@ -83,12 +83,6 @@ interface Env {
   VIPPS_WEBHOOK_SECRET?: string;
   /** KV cache for Vipps access tokens (1 h test / 24 h prod lifetime). */
   VIPPS_TOKENS: import("@cloudflare/workers-types").KVNamespace;
-  /**
-   * Queue for organization messages to supporting members: the compose page
-   * enqueues one job per message, the consumer in src/worker.ts sends it
-   * (specs/concepts/org-message.md).
-   */
-  ORG_MESSAGES: import("@cloudflare/workers-types").Queue;
   /** R2 bucket for uploaded org media (logo/banner images). */
   MEDIA: import("@cloudflare/workers-types").R2Bucket;
 }

@@ -52,3 +52,32 @@ export const NewTier = {
 
 /** The last active membership cannot be archived. */
 export const CannotArchive = { args: form({ canArchive: false }) };
+
+/**
+ * A fee change is never saved on the first press: the administrator is told
+ * how many members the product will email — with no opt-out — and chooses
+ * between confirming and cancelling the whole update.
+ */
+export const ConfirmingFeeChange = {
+  args: form({
+    values: {
+      name: BASIC_TIER.name,
+      description: BASIC_TIER.description ?? "",
+      annualFee: "400",
+    },
+    confirmFeeChange: { newFeeNok: 400, toEmail: 22, unreachable: 2 },
+  }),
+};
+
+/** Every affected member can be emailed — the unreachable line disappears. */
+export const ConfirmingFeeChangeAllReachable = {
+  args: form({
+    values: {
+      name: BASIC_TIER.name,
+      description: BASIC_TIER.description ?? "",
+      annualFee: "400",
+    },
+    unreachable: 0,
+    confirmFeeChange: { newFeeNok: 400, toEmail: 24, unreachable: 0 },
+  }),
+};

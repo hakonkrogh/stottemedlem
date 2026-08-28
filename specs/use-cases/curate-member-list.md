@@ -73,9 +73,12 @@ From the organization's point of view:
   use case if needed later.
 - Refunding itself, which is its own use case:
   [Refund a supporting member's payment](refund-a-payment.md).
-- Bulk import/export and external CRM sync.
-- Messaging/emailing members in bulk — that is its own use case:
-  [Keep supporting members in the loop](keep-supporters-in-the-loop.md).
+- Bulk import and external CRM sync. Exporting the list is in scope, as its
+  own use case: [Export the member list](export-member-list.md).
+- Messaging/emailing members in bulk — deliberately not offered (see the
+  retired [Keep supporting members in the loop](keep-supporters-in-the-loop.md));
+  the export is how the organization reaches its members through its own
+  channels.
 
 ## Related
 - [Concept: Presenting and editing](../concepts/presenting-and-editing.md)

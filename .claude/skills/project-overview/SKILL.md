@@ -41,7 +41,7 @@ lives in `specs/`, kept in sync with code by a mandatory `Stop`-hook harness.
   `OrgScreen` owns the chrome (org name as the page's ONE h1 — screens start at
   `level={2}` — account links, and tabs with warning-count badges from
   `lib/orgNav.ts` + `lib/orgWarnings.ts`). Vipps keys sit under the
-  Innstillinger tab, meldinger under Medlemmer.
+  Innstillinger tab.
   **Editable surfaces present first** (specs/concepts/presenting-and-editing.md):
   a screen shows stored values via `@stottemedlem/ui/components/InfoList.astro`
   plus an "Endre" action opening `?rediger=1`; a save closes the form, a
@@ -294,8 +294,15 @@ lives in `specs/`, kept in sync with code by a mandatory `Stop`-hook harness.
   policy (decided 2026-08-20, spec `use-cases/change-the-annual-fee.md`): a
   change hits EXISTING members at their next renewal (no grandfathering),
   history keeps what was actually paid, returning lapsed members pay the
-  current fee, and notifying members is an ACKNOWLEDGED GAP — the tier edit
-  page tells the admin to do it themselves. Renewal timing lives in core
+  current fee, and the PRODUCT notifies members (member notices, below).
+  **A fee change is confirmed before it saves** (added 2026-08-28, branch
+  price-change-confirmation): the tier form's save, when the fee changed and
+  anyone is affected, stores nothing and re-renders with a confirm box —
+  `feeChangeReach` in `lib/notices.ts` counts, against the PROPOSED fee, who
+  would be emailed (no opt-out) and who is unreachable; the confirm form
+  re-submits the values as hidden fields with `bekreft=1`, Avbryt links back
+  to the tier list. A change affecting nobody saves straight through.
+  Renewal timing lives in core
   (`isRenewalWindow`/`renewalPeriodYear`, tested): arranged from 1 Dec, due
   1 Jan, `retryDays: 7`. The renewal charge's Idempotency-Key is DERIVED
   (`stableUuid("renewal:<agreementId>:<year>")` in core), not random, so a run
@@ -354,32 +361,35 @@ lives in `specs/`, kept in sync with code by a mandatory `Stop`-hook harness.
   is the ONLY way to see an auth-gated page (see `preview-screenshot`) — fixtures
   shared via `components/memberFixtures.ts`. The whole list is loaded and
   filtered in the screen on purpose, so counts do not move while you search.
-  **Org messages** (added 2026-08-25, branch glowing-snarl/PR #32, spec
-  `specs/concepts/org-message.md` + resolved open questions in
-  `use-cases/keep-supporters-in-the-loop.md`): `/o/[slug]/meldinger` composes
-  a plain-text message to supporting members (subject, body, audience,
-  preview, per-message result at `/meldinger/[messageId]`). Decided
-  2026-08-25: default audience = ACTIVE members, lapsed only via the explicit
-  "Alle, også utløpte" choice; declining is one click, no login, at
-  `memberUnsubscribePath` (`/bli-medlem/[slug]/meldinger-av?n=<manageToken>`,
-  POST mutates — never GET), reversible there and shown on min-side, and
-  NEVER stops a member notice (`supporting_members.messages_declined_at`,
-  migration 0009). Sending is ASYNC: the POST records the message
-  (`org_messages`) and enqueues on the `org-messages` queue (`ORG_MESSAGES`
-  binding); the `worker.ts` queue consumer (its first real job) derives the
-  audience from the live register at delivery time (`deliverOrgMessage` in
-  `src/lib/messages.ts`) and records one outcome row per member
-  (`org_message_recipients`, unique per message+member = retry idempotency;
-  only provider-accepted sends count as `sent`). Deploy validates queue
-  consumers and fails without the queues; `org-messages` +
-  `org-messages-staging` ARE provisioned (2026-08-27 — `wrangler queues
-  create` did NOT auto-edit wrangler.jsonc this time, unlike r2). Proving the send job needs no auth and no
-  queue: a scratch `pnpm dlx tsx` script in `apps/backoffice` with wrangler's
-  `getPlatformProxy({ configPath: "./wrangler.jsonc", persist: true })` (same
-  live local D1 as `astro dev`) calling `deliverOrgMessage` with
-  `createLoggingSender()` — the logger prints the composed email (incl. the
-  unsubscribe URL) and reports `sent:false`, honestly recorded as `failed`.
-  That harness pattern works for ANY app lib that only touches D1 + packages.
+  **Org messages are REMOVED** (built 2026-08-25 as PR #32, removed
+  2026-08-28, branch price-change-confirmation; specs
+  `concepts/org-message.md` + `use-cases/keep-supporters-in-the-loop.md` +
+  `problems/supporters-never-hear-back.md` all RETIRED): the product no
+  longer carries an organization's own email to members — the member list
+  offers a CSV export instead (`/o/[slug]/medlemmer/eksport.csv`,
+  semicolon+BOM Excel-friendly via `csvDocument` in core, spec
+  `use-cases/export-member-list.md`), and member NOTICES (fee changes) remain
+  the only product-sent email. Gone with it: `/o/[slug]/meldinger`,
+  `/bli-medlem/[slug]/meldinger-av` (must 404 now), `lib/messages.ts`,
+  `memberUnsubscribePath`, the email package's `orgMessage`, the db message
+  helpers, the ORG_MESSAGES binding + org-messages queue config (worker.ts
+  keeps a drop-everything `queue` stub because the vipps-events consumer is
+  still declared). The `org_messages`/`org_message_recipients` tables and
+  `messages_declined_at` column stay in deployed DBs (additive migrations)
+  but nothing reads them; the provisioned `org-messages(-staging)` queues on
+  Cloudflare are simply unused. Useful harness pattern that survives the
+  feature — with limits found 2026-08-28: a scratch `pnpm dlx tsx` script in
+  `apps/backoffice` with wrangler's `getPlatformProxy({ configPath:
+  "./wrangler.jsonc", persist: true })` (same live local D1 as `astro dev`)
+  can drive app libs, no auth or queue needed — BUT (1) the script must live
+  IN `apps/backoffice` (a scratchpad path can't resolve workspace deps),
+  (2) it must be `.mts` (a bare `.ts` outside the package transpiles as CJS
+  → "Top-level await is not supported"), and (3) it CANNOT import any lib
+  that transitively imports `cloudflare:workers` — tsx dies with
+  ERR_UNSUPPORTED_ESM_URL_SCHEME, and `src/lib/periods.ts` does exactly
+  that, so most period-aware libs (notices, membership, renewals) are out
+  of reach this way. For those, validate via unit-tested core/db functions
+  + HTTP against `astro dev` instead.
   **Reconciliation** (added 2026-08-21, spec `concepts/payment-reconciliation.md`):
   `src/lib/reconcile.ts` (`reconcileOrganization`) runs FIRST in the 02:00 job.
   Webhook delivery is at-least-once, which also means at-most-never — a real

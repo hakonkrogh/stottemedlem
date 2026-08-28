@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   annualPeriodFor,
   calendarYearScheme,
+  csvDocument,
   daysInYear,
   daysRemainingInYear,
   formatOrganisasjonsnummer,
@@ -16,7 +17,6 @@ import {
   joinPageUrl,
   MEMBERSHIP_TIER_KEY_MAX_LENGTH,
   membershipTierKey,
-  memberUnsubscribePath,
   nextAnnualPeriod,
   normalizeMembershipTierDescription,
   paymentState,
@@ -249,17 +249,18 @@ describe("stableUuid", () => {
   });
 });
 
-describe("memberUnsubscribePath", () => {
-  it("lives under the org's public pages and carries the member's token", () => {
-    expect(memberUnsubscribePath("nordnes", "tok-1")).toBe(
-      "/bli-medlem/nordnes/meldinger-av?n=tok-1",
-    );
+describe("csvDocument", () => {
+  it("writes semicolon-delimited CRLF rows behind a UTF-8 BOM, so Excel opens it on a double-click", () => {
+    const doc = csvDocument([
+      ["Navn", "Beløp (kr)"],
+      ["Kari Nordmann", 300],
+    ]);
+    expect(doc).toBe("\uFEFFNavn;Beløp (kr)\r\nKari Nordmann;300\r\n");
   });
 
-  it("keeps a token with reserved characters intact in the URL", () => {
-    expect(memberUnsubscribePath("nordnes", "a/b&c")).toBe(
-      "/bli-medlem/nordnes/meldinger-av?n=a%2Fb%26c",
-    );
+  it("quotes values carrying delimiters, quotes or line breaks; empty for null", () => {
+    const doc = csvDocument([["A;B", 'sa "hei"', "to\nlinjer", null]]);
+    expect(doc).toBe('\uFEFF"A;B";"sa ""hei""";"to\nlinjer";\r\n');
   });
 });
 

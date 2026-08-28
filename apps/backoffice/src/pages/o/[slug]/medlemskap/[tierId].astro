@@ -17,7 +17,12 @@ import {
   type TierFormValues,
   tierFormValues,
 } from "../../../../lib/membershipTiers";
-import { type NoticeReport, sendOwedFeeChangeNotices } from "../../../../lib/notices";
+import {
+  type FeeChangeReach,
+  feeChangeReach,
+  type NoticeReport,
+  sendOwedFeeChangeNotices,
+} from "../../../../lib/notices";
 import { requireOrgView } from "../../../../lib/orgView";
 import { purgeOrgPublicPages } from "../../../../lib/publicPageCache";
 import { repriceAgreements } from "../../../../lib/renewals";
@@ -62,6 +67,9 @@ if (template) {
 const feePlaceholder = String(template?.suggestedFeeNok ?? 300);
 
 let notice: NoticeReport | null = null;
+// Set when a fee change awaits the administrator's word: the save is parsed
+// and valid, but nothing is stored yet (specs/use-cases/change-the-annual-fee.md).
+let confirmFeeChange: (FeeChangeReach & { newFeeNok: number }) | null = null;
 
 if (Astro.request.method === "POST") {
   const form = await Astro.request.formData();
@@ -86,45 +94,59 @@ if (Astro.request.method === "POST") {
         await createMembershipTier(db, org.id, parsed.input);
       } else if (tier) {
         const feeChanged = parsed.input.annualFeeNok !== tier.annualFeeNok;
-        await updateMembershipTier(db, org.id, tier.id, parsed.input);
-        // Existing members move to the new fee at their next renewal
-        // (specs/use-cases/change-the-annual-fee.md). The nightly job would
-        // get there anyway; doing it now means the amount in members' Vipps
-        // apps matches what the administrator just set, immediately.
-        if (feeChanged) {
-          const vipps = await getVippsForOrg(getWorkOS(), org.workosOrgId);
-          if (vipps) {
-            const { failed } = await repriceAgreements(db, vipps, org.id);
-            // Failures are not fatal: tonight's run tries again.
-            if (failed) console.warn(`${failed} agreement(s) not repriced yet for ${org.slug}`);
+        // A fee change is not saved on the first press. The product will email
+        // every affected member and offers no way out of that, so the
+        // administrator is told the number first and chooses: go through with
+        // it, or cancel the whole update (specs/use-cases/change-the-annual-fee.md).
+        // Only a change nobody is on skips the question.
+        if (feeChanged && form.get("bekreft") !== "1") {
+          const reach = await feeChangeReach(db, org.id, tier.id, parsed.input.annualFeeNok);
+          if (reach.toEmail + reach.unreachable > 0) {
+            confirmFeeChange = { ...reach, newFeeNok: parsed.input.annualFeeNok };
           }
-          // Telling the members is not a side effect of the price change — it
-          // is half of what a price change *is*
-          // (specs/use-cases/change-the-annual-fee.md). Doing it here rather
-          // than leaving it to tonight's run means the administrator learns
-          // straight away who could not be reached, while they are still
-          // thinking about the change. Anything that fails is still owed, and
-          // the nightly run picks it up.
-          notice = await sendOwedFeeChangeNotices(db, org, Astro.url.origin, getEmailSender());
+        }
+        if (!confirmFeeChange) {
+          await updateMembershipTier(db, org.id, tier.id, parsed.input);
+          // Existing members move to the new fee at their next renewal
+          // (specs/use-cases/change-the-annual-fee.md). The nightly job would
+          // get there anyway; doing it now means the amount in members' Vipps
+          // apps matches what the administrator just set, immediately.
+          if (feeChanged) {
+            const vipps = await getVippsForOrg(getWorkOS(), org.workosOrgId);
+            if (vipps) {
+              const { failed } = await repriceAgreements(db, vipps, org.id);
+              // Failures are not fatal: tonight's run tries again.
+              if (failed) console.warn(`${failed} agreement(s) not repriced yet for ${org.slug}`);
+            }
+            // Telling the members is not a side effect of the price change — it
+            // is half of what a price change *is*
+            // (specs/use-cases/change-the-annual-fee.md). Doing it here rather
+            // than leaving it to tonight's run means the administrator learns
+            // straight away who could not be reached, while they are still
+            // thinking about the change. Anything that fails is still owed, and
+            // the nightly run picks it up.
+            notice = await sendOwedFeeChangeNotices(db, org, Astro.url.origin, getEmailSender());
+          }
         }
       }
-      await purgeOrgPublicPages(org.slug, Astro.url.origin);
-      // A price change is half a message to the members, so it lands on the
-      // overview where that result is reported; anything else lands back on
-      // the membership offer it just changed.
-      return Astro.redirect(
-        notice
-          ? `${orgPath(org.slug)}?varslet=${notice.told}.${notice.unreachable + notice.failed}`
-          : tiersPath,
-      );
+      if (!confirmFeeChange) {
+        await purgeOrgPublicPages(org.slug, Astro.url.origin);
+        // A price change is half a message to the members, so it lands on the
+        // overview where that result is reported; anything else lands back on
+        // the membership offer it just changed.
+        return Astro.redirect(
+          notice
+            ? `${orgPath(org.slug)}?varslet=${notice.told}.${notice.unreachable + notice.failed}`
+            : tiersPath,
+        );
+      }
     }
   }
 }
 
 const canArchive = !isNew && tiers.length > 1;
-// What a price change would actually move. Shown before the administrator
-// changes anything, because the product cannot yet tell members itself
-// (specs/use-cases/change-the-annual-fee.md, open question).
+// What a price change would actually move — shown up front, before the
+// administrator has typed anything (specs/use-cases/change-the-annual-fee.md).
 const reach = tier ? await tierMemberReach(db, tier.id) : { members: 0, unreachable: 0 };
 const activeMembers = reach.members;
 const title = isNew ? "Legg til medlemskap" : `Endre ${tier?.name}`;
@@ -151,6 +173,7 @@ const title = isNew ? "Legg til medlemskap" : `Endre ${tier?.name}`;
       activeMembers={activeMembers}
       currentFeeNok={tier?.annualFeeNok}
       unreachable={reach.unreachable}
+      confirmFeeChange={confirmFeeChange}
     />
   </OrgScreen>
 </Shell>

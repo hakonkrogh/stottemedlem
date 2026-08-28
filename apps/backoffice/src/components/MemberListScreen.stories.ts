@@ -16,7 +16,7 @@ interface ScreenProps {
   members: MemberOverview[];
   search?: string;
   membersPath: string;
-  messagesPath?: string;
+  exportHref?: string;
   currentYear: number;
 }
 
@@ -29,7 +29,7 @@ const inFrame = (props: Partial<ScreenProps>) => ({
       props: {
         members: everyone,
         membersPath: `${ORG_PATH}/medlemmer`,
-        messagesPath: `${ORG_PATH}/meldinger`,
+        exportHref: `${ORG_PATH}/medlemmer/eksport.csv`,
         currentYear: 2026,
         ...props,
       },

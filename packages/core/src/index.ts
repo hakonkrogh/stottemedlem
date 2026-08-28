@@ -187,13 +187,18 @@ export function memberSelfServicePath(slug: string, manageToken: string): string
 }
 
 /**
- * The one-click decline every organization message must carry (see
- * specs/concepts/org-message.md) — where a member stops the organization's own
- * messages without a login and without ending anything. The same token as the
- * self-service page: whoever holds it is the member.
+ * A CSV document the way desktop spreadsheet tools actually open it
+ * (specs/use-cases/export-member-list.md): semicolon-delimited (what Excel
+ * expects under a Norwegian locale), CRLF line ends, and a UTF-8 BOM so æøå
+ * survive a double-click. Values with delimiters, quotes or line breaks are
+ * quoted; everything else is written as-is.
  */
-export function memberUnsubscribePath(slug: string, manageToken: string): string {
-  return `${joinPagePath(slug)}/meldinger-av?n=${encodeURIComponent(manageToken)}`;
+export function csvDocument(rows: readonly (readonly (string | number | null)[])[]): string {
+  const field = (value: string | number | null): string => {
+    const text = value === null ? "" : String(value);
+    return /[;"\r\n]/.test(text) ? `"${text.replaceAll('"', '""')}"` : text;
+  };
+  return `\uFEFF${rows.map((row) => row.map(field).join(";")).join("\r\n")}\r\n`;
 }
 
 /**

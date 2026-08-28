@@ -1,10 +1,9 @@
 ---
-import { memberUnsubscribePath, periodLabel } from "@stottemedlem/core";
+import { periodLabel } from "@stottemedlem/core";
 import {
   closeAgreement,
   findAgreementByManageToken,
   getOrganizationBySlug,
-  getSupportingMember,
   listMembershipHistory,
 } from "@stottemedlem/db";
 import Alert from "@stottemedlem/ui/components/Alert.astro";
@@ -62,12 +61,6 @@ if (Astro.request.method === "POST" && !stopped) {
 // What they have paid for stands: stopping ends the renewal, not the year.
 const history = agreement.memberId ? await listMembershipHistory(db, agreement.memberId) : [];
 const current = history[0];
-// Whether the member has declined the organization's own messages
-// (specs/concepts/org-message.md) — shown here with the way to change it, so
-// the choice made with one click in an email is never a dead end.
-const member = agreement.memberId ? await getSupportingMember(db, agreement.memberId) : null;
-const messagesDeclined = Boolean(member?.messagesDeclinedAt);
-const unsubscribeHref = token ? memberUnsubscribePath(org.slug, token) : null;
 const title = `Ditt støttemedlemskap — ${org.name}`;
 ---
 
@@ -111,19 +104,6 @@ const title = `Ditt støttemedlemskap — ${org.name}`;
             belastet på nytt.
           </Text>
         </Stack>
-      )
-    }
-
-    {
-      member && unsubscribeHref && (
-        <Text variant="small">
-          {messagesDeclined
-            ? `Du har meldt deg av meldinger fra ${org.name}. `
-            : `Du får meldinger fra ${org.name} — takk, oppdateringer og nyheter. `}
-          <TextLink href={unsubscribeHref}>
-            {messagesDeclined ? "Få meldinger igjen" : "Meld deg av"}
-          </TextLink>
-        </Text>
       )
     }
 

@@ -9,12 +9,12 @@ of the [organization](organization.md) they support. It is sent by the product
 itself — not written by an administrator in the moment — because something
 happened that the member is owed word of.
 
-A notice is not the same as the organization's own messages to its supporters
-(a thank-you, news, an invitation). Those are
-[keeping supporters in the loop](../use-cases/keep-supporters-in-the-loop.md):
-the organization decides whether to send them, and a member can decline them.
-A notice is the product keeping the membership honest, and there is nothing to
-decline.
+A notice is the **only** email the product sends to a member. The product
+deliberately does not carry the organization's own messages (a thank-you,
+news, an invitation — see the retired
+[keeping supporters in the loop](../use-cases/keep-supporters-in-the-loop.md));
+those are the organization's to send through its own channels. A notice is the
+product keeping the membership honest, and there is nothing to decline.
 
 ## Why it exists
 The product takes money from people once a year without asking again. That is
@@ -31,10 +31,9 @@ decides what they may be charged.
 - A notice is sent **because of an event in the member's own membership** — a
   changed [annual fee](annual-fee.md), a payment about to be taken, a payment
   that failed. Never because the organization has something to say.
-- **A necessary notice cannot be declined.** Opting out of an organization's
-  messages never opts a member out of being told what they will be charged.
-  A member who wants no more notices ends the membership instead — which is
-  always offered in the same breath.
+- **A necessary notice cannot be declined.** A member who wants no more
+  notices ends the membership instead — which is always offered in the same
+  breath.
 - A notice is **attributable to the organization** the member supports: it
   carries that organization's name, and a reply reaches the organization, not
   the product. The member decided to support *them*, not us.
@@ -60,10 +59,7 @@ decides what they may be charged.
 - Is the mechanism behind the notice promised by
   [changing the annual fee](../use-cases/change-the-annual-fee.md) and
   [renewal](../use-cases/renew-annual-membership.md).
-- Is deliberately *not* the same thing as
-  [keeping supporters in the loop](../use-cases/keep-supporters-in-the-loop.md).
 
 ## Referenced by
 - [Use case: Change the annual fee](../use-cases/change-the-annual-fee.md)
 - [Use case: Renew annual membership](../use-cases/renew-annual-membership.md)
-- [Use case: Keep supporting members in the loop](../use-cases/keep-supporters-in-the-loop.md)
