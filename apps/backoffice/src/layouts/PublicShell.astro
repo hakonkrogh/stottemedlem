@@ -34,41 +34,42 @@ const { title, description, noindex } = Astro.props;
 <html lang="no">
   <head>
     <meta charset="utf-8" />
-    {/* viewport-fit=cover makes WebKit REPORT the real safe-area insets. The
-        arrival bug (overlay-diagnosed 2026-08-28): the layout viewport grows
-        upward under the status bar ~150ms after load while safe-area-inset-top
-        stays 0 under the default viewport-fit, so content sits under the
-        status bar with no scroll offset anywhere. With cover the inset reads
-        true, and main's padding absorbs exactly the covered area. */}
-    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
     {description && <meta name="description" content={description} />}
     {noindex && <meta name="robots" content="noindex" />}
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <title>{title}</title>
     <script is:inline>
-      // The arrival bug's on-device signature (overlay diagnosis 2026-08-28):
-      // ~150ms after load the layout viewport GROWS upward under the status
-      // bar (innerHeight jumps by the status-bar height) with scrollY and
-      // every visualViewport offset at 0 — so only a real scroll change can
-      // ask the browser to re-seat its chrome, and it must run AFTER the
-      // growth, not at DOMContentLoaded. A manual scroll provably restores
-      // the layout (first on-device video). Guarded so it can never fight
-      // the reader: only before any touch, only at scroll 0, and only when
-      // the growth signature (or a visual-viewport offset) is present.
+      // The arrival bug, fully diagnosed on-device (overlay videos,
+      // 2026-08-28): ~150ms after load WebKit grows the LAYOUT viewport
+      // upward under the status bar (innerHeight 683→757) while scrollY,
+      // every visualViewport offset, and — even under viewport-fit=cover —
+      // env(safe-area-inset-top) all read 0, and a programmatic scroll
+      // change does not re-seat the chrome (only a real finger drag does).
+      // So no browser API will name or undo the covered area — but its size
+      // is measurable: the growth delta IS the covered status bar. Apply
+      // that delta as top padding while the page sits untouched at scroll 0,
+      // and withdraw it only when the viewport actually shrinks back
+      // (the chrome re-seated), so the layout never shifts under a reader.
       (function () {
-        var touched = false;
         var h0 = window.innerHeight;
+        var touched = false;
         addEventListener("touchstart", function () { touched = true; }, { once: true, passive: true });
-        var reseat = function () {
-          var vv = window.visualViewport;
-          var offset = vv && vv.pageTop > 0;
-          var grewUnderBar = window.innerHeight > h0;
-          if (touched || window.scrollY > 0 || !(offset || grewUnderBar)) return;
-          window.scrollTo(0, 1);
-          window.scrollTo(0, 0);
+        addEventListener("DOMContentLoaded", function () {
+          h0 = Math.min(h0, window.innerHeight);
+        });
+        var apply = function () {
+          var delta = window.innerHeight - h0;
+          var root = document.documentElement.style;
+          if (!touched && window.scrollY === 0 && delta >= 20 && delta <= 120) {
+            root.setProperty("--sm-arrival-inset", delta + "px");
+          } else if (window.innerHeight <= h0 + 2) {
+            root.setProperty("--sm-arrival-inset", "0px");
+          }
         };
-        addEventListener("pageshow", reseat);
-        [250, 500, 1000, 2000].forEach(function (ms) { setTimeout(reseat, ms); });
+        [200, 400, 800, 1600, 3200].forEach(function (ms) { setTimeout(apply, ms); });
+        addEventListener("resize", apply);
+        if (window.visualViewport) window.visualViewport.addEventListener("resize", apply);
       })();
     </script>
   </head>
@@ -112,7 +113,8 @@ const { title, description, noindex } = Astro.props;
                 " oT=" + (vv ? Math.round(vv.offsetTop) : "-") +
                 " vh=" + (vv ? Math.round(vv.height) : "-") +
                 " ih=" + window.innerHeight +
-                " sat=" + parseInt(getComputedStyle(probe).paddingTop || "0", 10)
+                " sat=" + parseInt(getComputedStyle(probe).paddingTop || "0", 10) +
+                " pad=" + parseInt(getComputedStyle(document.querySelector("main")).paddingTop || "0", 10)
               );
             }
             function tick() {
@@ -151,17 +153,15 @@ const { title, description, noindex } = Astro.props;
     max-width: 38rem;
     margin-inline: auto;
     padding: 3rem 1.25rem 2rem;
-    /* Absorb whatever unsafe area the viewport actually covers (see the
-     * viewport-fit note in <head>): 0 in the normal state, the status-bar
-     * height when the arrival bug lays the page out under it. */
-    padding-top: calc(3rem + env(safe-area-inset-top, 0px));
+    /* The measured status-bar compensation from the arrival script in <head>:
+     * 0 in the normal state, the viewport-growth delta when the arrival bug
+     * lays the page out under the status bar. */
+    padding-top: calc(3rem + var(--sm-arrival-inset, 0px));
   }
   footer {
     max-width: 38rem;
     margin-inline: auto;
     padding: 1rem 1.25rem 2.5rem;
-    /* Same guard for the bottom edge under viewport-fit=cover. */
-    padding-bottom: calc(2.5rem + env(safe-area-inset-bottom, 0px));
     font-size: 0.85rem;
     color: var(--sm-muted);
   }

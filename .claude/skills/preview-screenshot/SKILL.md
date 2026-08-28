@@ -71,7 +71,17 @@ description: Render any local URL (marketing/backoffice dev or preview server) t
   exactly the covered area, 0 in the normal state), plus the nudge
   re-triggered on the real signature (innerHeight grew past its initial
   value) at 250–2000ms timers instead of DOMContentLoaded (which fires
-  BEFORE the ~150ms growth). To READ such a
+  BEFORE the ~150ms growth). Third on-device video then DISPROVED both of
+  those levers too: with viewport-fit=cover live, sat STILL read 0 while the
+  viewport covered the status bar (WebKit's inset reporting lies in this
+  state), and the programmatic scrollTo(0,1);scrollTo(0,0) dance visibly
+  executed (scroll event at 257ms in the log) without re-seating the chrome
+  — only a real finger drag does. The surviving approach (shipped): compute
+  the covered area as the measured growth delta (innerHeight − initial
+  innerHeight, clamped 20–120px) and apply it as `--sm-arrival-inset` top
+  padding while untouched at scroll 0, withdrawing it only when innerHeight
+  shrinks back. Overlay now also shows `pad=` (main's computed padding-top)
+  to verify. To READ such a
   phone video: no ffmpeg here — dump frames with a Swift
   AVAssetImageGenerator script (see scratchpad pattern), then Read the PNGs.
 - Typical loop (marketing, static): `pnpm turbo build --filter=@stottemedlem/marketing
