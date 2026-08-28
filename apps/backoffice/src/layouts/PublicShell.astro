@@ -30,6 +30,27 @@ const { title, description, noindex } = Astro.props;
     {noindex && <meta name="robots" content="noindex" />}
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <title>{title}</title>
+    <script is:inline>
+      // A page arriving from another app can be laid out against WebKit's
+      // collapsed browser chrome, hiding the top under the status bar while
+      // scrollY is 0 — so scrollTo(0,0) alone is a no-op (PR #55's mistake).
+      // A real scroll change (1px down, then back) makes the browser re-seat
+      // the visual viewport; body's min-height guarantees that 1px exists.
+      // Guarded so it can never fight the reader: it runs only before any
+      // touch and only while the page sits untouched at scroll 0.
+      (function () {
+        let touched = false;
+        addEventListener("touchstart", () => { touched = true; }, { once: true, passive: true });
+        const reseat = () => {
+          const vv = window.visualViewport;
+          if (touched || window.scrollY > 0 || !vv || vv.pageTop <= 0) return;
+          window.scrollTo(0, 1);
+          window.scrollTo(0, 0);
+        };
+        addEventListener("DOMContentLoaded", reseat);
+        addEventListener("pageshow", reseat);
+      })();
+    </script>
   </head>
   <body>
     <main>

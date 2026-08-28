@@ -46,7 +46,16 @@ description: Render any local URL (marketing/backoffice dev or preview server) t
   (Apple forums thread 773770 + field reports): `viewport-fit=cover` and
   safe-area padding do NOT fix it; the one reported lever is body
   `min-height: 100lvh` (no flex, no JS) so even a short page has scroll range
-  to snap the chrome back — reinstated CSS-only; awaiting on-device proof.
+  to snap the chrome back — reinstated CSS-only. On-device video (2026-08-28,
+  iPhone Chrome, staging self-service page) then PROVED: the lvh range lets a
+  manual scroll recover the top and nothing freezes, but the page still OPENS
+  clipped, and #55's scrollTo(0,0) demonstrably did nothing (scrollY already
+  0 — a no-op scroll doesn't re-seat the visual viewport). Next experiment
+  shipped: an early (DOMContentLoaded + pageshow) `scrollTo(0,1); scrollTo(0,0)`
+  nudge, guarded to bail after any touchstart or when scrollY > 0 so it can
+  never yank a reader. To READ such a phone video: no ffmpeg here — dump
+  frames with a Swift AVAssetImageGenerator script (see scratchpad pattern),
+  then Read the PNGs.
 - Typical loop (marketing, static): `pnpm turbo build --filter=@stottemedlem/marketing
   && pnpm --filter @stottemedlem/marketing preview --port 4399 &` → shot → Read →
   iterate. (astro preview serves `dist/` live, so rebuild + reload is enough;
