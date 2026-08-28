@@ -105,6 +105,20 @@ public surface owes.
 
 ## Gotchas found driving this
 
+- **After a deploy, staging/production still serve the PREVIOUS page copy on
+  the first visit** (`x-sm-cache: hit` on stale HTML — the saved copy heals in
+  the background per visit). So "is the new code live?" needs TWO fetches:
+  curl the page once to trigger the refresh, then curl again and grep the body
+  for a marker unique to the new code. On-device testers hit the same
+  staleness — tell them to open the page once, then re-test (bit us
+  2026-08-28: a phone test of a just-merged fix filmed the pre-merge HTML).
+- **A follow-up PR based on another PR's branch merges into THAT BRANCH, not
+  main, unless the base branch is deleted at merge** — GitHub only retargets
+  to main when the base PR's head branch is deleted. Verify with
+  `git log origin/main` after merging stacked PRs; a "MERGED" badge alone
+  proves nothing about main (bit us 2026-08-28: PR #57 landed inside
+  fix-scroll-bounce and never deployed).
+
 - **POSTing a public form with curl 403s without an Origin header** — Astro's
   built-in CSRF check (`security.checkOrigin`, on by default) rejects
   form-encoded POSTs whose Origin doesn't match. Browsers always send it; curl

@@ -4,9 +4,18 @@
 // column on the warm brand background, and the mandatory subtle støttemedlem.no
 // attribution (specs/concepts/brand-attribution.md: ø in visible text, punycode
 // in the href).
+import { env } from "cloudflare:workers";
 import "@stottemedlem/ui/tokens.css";
 import "@stottemedlem/ui/base.css";
 import { CANONICAL_ORIGIN } from "@stottemedlem/core";
+
+// TEMPORARY, staging-only: the "page arrives with its top under the status
+// bar" bug can only be observed on a real phone, and every scripted fix so
+// far was built on guessed viewport state. This overlay shows the live state
+// (scrollY, visualViewport offsets, heights, safe-area inset) plus a timeline
+// of the first seconds, so a screen recording carries the diagnosis. Remove
+// once the arrival bug is understood and fixed.
+const viewportDebug = env.SENTRY_ENVIRONMENT === "staging";
 
 interface Props {
   title: string;
@@ -59,6 +68,57 @@ const { title, description, noindex } = Astro.props;
     <footer>
       Medlemssiden leveres av <a href={CANONICAL_ORIGIN}>støttemedlem.no</a>
     </footer>
+    {
+      viewportDebug && (
+        <>
+        <div
+          id="vv-debug"
+          style="position:fixed;left:4px;top:35%;z-index:9999;background:rgba(0,0,0,.8);color:#7CFC00;font:11px/1.5 ui-monospace,monospace;padding:6px 8px;border-radius:6px;pointer-events:none;white-space:pre;"
+        />
+        <div id="vv-sat-probe" style="position:fixed;padding-top:env(safe-area-inset-top);visibility:hidden;" />
+        <script is:inline>
+          (function () {
+            var box = document.getElementById("vv-debug");
+            var probe = document.getElementById("vv-sat-probe");
+            var t0 = performance.now();
+            var marks = [0, 150, 300, 600, 1000, 1500, 2500, 4000];
+            var lines = [];
+            var events = [];
+            ["DOMContentLoaded", "load", "pageshow", "touchstart", "scroll"].forEach(function (name) {
+              addEventListener(
+                name,
+                function () {
+                  if (events.length < 12) events.push(name.slice(0, 5) + "@" + Math.round(performance.now() - t0));
+                },
+                name === "touchstart" || name === "scroll" ? { once: true, passive: true } : undefined,
+              );
+            });
+            function snap() {
+              var vv = window.visualViewport;
+              return (
+                "sY=" + Math.round(window.scrollY) +
+                " pT=" + (vv ? Math.round(vv.pageTop) : "-") +
+                " oT=" + (vv ? Math.round(vv.offsetTop) : "-") +
+                " vh=" + (vv ? Math.round(vv.height) : "-") +
+                " ih=" + window.innerHeight +
+                " sat=" + parseInt(getComputedStyle(probe).paddingTop || "0", 10)
+              );
+            }
+            function tick() {
+              var t = performance.now() - t0;
+              while (marks.length && t >= marks[0]) {
+                lines.push("t" + marks.shift() + " " + snap());
+              }
+              box.textContent =
+                "now " + snap() + "\n" + lines.join("\n") + "\n" + events.join(" ");
+              if (t < 8000) requestAnimationFrame(tick);
+            }
+            requestAnimationFrame(tick);
+          })();
+        </script>
+        </>
+      )
+    }
   </body>
 </html>
 
