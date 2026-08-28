@@ -1,17 +1,25 @@
 ---
+import { formatOrganisasjonsnummer, periodLabel } from "@stottemedlem/core";
 import {
   findAgreementByManageToken,
   findAgreementByVippsId,
+  findReceiptNotice,
   getOrganizationBySlug,
+  getSupportingMember,
+  listChargesForAgreement,
+  listMembershipHistory,
 } from "@stottemedlem/db";
 import Heading from "@stottemedlem/ui/components/Heading.astro";
+import InfoList from "@stottemedlem/ui/components/InfoList.astro";
 import Stack from "@stottemedlem/ui/components/Stack.astro";
 import Text from "@stottemedlem/ui/components/Text.astro";
 import TextLink from "@stottemedlem/ui/components/TextLink.astro";
 import OrgIdentityHeader from "../../../components/OrgIdentityHeader.astro";
 import PublicShell from "../../../layouts/PublicShell.astro";
 import { getDb } from "../../../lib/db";
-import { syncAgreement, syncCharge } from "../../../lib/membership";
+import { getEmailSender } from "../../../lib/email";
+import { publicOrigin, syncAgreement, syncCharge } from "../../../lib/membership";
+import { sendOwedReceipts } from "../../../lib/receipts";
 import { getVippsForOrg } from "../../../lib/vipps";
 import { getWorkOS } from "../../../lib/workos";
 
@@ -19,6 +27,11 @@ import { getWorkOS } from "../../../lib/workos";
 // that anything was paid (specs/use-cases/join-as-supporting-member.md), so the
 // page asks Vipps rather than believing the redirect — and it is also the
 // polling fallback for when a webhook is slow or lost.
+//
+// When a payment IS confirmed, this page is the receipt itself
+// (specs/concepts/payment-receipt.md): the same betalingsdokumentasjon the
+// email carries, for the member standing here right now — including the one
+// whose profile came without an email address.
 const slug = Astro.params.slug;
 const db = getDb();
 const org = slug ? await getOrganizationBySlug(db, slug) : null;
@@ -37,7 +50,28 @@ const agreementId = tokenAgreement?.vippsAgreementId ?? Astro.url.searchParams.g
 if (!agreementId) return Astro.redirect(`/bli-medlem/${org.slug}`);
 
 let status: "active" | "pending" | "stopped" | "unknown" = "unknown";
-let memberName: string | null = null;
+
+/** The confirmed payment, presented as the payment documentation it is. */
+interface ReceiptDetails {
+  seller: string;
+  memberLabel: string | null;
+  what: string;
+  period: string;
+  paid: string;
+  /** Where the same receipt also went, when it could be emailed. */
+  emailedTo: string | null;
+}
+let receipt: ReceiptDetails | null = null;
+
+/** "2026-03-14" (or a full timestamp) as people read it. */
+const dato = (iso: string) =>
+  new Date(iso.length === 10 ? `${iso}T00:00:00Z` : iso).toLocaleDateString("nb-NO", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+    timeZone: "Europe/Oslo",
+  });
+const kr = (nok: number) => `${nok.toLocaleString("nb-NO").replace(/ /g, " ")} kr`;
 
 const vipps = await getVippsForOrg(getWorkOS(), org.workosOrgId);
 if (vipps) {
@@ -51,17 +85,38 @@ if (vipps) {
       const settled = await findAgreementByVippsId(db, agreementId);
       status =
         remote.status === "ACTIVE" ? "active" : remote.status === "PENDING" ? "pending" : "stopped";
-      memberName = settled?.memberId ? await memberNameFor(settled.memberId) : null;
+
+      if (settled?.memberId) {
+        // The email receipt goes out from here too — the supporter's own
+        // arrival is usually the first moment the capture is known.
+        await sendOwedReceipts(db, org, publicOrigin(Astro.request), getEmailSender());
+
+        const member = await getSupportingMember(db, settled.memberId);
+        const charges = await listChargesForAgreement(db, settled.id);
+        const captured = charges.filter((charge) => charge.status === "CHARGED").at(-1);
+        const membership = captured?.membershipId
+          ? (await listMembershipHistory(db, settled.memberId)).find(
+              (row) => row.id === captured.membershipId,
+            )
+          : undefined;
+        if (captured && membership) {
+          const emailed = await findReceiptNotice(db, captured.id);
+          receipt = {
+            seller: org.orgnr
+              ? `${org.name} (org.nr. ${formatOrganisasjonsnummer(org.orgnr)})`
+              : org.name,
+            memberLabel: member?.name ?? member?.email ?? null,
+            what: `Medlemskontingent — «${membership.tierName}»`,
+            period: `${dato(membership.periodStart)} – ${dato(membership.periodEnd)} (${periodLabel(membership.periodYear)})`,
+            paid: `${kr(captured.amountNok)} den ${dato(captured.capturedAt ?? captured.updatedAt)}, via Vipps`,
+            emailedTo: emailed && member?.email ? member.email : null,
+          };
+        }
+      }
     }
   } catch (error) {
     console.error("could not confirm agreement", error);
   }
-}
-
-async function memberNameFor(memberId: string): Promise<string | null> {
-  const { listMembershipHistory } = await import("@stottemedlem/db");
-  const history = await listMembershipHistory(db, memberId);
-  return history[0]?.tierName ?? null;
 }
 
 const title = `Takk for støtten — ${org.name}`;
@@ -77,14 +132,37 @@ const title = `Takk for støtten — ${org.name}`;
       status === "active" && (
         <Stack gap="sm">
           <Heading>Takk for støtten!</Heading>
-          <Text variant="lead">
-            Du er nå støttemedlem i {org.name}
-            {memberName ? ` med medlemskapet ${memberName}` : ""}, ut året.
-          </Text>
+          <Text variant="lead">Du er nå støttemedlem i {org.name}, ut året.</Text>
           <Text>
             Medlemskapet fornyes automatisk ved årsskiftet til den årlige kontingenten, så lenge du
             vil være med. Du får varsel i Vipps-appen før hver fornyelse, og kan si opp når som
             helst.
+          </Text>
+        </Stack>
+      )
+    }
+    {
+      status === "active" && receipt && (
+        <Stack gap="sm">
+          <Heading level={2}>Kvittering</Heading>
+          <InfoList
+            items={[
+              { label: "Selger", value: receipt.seller },
+              { label: "Medlem", value: receipt.memberLabel },
+              { label: "Ytelse", value: receipt.what },
+              { label: "Periode", value: receipt.period },
+              { label: "Betalt", value: receipt.paid },
+              {
+                label: "Merverdiavgift",
+                value: "0 kr",
+                hint: "Medlemskontingent er unntatt mva (merverdiavgiftsloven § 3-13).",
+              },
+            ]}
+          />
+          <Text variant="small">
+            Kvitteringen inneholder opplysningene som kreves for betalingsdokumentasjon av
+            medlemskontingent etter bokføringsforskriften § 5-1-6b, jf. § 5-1-1 nr. 2–5.
+            {receipt.emailedTo ? ` Den er også sendt til ${receipt.emailedTo}.` : ""}
           </Text>
         </Stack>
       )

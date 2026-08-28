@@ -30,7 +30,8 @@ decides what they may be charged.
 ## Rules & invariants
 - A notice is sent **because of an event in the member's own membership** — a
   changed [annual fee](annual-fee.md), a payment about to be taken, a payment
-  that failed. Never because the organization has something to say.
+  that was taken (the [payment receipt](payment-receipt.md)), a payment that
+  failed. Never because the organization has something to say.
 - **A necessary notice cannot be declined.** A member who wants no more
   notices ends the membership instead — which is always offered in the same
   breath.
@@ -44,7 +45,10 @@ decides what they may be charged.
   amount, and when. The record is what lets a later payment prove it was not a
   surprise.
 - A notice states what is happening, when it takes effect, and how to stop it.
-  A notice with nothing the member can do about it is a nuisance.
+  A notice with nothing the member can do about it is a nuisance. The one
+  exception is the [payment receipt](payment-receipt.md), whose point is
+  documentation rather than action — it still carries the way out of the
+  membership, which is the only act left after money has moved.
 - It carries the same [brand attribution](brand-attribution.md) as every other
   member-facing surface.
 - A member with no contact details cannot be told. The product does not treat
@@ -63,3 +67,5 @@ decides what they may be charged.
 ## Referenced by
 - [Use case: Change the annual fee](../use-cases/change-the-annual-fee.md)
 - [Use case: Renew annual membership](../use-cases/renew-annual-membership.md)
+- [Concept: Payment receipt](payment-receipt.md) — the notice kind that
+  documents a captured payment

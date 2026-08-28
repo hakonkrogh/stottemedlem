@@ -44,10 +44,17 @@ organization's list stays accurate as periods turn over.
    ([payment reconciliation](../concepts/payment-reconciliation.md)): a renewal
    that succeeded is picked up regardless, and the member is never shown as
    lapsed for a payment they made.
-6. A lapsed supporter can come back by joining again; renewal and return both
+6. Once the renewal payment is captured, the member receives its
+   [payment receipt](../concepts/payment-receipt.md) by email — the
+   documentation of the payment just taken, one per payment, not something the
+   member can decline. This does not contradict the no-reminder rule below:
+   a reminder *before* an unchanged renewal repeats what the payment app
+   already says, while the receipt documents money *after* it moved — which
+   the app's own notification does not do in a form fit for anyone's books.
+7. A lapsed supporter can come back by joining again; renewal and return both
    reuse the supporter's existing identity — they do not re-register as a new
    person, and their membership history accumulates across periods.
-7. The valid-until date after renewal is 31 December of the new period.
+8. The valid-until date after renewal is 31 December of the new period.
 
 ## Acceptance criteria
 - [ ] A continuing membership renews into the next period without the member or
@@ -66,6 +73,9 @@ organization's list stays accurate as periods turn over.
       never notified of it.
 - [ ] A renewal is never taken twice because the product lost track of having
       arranged it.
+- [ ] A captured renewal yields exactly one
+      [receipt](../concepts/payment-receipt.md) email, retried until sent when
+      a send fails.
 
 ## Out of scope
 - Mid-period tier upgrades (changing tier takes effect at the next renewal).
@@ -82,5 +92,7 @@ organization's list stays accurate as periods turn over.
 - [Concept: Annual fee](../concepts/annual-fee.md)
 - [Concept: Member notice](../concepts/member-notice.md) — what the product
   tells a member itself, when the payment app cannot
+- [Concept: Payment receipt](../concepts/payment-receipt.md) — the
+  documentation every captured renewal sends
 - [Concept: Payment reconciliation](../concepts/payment-reconciliation.md) — why
   a renewal counts even when nobody told us about it

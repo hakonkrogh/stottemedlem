@@ -1279,8 +1279,12 @@ export interface MemberNoticeRecord {
   agreementId: string;
   kind: MemberNoticeKind;
   tierId: string;
+  /** For a fee change, the fee announced; for a receipt, the amount paid. */
   feeNok: number;
-  previousFeeNok: number;
+  /** Fee changes only: the fee the member knew before this one. */
+  previousFeeNok?: number;
+  /** Receipts only: the captured payment this notice documents. */
+  chargeId?: string;
 }
 
 /** Write down that a member was told — only ever after the message went out. */
@@ -1295,6 +1299,66 @@ export async function listMemberNotices(db: Db, memberId: string): Promise<Membe
     .from(memberNotices)
     .where(eq(memberNotices.memberId, memberId))
     .orderBy(desc(memberNotices.sentAt));
+}
+
+/** One captured payment that still owes its member a receipt. */
+export interface CaptureOwedReceipt {
+  charge: MembershipCharge;
+  /** The period the payment bought — the receipt's "what was delivered". */
+  membership: Membership;
+  member: SupportingMember;
+  agreement: MembershipAgreement;
+}
+
+/**
+ * Which captured payments have no receipt yet (specs/concepts/payment-receipt.md).
+ *
+ * By comparison, not by memory: a capture owes a receipt for as long as no
+ * `receipt` notice points at the charge, so the send that failed tonight is
+ * simply still owed tomorrow. Only captures that bought a membership qualify —
+ * a capture without one is the activation race, and its receipt follows once
+ * the membership does. `since` bounds the sweep: a capture older than the
+ * window is no longer chased (deploying this feature must not shower members
+ * with receipts for long-settled payments).
+ */
+export async function listCapturesOwedReceipt(
+  db: Db,
+  orgId: string,
+  since: Date,
+): Promise<CaptureOwedReceipt[]> {
+  return db
+    .select({
+      charge: membershipCharges,
+      membership: memberships,
+      member: supportingMembers,
+      agreement: membershipAgreements,
+    })
+    .from(membershipCharges)
+    .innerJoin(memberships, eq(membershipCharges.membershipId, memberships.id))
+    .innerJoin(supportingMembers, eq(memberships.memberId, supportingMembers.id))
+    .innerJoin(membershipAgreements, eq(membershipCharges.agreementId, membershipAgreements.id))
+    .leftJoin(memberNotices, eq(memberNotices.chargeId, membershipCharges.id))
+    .where(
+      and(
+        eq(membershipCharges.orgId, orgId),
+        eq(membershipCharges.status, "CHARGED"),
+        isNull(memberNotices.id),
+        gte(
+          sql`coalesce(${membershipCharges.capturedAt}, ${membershipCharges.updatedAt})`,
+          since.toISOString(),
+        ),
+      ),
+    )
+    .orderBy(asc(membershipCharges.capturedAt));
+}
+
+/** The receipt notice documenting one charge, when one has gone out. */
+export async function findReceiptNotice(db: Db, chargeId: string): Promise<MemberNotice | null> {
+  const [row] = await db
+    .select()
+    .from(memberNotices)
+    .where(and(eq(memberNotices.chargeId, chargeId), eq(memberNotices.kind, "receipt")));
+  return row ?? null;
 }
 
 /**

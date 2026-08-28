@@ -211,8 +211,27 @@ lives in `specs/`, kept in sync with code by a mandatory `Stop`-hook harness.
   wording in `use-cases/renew-annual-membership.md`. Repository helpers in
   `packages/db/src/index.ts` (`recordDraftedAgreement`, `activateAgreement`,
   `recordCharge`, `grantMembershipForCapturedCharge`, `listMembersForPeriod`)
-  are all idempotent by design. NOT yet built: the join route, receipt page,
-  webhook receiver/queue consumer, member-list UI.
+  are all idempotent by design. (The join route, receipt page, webhook
+  receiver and member-list UI, once listed here as unbuilt, all exist now —
+  see below.)
+  **Payment receipts** (added 2026-08-28, branch membership-receipt-emails,
+  spec `specs/concepts/payment-receipt.md`): every captured charge — the join
+  AND every renewal — owes its member exactly one receipt, in two same-content
+  forms: the `kvittering.astro` page (renders an InfoList when the payment is
+  confirmed) and a `membershipReceipt` email (`@stottemedlem/email`,
+  non-declinable member notice, kind `receipt`). Sending is a comparison
+  sweep, `sendOwedReceipts` in `src/lib/receipts.ts`: captured charges with no
+  `member_notices` row pointing at them (migration 0010 added `charge_id` +
+  a partial UNIQUE index = one payment, one receipt), 14-day lookback so a
+  deploy never mails receipts for long-settled payments. Runs from the
+  kvittering page, the webhook receiver (AFTER the event is applied — an email
+  failure must never 500 the webhook or Vipps redelivers), and the nightly
+  cron as the retry. The legal content (bokføringsforskriften § 5-1-6b jf.
+  § 5-1-1 nr. 2–5, mval § 3-13 exemption) is ground-truthed in
+  norwegian-receipt-law.md (this skill). Members with no email get the page
+  only and are counted `unreachable` (self-limiting: they age out of the
+  lookback). The fee-rule queries filter `kind = "fee-change"`, so receipt
+  rows cannot disturb the 14-day fee rule.
   **Joining + the payment loop** (added 2026-08-20, same branch): public
   `POST /bli-medlem/[slug]/start` drafts the Vipps agreement (full annual fee
   as the agreement price, PRO-RATED initial charge) and 303s to Vipps;
@@ -738,6 +757,7 @@ Hard rules and exact wording live in the yaml and in the guide's own tables — 
 | (canonical) `README.md` | monorepo layout, commands, toolchain |
 | stop-hooks.md | how the two Stop hooks compose + how to test a hook locally. **Write `specs/**` with the Write/Edit tool, never a bash heredoc/python:** the spec hook only reads Edit/Write/MultiEdit/NotebookEdit calls out of the transcript, so Bash-written specs are invisible and it blocks the stop claiming you reconciled nothing — the default outcome in bypass-permissions mode, and it costs a turn every time (hit again 2026-08-27) |
 | qr-codes.md | @stottemedlem/qr package split, the /api/qr/[slug] embed contract (backoffice), the front-page card preview (marketing), qrcode-lib gotchas, open domain-routing item |
+| norwegian-receipt-law.md | verified legal ground truth for payment receipts: bokføringsforskriften § 5-1-6b (membership fees need only betalingsdokumentasjon with § 5-1-1 nr. 2–5 — no numbering, no PDF), mval § 3-13 VAT exemption, the rules that do NOT apply (kassasystem, § 5-2-9 file format, tax deduction), + how to curl Lovdata (WebFetch drops legal text) |
 | (skill) `vipps-test-rig` | drive a REAL recurring subscription on apitest from the CLI (agreement → MT-app approval → charges → webhooks → stop) + the local receiver and tunnel; the sandbox-DNS gotcha when verifying a tunnel |
 | (skill) `verify-workflow` | `node .claude/skills/verify-workflow/run-steps.mjs <workflow.yml> [job] --force-turbo` — run a GitHub Actions job's `run:` steps locally in a scrubbed, runner-like env; proves a CI change before pushing. Skips `uses:` steps and any step with a `${{ }}` expression (that guard is what stops it firing a real deploy / `--remote` D1 migration) |
 | (skill) `verify-qr` | decode a generated QR PNG (file or URL) + assert payload — real scan-level proof |

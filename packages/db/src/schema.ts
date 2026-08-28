@@ -230,9 +230,10 @@ export type NewMembershipCharge = typeof membershipCharges.$inferInsert;
 /**
  * The kinds of thing the product tells a member about their own membership.
  * Necessary notices, not the organization's own messages
- * (specs/concepts/member-notice.md).
+ * (specs/concepts/member-notice.md): a coming price, or the receipt for a
+ * payment already taken (specs/concepts/payment-receipt.md).
  */
-export type MemberNoticeKind = "fee-change";
+export type MemberNoticeKind = "fee-change" | "receipt";
 
 /**
  * Notices actually delivered to a supporting member.
@@ -257,6 +258,11 @@ export const memberNotices = sqliteTable("member_notices", {
   /** The annual fee announced, and the one the member knew before it. */
   feeNok: integer("fee_nok"),
   previousFeeNok: integer("previous_fee_nok"),
+  /**
+   * For a receipt: the captured payment it documents. The partial unique index
+   * on this column (migration 0010) is what makes one payment = one receipt.
+   */
+  chargeId: text("charge_id").references(() => membershipCharges.id),
   sentAt: text("sent_at").notNull().default(sql`(datetime('now'))`),
 });
 

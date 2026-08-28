@@ -77,6 +77,7 @@ The one message the product itself sends a member is the necessary
 | [Join page](concepts/join-page.md) | Draft |
 | [Member self-service page](concepts/member-self-service.md) | Draft |
 | [Member notice](concepts/member-notice.md) | Draft |
+| [Payment receipt](concepts/payment-receipt.md) | Draft |
 | [Organization message](concepts/org-message.md) | Retired |
 | [Payment reconciliation](concepts/payment-reconciliation.md) | Draft |
 | [Operational alerting](concepts/operational-alerting.md) | Draft |

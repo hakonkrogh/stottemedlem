@@ -81,6 +81,7 @@ async function runScheduledJobs(cron: string): Promise<void> {
     renewals,
     reconcile,
     notices,
+    receipts,
     { getEmailSender },
     { ensureWebhookRegistration, webhookReceiverUrl },
   ] = await Promise.all([
@@ -91,6 +92,7 @@ async function runScheduledJobs(cron: string): Promise<void> {
     import("./lib/renewals"),
     import("./lib/reconcile"),
     import("./lib/notices"),
+    import("./lib/receipts"),
     import("./lib/email"),
     import("./lib/vippsKeys"),
   ]);
@@ -180,6 +182,22 @@ async function runScheduledJobs(cron: string): Promise<void> {
           noticesLog.error("fee change notices failed to send", undefined, { ...told, ...ctx });
         } else if (notices.isNoteworthy(told)) {
           noticesLog.info("fee notices sent", { ...told, ...ctx });
+        }
+
+        // Every capture owes its member a receipt (specs/concepts/
+        // payment-receipt.md). The webhook and the receipt page already tried
+        // at capture time; this is the retry for anything that failed or was
+        // captured by tonight's own reconciliation.
+        const receiptReport = await receipts.sendOwedReceipts(
+          db,
+          org,
+          env.PUBLIC_ORIGIN,
+          getEmailSender(),
+        );
+        if (receiptReport.failed > 0) {
+          noticesLog.error("receipts failed to send", undefined, { ...receiptReport, ...ctx });
+        } else if (receipts.isNoteworthy(receiptReport)) {
+          noticesLog.info("receipts sent", { ...receiptReport, ...ctx });
         }
       }
 

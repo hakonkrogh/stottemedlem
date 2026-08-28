@@ -1,4 +1,5 @@
 export { type FeeChangeNotice, feeChangeNotice } from "./feeChangeNotice.js";
+export { type MembershipReceipt, membershipReceipt } from "./membershipReceipt.js";
 export {
   createLoggingSender,
   createResendSender,
