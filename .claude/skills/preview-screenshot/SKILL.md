@@ -107,12 +107,19 @@ description: Render any local URL (marketing/backoffice dev or preview server) t
   render, so it looks story-specific). Building afterwards does NOT heal it —
   Vite keeps serving the failed resolution; kill and restart Storybook (hit
   2026-08-28, again with db 2026-08-28).
+  Since 2026-08-31 the root alias `pnpm story` (= `pnpm stories`) does the
+  core+db pre-build AND starts Storybook in one go; the manual form is
   `pnpm --filter @stottemedlem/ui run storybook --ci`
-  (port 6006, ready in seconds, hot-reloads), then shoot a story's iframe URL
+  (port 6006, ready in seconds, hot-reloads). Then shoot a story's iframe URL
   directly: `http://localhost:6006/iframe.html?id=<story-id>&viewMode=story`.
   Story ids slugify title + export: "Primitives/Button" + `Primary` →
   `primitives-button--primary`; "Backoffice/Opprett organisasjon" + `WithError`
-  → `backoffice-opprett-organisasjon--with-error`. Stop with `lsof -ti:6006 |
+  → `backoffice-opprett-organisasjon--with-error`. **A playwright shot of a
+  COLD story is a blank page or a lone spinner** (hit 2026-08-31): playwright
+  shoots at `load`, but a first-visit story still compiles/fetches its module
+  after that. Add `--wait-for-timeout=4000` (and re-shoot if still blank —
+  a warm story then renders instantly); shot.sh's Chrome path avoids this via
+  `--virtual-time-budget` but can hang instead (see above). Stop with `lsof -ti:6006 |
   xargs kill`. If the astro dev server is needed instead (port 4322): it's a
   persistent daemon — "already running" may be a stale one from another session
   serving old code; `pnpm --filter @stottemedlem/backoffice exec astro dev stop`

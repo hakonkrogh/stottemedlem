@@ -29,6 +29,12 @@ const period = latest
 // change, so the organization has to (specs/concepts/member-notice.md). It is
 // only worth flagging while they are still paying.
 const unreachable = status === "active" && !member.email?.trim();
+// One heart per supported year (specs/concepts/scorecard.md) — as a count here,
+// so loyalty is visible at a glance without stretching the row. Built in the
+// frontmatter: a space next to an {expr} in the template is unreliable.
+const heartsLabel = entry.hearts > 0 ? `❤️ ${entry.hearts}` : null;
+const heartsTitle =
+  entry.hearts === 1 ? "Ett år som støttemedlem" : `${entry.hearts} år som støttemedlem`;
 ---
 
 <a class="row" href={href}>
@@ -36,6 +42,11 @@ const unreachable = status === "active" && !member.email?.trim();
   {contact && <span class="contact">{contact}</span>}
   <span class="meta">
     <span class:list={["pill", standing]}>{label}</span>
+    {heartsLabel && (
+      <span class="hearts" title={heartsTitle}>
+        {heartsLabel}
+      </span>
+    )}
     <span class="period">{period}{renewing && latest ? " · fornyes" : ""}</span>
     {unreachable && <span class="pill unreachable">Ingen e-post</span>}
   </span>
@@ -76,6 +87,11 @@ const unreachable = status === "active" && !member.email?.trim();
     align-items: center;
     gap: 0.4rem;
     margin-top: 0.15rem;
+  }
+  .hearts {
+    font-size: 0.85rem;
+    font-weight: 600;
+    white-space: nowrap;
   }
   .pill {
     padding: 0.15rem 0.5rem;

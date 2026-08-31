@@ -32,7 +32,7 @@ thanked, or repeated deliberately.
   and thank them.
 
 ## Solved by
-- [Use case: Earn stars and recruit new members](../use-cases/earn-stars-and-recruit.md)
+- [Use case: Earn hearts and recruit new members](../use-cases/earn-hearts-and-recruit.md)
 
 ## Related
 - [Concept: Scorecard](../concepts/scorecard.md)

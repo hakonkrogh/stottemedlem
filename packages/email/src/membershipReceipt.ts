@@ -96,7 +96,7 @@ export function membershipReceipt(receipt: MembershipReceipt): EmailMessage {
     `Hilsen ${orgName}`,
     "",
     "—",
-    `Sendt via ${BRAND_NAME} på vegne av ${orgName}. Dette er kvitteringen for en`,
+    `Sendt via ❤️ ${BRAND_NAME} på vegne av ${orgName}. Dette er kvitteringen for en`,
     "gjennomført betaling og sendes ved hver betaling — den kan ikke avmeldes.",
     contactNote,
   ];
@@ -119,7 +119,7 @@ ${htmlRows}
 <a href="${escapeHtml(manageUrl)}">stoppe det her</a>.</p>
 <p>Hilsen ${org}</p>
 <hr style="border:0;border-top:1px solid #e6ddd1;margin:2rem 0 1rem">
-<p style="font-size:13px;color:#6b5d4d">Sendt via <a href="${BRAND_URL}" style="color:#6b5d4d">${BRAND_NAME}</a>
+<p style="font-size:13px;color:#6b5d4d">Sendt via <a href="${BRAND_URL}" style="color:#6b5d4d">❤️ ${BRAND_NAME}</a>
 på vegne av ${org}. Dette er kvitteringen for en gjennomført betaling og sendes ved hver betaling
 — den kan ikke avmeldes. ${escapeHtml(contactNote)}</p>
 </div>`;

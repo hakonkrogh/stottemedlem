@@ -997,6 +997,12 @@ export interface MemberOverview {
   status: "active" | "lapsed";
   /** Their yearly arrangement is still live, so next period is already covered. */
   renewing: boolean;
+  /**
+   * One heart per supported annual period (specs/concepts/scorecard.md) —
+   * counted from the membership rows, never stored, so a fully refunded
+   * period takes its heart with it.
+   */
+  hearts: number;
 }
 
 /**
@@ -1046,6 +1052,8 @@ export async function listOrganizationMembers(
       // approval, seconds before the first payment lands.
       status: latest ? membershipStatus(latest.periodYear, currentPeriodKey) : "lapsed",
       renewing: live.has(member.id),
+      // Periods are unique per member and year, so each joined row is a heart.
+      hearts: (seen?.hearts ?? 0) + (membership ? 1 : 0),
     });
   }
   return [...byMember.values()];
@@ -1117,6 +1125,7 @@ export async function getOrganizationMember(
     latest,
     status: latest ? membershipStatus(latest.periodYear, currentPeriodKey) : "lapsed",
     renewing: Boolean(live),
+    hearts: history.length,
     history,
   };
 }

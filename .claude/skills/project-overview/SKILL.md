@@ -365,6 +365,23 @@ lives in `specs/`, kept in sync with code by a mandatory `Stop`-hook harness.
   hourly crons SKIP it silently (`getVippsForOrg` → null → continue) — no
   log noise, no renewals; only a real org with keys exercises the cron path
   (an earlier note claiming reconcile noise here was wrong).
+  **Heart brand mark + scorecard hearts** (added 2026-08-31, branch wry-frigate,
+  specs `concepts/brand-mark.md` NEW + `concepts/scorecard.md` display rules;
+  loyalty counters were briefly STARS the same day — the user replaced them
+  with hearts, so don't reintroduce ★ anywhere): the RED HEART character (❤️)
+  is the product's ONE symbol — the favicon of BOTH apps (character-in-`<text>`
+  SVG trick, `public/favicon.svg`; marketing's was missing entirely before), it
+  precedes the wordmark wherever brand attribution appears
+  ("❤️ støttemedlem.no": PublicShell footer, marketing hero/404, both email
+  footers, `qrCardSvg`'s default footer), AND it is what a member collects —
+  `MemberOverview.hearts` in `@stottemedlem/db` is DERIVED (one per membership
+  period; a full refund takes its heart), rendered by
+  `components/HeartRows.astro` as a game-HUD buildup, ten ❤️ per row, no empty
+  placeholders, count-form "❤️ 12" where space is tight (MemberRow, CSV
+  export's "Hjerter" column). Surfaces: min-side "Dine hjerter", member detail
+  history, member list, export, marketing perks row. Recruit counts /
+  referrals / printable proof from the same use case
+  (`use-cases/earn-hearts-and-recruit.md`) remain UNBUILT.
   **Member list** (added 2026-08-24, spec `use-cases/curate-member-list.md`):
   `/o/[slug]/medlemmer` (list, `?sok=` search) + `/o/[slug]/medlemmer/[memberId]`
   (history + the one editable thing, contact details). Queries live in
@@ -515,7 +532,9 @@ lives in `specs/`, kept in sync with code by a mandatory `Stop`-hook harness.
   @import + the @fontsource dep. Ships
   SOURCE (no build step) — the backoffice `astro.config.mjs` lists it in
   `vite.ssr.noExternal`. **Storybook** (since 2026-07-28, replacing earlier
-  dev-only story pages): `pnpm --filter @stottemedlem/ui run storybook --ci`
+  dev-only story pages): root alias `pnpm story` / `pnpm stories` (added
+  2026-08-31; pre-builds core+db first) or
+  `pnpm --filter @stottemedlem/ui run storybook --ci`
   (port 6006) via the community `@storybook-astro/framework` (Storybook 10 +
   Astro 7; storybook-astro.org). Stories are CSF colocated with components
   (`*.stories.ts`); slots pass via `args.slots.default` (HTML string, component

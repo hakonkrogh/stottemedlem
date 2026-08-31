@@ -12,6 +12,7 @@ import Heading from "@stottemedlem/ui/components/Heading.astro";
 import Stack from "@stottemedlem/ui/components/Stack.astro";
 import Text from "@stottemedlem/ui/components/Text.astro";
 import TextLink from "@stottemedlem/ui/components/TextLink.astro";
+import HeartRows from "../../../components/HeartRows.astro";
 import PublicShell from "../../../layouts/PublicShell.astro";
 import { getDb } from "../../../lib/db";
 import { getVippsForOrg } from "../../../lib/vipps";
@@ -102,6 +103,18 @@ const title = `Ditt støttemedlemskap — ${org.name}`;
           <Text variant="small">
             Sier du opp, står du som støttemedlem ut året du har betalt for — du blir bare ikke
             belastet på nytt.
+          </Text>
+        </Stack>
+      )
+    }
+
+    {
+      history.length > 0 && (
+        <Stack gap="sm">
+          <Heading level={2}>Dine hjerter</Heading>
+          <HeartRows count={history.length} />
+          <Text variant="small">
+            Ett hjerte for hvert år du har støttet {org.name}. De blir stående — år for år.
           </Text>
         </Stack>
       )

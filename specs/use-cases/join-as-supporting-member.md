@@ -89,6 +89,6 @@ From the supporter's point of view:
   confirmation documents, and the email that carries the same thing
 - [Concept: Payment reconciliation](../concepts/payment-reconciliation.md) — the
   safety net when the payment succeeds but word of it never reaches us
-- [Use case: Earn stars and recruit new members](earn-stars-and-recruit.md) — a
+- [Use case: Earn hearts and recruit new members](earn-hearts-and-recruit.md) — a
   join may arrive via a member's referral QR code; completing it credits that
   member's recruit count.

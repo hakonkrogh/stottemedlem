@@ -21,6 +21,7 @@ import TextLink from "@stottemedlem/ui/components/TextLink.astro";
 import type { MemberContactFieldErrors, MemberContactFormValues } from "../lib/memberContact";
 import type { RefundResult } from "../lib/membership";
 import type { PaymentView, RefundRefusal } from "../lib/refunds";
+import HeartRows from "./HeartRows.astro";
 import Subpage from "./Subpage.astro";
 
 interface Props {
@@ -240,6 +241,7 @@ const periodSurvives =
           <Text variant="muted">Ingen perioder er betalt ennå.</Text>
         ) : (
           <>
+            <HeartRows count={history.length} />
             <Text variant="small">
               {history.length === 1 ? "Én periode" : `${history.length} perioder`}, til sammen{" "}
               {totalPaid} kr.

@@ -32,7 +32,7 @@ without creating a duplicate person each year.
 ## Relationships
 - Belongs to one [organization](organization.md).
 - Has one or more [memberships](membership.md) over time (one per annual period).
-- Has a [scorecard](scorecard.md): stars derived from those memberships, plus a
+- Has a [scorecard](scorecard.md): hearts derived from those memberships, plus a
   count of members recruited via their referral.
 
 ## Referenced by
