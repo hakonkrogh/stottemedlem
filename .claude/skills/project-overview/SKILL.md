@@ -572,9 +572,12 @@ lives in `specs/`, kept in sync with code by a mandatory `Stop`-hook harness.
   FIRST step of ci.yml — dies with "specifiers in the lockfile don't match
   specifiers in package.json" before a single test runs. Nothing local catches
   it: test/typecheck/build/lint all stay green against the already-installed
-  node_modules. So after any session that ran `pnpm story`, `git diff
-  packages/ui/package.json` and either revert the bump or re-lock it
-  deliberately; `pnpm install --frozen-lockfile` locally is the cheap check. Stories are CSF colocated with components
+  node_modules. **The `verify-workflow` skill DOES catch it** (tested by
+  re-breaking it deliberately 2026-08-31: `run-steps.mjs .github/workflows/ci.yml
+  check` exits 1 on "Install dependencies" with ERR_PNPM_OUTDATED_LOCKFILE) —
+  which is the argument for running it before every push, not just after
+  editing a workflow. Bare `pnpm install --frozen-lockfile` is the same check,
+  cheaper. Either revert the bump or re-lock it deliberately. Stories are CSF colocated with components
   (`*.stories.ts`); slots pass via `args.slots.default` (HTML string, component
   ref, or configured `{ component, props, slots }`); a second glob in
   `packages/ui/.storybook/main.ts` pulls in app screen stories from
