@@ -16,9 +16,9 @@
     "@fontsource-variable/fraunces": "catalog:"
   },
   "devDependencies": {
-    "@storybook-astro/framework": "^1.9.0",
-    "@storybook/builder-vite": "^10.5.3",
+    "@storybook-astro/framework": "^1.10.0",
+    "@storybook/builder-vite": "^10.5.10",
     "astro": "catalog:",
-    "storybook": "^10.5.3"
+    "storybook": "^10.5.10"
   }
 }
