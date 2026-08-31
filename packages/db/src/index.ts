@@ -232,6 +232,23 @@ export async function listMembershipTiers(db: Db, orgId: string): Promise<Member
 }
 
 /**
+ * One tier by id, archived or not — because history points at tiers the offer
+ * no longer includes. Callers deciding what to SELL must check `archivedAt`
+ * themselves; `listMembershipTiers` is the offer.
+ */
+export async function getMembershipTier(
+  db: Db,
+  orgId: string,
+  tierId: string,
+): Promise<MembershipTier | null> {
+  const [row] = await db
+    .select()
+    .from(membershipTiers)
+    .where(and(eq(membershipTiers.id, tierId), eq(membershipTiers.orgId, orgId)));
+  return row ?? null;
+}
+
+/**
  * First free tier key for a name within the org: the derived key, or `-2`,
  * `-3`, … when taken (archived tiers keep their keys reserved). Assigned once
  * at creation and never changed — Vipps agreements and join links carry it.
@@ -1221,6 +1238,24 @@ export function memberStanding(entry: MemberOverview): MemberStanding {
 export function isCurrentMember(entry: MemberOverview): boolean {
   const standing = memberStanding(entry);
   return standing === "renewing" || standing === "ending";
+}
+
+/**
+ * Whether picking a membership back up has to be paid for now.
+ *
+ * A supporter who ended their arrangement and changes their mind is in one of
+ * two situations, and they are not the same transaction. Still inside a period
+ * they paid for, they owe nothing — only the continuation has to start again,
+ * and charging them would be the second payment for one period that the
+ * product gives straight back anyway (specs/concepts/membership.md). Lapsed,
+ * they are joining as anyone would, and this period is theirs to pay for.
+ *
+ * `null` — nothing ever paid — counts as owing: an arrangement that was never
+ * paid for has no period behind it.
+ */
+export function resumeCostsNow(latestPeriodYear: number | null, currentPeriodKey: number): boolean {
+  if (latestPeriodYear === null) return true;
+  return membershipStatus(latestPeriodYear, currentPeriodKey) !== "active";
 }
 
 /**

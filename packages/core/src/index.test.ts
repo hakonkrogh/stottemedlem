@@ -27,6 +27,7 @@ import {
   periodLabel,
   proratedJoinFeeNok,
   REFUND_WINDOW_DAYS,
+  redundantJoinAction,
   referredJoinPath,
   refundRefusal,
   renewalPeriodYear,
@@ -417,5 +418,36 @@ describe("paymentState", () => {
     expect(paymentState("CANCELLED")).toBe("failed");
     expect(paymentState("DUE")).toBe("pending");
     expect(paymentState("PROCESSING")).toBe("pending");
+  });
+});
+
+describe("redundantJoinAction", () => {
+  const join = {
+    chargeStatus: "CHARGED",
+    agreementId: "agr-rejoin",
+    periodBoughtByAgreementId: "agr-first",
+    otherAgreementRunning: false,
+  };
+
+  it("says nothing about the payment that bought the period", () => {
+    expect(redundantJoinAction({ ...join, periodBoughtByAgreementId: "agr-rejoin" })).toBe(null);
+  });
+
+  it("never moves money on a period whose provenance is not recorded", () => {
+    expect(redundantJoinAction({ ...join, periodBoughtByAgreementId: null })).toBe(null);
+  });
+
+  it("says nothing until money has actually been taken", () => {
+    expect(redundantJoinAction({ ...join, chargeStatus: "DUE" })).toBe(null);
+    expect(redundantJoinAction({ ...join, chargeStatus: "FAILED" })).toBe(null);
+    expect(redundantJoinAction({ ...join, chargeStatus: "REFUNDED" })).toBe(null);
+  });
+
+  it("gives back a second payment for one period, and lets the rejoin renew", () => {
+    expect(redundantJoinAction(join)).toBe("refund");
+  });
+
+  it("also ends the arrangement when another one of theirs still runs", () => {
+    expect(redundantJoinAction({ ...join, otherAgreementRunning: true })).toBe("refund-and-stop");
   });
 });

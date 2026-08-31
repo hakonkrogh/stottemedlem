@@ -4,9 +4,11 @@ import {
   anonymizeMember,
   closeAgreement,
   findAgreementByManageToken,
+  getMembershipTier,
   getOrganizationBySlug,
   hasOtherRunningAgreement,
   listMembershipHistory,
+  resumeCostsNow,
 } from "@stottemedlem/db";
 import Alert from "@stottemedlem/ui/components/Alert.astro";
 import Button from "@stottemedlem/ui/components/Button.astro";
@@ -18,6 +20,8 @@ import MemberCardFigure from "../../../components/MemberCardFigure.astro";
 import PublicShell from "../../../layouts/PublicShell.astro";
 import { getDb } from "../../../lib/db";
 import { loadMemberCardForMemberId, memberCardUrl } from "../../../lib/memberCard";
+import { publicOrigin, startJoin } from "../../../lib/membership";
+import { periods } from "../../../lib/periods";
 import { getVippsForOrg } from "../../../lib/vipps";
 import { getWorkOS } from "../../../lib/workos";
 
@@ -42,6 +46,7 @@ if (!agreement || agreement.orgId !== org.id) {
 
 let stopped = agreement.status === "STOPPED" || agreement.status === "EXPIRED";
 let stopFailed = false;
+let resumeFailed = false;
 // The member asked to be forgotten and it worked. Their token is void from
 // that moment, so this page can never be reached again — which is why the
 // confirmation has to be rendered here and now, not redirected to.
@@ -54,6 +59,48 @@ let eraseFailed = false;
 // setting — it is the member's right, not an advanced option.
 const action =
   Astro.request.method === "POST" ? (await Astro.request.formData()).get("handling") : null;
+
+// Changing their mind back is as much the member's to do as ending it was
+// (specs/concepts/member-self-service.md). A payment app cannot revive a
+// stopped arrangement, so resuming drafts a NEW one — and because the member
+// is known HERE, before the payment app is, it can ask for nothing when the
+// period is already theirs. That is the whole reason this belongs on this
+// page rather than on the public join page, where nobody has a name yet.
+if (action === "fortsett" && stopped && agreement.memberId) {
+  const tier = await getMembershipTier(db, org.id, agreement.tierId);
+  const vipps = await getVippsForOrg(getWorkOS(), org.workosOrgId);
+  // Never a second arrangement alongside a running one, and never back into a
+  // membership the organization has stopped offering — those go through the
+  // join page, which presents what is actually on offer today.
+  const mayResume =
+    tier &&
+    !tier.archivedAt &&
+    vipps &&
+    !(await hasOtherRunningAgreement(db, agreement.memberId, agreement.id));
+  if (mayResume) {
+    try {
+      const latest = (await listMembershipHistory(db, agreement.memberId))[0];
+      const { confirmationUrl } = await startJoin(
+        db,
+        vipps,
+        org,
+        tier,
+        publicOrigin(Astro.request),
+        {
+          periodAlreadyPaid: !resumeCostsNow(latest?.periodYear ?? null, periods.periodFor().year),
+        },
+      );
+      // 303 so the browser follows with GET and the back button cannot draft a
+      // second agreement — the same reason joining does it.
+      return Astro.redirect(confirmationUrl, 303);
+    } catch (error) {
+      console.error("could not resume agreement", error);
+      resumeFailed = true;
+    }
+  } else {
+    resumeFailed = true;
+  }
+}
 
 if (action === "stopp" || action === "slett") {
   if (!stopped) {
@@ -106,6 +153,22 @@ const chargedElsewhere =
   stopped && agreement.memberId && !erased
     ? await hasOtherRunningAgreement(db, agreement.memberId, agreement.id)
     : false;
+
+// Offering the way back (specs/use-cases/renew-annual-membership.md). Not
+// offered where it would be a lie: into a membership no longer on offer, or
+// alongside an arrangement of theirs that already renews.
+const resumeTier =
+  stopped && agreement.memberId && !erased && !chargedElsewhere
+    ? await getMembershipTier(db, org.id, agreement.tierId)
+    : null;
+const canResume = Boolean(resumeTier && !resumeTier.archivedAt);
+// Inside a period they paid for, resuming costs nothing and only starts the
+// renewal again; lapsed, it is an ordinary join and this period is theirs to
+// pay for. The button must say which, before it is pressed.
+const resumeNok =
+  canResume && resumeTier && resumeCostsNow(current?.periodYear ?? null, periods.periodFor().year)
+    ? periods.proratedJoinFeeNok(resumeTier.annualFeeNok, new Date())
+    : null;
 
 // The page is the card, then the paperwork (specs/concepts/member-card.md).
 // What the card already says — the hearts collected, the year it is good for —
@@ -184,6 +247,7 @@ const title = `Ditt støttemedlemskap — ${org.name}`;
     <Text variant="lead">{statusLine}</Text>
 
     {stopFailed && <Alert variant="error">Vi fikk ikke stoppet medlemskapet nå. Prøv igjen om litt.</Alert>}
+    {resumeFailed && <Alert variant="error">Vi fikk ikke startet medlemskapet igjen nå. Prøv igjen om litt, eller meld deg inn på nytt fra støttemedlemssiden.</Alert>}
     {eraseFailed && !stopFailed && <Alert variant="error">Vi fikk ikke slettet opplysningene nå. Prøv igjen om litt.</Alert>}
 
     {
@@ -200,6 +264,21 @@ const title = `Ditt støttemedlemskap — ${org.name}`;
               .filter(Boolean)
               .join(" ")}
           </Text>
+          {/* Angret? Ending is reversible for the person, if not for the
+              agreement (specs/concepts/member-self-service.md). */}
+          {canResume && (
+            <Stack gap="sm">
+              <form method="post">
+                <input type="hidden" name="handling" value="fortsett" />
+                <Button type="submit">Fortsett medlemskapet</Button>
+              </form>
+              <Text variant="small">
+                {resumeNok === null
+                  ? `Du har allerede betalt for ${current ? periodLabel(current.periodYear) : "perioden"}, så du betaler ingenting nå — den automatiske fornyelsen starter bare igjen. Du godkjenner den nye avtalen i Vipps.`
+                  : `Du betaler ${resumeNok} kr nå for resten av ${periodLabel(periods.periodFor().year)}, deretter ${resumeTier?.annualFeeNok} kr i året. Du godkjenner i Vipps.`}
+              </Text>
+            </Stack>
+          )}
         </Stack>
       ) : (
         <Stack gap="sm">

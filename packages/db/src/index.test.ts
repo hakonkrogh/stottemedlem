@@ -11,6 +11,7 @@ import {
   membershipStatus,
   owesFeeChangeNotice,
   renewalFeeNok,
+  resumeCostsNow,
 } from "./index.js";
 import type { Organization } from "./schema.js";
 
@@ -292,5 +293,28 @@ describe("hasAcceptedDpa", () => {
   it("does not accept a version recorded without a date, or a date without a version", () => {
     expect(hasAcceptedDpa(org(null, "2026-08-31"), "2026-08-31")).toBe(false);
     expect(hasAcceptedDpa(org("2026-08-31T09:00:00.000Z", null), "2026-08-31")).toBe(false);
+  });
+});
+
+describe("resumeCostsNow", () => {
+  it("asks for nothing inside a period the member already paid for", () => {
+    expect(resumeCostsNow(2026, 2026)).toBe(false);
+  });
+
+  it("charges a lapsed member, who is joining like anyone else", () => {
+    expect(resumeCostsNow(2025, 2026)).toBe(true);
+  });
+
+  it("treats a member who never paid as owing this period", () => {
+    expect(resumeCostsNow(null, 2026)).toBe(true);
+  });
+
+  it("asks for nothing when a later period is already covered", () => {
+    expect(resumeCostsNow(2027, 2026)).toBe(false);
+  });
+
+  it("works on the accelerated ISO-week calendar too", () => {
+    expect(resumeCostsNow(202636, 202636)).toBe(false);
+    expect(resumeCostsNow(202635, 202636)).toBe(true);
   });
 });

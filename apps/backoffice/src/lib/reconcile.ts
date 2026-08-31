@@ -150,7 +150,7 @@ async function reconcileAgreement(
     } else {
       report.chargesUnknown++;
     }
-    await applyCharge(db, agreement.vippsAgreementId, charge);
+    await applyCharge(db, vipps, agreement.vippsAgreementId, charge);
   }
 
   await markAgreementReconciled(db, agreement.id);

@@ -39,14 +39,9 @@ export const POST: APIRoute = async ({ params, request }) => {
   const referredByMemberId = referral ? await findMemberIdByCardToken(db, org.id, referral) : null;
 
   try {
-    const { confirmationUrl } = await startJoin(
-      db,
-      vipps,
-      org,
-      tier,
-      publicOrigin(request),
+    const { confirmationUrl } = await startJoin(db, vipps, org, tier, publicOrigin(request), {
       referredByMemberId,
-    );
+    });
     // 303: the browser must follow with GET, and the back button must not
     // re-post and draft a second agreement.
     return new Response(null, { status: 303, headers: { location: confirmationUrl } });

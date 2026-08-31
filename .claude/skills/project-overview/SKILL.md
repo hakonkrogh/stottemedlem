@@ -716,6 +716,17 @@ lives in `specs/`, kept in sync with code by a mandatory `Stop`-hook harness.
   command not found` / `turbo: command not found`, which is a missing install,
   not a broken tree. Run `pnpm install` once per worktree first (~seconds, the
   store is shared).
+- **A fresh worktree also has no `apps/backoffice/.dev.vars`, and `pnpm
+  typecheck` fails because of it** — with six errors in files you did not
+  touch (`Property 'VIPPS_CLIENT_ID' does not exist on type 'Env'`, same for
+  `VIPPS_CLIENT_SECRET` / `VIPPS_SUBSCRIPTION_KEY` / `VIPPS_MSN` /
+  `VIPPS_WEBHOOK_SECRET` / `WORKOS_API_KEY`). The `typecheck` script runs
+  `wrangler types` first, and wrangler builds `Env` from wrangler.jsonc **plus
+  `.dev.vars`**; secrets live only in the latter, so without it every
+  `env.<SECRET>` read is an error. `cp apps/backoffice/.dev.vars.example
+  apps/backoffice/.dev.vars` (gitignored) is enough to typecheck — the
+  placeholder values never leave the type layer. Cost a "did I break this?"
+  detour on 2026-08-31.
 - **Dependency changes have three workspace-level rules** (`catalog:` shared
   versions, a 7-day `minimumReleaseAge` quarantine, blocked postinstall
   scripts) and one trap that reads as an unrelated types error: a filtered

@@ -61,7 +61,22 @@ From the supporter's point of view:
    the join page instead of a receipt) — and the product reuses the same
    unguessable token that addresses the member's
    [own page](../concepts/member-self-service.md) for this.
-7. The confirmation is also a **[payment receipt](../concepts/payment-receipt.md)**:
+7. **Joining twice inside one period costs nothing extra.** A supporter may
+   arrive on the join page already holding the current
+   [annual period](../concepts/annual-period.md) — most often because they
+   ended their arrangement and want it back, since a payment app cannot revive
+   an arrangement once ended and joining again is the only way to resume
+   [renewal](renew-annual-membership.md). Nothing stops them joining, and
+   nothing can: who is joining is known only from the payment app's consent,
+   which arrives *with* the payment and not before. So the product acts the
+   moment it can — the payment for a period already paid for is given back at
+   once, of its own accord, and the supporter is told on the confirmation page
+   that they were already a member and that the money is on its way back. What
+   they came for stands: the new arrangement carries their renewal onward. If
+   they already had one still running, that one continues instead and the new
+   one is ended, because two live arrangements for one supporter is next
+   period's double payment already promised.
+8. The confirmation is also a **[payment receipt](../concepts/payment-receipt.md)**:
    once the payment is confirmed, the page shows the documentation Norwegian
    bookkeeping rules ask of a membership-fee payment (bokføringsforskriften
    § 5-1-6b, jf. § 5-1-1 nr. 2–5 — the parties, what was paid for, the period,
@@ -82,6 +97,12 @@ From the supporter's point of view:
       notice readable without joining, before the supporter can start.
 - [ ] A payment that succeeded creates the membership even if the product was
       never notified of it.
+- [ ] A supporter is never left having paid twice for one annual period: a
+      second payment for a period they already hold is returned without anyone
+      asking, and the confirmation page says so.
+- [ ] A supporter who ended their arrangement and joined again inside the same
+      period ends up renewing again, having paid once.
+- [ ] A supporter never ends up holding two arrangements that both renew.
 
 ## Out of scope
 - Gift/third-party memberships (paying on behalf of someone else).
