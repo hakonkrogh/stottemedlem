@@ -19,3 +19,6 @@ storybook-static/
 # (agreement/charge ids and the webhook secret Vipps shows only once).
 .vipps-tunnel
 .vipps-test-state.json
+
+# render-card skill: scratch card artwork (SVG/PNG contact sheets)
+.card-preview/

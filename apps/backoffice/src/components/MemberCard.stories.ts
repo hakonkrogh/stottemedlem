@@ -1,4 +1,6 @@
-// The member's card in every shape it takes (specs/concepts/member-card.md).
+// The member's card in every shape it takes (specs/concepts/member-card.md) —
+// including, literally, both of its shapes: the wide card that gets shared and
+// the upright one a phone-width surface shows instead.
 // It is the one surface a supporting member shows to strangers, so what needs
 // reviewing here is whether it still reads well when the inputs are awkward:
 // a very long name, a decade of hearts, an organization with no logo, a
@@ -58,6 +60,32 @@ export const WithoutName = { args: { ...base, memberName: null, logoDataUri: LOG
 export const LongNames = {
   args: {
     ...base,
+    memberName: "Anne-Margrethe Wollertsen Bjørnstad",
+    organizationName: "Vestbygda Skolekorps og Ungdomsorkester",
+    hearts: 7,
+    logoDataUri: LOGO,
+  },
+};
+
+/**
+ * The upright card — what a phone gets instead of the wide one, so the QR code
+ * stays big enough to scan and the captions big enough to read.
+ */
+export const Upright = { args: { ...base, shape: "tall" as const, logoDataUri: LOGO } };
+
+/** The upright card with no organization mark: the header band closes up. */
+export const UprightWithoutLogo = { args: { ...base, shape: "tall" as const } };
+
+/** The upright card carrying a decade of hearts, centred row by row. */
+export const UprightLongLoyalty = {
+  args: { ...base, shape: "tall" as const, hearts: 34, recruits: 12, logoDataUri: LOGO },
+};
+
+/** The upright card under the same name pressure as the wide one. */
+export const UprightLongNames = {
+  args: {
+    ...base,
+    shape: "tall" as const,
     memberName: "Anne-Margrethe Wollertsen Bjørnstad",
     organizationName: "Vestbygda Skolekorps og Ungdomsorkester",
     hearts: 7,
