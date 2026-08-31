@@ -1,6 +1,7 @@
 ---
-import { periodLabel } from "@stottemedlem/core";
+import { joinPagePrivacyPath, periodLabel } from "@stottemedlem/core";
 import {
+  anonymizeMember,
   closeAgreement,
   findAgreementByManageToken,
   getOrganizationBySlug,
@@ -41,28 +42,60 @@ if (!agreement || agreement.orgId !== org.id) {
 
 let stopped = agreement.status === "STOPPED" || agreement.status === "EXPIRED";
 let stopFailed = false;
+// The member asked to be forgotten and it worked. Their token is void from
+// that moment, so this page can never be reached again — which is why the
+// confirmation has to be rendered here and now, not redirected to.
+let erased = false;
+let eraseFailed = false;
 
-if (Astro.request.method === "POST" && !stopped) {
-  const vipps = await getVippsForOrg(getWorkOS(), org.workosOrgId);
-  try {
-    if (!vipps) throw new Error("organisasjonen mangler Vipps-oppsett");
-    // Stop it with Vipps first: the member's word only counts once the
-    // provider will stop charging. Our record follows.
-    await vipps.updateAgreement(
-      agreement.vippsAgreementId,
-      { status: "STOPPED" },
-      crypto.randomUUID(),
-    );
-    await closeAgreement(db, agreement.vippsAgreementId, "STOPPED");
-    stopped = true;
-  } catch (error) {
-    console.error("could not stop agreement", error);
-    stopFailed = true;
+// One form action or the other (specs/use-cases/erase-member-data.md): ending
+// the arrangement, or ending it AND erasing the person behind it. Erasing is
+// deliberately the same button plus a confirmation rather than a hidden
+// setting — it is the member's right, not an advanced option.
+const action =
+  Astro.request.method === "POST" ? (await Astro.request.formData()).get("handling") : null;
+
+if (action === "stopp" || action === "slett") {
+  if (!stopped) {
+    const vipps = await getVippsForOrg(getWorkOS(), org.workosOrgId);
+    try {
+      if (!vipps) throw new Error("organisasjonen mangler Vipps-oppsett");
+      // Stop it with Vipps first: the member's word only counts once the
+      // provider will stop charging. Our record follows.
+      await vipps.updateAgreement(
+        agreement.vippsAgreementId,
+        { status: "STOPPED" },
+        crypto.randomUUID(),
+      );
+      await closeAgreement(db, agreement.vippsAgreementId, "STOPPED");
+      stopped = true;
+    } catch (error) {
+      console.error("could not stop agreement", error);
+      stopFailed = true;
+    }
+  }
+
+  // Erasing only follows a payment arrangement that has actually stopped: a
+  // member cannot be erased out of a contract that is still charging them.
+  if (action === "slett") {
+    if (!stopped || !agreement.memberId) {
+      eraseFailed = true;
+    } else {
+      const outcome = await anonymizeMember(db, agreement.memberId).catch((error) => {
+        console.error("could not erase member", error);
+        return null;
+      });
+      if (outcome?.erased) erased = true;
+      else eraseFailed = true;
+    }
   }
 }
 
 // What they have paid for stands: stopping ends the renewal, not the year.
-const history = agreement.memberId ? await listMembershipHistory(db, agreement.memberId) : [];
+// Nothing personal is loaded once they are erased — the page they are about to
+// see must not show the very details it just removed.
+const history =
+  agreement.memberId && !erased ? await listMembershipHistory(db, agreement.memberId) : [];
 const current = history[0];
 
 // "Will I be charged again?" is about this person's money, not about this one
@@ -70,7 +103,7 @@ const current = history[0];
 // one and a live one. Promising no further payment while another arrangement
 // renews would be the one wrong thing this page could say.
 const chargedElsewhere =
-  stopped && agreement.memberId
+  stopped && agreement.memberId && !erased
     ? await hasOtherRunningAgreement(db, agreement.memberId, agreement.id)
     : false;
 
@@ -78,8 +111,10 @@ const chargedElsewhere =
 // What the card already says — the hearts collected, the year it is good for —
 // is not repeated underneath it: the picture is the statement, and a page that
 // explains its own illustration is longer without saying more. There is no
-// card before a payment has completed.
-const card = agreement.memberId ? await loadMemberCardForMemberId(db, agreement.memberId) : null;
+// card before a payment has completed — and none after an erasure, which took
+// the card's address with it (specs/use-cases/erase-member-data.md).
+const card =
+  agreement.memberId && !erased ? await loadMemberCardForMemberId(db, agreement.memberId) : null;
 const cardToken = card?.member.cardToken ?? null;
 const cardAlt = card
   ? `Medlemsbevis for ${card.member.name?.trim() || "deg"} i ${org.name}, med ${card.hearts} hjerter.`
@@ -105,6 +140,33 @@ const title = `Ditt støttemedlemskap — ${org.name}`;
 ---
 
 <PublicShell title={title} description={`Administrer støttemedlemskapet ditt i ${org.name}.`} noindex>
+  {
+    /* Erased: the address that opened this page is void from now on, so this
+       render is the member's last look at it. It says what happened and what
+       is left, and offers nothing personal — there is nothing personal left to
+       offer (specs/use-cases/erase-member-data.md). */
+    erased ? (
+      <Stack gap="lg">
+        <Stack gap="sm">
+          <Heading>Opplysningene dine er slettet</Heading>
+          <Alert variant="success">
+            Navn, e-postadresse og telefonnummer er fjernet fra medlemsregisteret til {org.name}.
+          </Alert>
+        </Stack>
+        <Text>
+          Medlemskapet er avsluttet, og du blir ikke belastet igjen. Betalingene som er gjort blir
+          liggende i organisasjonens regnskap uten navn, slik loven krever.
+        </Text>
+        <Text>
+          Denne siden fungerer ikke lenger — lenken til den er slettet sammen med opplysningene.
+          Vil du støtte {org.name} igjen senere, melder du deg inn på nytt som et nytt medlem.
+        </Text>
+        <Text variant="small">
+          <TextLink href={`/bli-medlem/${org.slug}`}>Om {org.name}</TextLink> ·
+          <TextLink href={joinPagePrivacyPath(org.slug)}>Personvern</TextLink>
+        </Text>
+      </Stack>
+    ) : (
   <Stack gap="lg">
     <Heading>Ditt støttemedlemskap</Heading>
 
@@ -122,6 +184,7 @@ const title = `Ditt støttemedlemskap — ${org.name}`;
     <Text variant="lead">{statusLine}</Text>
 
     {stopFailed && <Alert variant="error">Vi fikk ikke stoppet medlemskapet nå. Prøv igjen om litt.</Alert>}
+    {eraseFailed && !stopFailed && <Alert variant="error">Vi fikk ikke slettet opplysningene nå. Prøv igjen om litt.</Alert>}
 
     {
       stopped ? (
@@ -142,6 +205,7 @@ const title = `Ditt støttemedlemskap — ${org.name}`;
         <Stack gap="sm">
           <Text>Du får varsel i Vipps-appen før hver fornyelse.</Text>
           <form method="post">
+            <input type="hidden" name="handling" value="stopp" />
             <Button type="submit" variant="secondary">Si opp medlemskapet</Button>
           </form>
           <Text variant="small">
@@ -152,8 +216,47 @@ const title = `Ditt støttemedlemskap — ${org.name}`;
       )
     }
 
+    {/* The way out of the register, next to the way out of the payment
+        (specs/use-cases/erase-member-data.md). Only offered once the
+        arrangement has stopped: nobody can be erased out of a contract that is
+        still charging them. */}
+    {
+      stopped && (
+        <Stack gap="sm">
+          <Heading level={2}>Slett opplysningene dine</Heading>
+          <Text>
+            Du kan få navn, e-postadresse og telefonnummer fjernet fra medlemsregisteret til{" "}
+            {org.name}. Betalingene du har gjort blir liggende i regnskapet uten navn, slik loven
+            krever.
+          </Text>
+          <form method="post" data-confirm="Slette opplysningene dine? Denne siden slutter å virke, og hjertene dine forsvinner.">
+            <input type="hidden" name="handling" value="slett" />
+            <Button type="submit" variant="secondary">Slett opplysningene mine</Button>
+          </form>
+          <Text variant="small">
+            Sletting kan ikke angres. Denne siden slutter å virke, og hjertene dine nullstilles —
+            melder du deg inn igjen, starter du som nytt medlem.
+          </Text>
+        </Stack>
+      )
+    }
+
     <Text variant="small">
-      <TextLink href={`/bli-medlem/${org.slug}`}>Om {org.name}</TextLink>
+      <TextLink href={`/bli-medlem/${org.slug}`}>Om {org.name}</TextLink> ·
+      <TextLink href={joinPagePrivacyPath(org.slug)}>Personvern</TextLink>
     </Text>
   </Stack>
+    )
+  }
 </PublicShell>
+
+<script>
+  // A deletion that cannot be undone gets one question first. The form still
+  // posts without JavaScript — the confirmation is a courtesy, never the thing
+  // that protects the member (the server refuses while an arrangement runs).
+  document.querySelectorAll<HTMLFormElement>("form[data-confirm]").forEach((form) => {
+    form.addEventListener("submit", (event: Event) => {
+      if (!window.confirm(form.dataset.confirm)) event.preventDefault();
+    });
+  });
+</script>

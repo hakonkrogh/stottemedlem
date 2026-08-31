@@ -4,7 +4,7 @@
 // The stories are also how this back office is reviewed: every link a screen
 // renders is mapped to the story that shows where it leads, so the whole tabbed
 // back office can be clicked through in Storybook without running the app.
-import { CANONICAL_ORIGIN } from "@stottemedlem/core";
+import { CANONICAL_ORIGIN, DPA_VERSION } from "@stottemedlem/core";
 import type { MembershipTier, Organization } from "@stottemedlem/db";
 import type { OrgWarning } from "../lib/orgWarnings";
 import { orgWarnings } from "../lib/orgWarnings";
@@ -21,6 +21,10 @@ export const ORG: Organization = {
   bannerKey: null,
   bannerFocusX: null,
   bannerFocusY: null,
+  // Signed up after the agreement existed, which is the ordinary case
+  // (specs/concepts/data-processing-agreement.md).
+  dpaAcceptedAt: "2026-01-04T09:00:00.000Z",
+  dpaVersion: DPA_VERSION,
   createdAt: "2026-01-04",
 };
 
@@ -88,6 +92,7 @@ export const ALL_WARNINGS: OrgWarning[] = orgWarnings({
   tierCount: 0,
   vippsKeys: null,
   webhookUrl: WEBHOOK_URL,
+  dpaAccepted: false,
 });
 
 /** Just the one warning a connected-but-unreachable payment setup produces. */
@@ -104,6 +109,7 @@ export const PAYMENT_EVENT_WARNING: OrgWarning[] = orgWarnings({
     validatedAt: "2026-08-27T09:00:00.000Z",
   },
   webhookUrl: WEBHOOK_URL,
+  dpaAccepted: true,
 });
 
 /**

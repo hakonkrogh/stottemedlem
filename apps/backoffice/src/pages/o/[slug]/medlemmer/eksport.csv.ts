@@ -42,7 +42,11 @@ export const GET: APIRoute = async ({ locals, params }) => {
       "Registrert",
     ],
     ...members.map((entry) => [
-      entry.member.name,
+      // An erased member keeps their row so the year's totals still add up,
+      // but carries no person (specs/concepts/member-data.md). Saying so beats
+      // three blank cells an administrator would read as a bug — and beats
+      // exporting a name that no longer exists.
+      entry.member.anonymizedAt ? "Slettet medlem" : entry.member.name,
       entry.member.email,
       entry.member.phone,
       statusLabel[memberStanding(entry)],

@@ -1,0 +1,148 @@
+---
+import { DPA_VERSION } from "@stottemedlem/core";
+import Heading from "@stottemedlem/ui/components/Heading.astro";
+import Stack from "@stottemedlem/ui/components/Stack.astro";
+import Text from "@stottemedlem/ui/components/Text.astro";
+import PublicShell from "../layouts/PublicShell.astro";
+
+// PUBLIC data processing agreement (databehandleravtale) between an
+// organization and the product (specs/concepts/data-processing-agreement.md).
+//
+// One standard text for every organization, accepted by creating one — so it
+// has to be readable BEFORE signing up, without a session, and re-readable
+// afterwards. Deliberately short: an agreement nobody in a volunteer-run choir
+// will read is not an agreement, it is a formality. It says what we do with
+// the register, what we will not do, who else touches it, and how it ends.
+const version = DPA_VERSION;
+---
+
+<PublicShell
+  title="Databehandleravtale"
+  description="Avtalen om hvordan støttemedlem.no behandler medlemsopplysningene på vegne av organisasjonen."
+>
+  <Stack gap="lg">
+    <Stack gap="sm">
+      <Heading>Databehandleravtale</Heading>
+      <Text variant="lead">
+        Mellom organisasjonen som fører medlemsregisteret, og støttemedlem.no som drifter det på
+        organisasjonens vegne.
+      </Text>
+      <Text variant="small">Versjon {version}. Godtas ved å opprette en organisasjon.</Text>
+    </Stack>
+
+    <section>
+      <Heading level={2}>1. Hvem er hvem</Heading>
+      <Text>
+        <strong>Organisasjonen er behandlingsansvarlig.</strong> Det er organisasjonen som bestemmer
+        at den fører et register over støttemedlemmene sine, og hva registeret brukes til.
+      </Text>
+      <Text>
+        <strong>støttemedlem.no er databehandler.</strong> Vi lagrer og behandler opplysningene på
+        oppdrag fra organisasjonen, og bare slik denne avtalen sier.
+      </Text>
+    </section>
+
+    <section>
+      <Heading level={2}>2. Hva vi behandler, og hvorfor</Heading>
+      <Text>
+        Om hvert støttemedlem: <strong>navn, e-postadresse og telefonnummer</strong>, og hva de har
+        betalt — hvilket medlemskap, hvilke år, hvilket beløp og når.
+      </Text>
+      <Text>
+        Formålet er å drive støttemedlemskapet: føre registeret, ta imot betalingen, fornye
+        medlemskapet, og sende medlemmet kvittering og varsel om sin egen betaling. Ikke noe annet.
+      </Text>
+    </section>
+
+    <section>
+      <Heading level={2}>3. Hva vi gjør — og ikke gjør</Heading>
+      <ul>
+        <li>Vi behandler opplysningene bare for organisasjonen, aldri til egne formål.</li>
+        <li>Vi selger dem ikke, og deler dem ikke med andre enn underleverandørene i punkt 4.</li>
+        <li>Vi bruker dem ikke til markedsføring, profilering eller trening av modeller.</li>
+        <li>
+          Vi samler ikke inn mer enn punkt 2. Vi ber aldri om fødselsnummer, adresse eller
+          fødselsdato.
+        </li>
+        <li>
+          Vi sikrer opplysningene med kryptert overføring og lagring, og gir tilgang bare til dem
+          som trenger det for å drifte tjenesten.
+        </li>
+        <li>
+          Oppdager vi et brudd på sikkerheten, sier vi fra til organisasjonen uten unødig opphold,
+          med det vi vet — slik at organisasjonen kan melde fra til Datatilsynet.
+        </li>
+      </ul>
+    </section>
+
+    <section>
+      <Heading level={2}>4. Hvem andre er involvert</Heading>
+      <Text>
+        Vi bruker disse underleverandørene for å kunne levere tjenesten. Alle behandler
+        opplysningene bare på våre instrukser, og innenfor EU/EØS eller på et gyldig
+        overføringsgrunnlag:
+      </Text>
+      <ul>
+        <li><strong>Cloudflare</strong> — drift av tjenesten og databasen registeret ligger i.</li>
+        <li><strong>Vipps MobilePay</strong> — betaling. Vipps er selv ansvarlig for sin egen behandling.</li>
+        <li><strong>WorkOS</strong> — innlogging for organisasjonens administratorer.</li>
+        <li><strong>Resend</strong> — utsending av kvitteringer og varsler på e-post.</li>
+        <li><strong>Sentry</strong> — feilovervåking, så vi oppdager feil i tjenesten.</li>
+      </ul>
+      <Text variant="small">
+        Bytter vi ut eller legger til en underleverandør, sier vi fra på forhånd. Organisasjonen kan
+        si opp avtalen om den ikke godtar endringen.
+      </Text>
+    </section>
+
+    <section>
+      <Heading level={2}>5. Medlemmenes rettigheter</Heading>
+      <Text>
+        Vi hjelper organisasjonen med å oppfylle rettighetene til støttemedlemmene. I praksis er
+        det bygget inn: medlemslisten kan lastes ned som fil, opplysninger kan rettes, og et medlem
+        kan få opplysningene sine slettet — enten selv, fra sin egen medlemsside, eller ved at
+        organisasjonen gjør det for dem.
+      </Text>
+    </section>
+
+    <section>
+      <Heading level={2}>6. Hvor lenge</Heading>
+      <Text>
+        Opplysningene om et medlem beholdes så lenge de er medlem, og deretter i fem år etter det
+        siste året de støttet — like lenge som betalingene må kunne dokumenteres i regnskapet. Året
+        etter slettes navn, e-postadresse og telefonnummer automatisk. Betalingshistorikken blir
+        liggende uten navn.
+      </Text>
+    </section>
+
+    <section>
+      <Heading level={2}>7. Når avtalen tar slutt</Heading>
+      <Text>
+        Avtalen gjelder så lenge organisasjonen bruker tjenesten. Slutter den, kan organisasjonen
+        laste ned medlemslisten sin, og vi sletter registeret etterpå. Registeret er organisasjonens
+        egne data — det følger organisasjonen ut.
+      </Text>
+    </section>
+
+    <section>
+      <Heading level={2}>8. Endringer</Heading>
+      <Text>
+        Endrer vi avtalen på en måte som betyr noe, får organisasjonen den nye versjonen til
+        godkjenning i administrasjonen. Denne siden viser alltid den gjeldende teksten.
+      </Text>
+    </section>
+  </Stack>
+</PublicShell>
+
+<style>
+  section {
+    display: grid;
+    gap: 0.5rem;
+  }
+  section ul {
+    margin: 0;
+    padding-left: 1.4rem;
+    display: grid;
+    gap: 0.4rem;
+  }
+</style>

@@ -60,6 +60,7 @@ The one message the product itself sends a member is the necessary
 | [Promote membership with a QR code card](use-cases/promote-with-qr-card.md) | Draft | [Collecting annual support](problems/collecting-annual-support.md) |
 | [Keep supporting members in the loop](use-cases/keep-supporters-in-the-loop.md) | Retired | [Supporters never hear back](problems/supporters-never-hear-back.md) |
 | [Earn hearts and recruit new members](use-cases/earn-hearts-and-recruit.md) | Draft | [Invisible loyalty and word of mouth](problems/invisible-loyalty-and-word-of-mouth.md) |
+| [Erase a member's personal data](use-cases/erase-member-data.md) | Draft | [Keeping an accurate list](problems/keeping-an-accurate-member-list.md) |
 
 ## Concepts — *shared vocabulary*
 
@@ -70,6 +71,8 @@ The one message the product itself sends a member is the necessary
 | [Back office](concepts/back-office.md) | Draft |
 | [Presenting and editing](concepts/presenting-and-editing.md) | Draft |
 | [Supporting member](concepts/supporting-member.md) | Draft |
+| [Member data](concepts/member-data.md) | Draft |
+| [Data processing agreement](concepts/data-processing-agreement.md) | Draft |
 | [Membership](concepts/membership.md) | Draft |
 | [Membership tier](concepts/membership-tier.md) | Draft |
 | [Annual period](concepts/annual-period.md) | Draft |

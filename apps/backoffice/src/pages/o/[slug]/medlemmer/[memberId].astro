@@ -1,5 +1,6 @@
 ---
 import {
+  anonymizeMember,
   findChargeByVippsId,
   getMembershipAgreement,
   getOrganizationMember,
@@ -49,6 +50,8 @@ let fieldErrors: MemberContactFieldErrors = {};
 let saved = false;
 let refunded: RefundResult | null = null;
 let refundError: string | null = null;
+let erased = false;
+let eraseError: string | null = null;
 
 if (Astro.request.method === "POST") {
   const form = await Astro.request.formData();
@@ -56,6 +59,8 @@ if (Astro.request.method === "POST") {
 
   if (refundChargeId) {
     refundError = await refundPayment(refundChargeId);
+  } else if (form.get("slett")) {
+    eraseError = await erasePersonalData();
   } else {
     const parsed = parseMemberContactForm(form);
     values = parsed.values;
@@ -71,6 +76,31 @@ if (Astro.request.method === "POST") {
   entry =
     (await getOrganizationMember(db, org.id, entry.member.id, periods.periodFor().year)) ?? entry;
   values = memberContactFormValues(entry.member);
+}
+
+/**
+ * Erase the person, keep what they paid (specs/use-cases/erase-member-data.md).
+ *
+ * Refused while the yearly arrangement still runs: ending that is the member's
+ * own to do, from their Vipps app or their own page, and erasing somebody who
+ * is still being charged would leave the organization taking money from a
+ * person it can no longer name.
+ */
+async function erasePersonalData(): Promise<string | null> {
+  if (!entry) return "Fant ikke medlemmet.";
+  if (entry.renewing) {
+    return "Medlemmet har en løpende avtale. Den må avsluttes først — det gjør medlemmet selv i Vipps-appen eller på sin egen medlemsside.";
+  }
+  const outcome = await anonymizeMember(db, entry.member.id).catch((error) => {
+    console.error("could not erase member", error);
+    return null;
+  });
+  if (!outcome) return "Vi fikk ikke slettet opplysningene nå. Prøv igjen om litt.";
+  if (!outcome.erased && !outcome.member.anonymizedAt) {
+    return "Vi fikk ikke slettet opplysningene nå. Prøv igjen om litt.";
+  }
+  erased = outcome.erased;
+  return null;
 }
 
 /**
@@ -113,6 +143,9 @@ const confirming = refunded
   : (payments.find(
       (payment) => payment.chargeId === Astro.url.searchParams.get("refunder") && !payment.refusal,
     ) ?? null);
+// Erasing is irreversible in the same way, and asks in the same place: the
+// link opens this confirmation, and only the confirmation can erase.
+const erasing = !erased && !entry.member.anonymizedAt && Astro.url.searchParams.has("slett");
 ---
 
 <Shell title={`${displayName} — ${org.name}`} frame={false}>
@@ -127,6 +160,9 @@ const confirming = refunded
       confirming={confirming}
       refunded={refunded}
       refundError={refundError}
+      erasing={erasing}
+      erased={erased}
+      eraseError={eraseError}
       membersPath={membersPath}
       memberPath={memberPath}
     />

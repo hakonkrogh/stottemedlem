@@ -4,13 +4,16 @@ import * as Sentry from "@sentry/cloudflare";
 import { JOIN_PAGE_PATH_SEGMENT } from "@stottemedlem/core";
 import { logger } from "./lib/log";
 
-// Public org pages (specs/concepts/join-page.md): the join page and its
-// salgsvilkår are served stale-while-revalidate — a visit gets the cached copy
-// instantly and refreshes it in the background, so a change on the org's side
-// is visible at the latest from the next visit. The cache is per-datacenter;
-// the back office additionally purges its own datacenter's copy on save
-// (src/lib/publicPageCache.ts — keep the cache name and key shape in sync).
-const PUBLIC_ORG_PAGE = new RegExp(`^/${JOIN_PAGE_PATH_SEGMENT}/[a-z0-9-]+(?:/vilkar)?/?$`);
+// Public org pages (specs/concepts/join-page.md): the join page, its
+// salgsvilkår and its privacy notice are served stale-while-revalidate — a
+// visit gets the cached copy instantly and refreshes it in the background, so
+// a change on the org's side is visible at the latest from the next visit. The
+// cache is per-datacenter; the back office additionally purges its own
+// datacenter's copy on save (src/lib/publicPageCache.ts — keep the cache name
+// and key shape in sync).
+const PUBLIC_ORG_PAGE = new RegExp(
+  `^/${JOIN_PAGE_PATH_SEGMENT}/[a-z0-9-]+(?:/(?:vilkar|personvern))?/?$`,
+);
 
 // The join page's former address. A join page's address must never break once
 // printed or registered with a payment provider (specs/concepts/join-page.md),
@@ -36,6 +39,7 @@ const CACHE_MAX_AGE_SECONDS = 7 * 24 * 60 * 60;
 const reconcileLog = logger("reconcile");
 const noticesLog = logger("notices");
 const renewalsLog = logger("renewals");
+const retentionLog = logger("retention");
 const scheduledLog = logger("scheduled");
 const webhooksLog = logger("webhooks");
 
@@ -82,6 +86,8 @@ async function runScheduledJobs(cron: string): Promise<void> {
     reconcile,
     notices,
     receipts,
+    retention,
+    { periods },
     { getEmailSender },
     { ensureWebhookRegistration, webhookReceiverUrl },
   ] = await Promise.all([
@@ -93,6 +99,8 @@ async function runScheduledJobs(cron: string): Promise<void> {
     import("./lib/reconcile"),
     import("./lib/notices"),
     import("./lib/receipts"),
+    import("./lib/retention"),
+    import("./lib/periods"),
     import("./lib/email"),
     import("./lib/vippsKeys"),
   ]);
@@ -120,6 +128,28 @@ async function runScheduledJobs(cron: string): Promise<void> {
   for (const org of await listOrganizations(db)) {
     const ctx = { cron, org: org.slug };
     try {
+      // The privacy notice promises that a member's details are erased once
+      // the payment history no longer has to name them, and a promise nobody
+      // remembers to keep is not one (specs/concepts/member-data.md). Run
+      // before anything else and outside the Vipps check: erasing is about
+      // what WE hold, so an organization that never connected Vipps — or has
+      // since disconnected — must not be the one place old members linger.
+      if (reconcileFirst) {
+        const swept = await retention.eraseMembersPastRetention(
+          db,
+          org.id,
+          periods.periodFor().year,
+        );
+        if (swept.failed > 0) {
+          retentionLog.error("could not erase some members past retention", undefined, {
+            ...swept,
+            ...ctx,
+          });
+        } else if (retention.isNoteworthy(swept)) {
+          retentionLog.info("erased members past retention", { ...swept, ...ctx });
+        }
+      }
+
       const vipps = await getVippsForOrg(workos, org.workosOrgId);
       // An organization that has not connected Vipps has nothing to renew.
       if (!vipps) continue;

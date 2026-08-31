@@ -1,6 +1,7 @@
-import { CANONICAL_ORIGIN, joinPagePath } from "@stottemedlem/core";
+import { CANONICAL_ORIGIN, joinPagePath, joinPagePrivacyPath } from "@stottemedlem/core";
 
-// The public org pages (/bli-medlem/[slug] + /bli-medlem/[slug]/vilkar) are served from the
+// The public org pages (/bli-medlem/[slug] + its /vilkar and /personvern) are
+// served from the
 // Worker cache and revalidated in the background on every visit (see
 // src/worker.ts and specs/concepts/join-page.md). The cache is
 // per-datacenter, so it cannot be purged globally from here — visits handle
@@ -34,6 +35,7 @@ function publicPageCacheKeys(slug: string, requestOrigin: string): string[] {
     days.flatMap((day) => [
       `${origin}${joinPagePath(slug)}#${day}`,
       `${origin}${joinPagePath(slug)}/vilkar#${day}`,
+      `${origin}${joinPagePrivacyPath(slug)}#${day}`,
     ]),
   );
 }

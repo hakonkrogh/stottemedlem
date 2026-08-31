@@ -2,6 +2,7 @@
 import {
   formatOrganisasjonsnummer,
   JOIN_REFERRAL_PARAM,
+  joinPagePrivacyPath,
   joinPageTermsPath,
   periodLabel,
 } from "@stottemedlem/core";
@@ -129,8 +130,21 @@ const referral = Astro.url.searchParams.get(JOIN_REFERRAL_PARAM)?.trim() || null
           </Text>
         )
       }
+      {/* What joining costs in personal data, said BEFORE the supporter leaves
+          for Vipps — the consent screen in the app is the payment provider's,
+          not the organization's (specs/concepts/member-data.md). */}
+      {
+        tiers.length > 0 && (
+          <Text variant="muted">
+            Du deler navn, e-postadresse og telefonnummer fra Vipps-profilen din, slik at {org.name}{" "}
+            kan føre deg opp som støttemedlem og sende deg kvittering. Ikke noe mer — se{" "}
+            <TextLink href={joinPagePrivacyPath(org.slug)}>personvern</TextLink>.
+          </Text>
+        )
+      }
       <Text variant="small">
-        <TextLink href={joinPageTermsPath(org.slug)}>Salgsvilkår</TextLink>
+        <TextLink href={joinPageTermsPath(org.slug)}>Salgsvilkår</TextLink> ·
+        <TextLink href={joinPagePrivacyPath(org.slug)}>Personvern</TextLink>
       </Text>
     </Stack>
 

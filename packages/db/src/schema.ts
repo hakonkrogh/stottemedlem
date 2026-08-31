@@ -39,6 +39,14 @@ export const organizations = sqliteTable("organizations", {
    */
   bannerFocusX: integer("banner_focus_x"),
   bannerFocusY: integer("banner_focus_y"),
+  /**
+   * When this organization accepted the data processing agreement, and which
+   * version of it (specs/concepts/data-processing-agreement.md). Null means it
+   * has not — true for every organization created before the agreement
+   * existed, which is why the back office asks rather than assumes.
+   */
+  dpaAcceptedAt: text("dpa_accepted_at"),
+  dpaVersion: text("dpa_version"),
   createdAt: text("created_at").notNull().default(sql`(datetime('now'))`),
 });
 
@@ -110,6 +118,13 @@ export const supportingMembers = sqliteTable("supporting_members", {
    * stays because migrations are additive). Nothing reads it.
    */
   messagesDeclinedAt: text("messages_declined_at"),
+  /**
+   * When this member's personal data was erased — on their own request, on the
+   * organization's, or by the retention sweep once the payment history no
+   * longer has to name anyone (specs/concepts/member-data.md). The row lives
+   * on so the periods it paid for still count; the person is gone from it.
+   */
+  anonymizedAt: text("anonymized_at"),
   createdAt: text("created_at").notNull().default(sql`(datetime('now'))`),
 });
 

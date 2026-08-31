@@ -15,8 +15,14 @@ const { member, latest, status } = entry;
 
 // A supporter may consent to a name and nothing else, or to no name at all.
 // Whatever we have, show something a person can recognize rather than an id.
-const displayName = member.name || member.email || member.phone || "Uten navn";
-const contact = member.name ? (member.email ?? member.phone) : member.phone;
+// An erased member has none of it by design (specs/concepts/member-data.md) —
+// named as erased, so the row reads as a record kept on purpose rather than as
+// a member the product lost.
+const anonymized = Boolean(member.anonymizedAt);
+const displayName = anonymized
+  ? "Slettet medlem"
+  : member.name || member.email || member.phone || "Uten navn";
+const contact = anonymized ? null : member.name ? (member.email ?? member.phone) : member.phone;
 // Where they stand, as one word (specs/use-cases/curate-member-list.md).
 // Someone recorded but with no completed payment is not lapsed — they have
 // never been current. Calling that "Utløpt" would read as a member who left.
@@ -32,7 +38,7 @@ const period = latest
 // A member with no address is one the product cannot tell about a price
 // change, so the organization has to (specs/concepts/member-notice.md). It is
 // only worth flagging while they are still paying.
-const unreachable = status === "active" && !member.email?.trim();
+const unreachable = status === "active" && !anonymized && !member.email?.trim();
 // One heart per supported year (specs/concepts/scorecard.md) — as a count here,
 // so loyalty is visible at a glance without stretching the row. Built in the
 // frontmatter: a space next to an {expr} in the template is unreliable.

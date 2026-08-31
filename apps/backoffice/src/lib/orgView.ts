@@ -1,5 +1,7 @@
+import { DPA_VERSION } from "@stottemedlem/core";
 import {
   countActiveMembers,
+  hasAcceptedDpa,
   listMembershipTiers,
   type MembershipTier,
   type Organization,
@@ -50,6 +52,7 @@ export async function orgView(org: Organization, request: Request): Promise<OrgV
       tierCount: tiers.length,
       vippsKeys,
       webhookUrl,
+      dpaAccepted: hasAcceptedDpa(org, DPA_VERSION),
     }),
   };
 }

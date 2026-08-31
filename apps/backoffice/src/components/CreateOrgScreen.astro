@@ -8,9 +8,11 @@
 // membership name at this fee — because Vipps evaluates the public page
 // against a real, priced product. Everything about it can be changed later on
 // the medlemskap page (specs/concepts/membership-tier.md).
+import { DPA_PATH } from "@stottemedlem/core";
 import Alert from "@stottemedlem/ui/components/Alert.astro";
 import Button from "@stottemedlem/ui/components/Button.astro";
 import CardFooter from "@stottemedlem/ui/components/CardFooter.astro";
+import Checkbox from "@stottemedlem/ui/components/Checkbox.astro";
 import Heading from "@stottemedlem/ui/components/Heading.astro";
 import Stack from "@stottemedlem/ui/components/Stack.astro";
 import Text from "@stottemedlem/ui/components/Text.astro";
@@ -23,7 +25,13 @@ interface Props {
   name?: string;
   values?: ProfileFormValues;
   annualFee?: string;
-  fieldErrors?: ProfileFieldErrors & { name?: string; annualFee?: string };
+  fieldErrors?: ProfileFieldErrors & {
+    name?: string;
+    annualFee?: string;
+    godtarAvtale?: string;
+  };
+  /** Keep the tick when a rejected submission re-renders the form. */
+  acceptedDpa?: boolean;
   error?: string | null;
 }
 const {
@@ -31,6 +39,7 @@ const {
   values = { orgnr: "", contactEmail: "" },
   annualFee = "",
   fieldErrors = {},
+  acceptedDpa = false,
   error = null,
 } = Astro.props;
 ---
@@ -68,6 +77,17 @@ const {
         Dette blir prisen på det første medlemskapet. Du kan endre navn og pris — og legge til
         flere typer medlemskap — når som helst etterpå.
       </Text>
+      {/* An explicit tick, never a pre-ticked box and never a line of small
+          print under the button: the administrator is taking on
+          responsibility for other people's data, and should have to notice
+          (specs/concepts/data-processing-agreement.md). It sits ABOVE the
+          button, because a condition of pressing something belongs before it.
+          The agreement is linked and readable without signing in. */}
+      <Checkbox name="godtarAvtale" checked={acceptedDpa} required error={fieldErrors.godtarAvtale}>
+        Jeg godtar <TextLink href={DPA_PATH}>databehandleravtalen</TextLink>: organisasjonen eier
+        medlemsregisteret sitt, og støttemedlem.no behandler opplysningene bare på organisasjonens
+        vegne.
+      </Checkbox>
       <Button block>Opprett og fortsett</Button>
     </Stack>
   </form>

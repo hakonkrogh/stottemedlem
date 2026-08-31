@@ -21,6 +21,7 @@ export function fixtureMember(
     cardToken: `kort-${id}`,
     referredByMemberId: null,
     messagesDeclinedAt: null,
+    anonymizedAt: null,
     createdAt: "2026-01-04",
   };
 }

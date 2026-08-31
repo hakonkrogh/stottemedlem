@@ -1,0 +1,177 @@
+---
+import { formatOrganisasjonsnummer, joinPagePath, joinPageTermsPath } from "@stottemedlem/core";
+import {
+  getOrganizationBySlug,
+  listMembershipTiers,
+  MEMBER_IDENTITY_RETENTION_YEARS,
+} from "@stottemedlem/db";
+import Heading from "@stottemedlem/ui/components/Heading.astro";
+import Stack from "@stottemedlem/ui/components/Stack.astro";
+import Text from "@stottemedlem/ui/components/Text.astro";
+import TextLink from "@stottemedlem/ui/components/TextLink.astro";
+import PublicShell from "../../../layouts/PublicShell.astro";
+import { getDb } from "../../../lib/db";
+
+// PUBLIC privacy notice (personvernerklæring) for an organization's supporting
+// membership — what a supporter must be told BEFORE anything about them is
+// collected (specs/concepts/member-data.md).
+//
+// The organization is the one who decides that it keeps a member register, so
+// the notice is written in its name and carries its contact details; the
+// product is what processes the register on its behalf. One standard template
+// for every org, by design — the product collects the same three details from
+// every supporter, so there is nothing per-org to configure and nothing an
+// administrator can get wrong.
+const slug = Astro.params.slug;
+const db = getDb();
+const org = slug ? await getOrganizationBySlug(db, slug) : null;
+if (!org) return new Response("Fant ikke organisasjonen", { status: 404 });
+
+const contact = org.contactEmail ?? null;
+// Named so the notice can say which memberships the register covers, the same
+// way the sales terms enumerate what they price.
+const tiers = await listMembershipTiers(db, org.id);
+---
+
+<PublicShell
+  title={`Personvern — ${org.name}`}
+  description={`Hvilke opplysninger ${org.name} lagrer om støttemedlemmene sine, og hvorfor.`}
+>
+  <Stack gap="lg">
+    <Stack gap="sm">
+      <Heading>Personvern</Heading>
+      <Text variant="lead">
+        Hva {org.name} lagrer om deg som støttemedlem, hvorfor, og hva du kan gjøre med det.
+      </Text>
+    </Stack>
+
+    <section>
+      <Heading level={2}>Hvem behandler opplysningene</Heading>
+      <Text>
+        {org.name}
+        {org.orgnr && ` (org.nr. ${formatOrganisasjonsnummer(org.orgnr)})`} er behandlingsansvarlig
+        for medlemsregisteret sitt: det er organisasjonen som bestemmer at den fører et register
+        over støttemedlemmene sine, og hva det brukes til.
+      </Text>
+      <Text>
+        støttemedlem.no er databehandler og drifter registeret på vegne av organisasjonen. Vi
+        bruker ikke opplysningene til noe eget formål, selger dem ikke, og deler dem ikke videre
+        med andre.
+      </Text>
+      <Text>
+        Betalingen håndteres av Vipps MobilePay, som er ansvarlig for sin egen behandling av
+        opplysningene dine. Se personvernerklæringen i Vipps-appen.
+      </Text>
+    </section>
+
+    <section>
+      <Heading level={2}>Hva vi lagrer</Heading>
+      <Text>Når du melder deg inn, lagrer vi:</Text>
+      <ul>
+        <li>
+          <strong>Navn, e-postadresse og telefonnummer.</strong> Disse kommer fra Vipps-profilen din,
+          og bare fordi du sier ja til å dele dem i Vipps-appen når du melder deg inn. Vi henter dem
+          én gang, ved innmelding, og aldri senere.
+        </li>
+        <li>
+          <strong>Medlemskapet ditt:</strong> hvilket støttemedlemskap du har, hvilke år du har
+          støttet, hva du betalte og når.
+        </li>
+      </ul>
+      <Text>
+        Det er alt. Vi ber ikke om fødselsnummer, adresse eller fødselsdato, og vi henter ikke inn
+        opplysninger om deg fra andre steder.
+      </Text>
+    </section>
+
+    <section>
+      <Heading level={2}>Hvorfor</Heading>
+      <ul>
+        <li>
+          <strong>For å føre deg opp som støttemedlem.</strong> Uten et navn er det ingen liste, og
+          uten en liste vet ikke organisasjonen hvem som støtter den.
+        </li>
+        <li>
+          <strong>For å kunne si fra om din egen betaling</strong> — kvittering når du har betalt, og
+          varsel før medlemskapet fornyes eller prisen endres.
+        </li>
+        <li>
+          <strong>Fordi regnskapet krever det.</strong> Betalinger må kunne dokumenteres i fem år
+          etter regnskapsåret (bokføringsloven).
+        </li>
+      </ul>
+      <Text>
+        Behandlingen er nødvendig for å oppfylle medlemsavtalen med deg, og for de lovpålagte
+        pliktene organisasjonen har for regnskapet.
+      </Text>
+    </section>
+
+    <section>
+      <Heading level={2}>Hvem ser opplysningene</Heading>
+      <Text>
+        De som administrerer medlemskapene i {org.name}. Organisasjonen kan laste ned medlemslisten
+        som en fil og bruke den i sine egne verktøy — registeret er organisasjonens egne data.
+        {
+          tiers.length > 0 &&
+            ` Registeret dekker støttemedlemskapene organisasjonen tilbyr${
+              tiers.length === 1 ? "" : ", uansett nivå"
+            }.`
+        }
+      </Text>
+    </section>
+
+    <section>
+      <Heading level={2}>Hvor lenge</Heading>
+      <Text>
+        Så lenge du er støttemedlem, og deretter i {MEMBER_IDENTITY_RETENTION_YEARS} år etter det
+        siste året du støttet — like lenge som betalingene må kunne dokumenteres. Året etter det
+        slettes navn, e-postadresse og telefonnummer automatisk. Betalingshistorikken blir liggende
+        uten at den peker på deg, slik at organisasjonens tall for et år som allerede er rapportert,
+        ikke endrer seg.
+      </Text>
+    </section>
+
+    <section>
+      <Heading level={2}>Rettighetene dine</Heading>
+      <Text>
+        Du har rett til innsyn i hva som er lagret om deg, til å få rettet det som er feil, til å få
+        opplysningene slettet, og til å få dem utlevert i et maskinlesbart format.
+      </Text>
+      <Text>
+        <strong>Du kan slette opplysningene dine selv.</strong> På din egen medlemsside — den du når
+        fra Vipps-appen, og fra kvitteringen din — kan du avslutte medlemskapet og be om at
+        opplysningene om deg fjernes. Da beholder vi bare betalingshistorikken, uten navn og
+        kontaktopplysninger.
+      </Text>
+      <Text>
+        Du kan også {contact ? "kontakte organisasjonen på " : "kontakte organisasjonen"}
+        {contact && <a href={`mailto:${contact}`}>{contact}</a>}, så gjør de det for deg.
+      </Text>
+      <Text>
+        Mener du at opplysningene dine ikke behandles slik de skal, kan du klage til Datatilsynet
+        (datatilsynet.no).
+      </Text>
+    </section>
+
+    <Text variant="small">
+      <TextLink href={joinPagePath(org.slug)}>Tilbake til {org.name}</TextLink> ·
+      <TextLink href={joinPageTermsPath(org.slug)}>Salgsvilkår</TextLink>
+    </Text>
+  </Stack>
+</PublicShell>
+
+<style>
+  section {
+    display: grid;
+    gap: 0.5rem;
+  }
+  section ul {
+    margin: 0;
+    padding-left: 1.4rem;
+    display: grid;
+    gap: 0.4rem;
+  }
+  section a {
+    color: inherit;
+  }
+</style>

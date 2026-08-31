@@ -183,6 +183,36 @@ export async function updateOrganizationProfile(
   return row ?? null;
 }
 
+/**
+ * Record that an organization accepted the data processing agreement
+ * (specs/concepts/data-processing-agreement.md) — at signup, or afterwards for
+ * one that predates it.
+ *
+ * Always writes: accepting the current version again is how an organization
+ * moves off an older one, so this is not "only if missing".
+ */
+export async function acceptDataProcessingAgreement(
+  db: Db,
+  orgId: string,
+  version: string,
+): Promise<Organization | null> {
+  const [row] = await db
+    .update(organizations)
+    .set({ dpaAcceptedAt: new Date().toISOString(), dpaVersion: version })
+    .where(eq(organizations.id, orgId))
+    .returning();
+  return row ?? null;
+}
+
+/**
+ * Has this organization accepted the agreement that is current *now*? An
+ * organization on a superseded version has not — the point of versioning it is
+ * that a substantive change has to be agreed again.
+ */
+export function hasAcceptedDpa(org: Organization, currentVersion: string): boolean {
+  return Boolean(org.dpaAcceptedAt) && org.dpaVersion === currentVersion;
+}
+
 // --- Membership tiers (specs/concepts/membership-tier.md) --------------------
 
 /** The tier fields an administrator edits; everything else is assigned. */
@@ -1252,6 +1282,122 @@ export async function getOrganizationMember(
     recruits: await countRecruits(db, member.id),
     history,
   };
+}
+
+// ── Erasing a member (specs/concepts/member-data.md) ───────────────────────
+
+/**
+ * How many years a member's identity outlives their last supported period.
+ *
+ * The organization's payment documentation has to name its counterparty for
+ * five years (bokføringsloven), so the person stays exactly as long as the
+ * books that name them — and goes the year after. One rule, tied to a duty the
+ * organization already has, which is also what the privacy notice can state
+ * plainly (specs/concepts/member-data.md).
+ */
+export const MEMBER_IDENTITY_RETENTION_YEARS = 5;
+
+/** Is this member's yearly arrangement still running? */
+export async function hasRunningAgreement(db: Db, memberId: string): Promise<boolean> {
+  const [row] = await db
+    .select({ id: membershipAgreements.id })
+    .from(membershipAgreements)
+    .where(
+      and(eq(membershipAgreements.memberId, memberId), eq(membershipAgreements.status, "ACTIVE")),
+    );
+  return Boolean(row);
+}
+
+/**
+ * Erase the person, keep the year. Name, contact details, the payment
+ * provider's id for them and the tokens addressing their personal pages all
+ * go; the periods they paid for and the payments behind them stay, so the
+ * organization's totals for a year it has already reported do not move.
+ *
+ * Idempotent: a member erased twice is erased once. Refuses while an
+ * arrangement is still running — a member cannot be erased out of a contract
+ * that is still charging them (specs/use-cases/erase-member-data.md).
+ */
+export async function anonymizeMember(
+  db: Db,
+  memberId: string,
+): Promise<{ member: SupportingMember; erased: boolean } | null> {
+  const [existing] = await db
+    .select()
+    .from(supportingMembers)
+    .where(eq(supportingMembers.id, memberId));
+  if (!existing) return null;
+  if (existing.anonymizedAt) return { member: existing, erased: false };
+  if (await hasRunningAgreement(db, memberId)) return { member: existing, erased: false };
+
+  // The agreement's copy of the provider id, and the token that opens the
+  // member's own page, are the person too: leaving either behind would mean
+  // the erased member still has a working personal address on the internet.
+  await db
+    .update(membershipAgreements)
+    .set({ vippsSub: null, manageToken: null })
+    .where(eq(membershipAgreements.memberId, memberId));
+
+  const [updated] = await db
+    .update(supportingMembers)
+    .set({
+      name: null,
+      email: null,
+      phone: null,
+      // Clearing the sub means a returning supporter is met as a new member
+      // rather than re-attached to the row they asked us to forget. Their
+      // history starts over — that is what erasure costs, and it is theirs to
+      // choose.
+      vippsSub: null,
+      // The card is a public address showing their name. It must stop
+      // resolving, not merely stop being linked to.
+      cardToken: null,
+      anonymizedAt: new Date().toISOString(),
+    })
+    .where(eq(supportingMembers.id, memberId))
+    .returning();
+  return updated ? { member: updated, erased: true } : { member: existing, erased: false };
+}
+
+/**
+ * The members of one organization whose identity has outlived the payment
+ * history that justified keeping it — the retention rule, as a query.
+ *
+ * A member is due once `MEMBER_IDENTITY_RETENTION_YEARS` have passed since the
+ * later of their last supported period and the year they were registered (a
+ * supporter who never completed a payment has no period to count from, and no
+ * bookkeeping reason to be kept at all). Anyone still renewing is never due:
+ * they are a current member, not a record.
+ */
+export async function selectMembersDueForErasure(
+  db: Db,
+  orgId: string,
+  currentPeriodKey: number,
+): Promise<string[]> {
+  const rows = await db
+    .select({
+      id: supportingMembers.id,
+      createdAt: supportingMembers.createdAt,
+      periodYear: memberships.periodYear,
+    })
+    .from(supportingMembers)
+    .leftJoin(memberships, eq(memberships.memberId, supportingMembers.id))
+    .where(and(eq(supportingMembers.orgId, orgId), isNull(supportingMembers.anonymizedAt)));
+
+  // One row per membership, so fold them into the last year each member has.
+  const lastYear = new Map<string, number>();
+  for (const row of rows) {
+    const year = Math.max(row.periodYear ?? 0, Number(row.createdAt.slice(0, 4)) || 0);
+    lastYear.set(row.id, Math.max(lastYear.get(row.id) ?? 0, year));
+  }
+
+  const due: string[] = [];
+  for (const [memberId, year] of lastYear) {
+    if (year + MEMBER_IDENTITY_RETENTION_YEARS >= currentPeriodKey) continue;
+    if (await hasRunningAgreement(db, memberId)) continue;
+    due.push(memberId);
+  }
+  return due;
 }
 
 // ── The member's card (specs/concepts/member-card.md) ──────────────────────

@@ -1,12 +1,22 @@
 import { defineMiddleware } from "astro:middleware";
-import { JOIN_PAGE_PATH_SEGMENT, MEMBER_CARD_PATH_SEGMENT } from "@stottemedlem/core";
+import { DPA_PATH, JOIN_PAGE_PATH_SEGMENT, MEMBER_CARD_PATH_SEGMENT } from "@stottemedlem/core";
 import { env, getWorkOS, SESSION_COOKIE, sessionCookieOptions, toSessionInfo } from "./lib/workos";
 
 // Paths reachable without a session. Everything else requires an authenticated
 // WorkOS session; unauthenticated requests are sent to /login.
 // /favicon.ico is here because browsers and crawlers request it unprompted on
 // the public pages — without it they get bounced into the login flow.
-const PUBLIC_EXACT = new Set(["/login", "/callback", "/logout", "/healthz", "/favicon.ico"]);
+// The databehandleravtale is accepted BY signing up, so it has to be readable
+// before there is a session to read it with — and afterwards, by anyone the
+// organization wants to show it to (specs/concepts/data-processing-agreement.md).
+const PUBLIC_EXACT = new Set([
+  "/login",
+  "/callback",
+  "/logout",
+  "/healthz",
+  "/favicon.ico",
+  DPA_PATH,
+]);
 function isPublic(pathname: string): boolean {
   // /api/qr/* is the public QR embed contract (see docs/qr-codes.md).
   // /bli-medlem/* is the org's public join page + salgsvilkår

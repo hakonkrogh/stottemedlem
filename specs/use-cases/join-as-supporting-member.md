@@ -25,24 +25,31 @@ From the supporter's point of view:
    name), and its [annual fee](../concepts/annual-fee.md). A join link or QR
    code may point at a specific tier; when the organization has several tiers
    and the address names none, the supporter chooses one first.
-2. The minimum identity needed to be listed as a
-   [supporting member](../concepts/supporting-member.md) (e.g. name and a contact
-   such as email) comes from the supporter's Vipps profile, with their consent —
-   the supporter only types it in themselves if Vipps cannot provide it.
-3. The supporter approves the payment in Vipps. Joining mid-year costs only
+2. **Before** they can start, the join page tells them what joining shares —
+   name, e-mail address and phone number, and what the organization does with
+   them — and links the organization's full privacy notice, which is public and
+   readable without joining (see [member data](../concepts/member-data.md)).
+   The payment app's own consent screen comes later and belongs to the payment
+   provider; it is not where the organization explains itself.
+3. That identity — the minimum needed to be listed as a
+   [supporting member](../concepts/supporting-member.md), and no more than
+   name, e-mail address and phone number — comes from the supporter's Vipps
+   profile, with their consent; the supporter only types it in themselves if
+   Vipps cannot provide it.
+4. The supporter approves the payment in Vipps. Joining mid-year costs only
    the remaining share of the [annual fee](../concepts/annual-fee.md) for the
    current [annual period](../concepts/annual-period.md); the supporter is told
    both what they pay now and what the membership costs per year afterwards.
    Approving also sets up the yearly continuation — the supporter agrees once,
    and [renewal](renew-annual-membership.md) then happens by itself until they
    end it.
-4. On successful payment, the supporter becomes an **active** supporting member
+5. On successful payment, the supporter becomes an **active** supporting member
    for the current [annual period](../concepts/annual-period.md), and this is
    reflected immediately in the organization's
    [member list](curate-member-list.md). Payment is what decides this: the
    supporter returning from Vipps is not by itself proof that anything was
    paid, and the product never treats it as such.
-5. The supporter receives confirmation that they are now a supporting member and
+6. The supporter receives confirmation that they are now a supporting member and
    until when their support is valid. The confirmation presents the
    organization's identity the same way the [join page](../concepts/join-page.md)
    does — name and, when uploaded, the visual identity in the same banner-and-
@@ -54,7 +61,7 @@ From the supporter's point of view:
    the join page instead of a receipt) — and the product reuses the same
    unguessable token that addresses the member's
    [own page](../concepts/member-self-service.md) for this.
-6. The confirmation is also a **[payment receipt](../concepts/payment-receipt.md)**:
+7. The confirmation is also a **[payment receipt](../concepts/payment-receipt.md)**:
    once the payment is confirmed, the page shows the documentation Norwegian
    bookkeeping rules ask of a membership-fee payment (bokføringsforskriften
    § 5-1-6b, jf. § 5-1-1 nr. 2–5 — the parties, what was paid for, the period,
@@ -71,6 +78,8 @@ From the supporter's point of view:
 - [ ] A confirmed payment yields a [receipt](../concepts/payment-receipt.md) —
       on the confirmation page, and by email when the member has an address.
 - [ ] A failed or abandoned payment does not create an active membership.
+- [ ] The join page states which details joining shares, and links a privacy
+      notice readable without joining, before the supporter can start.
 - [ ] A payment that succeeded creates the membership even if the product was
       never notified of it.
 
@@ -80,6 +89,8 @@ From the supporter's point of view:
 
 ## Related
 - [Concept: Supporting member](../concepts/supporting-member.md)
+- [Concept: Member data](../concepts/member-data.md) — what joining collects,
+  what the supporter is told about it, and how long it is kept
 - [Concept: Membership](../concepts/membership.md)
 - [Concept: Annual period](../concepts/annual-period.md)
 - [Concept: Member self-service page](../concepts/member-self-service.md) — the

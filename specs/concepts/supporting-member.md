@@ -6,9 +6,10 @@
 A **supporting member** is a person from the community who backs an
 [organization](organization.md) by paying its [annual fee](annual-fee.md). They
 are the product's namesake (Norwegian: *støttemedlem*). A supporting member is
-identified by minimal details — enough to list and contact them (e.g. name and
-email) — and is not necessarily an active participant in the organization, just a
-supporter of it.
+identified by the smallest set of details that lets an organization list them
+and reach them — **name, e-mail address and phone number**, and nothing else
+(see [member data](member-data.md)) — and is not necessarily an active
+participant in the organization, just a supporter of it.
 
 ## Why it exists
 The supporting member is the person the organization wants to see on its list and
@@ -28,6 +29,12 @@ without creating a duplicate person each year.
   never re-fetched afterwards: the provider only offers it for a short window
   after consent. What is captured then is what the organization has.
 - Identity/contact details can be corrected without altering payment history.
+- A supporting member can stop being a *person* without ceasing to be a
+  *record*: their details are erased on request, and by themselves once they
+  have been kept as long as they may be, while the periods they paid for
+  remain (see [member data](member-data.md) and
+  [erase a member's personal data](../use-cases/erase-member-data.md)). An
+  erased member is presented as erased, never as one with a missing name.
 
 ## Relationships
 - Belongs to one [organization](organization.md).
@@ -38,4 +45,6 @@ without creating a duplicate person each year.
 ## Referenced by
 - [Use case: Join as a supporting member](../use-cases/join-as-supporting-member.md)
 - [Use case: Curate the member list](../use-cases/curate-member-list.md)
+- [Use case: Erase a member's personal data](../use-cases/erase-member-data.md)
+- [Concept: Member data](member-data.md)
 - [Problem: Keeping an accurate list](../problems/keeping-an-accurate-member-list.md)

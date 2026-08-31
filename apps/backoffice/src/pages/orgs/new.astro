@@ -1,6 +1,10 @@
 ---
-import { DEFAULT_MEMBERSHIP_TIER_NAME } from "@stottemedlem/core";
-import { createMembershipTier, ensureOrganization } from "@stottemedlem/db";
+import { DEFAULT_MEMBERSHIP_TIER_NAME, DPA_VERSION } from "@stottemedlem/core";
+import {
+  acceptDataProcessingAgreement,
+  createMembershipTier,
+  ensureOrganization,
+} from "@stottemedlem/db";
 import CreateOrgScreen from "../../components/CreateOrgScreen.astro";
 import Shell from "../../layouts/Shell.astro";
 import { getDb } from "../../lib/db";
@@ -23,7 +27,12 @@ if (!session) return Astro.redirect("/login");
 let name = "";
 let values = { orgnr: "", contactEmail: "" };
 let annualFee = "";
-let fieldErrors: ProfileFieldErrors & { name?: string; annualFee?: string } = {};
+let acceptedDpa = false;
+let fieldErrors: ProfileFieldErrors & {
+  name?: string;
+  annualFee?: string;
+  godtarAvtale?: string;
+} = {};
 
 if (Astro.request.method === "POST") {
   const form = await Astro.request.formData();
@@ -36,6 +45,15 @@ if (Astro.request.method === "POST") {
   const parsedFee = parseAnnualFee(annualFee);
   if ("error" in parsedFee) fieldErrors.annualFee = parsedFee.error;
 
+  // The agreement is a condition of creating the organization, checked on the
+  // server as well as by the browser — an unticked box must not be able to
+  // produce an organization whose acceptance we would then be recording
+  // falsely (specs/concepts/data-processing-agreement.md).
+  acceptedDpa = form.get("godtarAvtale") !== null;
+  if (!acceptedDpa) {
+    fieldErrors.godtarAvtale = "Du må godta databehandleravtalen for å opprette organisasjonen.";
+  }
+
   if (Object.keys(fieldErrors).length === 0 && parsed.profile && "fee" in parsedFee) {
     const workos = getWorkOS();
     const org = await workos.organizations.createOrganization({ name });
@@ -45,6 +63,12 @@ if (Astro.request.method === "POST") {
     });
     const db = getDb();
     const row = await ensureOrganization(db, org.id, org.name, parsed.profile);
+    // The administrator ticked the box above (checked again, server-side, just
+    // now), so record what they accepted and when
+    // (specs/concepts/data-processing-agreement.md). Recorded here and nowhere
+    // else: adopting an org that already exists in WorkOS (orgs/index) is not
+    // an act of agreeing to anything.
+    await acceptDataProcessingAgreement(db, row.id, DPA_VERSION);
     await createMembershipTier(db, row.id, {
       name: DEFAULT_MEMBERSHIP_TIER_NAME,
       description: null,
@@ -72,5 +96,11 @@ if (Astro.request.method === "POST") {
 ---
 
 <Shell title="Opprett organisasjon">
-  <CreateOrgScreen name={name} values={values} annualFee={annualFee} fieldErrors={fieldErrors} />
+  <CreateOrgScreen
+    name={name}
+    values={values}
+    annualFee={annualFee}
+    acceptedDpa={acceptedDpa}
+    fieldErrors={fieldErrors}
+  />
 </Shell>
