@@ -951,6 +951,16 @@ produced the exact quotes (365-day refund window, rate limits) that the summary 
 Hard rules and exact wording live in the yaml and in the guide's own tables — go there.
 
 ## Index
+
+**This table conflicts on almost every rebase** — every branch appends to or
+edits a row here, so two branches touching the skills layer collide by
+construction. Resolve by keeping BOTH sides' row edits (a row each side changed
+differently is usually two independent facts, not a contest), never by taking
+one side wholesale. And mind the direction: in a REBASE `<<<<<<< HEAD` is
+*origin/main*, and `>>>>>>> <sha>` is *your* commit being replayed — the
+opposite way round from a merge, which is how a newer upstream row gets thrown
+away by mistake (nearly did, 2026-08-31, rebasing onto the one-card PR).
+
 | doc | covers |
 |-----|--------|
 | (canonical) `CLAUDE.md` | the mandatory spec harness + start-here loop |
