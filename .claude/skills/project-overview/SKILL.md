@@ -543,8 +543,17 @@ lives in `specs/`, kept in sync with code by a mandatory `Stop`-hook harness.
   `0007_agreement_reconciliation.sql`; NULLs sort first in SQLite), capped at
   250 per org per run so a night's cost is predictable. A failed read is NOT
   marked reconciled, so it goes first next time; drafts too old to chase are
-  counted and logged rather than silently dropped. Read-only + idempotent —
-  it never creates or cancels a charge. **Testing the cron locally:** `astro dev` can't
+  counted and logged rather than silently dropped. Idempotent, and it never
+  ASKS for money — but it is no longer purely read-only (changed 2026-08-31):
+  it runs charges through the same `applyCharge` as the webhook, which
+  **refunds** a payment landing on a period another agreement already bought.
+  **So a change to the money path reaches rows that already exist, the moment
+  it deploys** — reconciliation works by comparison, not memory, so it
+  re-applies every charge in `CHARGE_LOOKBACK_DAYS` under the NEW rules. That
+  is the point (it is how the 31.8.2026 staging double-payment heals itself),
+  but it means merging a money-path change and deploying are the same event as
+  far as real money is concerned. The receipts sweep bounds the same risk
+  deliberately with its 14-day lookback; reconciliation does not. **Testing the cron locally:** `astro dev` can't
   reach `scheduled` — build, then `wrangler dev --test-scheduled` and hit
   `/cdn-cgi/handler/scheduled?cron=0+2+*+*+*` (NOT `/__scheduled`, which our
   custom fetch handler swallows into a /login redirect). The `vipps-test-rig`
