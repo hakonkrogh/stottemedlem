@@ -2,19 +2,14 @@ import { memberCardSize } from "@stottemedlem/qr";
 import type { APIRoute } from "astro";
 import { renderCardPng } from "../../../lib/cardImage";
 import { getDb } from "../../../lib/db";
-import {
-  loadMemberCard,
-  memberCardShapeFromQuery,
-  renderMemberCardSvg,
-} from "../../../lib/memberCard";
+import { loadMemberCard, renderMemberCardSvg } from "../../../lib/memberCard";
 
 /**
  * The member's card as a picture (specs/concepts/member-card.md).
  *
  * This is the form the outside world understands: what a social feed previews
  * when the card address is shared, what travels with a receipt, and what a
- * member can save. `?bredde=` renders it larger for printing, and
- * `?form=staaende` draws the upright card instead of the wide one.
+ * member can save. `?bredde=` renders it larger for printing.
  */
 
 /** Big enough to print, small enough that nobody rasterizes a poster by accident. */
@@ -29,12 +24,11 @@ export const GET: APIRoute = async ({ params, url }) => {
   // the minimum instead of at its natural size.
   const asked = url.searchParams.get("bredde");
   const parsed = asked === null ? Number.NaN : Number(asked);
-  const shape = memberCardShapeFromQuery(url);
   const width = Number.isFinite(parsed)
     ? Math.min(MAX_WIDTH, Math.max(600, Math.round(parsed)))
-    : memberCardSize(shape).width;
+    : memberCardSize().width;
 
-  const png = await renderCardPng(await renderMemberCardSvg(card, shape), width);
+  const png = await renderCardPng(await renderMemberCardSvg(card), width);
   const headers = new Headers({
     "Content-Type": "image/png",
     "Cache-Control": "public, max-age=300",

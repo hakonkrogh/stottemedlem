@@ -12,7 +12,11 @@ import { PNG } from "pngjs";
 const args = process.argv.slice(2);
 const expectIndex = args.indexOf("--expect");
 const expected = expectIndex === -1 ? undefined : args[expectIndex + 1];
-const source = args.filter((_, i) => i !== expectIndex && i !== expectIndex + 1)[0];
+// Without --expect, expectIndex is -1 and `i !== expectIndex + 1` would drop
+// argument 0 — the source itself — leaving only the usage message behind.
+const source = args.filter(
+  (_, i) => expectIndex === -1 || (i !== expectIndex && i !== expectIndex + 1),
+)[0];
 
 if (!source) {
   console.error("usage: node decode.mjs <png-path-or-url> [--expect <payload>]");

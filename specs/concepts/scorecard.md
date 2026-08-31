@@ -36,9 +36,11 @@ perk of being a member, and a growth loop for the organization.
   a surface is too tight for the full buildup (a list row, a spreadsheet
   export), the count stands in ("❤️ 12").
 - Hearts appear wherever the member is looked at: their own
-  [member card](member-card.md), their
-  [self-service page](member-self-service.md), the organization's member list
-  and member detail, and the member-list export. The recruit count travels with
+  [member card](member-card.md) — which is how they reach the member's
+  [self-service page](member-self-service.md) and their
+  [receipts](payment-receipt.md), those surfaces showing the card rather than
+  counting the hearts again beside it — plus the organization's member list and
+  member detail, and the member-list export. The recruit count travels with
   them everywhere a surface has room for it — but only once it is above zero,
   since "0 recruited" says nothing worth saying.
 - The member's hearts are the [brand mark](brand-mark.md) multiplied: the same

@@ -15,11 +15,8 @@ import { create, toString as toStringQr } from "qrcode";
 /** The member's own card — a different owner from the organization's card below. */
 export {
   MEMBER_CARD_HEIGHT,
-  MEMBER_CARD_TALL_HEIGHT,
-  MEMBER_CARD_TALL_WIDTH,
   MEMBER_CARD_WIDTH,
   type MemberCardOptions,
-  type MemberCardShape,
   memberCardSize,
   memberCardSvg,
 } from "./memberCard.js";

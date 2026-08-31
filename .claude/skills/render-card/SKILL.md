@@ -10,11 +10,10 @@ description: Draw the member card and the org QR card from real `@stottemedlem/q
     #         "file://$(pwd)/.card-preview/index.html" <out.png> 900 4000
 
 Rebuilds `@stottemedlem/qr` (turbo-cached, ~40ms warm), draws every fixture,
-and writes `card-<shape>-<case>.svg`, `raster-*.png` and an `index.html`
+and writes `card-<case>.svg`, `raster-*.png` and an `index.html`
 contact sheet showing browser-rendered and rasterized side by side. Screenshot
 that one file and you have reviewed every case at once.
 
-    --shape wide|tall|both   member-card shape(s) (default both)
     --case A,B               fixture(s) to draw (default all)
     --set key=value          override one field, repeatable
     --org-card               the ORGANISATION's qrCardSvg instead
@@ -25,7 +24,7 @@ that one file and you have reviewed every case at once.
 Examples:
 
     render.mjs --list
-    render.mjs --shape tall --case LongNames --raster
+    render.mjs --case LongNames --raster
     render.mjs --case WithLogo --set hearts=17 --set recruits=4 --raster
 
 ## Why `--raster` is the pass that counts
@@ -47,7 +46,7 @@ a logo referenced by URL instead of carried as a data URI.
 |------|--------|
 | `render-card --raster` | the artwork itself — layout, fitting, the shared PNG. No server. |
 | Storybook (`pnpm story`, `MemberCard.stories.ts`) | the same artwork with real variable-weight text; the human review surface |
-| `preview-screenshot` on `/medlemsbevis/<token>` | the artwork **in its page**, incl. the `<picture>` shape switch — needs `verify-public-routes/seed.sh` + a dev server |
+| `preview-screenshot` on `/medlemsbevis/<token>` | the artwork **in its page**, incl. the full-bleed / `max-width` sizing — needs `verify-public-routes/seed.sh` + a dev server |
 | `verify-qr` | that the QR in the card decodes to the right payload |
 
 Fixtures are fictitious on purpose (rendered cards end up in screenshots and

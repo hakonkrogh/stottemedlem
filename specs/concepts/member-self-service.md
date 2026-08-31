@@ -20,16 +20,28 @@ the organization and without the organization having to answer.
 ## Rules & invariants
 - The page belongs to **one membership** and shows only it. It never exposes
   anything about the organization's other members.
-- **It leads with the member's [card](member-card.md)** — what they are comes
-  before what they pay and how to stop it. The card's own address is offered
-  here too, since this page is where a member comes looking for it.
+- **It is the card, then the paperwork.** Under the page's own title comes the
+  member's [card](member-card.md), and only then what they pay and how to stop
+  it — what they are before what it costs. The card is the largest thing on
+  the page and is given the full width of the screen where the screen is
+  narrow.
+- **The page never explains its own card.** What the card already says — the
+  hearts collected, the period it is good for, the organization it is for — is
+  not repeated as prose underneath it. A page that captions its own
+  illustration is longer without saying more.
+- **Sharing the card is offered on the card**, not as a section further down:
+  the thing being shared is right there, so the action belongs on it. The
+  member's device decides what sharing means — its own share sheet where it
+  has one, otherwise the address on the clipboard — and with no scripting at
+  all the action still leads to the card.
 - The card's address and this page's address are **different secrets** on
   purpose: this one can end the membership and must never be shared, while the
-  card is made for sharing.
-- **Whether the membership continues is stated first**, alongside what is paid
-  and for which period — not further down the page. Checking exactly that is
-  why a member opens this page, and a membership they have already cancelled
-  must never read as an ordinary running one. The same is true whichever way
+  card is made for sharing. Only the card's address is ever offered for
+  sharing here.
+- **Whether the membership continues is stated directly under the card**,
+  alongside what is paid and for which period, in one line — before anything
+  else that could be mistaken for an ordinary running membership. Checking
+  exactly that is why a member opens this page. The same is true whichever way
   they cancelled: in the product, or directly in their payment app
   ([membership](membership.md)).
 - It offers **ending the membership** as a real action, completed on the page.

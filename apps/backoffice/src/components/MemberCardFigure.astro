@@ -6,59 +6,153 @@
 // and what lands in a social feed can never drift apart. The alt text carries
 // what the picture says, since the picture is the whole content.
 //
-// Responsive by picking the card's SHAPE, not by scaling one: an image keeps
-// its aspect ratio, so the wide 1.91:1 card poured into a phone's column ends
-// up with a QR code too small to scan and captions too small to read. Below
-// the breakpoint the browser fetches the upright card instead, which lays the
-// same content down the page at readable sizes. The wide card stays the
-// default and the `<img>` fallback, because it is the one that gets shared.
+// One card, one image (specs/concepts/member-card.md). The card is drawn
+// upright for a phone, so there is nothing to choose between here — it simply
+// scales, running to both screen edges where the screen is narrow and capping
+// at a card-like width where there is room to spare.
+//
+// Sharing is offered ON the card rather than as a paragraph elsewhere on the
+// page: the thing being shared is right there, so the action belongs on it.
 import { memberCardImagePath } from "@stottemedlem/core";
 import { memberCardSize } from "@stottemedlem/qr";
 
 interface Props {
   cardToken: string;
   alt: string;
+  /**
+   * The card's own public address. Passing it puts a share action on the card;
+   * leaving it out shows the card alone. Only ever the CARD's address — the
+   * member's self-service address can end the membership and must never be
+   * offered for sharing (specs/concepts/member-self-service.md).
+   */
+  shareUrl?: string;
+  /** What the share sheet calls it. */
+  shareTitle?: string;
 }
-const { cardToken, alt } = Astro.props;
+const { cardToken, alt, shareUrl, shareTitle } = Astro.props;
 
-const wide = memberCardSize("wide");
-const tall = memberCardSize("tall");
-
-/**
- * The public content column caps at 38rem, so above this breakpoint the wide
- * card always renders at its full column width and its QR code stays around
- * 105px. Below it the column shrinks with the viewport and the wide card's QR
- * goes with it, so the upright card takes over — its QR is 177px on a 390px
- * phone, the width where someone actually holds the card up to be scanned.
- */
-const TALL_BELOW = "40rem";
+const { width, height } = memberCardSize();
 ---
 
 <figure class="member-card">
-  <picture>
-    <source
-      media={`(max-width: ${TALL_BELOW})`}
-      srcset={memberCardImagePath(cardToken, "svg", "tall")}
-      width={tall.width}
-      height={tall.height}
-    />
-    <img
-      src={memberCardImagePath(cardToken, "svg")}
-      alt={alt}
-      width={wide.width}
-      height={wide.height}
-    />
-  </picture>
+  <img src={memberCardImagePath(cardToken, "svg")} alt={alt} width={width} height={height} />
+
+  {
+    shareUrl && (
+      <a
+        class="member-card__share"
+        href={shareUrl}
+        data-share
+        data-share-title={shareTitle}
+        aria-label="Del medlemsbeviset"
+      >
+        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+          <path
+            d="M12 3v12M12 3l-4 4M12 3l4 4M5 13v6a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-6"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+        </svg>
+        <span data-share-label>Del</span>
+      </a>
+    )
+  }
 </figure>
+
+<script>
+  // Sharing the card, in whatever way the reader's device can: the phone's own
+  // share sheet when it has one, the clipboard otherwise. With no script at
+  // all the link still works — it opens the card, which is the address the
+  // member wanted in the first place.
+  const links = document.querySelectorAll<HTMLAnchorElement>("a[data-share]");
+  links.forEach((anchor) => {
+    anchor.addEventListener("click", (event: MouseEvent) => {
+      const url = anchor.href;
+      const title = anchor.dataset.shareTitle;
+      const label = anchor.querySelector("[data-share-label]");
+
+      if (navigator.share) {
+        event.preventDefault();
+        navigator.share(title ? { title, url } : { url }).catch(() => {});
+        return;
+      }
+      if (!navigator.clipboard) return;
+
+      event.preventDefault();
+      navigator.clipboard.writeText(url).then(
+        () => {
+          if (!label) return;
+          const previous = label.textContent;
+          label.textContent = "Lenke kopiert";
+          setTimeout(() => {
+            label.textContent = previous;
+          }, 2500);
+        },
+        () => {
+          window.location.href = url;
+        },
+      );
+    });
+  });
+</script>
 
 <style>
   .member-card {
     margin: 0;
+    position: relative;
+    /* Full-bleed by default — on a phone the card is the page's subject, and
+     * the reading column's gutter only makes its QR code and its name smaller
+     * than they need to be. The negative margin cancels exactly that padding,
+     * which PublicShell publishes as --sm-page-gutter. */
+    margin-inline: calc(-1 * var(--sm-page-gutter, 1.25rem));
   }
-  .member-card picture,
   .member-card img {
     display: block;
     width: 100%;
     height: auto;
+  }
+
+  /* Where there is room to spare, the card stops growing: it is upright, so
+   * the full 38rem column would make it over 800px tall and it would read as
+   * a poster rather than as a card. */
+  @media (min-width: 34rem) {
+    .member-card {
+      margin-inline: auto;
+      max-width: 24rem;
+    }
+  }
+
+  .member-card__share {
+    position: absolute;
+    right: 1rem;
+    bottom: 1rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.4rem 0.8rem;
+    border: 1px solid var(--sm-border-strong);
+    border-radius: 999px;
+    background: var(--sm-surface);
+    color: var(--sm-ink);
+    font: inherit;
+    font-size: 0.85rem;
+    line-height: 1;
+    text-decoration: none;
+    box-shadow: 0 1px 4px rgba(80, 60, 30, 0.12);
+  }
+  .member-card__share:hover {
+    background: var(--sm-accent-soft);
+    border-color: var(--sm-accent-deep);
+  }
+  .member-card__share:focus-visible {
+    outline: 3px solid var(--sm-focus-ring);
+    outline-offset: 2px;
+  }
+  .member-card__share svg {
+    width: 1em;
+    height: 1em;
   }
 </style>

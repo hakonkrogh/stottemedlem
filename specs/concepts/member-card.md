@@ -49,21 +49,36 @@ surface the member happens to be looking at.
   [self-service page](member-self-service.md): that one can *end* the
   membership, so it must never be shared, while the card is made for sharing.
   Holding a card address grants nothing but looking at the card.
-- **A shared card must preview well.** When the address is pasted into a chat
-  or a social feed, the card itself is what appears — an image of the card, not
-  a bare link.
-- **The card takes the shape the surface can show it in.** It is a picture, so
-  it cannot reflow: poured into a phone-width column, a card laid out across
-  the page ends up with a QR code too small to scan and lines too small to
-  read, and a card nobody can scan has lost the half of its purpose that
-  recruits. So the card has two shapes — one laid out across the page, one down
-  it — and a surface shows whichever fits the reader's screen. The across-the-
-  page shape is the one that gets shared, because it is the one link previews
-  show whole.
-- **Both shapes are the same card.** They say the same things about the same
-  member, lead to the same join address, and are made from the same derived
-  truth. Which one a reader got is a fact about their screen, never about their
-  membership.
+- **A shared card previews as the card.** When the address is pasted into a
+  chat or a social feed, the card itself is what appears — an image of the
+  card, not a bare link. How much of it a given feed shows is that feed's
+  business, not a reason to draw a second card (below).
+- **There is exactly one card, and it is upright.** It is a picture, so it
+  cannot reflow, and the surface that decides its shape is a phone: that is
+  where a member looks at their card and where its QR code is held up to a
+  camera. Laid out across the page instead, it arrives in a phone-width column
+  with a QR code too small to scan and lines too small to read — and a card
+  nobody can scan has lost the half of its purpose that recruits.
+- **One card, not one per surface.** A second, across-the-page version existed
+  for a while purely because link previews show that proportion uncropped. It
+  was dropped: two drawings have to be kept saying the same thing about the
+  same member, and the accepted cost is that a shared card is cropped in some
+  feeds rather than shown whole. What the member is looking at is always
+  exactly what they hand on.
+- **The card gets the room the screen has, and no more.** On a surface narrow
+  enough that the reading column's margins matter, it runs to both screen
+  edges: it is the subject of the page it appears on, and margins only make the
+  QR code and the name smaller than they need to be. Where there is room to
+  spare it stops growing rather than filling the width — an upright card poured
+  across a desktop column reads as a poster, not as a card.
+- **The QR code is sized to be scanned, not to dominate.** It is the smallest
+  it can be and still come off a screen or a print into a camera — past that
+  it takes the card away from the member, who is what the card is about.
+- **Where the member is looking at their own card, the card carries the way to
+  share it** — an action on the card itself rather than an address printed
+  elsewhere on the page. What sharing means is the reader's device's business:
+  its own share sheet where it has one, the card's address on the clipboard
+  otherwise.
 - **Anyone may look; only the member can change it.** The card page offers no
   actions on the membership. A visitor who is not the member sees exactly what
   the member sees.

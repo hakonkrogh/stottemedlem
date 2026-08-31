@@ -9,12 +9,12 @@ Distinct from the *member's personal referral* QR (`specs/use-cases/earn-stars-a
   XML-escaped name, auto-shrinking font) and `qrSvg(url)` (async).
 - `@stottemedlem/qr` also carries `memberCardSvg({...})` (`src/memberCard.ts`) —
   the MEMBER's card (specs/concepts/member-card.md), a different owner from
-  `qrCardSvg`'s organization card. **Two shapes** since 2026-08-31
-  (`shape: "wide" | "tall"`, `memberCardSize(shape)`): wide 1200×628 (1.91:1,
-  the shape link previews show uncropped, the default and the one that gets
-  shared) and tall 760×1120 for phone-width surfaces — an image cannot reflow,
-  so the wide card in a 350px column has a ~65px QR nobody can scan. Same
-  content both ways; layouts are STACKED, not hand-placed at fixed `y`s, so a
+  `qrCardSvg`'s organization card. **ONE shape, 760×1040 UPRIGHT**
+  (`memberCardSize()`, no argument). It had two for a few hours on 2026-08-31
+  — a wide 1200×628 for link previews — and the user removed the wide one the
+  same day; an image cannot reflow and the surface that matters is a phone, so
+  the card is drawn for a phone and every surface embeds that. The layout is
+  STACKED, not hand-placed at fixed `y`s, so a
   long name plus four rows of hearts still fits (a unit test asserts every
   placed x/y stays inside the canvas). Text width is estimated at 0.57 em per
   character DELIBERATELY wide: resvg draws every line at Fraunces' heavy
@@ -48,11 +48,11 @@ Distinct from the *member's personal referral* QR (`specs/use-cases/earn-stars-a
 
 - **Member card** (added 2026-08-31, branch member-validity-card):
   `GET /medlemsbevis/<cardToken>` (page, noindex, og:image + twitter card),
-  `…/kort.svg`, `…/kort.png` (`?bredde=` up to 2400, `?last=1` to download,
-  `?form=staaende` for the tall shape — `MEMBER_CARD_SHAPE_PARAM` /
-  `memberCardImagePath(token, format, shape)` in core). `MemberCardFigure.astro`
-  is a `<picture>`: the tall SVG below 40rem, the wide one otherwise and as the
-  `<img>` fallback, so og:image/email always get the shareable shape.
+  `…/kort.svg`, `…/kort.png` (`?bredde=` up to 2400, `?last=1` to download;
+  `memberCardImagePath(token, format)` in core takes NO shape since
+  2026-08-31, and the old `?form=staaende` is simply ignored).
+  `MemberCardFigure.astro` is a bare `<img>` — full-bleed by default,
+  `max-width: 24rem` above 34rem — plus an optional `shareUrl` share pill.
   Public in `src/middleware.ts` and routed on the APEX in `wrangler.jsonc`
   (`xn--stttemedlem-hgb.no/medlemsbevis/*`) — a share link has to be short and
   on the canonical domain. Token = `supporting_members.card_token`, NOT the

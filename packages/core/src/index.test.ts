@@ -159,16 +159,11 @@ describe("the member's card address", () => {
     expect(memberCardImagePath("kort-1", "svg")).toBe("/medlemsbevis/kort-1/kort.svg");
   });
 
-  it("asks for the upright card only when a surface explicitly needs it", () => {
-    // The wide card is what gets shared, so it is what an unqualified address
-    // gives — a preview must never come back the wrong shape.
-    expect(memberCardImagePath("kort-1", "svg", "wide")).toBe("/medlemsbevis/kort-1/kort.svg");
-    expect(memberCardImagePath("kort-1", "svg", "tall")).toBe(
-      "/medlemsbevis/kort-1/kort.svg?form=staaende",
-    );
-    expect(memberCardImagePath("kort-1", "png", "tall")).toBe(
-      "/medlemsbevis/kort-1/kort.png?form=staaende",
-    );
+  it("takes no shape — there is exactly one card", () => {
+    // Every surface embeds the same drawing, so the address that names it has
+    // nothing left to qualify (specs/concepts/member-card.md).
+    expect(memberCardImagePath("kort-1", "svg")).not.toContain("?");
+    expect(memberCardImagePath("kort-1", "png")).not.toContain("?");
   });
 
   it("escapes the token, since it ends up in a URL", () => {
