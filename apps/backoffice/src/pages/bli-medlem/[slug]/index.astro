@@ -1,5 +1,10 @@
 ---
-import { formatOrganisasjonsnummer, joinPageTermsPath, periodLabel } from "@stottemedlem/core";
+import {
+  formatOrganisasjonsnummer,
+  JOIN_REFERRAL_PARAM,
+  joinPageTermsPath,
+  periodLabel,
+} from "@stottemedlem/core";
 import { getOrganizationBySlug, listMembershipTiers } from "@stottemedlem/db";
 import Alert from "@stottemedlem/ui/components/Alert.astro";
 import Button from "@stottemedlem/ui/components/Button.astro";
@@ -60,6 +65,11 @@ const subheadPromise =
 // Set when the join attempt bounced back here (see start.ts). Query strings are
 // not part of the page's cache key, so this never gets cached onto anyone else.
 const joinError = Astro.url.searchParams.get("feil");
+// Someone arrived by scanning a member's card (specs/concepts/member-card.md).
+// The referral rides along into the payment so a completed join can be
+// credited back to them; an address with a query string is never cached, so
+// this is safe to render per visitor.
+const referral = Astro.url.searchParams.get(JOIN_REFERRAL_PARAM)?.trim() || null;
 ---
 
 <PublicShell title={title} description={description}>
@@ -104,6 +114,7 @@ const joinError = Astro.url.searchParams.get("feil");
               of its own. */}
           <form method="post" action={`/bli-medlem/${org.slug}/start`}>
             <input type="hidden" name="medlemskap" value={tier.key} />
+            {referral && <input type="hidden" name={JOIN_REFERRAL_PARAM} value={referral} />}
             <Button type="submit" block>Bli støttemedlem med Vipps</Button>
           </form>
         </MembershipTierCard>

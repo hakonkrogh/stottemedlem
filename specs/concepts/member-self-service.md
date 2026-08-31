@@ -20,6 +20,12 @@ the organization and without the organization having to answer.
 ## Rules & invariants
 - The page belongs to **one membership** and shows only it. It never exposes
   anything about the organization's other members.
+- **It leads with the member's [card](member-card.md)** — what they are comes
+  before what they pay and how to stop it. The card's own address is offered
+  here too, since this page is where a member comes looking for it.
+- The card's address and this page's address are **different secrets** on
+  purpose: this one can end the membership and must never be shared, while the
+  card is made for sharing.
 - It offers **ending the membership** as a real action, completed on the page.
   Ending it takes effect with the payment provider first; the product's record
   follows what the provider confirms.
@@ -49,6 +55,7 @@ the organization and without the organization having to answer.
   [supporting member](supporting-member.md).
 - Is the counterpart of the [join page](join-page.md): one starts the
   relationship, the other ends it.
+- Shows, and hands over the address of, the member's [card](member-card.md).
 
 ## Referenced by
 - [Use case: Renew annual membership](../use-cases/renew-annual-membership.md)

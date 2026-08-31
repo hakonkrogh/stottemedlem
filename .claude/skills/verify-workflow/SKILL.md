@@ -1,6 +1,6 @@
 ---
 name: verify-workflow
-description: Run a GitHub Actions workflow's `run:` steps locally in a runner-like scrubbed env, to prove a CI change is green BEFORE pushing. Use after editing anything in .github/workflows/.
+description: Run a GitHub Actions workflow's `run:` steps locally in a runner-like scrubbed env, to prove CI is green BEFORE pushing. Use after editing anything in .github/workflows/, AND before any push that could touch a package.json or pnpm-lock.yaml (adding a dependency, or merely running `pnpm story`) — it replays `pnpm install --frozen-lockfile`, the one failure nothing else local catches.
 ---
 # Verify a GitHub Actions workflow locally
 
@@ -24,6 +24,25 @@ node .claude/skills/verify-workflow/run-steps.mjs <workflow.yml> [job] [flags]
 # the normal check after editing CI
 node .claude/skills/verify-workflow/run-steps.mjs .github/workflows/ci.yml --force-turbo
 ```
+
+
+## It also catches lockfile drift — run it before ANY push
+
+The job's first step is `pnpm install --frozen-lockfile`, so this replays the
+one failure mode nothing else local sees: a `package.json` whose specifiers no
+longer match `pnpm-lock.yaml`. `pnpm test`/`typecheck`/`build`/`lint` all keep
+passing against the already-installed `node_modules` while CI dies before the
+first test.
+
+Verified 2026-08-31 by re-breaking it on purpose: with `packages/ui/package.json`
+bumped to `^10.5.10` and the lockfile left at `^10.5.3`, this exits 1 with
+`ERR_PNPM_OUTDATED_LOCKFILE`. That drift is not hypothetical — running
+`pnpm story` triggered a Storybook automigration that rewrote the manifest and
+not the lockfile (see the Storybook note in `project-overview`).
+
+So the trigger is wider than "after editing `.github/workflows/`": run it
+before pushing anything that could touch a manifest or the lockfile — adding a
+dependency, or merely starting Storybook.
 
 ## What it does and does not do
 

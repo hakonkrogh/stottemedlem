@@ -12,6 +12,14 @@
 
 import { create, toString as toStringQr } from "qrcode";
 
+/** The member's own card — a different owner from the organization's card below. */
+export {
+  MEMBER_CARD_HEIGHT,
+  MEMBER_CARD_WIDTH,
+  type MemberCardOptions,
+  memberCardSvg,
+} from "./memberCard.js";
+
 export interface QrOptions {
   /** Rendered width in pixels (PNG) or the `width` attribute (SVG). */
   width?: number;

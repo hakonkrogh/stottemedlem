@@ -68,6 +68,8 @@ const overview = (
     email: null,
     phone: null,
     vippsSub: null,
+    cardToken: null,
+    referredByMemberId: null,
     messagesDeclinedAt: null,
     createdAt: "2026-01-01 00:00:00",
     ...extra,
@@ -76,6 +78,7 @@ const overview = (
   status,
   renewing: false,
   hearts: 0,
+  recruits: 0,
 });
 
 describe("countMembersByStatus", () => {

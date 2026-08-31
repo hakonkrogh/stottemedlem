@@ -1,0 +1,38 @@
+---
+// The member's card, shown (specs/concepts/member-card.md).
+//
+// Always the same drawing the member would share — the page embeds the card's
+// own image rather than re-laying it out in HTML, so what someone sees here
+// and what lands in a social feed can never drift apart. The alt text carries
+// what the picture says, since the picture is the whole content.
+import { memberCardImagePath } from "@stottemedlem/core";
+import { MEMBER_CARD_HEIGHT, MEMBER_CARD_WIDTH } from "@stottemedlem/qr";
+
+interface Props {
+  cardToken: string;
+  alt: string;
+}
+const { cardToken, alt } = Astro.props;
+---
+
+<figure class="member-card">
+  <img
+    src={memberCardImagePath(cardToken, "svg")}
+    alt={alt}
+    width={MEMBER_CARD_WIDTH}
+    height={MEMBER_CARD_HEIGHT}
+  />
+</figure>
+
+<style>
+  .member-card {
+    margin: 0;
+    border-radius: 1rem;
+    overflow: hidden;
+  }
+  .member-card img {
+    display: block;
+    width: 100%;
+    height: auto;
+  }
+</style>

@@ -7,6 +7,8 @@ import {
   recordMemberNotice,
 } from "@stottemedlem/db";
 import { type EmailMessage, type EmailSender, membershipReceipt } from "@stottemedlem/email";
+import { renderCardPng } from "./cardImage";
+import { loadMemberCardForMemberId, memberCardUrl, renderMemberCardSvg } from "./memberCard";
 
 // The receipt for every captured payment (specs/concepts/payment-receipt.md).
 //
@@ -38,6 +40,15 @@ export function isNoteworthy(report: ReceiptReport): boolean {
   return report.sent > 0 || report.unreachable > 0 || report.failed > 0;
 }
 
+/** Bytes as base64, in chunks so a whole image never blows the argument limit. */
+function toBase64(bytes: Uint8Array): string {
+  let binary = "";
+  for (let i = 0; i < bytes.length; i += 8192) {
+    binary += String.fromCharCode(...bytes.subarray(i, i + 8192));
+  }
+  return btoa(binary);
+}
+
 /**
  * Send the receipt for every recent capture that still owes one, and write
  * down each send that the provider accepted. A member without an address gets
@@ -64,6 +75,22 @@ export async function sendOwedReceipts(
       report.unreachable++;
       continue;
     }
+    // The card leads the receipt (specs/concepts/member-card.md). It is
+    // assembled from the member's history, so it is always current — and it
+    // rides along as a picture too, for the mail clients that will not load
+    // one. A card that cannot be drawn must never cost the member their
+    // receipt: the message goes out without it.
+    const card = await loadMemberCardForMemberId(db, member.id);
+    const cardToken = card?.member.cardToken ?? null;
+    let cardPngBase64: string | null = null;
+    if (card && cardToken) {
+      try {
+        cardPngBase64 = toBase64(await renderCardPng(await renderMemberCardSvg(card)));
+      } catch {
+        cardPngBase64 = null;
+      }
+    }
+
     messages.push(
       membershipReceipt({
         orgName: org.name,
@@ -79,6 +106,10 @@ export async function sendOwedReceipts(
         paidDate: charge.capturedAt ?? charge.updatedAt,
         kind: charge.type === "RECURRING" ? "renewal" : "join",
         manageUrl: `${origin}${memberSelfServicePath(org.slug, agreement.manageToken)}`,
+        hearts: card?.hearts ?? 0,
+        recruits: card?.recruits ?? 0,
+        cardUrl: cardToken ? memberCardUrl(cardToken) : `${origin}/bli-medlem/${org.slug}`,
+        cardPngBase64,
       }),
     );
     recipients.push(capture);

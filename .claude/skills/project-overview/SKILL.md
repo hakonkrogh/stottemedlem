@@ -379,9 +379,26 @@ lives in `specs/`, kept in sync with code by a mandatory `Stop`-hook harness.
   `components/HeartRows.astro` as a game-HUD buildup, ten ❤️ per row, no empty
   placeholders, count-form "❤️ 12" where space is tight (MemberRow, CSV
   export's "Hjerter" column). Surfaces: min-side "Dine hjerter", member detail
-  history, member list, export, marketing perks row. Recruit counts /
-  referrals / printable proof from the same use case
-  (`use-cases/earn-hearts-and-recruit.md`) remain UNBUILT.
+  history, member list, export, marketing perks row.
+  **Member card + referrals** (added 2026-08-31, branch member-validity-card,
+  spec `concepts/member-card.md` NEW; this REPLACES the old note that recruit
+  counts / referrals / printable proof were unbuilt — they are built): the card
+  is the member's proof of support — name, org + circled logo, hearts, validity,
+  QR, brand attribution — drawn ONCE by `memberCardSvg` in `@stottemedlem/qr`
+  and reused everywhere, so what a member shares is what they were shown.
+  Public at `/medlemsbevis/<cardToken>` (+ `/kort.svg`, `/kort.png`), embedded
+  on min-side, kvittering and the receipt email (which now LEADS with the card
+  and attaches the PNG). Two separate secrets, and confusing them is the one
+  real hazard here: `supporting_members.card_token` is safe to post publicly,
+  `membership_agreements.manage_token` can STOP the membership — never render
+  the latter anywhere shareable. Referral: the QR carries `?verva=<cardToken>`
+  → hidden field on the join form → `membership_agreements.referred_by_member_id`
+  (the joiner is still anonymous at draft time) → copied onto the member at
+  activation, set once and only for a member row being CREATED (a returning
+  supporter was not recruited today). `recruits` is derived, joins-with-a-payment
+  only, and now sits on `MemberOverview` — so any new `MemberOverview` fixture
+  needs it. Migration `0011_member_card.sql` backfills a card token for every
+  existing member. Rendering/route details: `qr-codes.md` in this skill.
   **Member list** (added 2026-08-24, spec `use-cases/curate-member-list.md`):
   `/o/[slug]/medlemmer` (list, `?sok=` search) + `/o/[slug]/medlemmer/[memberId]`
   (history + the one editable thing, contact details). Queries live in
@@ -492,7 +509,18 @@ lives in `specs/`, kept in sync with code by a mandatory `Stop`-hook harness.
   member-notices, spec `specs/concepts/member-notice.md`): the ONLY way the
   product speaks to a member — Resend REST client (fetch-only, batched at 100,
   a rejected batch counts as nobody told) plus the notice copy itself
-  (`feeChangeNotice`, Norwegian). **The sending address is always ours**
+  (`feeChangeNotice`, `membershipReceipt`, Norwegian).
+  **Resend's BATCH endpoint does not accept attachments** (verified against the
+  docs 2026-08-31: "The `attachments` field is not supported yet" on
+  `/emails/batch`), so since the member card `createResendSender` splits —
+  a message with `attachments` goes one-at-a-time to `POST /emails`, everything
+  else still batches — and results are re-assembled IN THE CALLER'S ORDER,
+  because `sendOwedReceipts`/`notices` read results by position. Keep
+  attachments to the few messages that want them.
+  **Reading Resend's docs:** the rendered HTML is a JS shell that greps as
+  noise; append `.md` to any docs URL for the source
+  (`resend.com/docs/api-reference/emails/send-batch-emails.md`) and grep that.
+  `resend.com/docs/llms.txt` is the index. **The sending address is always ours**
   (`EMAIL_FROM_ADDRESS` var, `noreply@xn--stttemedlem-hgb.no`) — a provider only
   sends from a domain we own; the org is the display name + `reply_to`.
   `RESEND_API_KEY` is a secret; **absent = `createLoggingSender()`**, which
@@ -536,7 +564,20 @@ lives in `specs/`, kept in sync with code by a mandatory `Stop`-hook harness.
   2026-08-31; pre-builds core+db first) or
   `pnpm --filter @stottemedlem/ui run storybook --ci`
   (port 6006) via the community `@storybook-astro/framework` (Storybook 10 +
-  Astro 7; storybook-astro.org). Stories are CSF colocated with components
+  Astro 7; storybook-astro.org).
+  **Running Storybook can rewrite `packages/ui/package.json` and break CI**
+  (hit 2026-08-31): an automigration bumped `storybook` +
+  `@storybook/builder-vite` from `^10.5.3` to `^10.5.10` in the MANIFEST while
+  leaving `pnpm-lock.yaml` alone, so `pnpm install --frozen-lockfile` — the
+  FIRST step of ci.yml — dies with "specifiers in the lockfile don't match
+  specifiers in package.json" before a single test runs. Nothing local catches
+  it: test/typecheck/build/lint all stay green against the already-installed
+  node_modules. **The `verify-workflow` skill DOES catch it** (tested by
+  re-breaking it deliberately 2026-08-31: `run-steps.mjs .github/workflows/ci.yml
+  check` exits 1 on "Install dependencies" with ERR_PNPM_OUTDATED_LOCKFILE) —
+  which is the argument for running it before every push, not just after
+  editing a workflow. Bare `pnpm install --frozen-lockfile` is the same check,
+  cheaper. Either revert the bump or re-lock it deliberately. Stories are CSF colocated with components
   (`*.stories.ts`); slots pass via `args.slots.default` (HTML string, component
   ref, or configured `{ component, props, slots }`); a second glob in
   `packages/ui/.storybook/main.ts` pulls in app screen stories from

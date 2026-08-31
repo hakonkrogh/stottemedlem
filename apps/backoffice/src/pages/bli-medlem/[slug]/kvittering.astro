@@ -14,10 +14,12 @@ import InfoList from "@stottemedlem/ui/components/InfoList.astro";
 import Stack from "@stottemedlem/ui/components/Stack.astro";
 import Text from "@stottemedlem/ui/components/Text.astro";
 import TextLink from "@stottemedlem/ui/components/TextLink.astro";
+import MemberCardFigure from "../../../components/MemberCardFigure.astro";
 import OrgIdentityHeader from "../../../components/OrgIdentityHeader.astro";
 import PublicShell from "../../../layouts/PublicShell.astro";
 import { getDb } from "../../../lib/db";
 import { getEmailSender } from "../../../lib/email";
+import { loadMemberCardForMemberId, memberCardUrl } from "../../../lib/memberCard";
 import { publicOrigin, syncAgreement, syncCharge } from "../../../lib/membership";
 import { sendOwedReceipts } from "../../../lib/receipts";
 import { getVippsForOrg } from "../../../lib/vipps";
@@ -63,6 +65,10 @@ interface ReceiptDetails {
 }
 let receipt: ReceiptDetails | null = null;
 
+// The card the supporter just earned (specs/concepts/member-card.md) — the
+// first thing they should see here, ahead of the paperwork.
+let card: Awaited<ReturnType<typeof loadMemberCardForMemberId>> = null;
+
 /** "2026-03-14" (or a full timestamp) as people read it. */
 const dato = (iso: string) =>
   new Date(iso.length === 10 ? `${iso}T00:00:00Z` : iso).toLocaleDateString("nb-NO", {
@@ -91,6 +97,7 @@ if (vipps) {
         // arrival is usually the first moment the capture is known.
         await sendOwedReceipts(db, org, publicOrigin(Astro.request), getEmailSender());
 
+        card = await loadMemberCardForMemberId(db, settled.memberId);
         const member = await getSupportingMember(db, settled.memberId);
         const charges = await listChargesForAgreement(db, settled.id);
         const captured = charges.filter((charge) => charge.status === "CHARGED").at(-1);
@@ -137,6 +144,21 @@ const title = `Takk for støtten — ${org.name}`;
             Medlemskapet fornyes automatisk ved årsskiftet til den årlige kontingenten, så lenge du
             vil være med. Du får varsel i Vipps-appen før hver fornyelse, og kan si opp når som
             helst.
+          </Text>
+        </Stack>
+      )
+    }
+    {
+      status === "active" && card?.member.cardToken && (
+        <Stack gap="sm">
+          <MemberCardFigure
+            cardToken={card.member.cardToken}
+            alt={`Medlemsbevis for ${card.member.name?.trim() || "deg"} i ${org.name}, med ${card.hearts} hjerter.`}
+          />
+          <Text variant="small">
+            Dette er medlemsbeviset ditt. Det er ditt å dele —{" "}
+            <TextLink href={memberCardUrl(card.member.cardToken)}>se og del det her</TextLink>. Blir
+            noen støttemedlem ved å skanne QR-koden, teller det som en verving for deg.
           </Text>
         </Stack>
       )

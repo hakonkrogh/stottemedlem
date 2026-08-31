@@ -1,5 +1,5 @@
 import { defineMiddleware } from "astro:middleware";
-import { JOIN_PAGE_PATH_SEGMENT } from "@stottemedlem/core";
+import { JOIN_PAGE_PATH_SEGMENT, MEMBER_CARD_PATH_SEGMENT } from "@stottemedlem/core";
 import { env, getWorkOS, SESSION_COOKIE, sessionCookieOptions, toSessionInfo } from "./lib/workos";
 
 // Paths reachable without a session. Everything else requires an authenticated
@@ -20,6 +20,9 @@ function isPublic(pathname: string): boolean {
     // themselves with an HMAC signature the receiver verifies.
     pathname.startsWith("/api/vipps/") ||
     pathname.startsWith(`/${JOIN_PAGE_PATH_SEGMENT}/`) ||
+    // A member's card is theirs to share with anyone, so it can carry no
+    // session at all (specs/concepts/member-card.md).
+    pathname.startsWith(`/${MEMBER_CARD_PATH_SEGMENT}/`) ||
     pathname.startsWith("/org/")
   );
 }

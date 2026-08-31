@@ -35,20 +35,27 @@ perk of being a member, and a growth loop for the organization.
   drawn — there are no empty placeholders, because there is no maximum. Where
   a surface is too tight for the full buildup (a list row, a spreadsheet
   export), the count stands in ("❤️ 12").
-- Hearts appear wherever the member is looked at: the member's own
+- Hearts appear wherever the member is looked at: their own
+  [member card](member-card.md), their
   [self-service page](member-self-service.md), the organization's member list
-  and member detail, and the member-list export.
+  and member detail, and the member-list export. The recruit count travels with
+  them everywhere a surface has room for it — but only once it is above zero,
+  since "0 recruited" says nothing worth saying.
 - The member's hearts are the [brand mark](brand-mark.md) multiplied: the same
   red heart that identifies the product is what a member collects, one per
   year — supporting is the act the heart stands for, so the counter and the
   brand deliberately share the glyph.
-- A member can produce a **printable proof of support** showing their scorecard
-  and a QR code. Scanning the QR code leads into that organization's join flow
-  with a referral back to the member.
+- The scorecard's own object is the [member card](member-card.md): one card per
+  member per organization, showing the scorecard and a QR code, and shareable
+  at an address of its own. Scanning that QR code leads into the organization's
+  join flow with a referral back to the member.
 - A referral counts toward the recruit count only when the referred person
   **completes** joining (becomes a paying supporting member) — scans alone
   score nothing.
-- A recruit is attributed to at most one referring member.
+- A recruit is attributed to at most one referring member, decided when they
+  join and never revised afterwards. Someone who has supported the organization
+  before is not recruited by whoever's card they happened to scan: they were
+  already here.
 
 ## Relationships
 - Belongs to one [supporting member](supporting-member.md) (for their one
@@ -57,6 +64,7 @@ perk of being a member, and a growth loop for the organization.
 - Hearts share their glyph with the [brand mark](brand-mark.md) on purpose.
 - Recruits are other supporting members whose join carried this member's
   referral.
+- Is shown, and shared, as the [member card](member-card.md).
 
 ## Referenced by
 - [Use case: Earn hearts and recruit new members](../use-cases/earn-hearts-and-recruit.md)

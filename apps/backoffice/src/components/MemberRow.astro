@@ -35,6 +35,14 @@ const unreachable = status === "active" && !member.email?.trim();
 const heartsLabel = entry.hearts > 0 ? `❤️ ${entry.hearts}` : null;
 const heartsTitle =
   entry.hearts === 1 ? "Ett år som støttemedlem" : `${entry.hearts} år som støttemedlem`;
+// Word of mouth made visible (specs/concepts/scorecard.md): the organization
+// can only thank its best recruiters if it can see them. A zero says nothing,
+// so it is left out.
+// Bound to the hearts with a middle dot: the two halves of the scorecard read
+// as one thing, and the row stays short enough not to wrap.
+const recruitsLabel = entry.recruits > 0 ? `· vervet ${entry.recruits}` : null;
+const recruitsTitle =
+  entry.recruits === 1 ? "Har vervet ett medlem" : `Har vervet ${entry.recruits} medlemmer`;
 ---
 
 <a class="row" href={href}>
@@ -45,6 +53,11 @@ const heartsTitle =
     {heartsLabel && (
       <span class="hearts" title={heartsTitle}>
         {heartsLabel}
+      </span>
+    )}
+    {recruitsLabel && (
+      <span class="recruits" title={recruitsTitle}>
+        {recruitsLabel}
       </span>
     )}
     <span class="period">{period}{renewing && latest ? " · fornyes" : ""}</span>
@@ -91,6 +104,11 @@ const heartsTitle =
   .hearts {
     font-size: 0.85rem;
     font-weight: 600;
+    white-space: nowrap;
+  }
+  .recruits {
+    font-size: 0.8rem;
+    color: var(--sm-muted);
     white-space: nowrap;
   }
   .pill {

@@ -1,4 +1,4 @@
-import type { EmailMessage } from "./types.js";
+import type { EmailAttachment, EmailMessage } from "./types.js";
 
 /** Punycode: a raw ø in a URL breaks in too many mail clients. */
 const BRAND_URL = "https://xn--stttemedlem-hgb.no";
@@ -32,6 +32,27 @@ export interface MembershipReceipt {
   kind: "join" | "renewal";
   /** The member's own page — where the automatic renewal can be stopped. */
   manageUrl: string;
+  /**
+   * The member's card (specs/concepts/member-card.md) — the part of this
+   * message the member actually wants. One heart per supported year, the
+   * address they may share, and optionally the card as a picture to keep.
+   */
+  hearts: number;
+  recruits?: number;
+  cardUrl: string;
+  /** The card rendered as a PNG, base64-encoded, when one could be made. */
+  cardPngBase64?: string | null;
+}
+
+/** Ten to a row, like everywhere else the hearts are drawn. */
+const HEARTS_PER_ROW = 10;
+
+function heartRows(count: number): string[] {
+  const rows: string[] = [];
+  for (let left = count; left > 0; left -= HEARTS_PER_ROW) {
+    rows.push("❤️".repeat(Math.min(left, HEARTS_PER_ROW)));
+  }
+  return rows;
 }
 
 const escapeHtml = (value: string) =>
@@ -83,11 +104,34 @@ export function membershipReceipt(receipt: MembershipReceipt): EmailMessage {
     ["Merverdiavgift", "0 kr — medlemskontingent er unntatt mva"],
   ];
 
+  // The card leads (specs/concepts/member-card.md): the receipt's bookkeeping
+  // detail is what the law wants, but the card is what the member wants, so it
+  // comes first and the paperwork follows it.
+  const heartLine =
+    receipt.hearts === 1 ? "1 år som støttemedlem" : `${receipt.hearts} år som støttemedlem`;
+  const recruits = receipt.recruits ?? 0;
+  const cardName = memberName?.trim() || receipt.memberEmail;
+  const cardLines = [
+    "— DITT MEDLEMSBEVIS —",
+    `${cardName} — støttemedlem i ${orgName}`,
+    `Gyldig ${periodText}`,
+    ...heartRows(receipt.hearts),
+    recruits > 0
+      ? `${heartLine} · vervet ${recruits} ${recruits === 1 ? "medlem" : "medlemmer"}`
+      : heartLine,
+    "",
+    "Se og del beviset:",
+    receipt.cardUrl,
+  ];
+
   const lines = [
     greeting,
     "",
     lead,
     "",
+    ...cardLines,
+    "",
+    "Kvittering:",
     ...rows.map(([label, value]) => `${label}: ${value}`),
     "",
     "Medlemskapet fornyes automatisk. Vil du ikke fortsette, kan du stoppe det her:",
@@ -109,9 +153,31 @@ export function membershipReceipt(receipt: MembershipReceipt): EmailMessage {
         `<td style="padding:0.2rem 0">${escapeHtml(value)}</td></tr>`,
     )
     .join("\n");
+  const heartsHtml = heartRows(receipt.hearts)
+    .map((row) => `<div style="font-size:19px;line-height:1.45;letter-spacing:2px">${row}</div>`)
+    .join("");
+  // Table-wrapped and inline-styled, because that is the only layout every
+  // mail client agrees on. The hearts are the emoji character here — an email
+  // can render those, unlike the rasterized card.
+  const cardHtml = `<table role="presentation" cellpadding="0" cellspacing="0" style="border-collapse:separate;width:100%;margin:1.25rem 0">
+<tr><td style="background:#fdf8f0;border:1px solid #eadfce;border-radius:14px;padding:20px 22px">
+<div style="font-size:11px;letter-spacing:2.5px;font-weight:700;color:#b8860b">STØTTEMEDLEM</div>
+<div style="font-size:22px;font-weight:700;color:#2b2118;padding-top:6px">${escapeHtml(cardName)}</div>
+<div style="font-size:15px;color:#6b5d4d;padding-top:2px">Gyldig ${escapeHtml(periodText)} · ${org}</div>
+<div style="padding-top:10px">${heartsHtml}</div>
+<div style="font-size:13px;color:#6b5d4d;padding-top:4px">${escapeHtml(
+    recruits > 0
+      ? `${heartLine} · vervet ${recruits} ${recruits === 1 ? "medlem" : "medlemmer"}`
+      : heartLine,
+  )}</div>
+<div style="font-size:14px;padding-top:12px"><a href="${escapeHtml(receipt.cardUrl)}">Se og del medlemsbeviset ditt</a></div>
+</td></tr></table>`;
+
   const html = `<div style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif;font-size:16px;line-height:1.6;color:#2b2118;max-width:34rem">
 <p>${escapeHtml(greeting)}</p>
 <p>${escapeHtml(lead)}</p>
+${cardHtml}
+<p style="font-size:13px;color:#6b5d4d;margin-bottom:0.3rem">Kvittering</p>
 <table style="border-collapse:collapse;font-size:15px">
 ${htmlRows}
 </table>
@@ -124,10 +190,23 @@ på vegne av ${org}. Dette er kvitteringen for en gjennomført betaling og sende
 — den kan ikke avmeldes. ${escapeHtml(contactNote)}</p>
 </div>`;
 
+  // The card as a file, so the member keeps it even if their mail client
+  // never loads a picture and even after the message is filed away.
+  const attachments: EmailAttachment[] = receipt.cardPngBase64
+    ? [
+        {
+          filename: "medlemsbevis.png",
+          contentBase64: receipt.cardPngBase64,
+          contentType: "image/png",
+        },
+      ]
+    : [];
+
   return {
     to: receipt.memberEmail,
     fromName: orgName,
     replyTo: receipt.orgContactEmail ?? undefined,
+    ...(attachments.length > 0 ? { attachments } : {}),
     subject:
       receipt.kind === "join"
         ? `Kvittering: støttemedlemskap i ${orgName} — ${kr(paidNok)}`

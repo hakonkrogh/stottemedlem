@@ -92,6 +92,19 @@ export const supportingMembers = sqliteTable("supporting_members", {
   /** Vipps' opaque per-user id — how a returning supporter is recognized. */
   vippsSub: text("vipps_sub"),
   /**
+   * Unguessable token in the member's card address
+   * (specs/concepts/member-card.md). Deliberately NOT the agreement's
+   * manage token: the card is made to be shared, and holding this grants
+   * nothing but looking at the card.
+   */
+  cardToken: text("card_token"),
+  /**
+   * The member whose card brought this one in, if any — set once, when they
+   * joined, and never rewritten: a recruit belongs to at most one recruiter
+   * (specs/concepts/scorecard.md).
+   */
+  referredByMemberId: text("referred_by_member_id"),
+  /**
    * Legacy: when the member declined the organization's own messages, back
    * when the product could send those (feature removed 2026-08-28; the column
    * stays because migrations are additive). Nothing reads it.
@@ -134,6 +147,12 @@ export const membershipAgreements = sqliteTable("membership_agreements", {
    * the member, so it must never appear anywhere the member did not put it.
    */
   manageToken: text("manage_token"),
+  /**
+   * The card that was scanned to start this join, held here until Vipps names
+   * the person it belongs to — at drafting time the joiner is still anonymous
+   * (specs/use-cases/earn-hearts-and-recruit.md).
+   */
+  referredByMemberId: text("referred_by_member_id"),
   createdAt: text("created_at").notNull().default(sql`(datetime('now'))`),
   activatedAt: text("activated_at"),
   stoppedAt: text("stopped_at"),

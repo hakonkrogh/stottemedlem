@@ -1,0 +1,102 @@
+import { env } from "cloudflare:workers";
+import { initWasm, Resvg } from "@resvg/resvg-wasm";
+import wasm from "@resvg/resvg-wasm/index_bg.wasm";
+import { MEMBER_CARD_WIDTH } from "@stottemedlem/qr";
+import fraunces from "../assets/fonts/Fraunces.ttf?inline";
+
+/**
+ * Turning the member's card (specs/concepts/member-card.md) into a real
+ * picture.
+ *
+ * A shared card has to preview in a social feed and travel in an email, and
+ * neither accepts SVG — so the same drawing is rasterized here. Two things a
+ * Worker does not have and therefore ships with the code:
+ *
+ *  - **A WebAssembly renderer.** Workers cannot compile WebAssembly at
+ *    runtime, so the module is imported (the Cloudflare Vite plugin emits it
+ *    beside the bundle) rather than fetched.
+ *  - **Fonts.** There is no system font to fall back on: text drawn in a font
+ *    the renderer does not hold renders as nothing at all. The card's one
+ *    typeface is embedded, and it is the same Fraunces the rest of the product
+ *    is set in.
+ */
+
+/** The card's own typeface must be named exactly as the SVG asks for it. */
+export const CARD_FONT_FAMILY = "Fraunces";
+
+let wasmReady: Promise<void> | null = null;
+let fontBytes: Uint8Array | null = null;
+
+function decodeFont(): Uint8Array {
+  if (fontBytes) return fontBytes;
+  // Vite inlines the file as a base64 data URI; the renderer wants the bytes.
+  const base64 = String(fraunces).split(",")[1] ?? "";
+  const binary = atob(base64);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+  fontBytes = bytes;
+  return bytes;
+}
+
+/**
+ * Render a card SVG to a PNG.
+ *
+ * `width` is the pixel width to render at; the card's own aspect ratio is
+ * kept, so asking for a wider image gives a sharper one rather than a
+ * differently shaped one.
+ */
+export async function renderCardPng(
+  svg: string,
+  width = MEMBER_CARD_WIDTH,
+): Promise<Uint8Array<ArrayBuffer>> {
+  wasmReady ??= initWasm(wasm as WebAssembly.Module);
+  await wasmReady;
+
+  const renderer = new Resvg(svg, {
+    fitTo: { mode: "width", value: width },
+    font: {
+      fontBuffers: [decodeFont()],
+      defaultFontFamily: CARD_FONT_FAMILY,
+      // There are none, and letting the renderer look for them only costs time.
+      loadSystemFonts: false,
+    },
+  });
+  return new Uint8Array(renderer.render().asPng());
+}
+
+/** Image types the card may embed — the ones organizations can upload. */
+const MIME_BY_MAGIC: Array<[string, number[]]> = [
+  ["image/png", [0x89, 0x50, 0x4e, 0x47]],
+  ["image/jpeg", [0xff, 0xd8, 0xff]],
+];
+
+/**
+ * The organization's logo as a data URI, or null when it has none.
+ *
+ * The card must be one self-contained file: a rasterizer cannot follow a link
+ * out to R2, and neither can a mail client reading the card offline. So the
+ * logo is carried inside the drawing rather than referenced.
+ *
+ * WebP is skipped deliberately — the renderer cannot decode it, and a card
+ * with a blank hole where the logo should be is worse than a card with no
+ * logo at all.
+ */
+export async function orgLogoDataUri(logoKey: string | null): Promise<string | null> {
+  if (!logoKey) return null;
+  const object = await env.MEDIA.get(logoKey);
+  if (!object) return null;
+
+  const bytes = new Uint8Array(await object.arrayBuffer());
+  const mime = MIME_BY_MAGIC.find(([, magic]) =>
+    magic.every((byte, index) => bytes[index] === byte),
+  )?.[0];
+  if (!mime) return null;
+
+  let binary = "";
+  // Chunked: spreading a whole image into String.fromCharCode at once blows
+  // the argument limit on anything but a thumbnail.
+  for (let i = 0; i < bytes.length; i += 8192) {
+    binary += String.fromCharCode(...bytes.subarray(i, i + 8192));
+  }
+  return `data:${mime};base64,${btoa(binary)}`;
+}

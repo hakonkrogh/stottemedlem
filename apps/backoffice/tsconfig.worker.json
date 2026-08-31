@@ -12,5 +12,5 @@
   },
   // Run `wrangler types` first (the typecheck script does) — it generates
   // worker-configuration.d.ts with the Env interface + Workers runtime types.
-  "include": ["src/worker.ts", "worker-configuration.d.ts"]
+  "include": ["src/worker.ts", "src/assets.d.ts", "worker-configuration.d.ts"]
 }

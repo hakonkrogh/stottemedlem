@@ -19,6 +19,23 @@ export interface EmailMessage {
   subject: string;
   text: string;
   html: string;
+  /**
+   * Files travelling with the message — a member's card riding along with
+   * their receipt (specs/concepts/member-card.md), so they keep something they
+   * can save and show even if the mail client refuses to load pictures.
+   *
+   * A message that carries one cannot be batched by the provider, so keep
+   * attachments to the messages that genuinely want them.
+   */
+  attachments?: EmailAttachment[];
+}
+
+/** One file on a message. */
+export interface EmailAttachment {
+  filename: string;
+  /** The file's bytes, base64-encoded — what mail providers take. */
+  contentBase64: string;
+  contentType: string;
 }
 
 /**

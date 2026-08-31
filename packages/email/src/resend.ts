@@ -1,6 +1,7 @@
 import type { EmailMessage, EmailResult, EmailSender } from "./types.js";
 
 const RESEND_BATCH_URL = "https://api.resend.com/emails/batch";
+const RESEND_SEND_URL = "https://api.resend.com/emails";
 
 /** Resend accepts at most 100 messages per batch request. */
 export const RESEND_BATCH_LIMIT = 100;
@@ -18,6 +19,10 @@ export interface ResendConfig {
 
 interface ResendBatchResponse {
   data?: { id?: string }[];
+}
+
+interface ResendSendResponse {
+  id?: string;
 }
 
 /** RFC 5322 display name: quote it, and don't let a name break out of the quotes. */
@@ -47,6 +52,48 @@ function chunk<T>(items: T[], size: number): T[][] {
 export function createResendSender(config: ResendConfig): EmailSender {
   const doFetch = config.fetch ?? fetch;
 
+  /** The provider's shape for one message, minus the recipient list wrapper. */
+  const payload = (message: EmailMessage) => ({
+    from: addressWithName(message.fromName, config.from),
+    to: [message.to],
+    subject: message.subject,
+    text: message.text,
+    html: message.html,
+    ...(message.replyTo ? { reply_to: message.replyTo } : {}),
+  });
+
+  /**
+   * One message on its own. The batch endpoint refuses attachments, so a
+   * message carrying a file — a receipt with the member's card — goes this way
+   * instead. Slower per message, and only ever used by the few that need it.
+   */
+  async function sendOne(message: EmailMessage): Promise<EmailResult> {
+    const failed = (detail: string) => ({ to: message.to, sent: false, detail });
+    let response: Response;
+    try {
+      response = await doFetch(RESEND_SEND_URL, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${config.apiKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          ...payload(message),
+          attachments: (message.attachments ?? []).map((attachment) => ({
+            filename: attachment.filename,
+            content: attachment.contentBase64,
+            content_type: attachment.contentType,
+          })),
+        }),
+      });
+    } catch (error) {
+      return failed(error instanceof Error ? error.message : "network error");
+    }
+    if (!response.ok) return failed(`${response.status} ${(await response.text()).slice(0, 200)}`);
+    const body = (await response.json()) as ResendSendResponse;
+    return body.id ? { to: message.to, sent: true, detail: body.id } : failed("no id returned");
+  }
+
   async function sendBatch(messages: EmailMessage[]): Promise<EmailResult[]> {
     const failed = (detail: string) => messages.map((m) => ({ to: m.to, sent: false, detail }));
 
@@ -58,16 +105,7 @@ export function createResendSender(config: ResendConfig): EmailSender {
           Authorization: `Bearer ${config.apiKey}`,
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(
-          messages.map((message) => ({
-            from: addressWithName(message.fromName, config.from),
-            to: [message.to],
-            subject: message.subject,
-            text: message.text,
-            html: message.html,
-            ...(message.replyTo ? { reply_to: message.replyTo } : {}),
-          })),
-        ),
+        body: JSON.stringify(messages.map(payload)),
       });
     } catch (error) {
       return failed(error instanceof Error ? error.message : "network error");
@@ -90,9 +128,25 @@ export function createResendSender(config: ResendConfig): EmailSender {
 
   return {
     async send(messages) {
-      const results: EmailResult[] = [];
-      for (const batch of chunk(messages, RESEND_BATCH_LIMIT)) {
-        results.push(...(await sendBatch(batch)));
+      // The caller reads results by position, so the order the caller gave
+      // must survive the split between the two endpoints.
+      const results: EmailResult[] = new Array(messages.length);
+      const batchable: Array<{ index: number; message: EmailMessage }> = [];
+
+      for (const [index, message] of messages.entries()) {
+        if (message.attachments?.length) {
+          results[index] = await sendOne(message);
+        } else {
+          batchable.push({ index, message });
+        }
+      }
+
+      for (const batch of chunk(batchable, RESEND_BATCH_LIMIT)) {
+        const sent = await sendBatch(batch.map((entry) => entry.message));
+        for (const [position, entry] of batch.entries()) {
+          const result = sent[position];
+          if (result) results[entry.index] = result;
+        }
       }
       return results;
     },

@@ -243,8 +243,18 @@ const periodSurvives =
           <>
             <HeartRows count={history.length} />
             <Text variant="small">
-              {history.length === 1 ? "Én periode" : `${history.length} perioder`}, til sammen{" "}
-              {totalPaid} kr.
+              {[
+                history.length === 1 ? "Én periode" : `${history.length} perioder`,
+                `til sammen ${totalPaid} kr`,
+                // Recruiting is the other half of the scorecard
+                // (specs/concepts/scorecard.md), and the half an organization
+                // can only thank someone for if it can see it.
+                entry.recruits > 0
+                  ? `har vervet ${entry.recruits} ${entry.recruits === 1 ? "medlem" : "medlemmer"}`
+                  : null,
+              ]
+                .filter(Boolean)
+                .join(" · ")}
             </Text>
             <ul class="history">
               {history.map((period) => (

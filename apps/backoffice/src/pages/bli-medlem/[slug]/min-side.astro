@@ -13,8 +13,14 @@ import Stack from "@stottemedlem/ui/components/Stack.astro";
 import Text from "@stottemedlem/ui/components/Text.astro";
 import TextLink from "@stottemedlem/ui/components/TextLink.astro";
 import HeartRows from "../../../components/HeartRows.astro";
+import MemberCardFigure from "../../../components/MemberCardFigure.astro";
 import PublicShell from "../../../layouts/PublicShell.astro";
 import { getDb } from "../../../lib/db";
+import {
+  loadMemberCardForMemberId,
+  memberCardDisplayUrl,
+  memberCardUrl,
+} from "../../../lib/memberCard";
 import { getVippsForOrg } from "../../../lib/vipps";
 import { getWorkOS } from "../../../lib/workos";
 
@@ -62,11 +68,22 @@ if (Astro.request.method === "POST" && !stopped) {
 // What they have paid for stands: stopping ends the renewal, not the year.
 const history = agreement.memberId ? await listMembershipHistory(db, agreement.memberId) : [];
 const current = history[0];
+
+// The card comes first (specs/concepts/member-card.md): the member's own page
+// leads with the proof of what they are, and only then offers the paperwork
+// and the way out. There is no card before a payment has completed.
+const card = agreement.memberId ? await loadMemberCardForMemberId(db, agreement.memberId) : null;
+const cardToken = card?.member.cardToken ?? null;
+const cardAlt = card
+  ? `Medlemsbevis for ${card.member.name?.trim() || "deg"} i ${org.name}, med ${card.hearts} hjerter.`
+  : "";
 const title = `Ditt støttemedlemskap — ${org.name}`;
 ---
 
 <PublicShell title={title} description={`Administrer støttemedlemskapet ditt i ${org.name}.`} noindex>
   <Stack gap="lg">
+    {card && cardToken && <MemberCardFigure cardToken={cardToken} alt={cardAlt} />}
+
     <Stack gap="sm">
       <Heading>Ditt støttemedlemskap</Heading>
       {
@@ -115,6 +132,25 @@ const title = `Ditt støttemedlemskap — ${org.name}`;
           <HeartRows count={history.length} />
           <Text variant="small">
             Ett hjerte for hvert år du har støttet {org.name}. De blir stående — år for år.
+          </Text>
+        </Stack>
+      )
+    }
+
+    {
+      cardToken && (
+        <Stack gap="sm">
+          <Heading level={2}>Del medlemsbeviset</Heading>
+          <Text>
+            Beviset over er ditt å dele. Alle som åpner lenken ser det, og ingen kan endre
+            medlemskapet ditt fra den.
+          </Text>
+          <Text variant="small">
+            <TextLink href={memberCardUrl(cardToken)}>{memberCardDisplayUrl(cardToken)}</TextLink>
+          </Text>
+          <Text variant="small">
+            Skanner noen QR-koden på beviset og blir støttemedlem, teller det som en verving
+            for deg.
           </Text>
         </Stack>
       )
