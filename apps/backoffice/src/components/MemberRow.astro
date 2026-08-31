@@ -3,23 +3,27 @@
 // is the loudest thing on the row, because "who is current" is the question
 // the list exists to answer; the whole row is the link to the member.
 import { periodLabel } from "@stottemedlem/core";
-import type { MemberOverview } from "@stottemedlem/db";
+import { type MemberOverview, memberStanding } from "@stottemedlem/db";
+import { standingDescription, standingLabel } from "../lib/memberStanding";
 
 interface Props {
   entry: MemberOverview;
   href: string;
 }
 const { entry, href } = Astro.props;
-const { member, latest, status, renewing } = entry;
+const { member, latest, status } = entry;
 
 // A supporter may consent to a name and nothing else, or to no name at all.
 // Whatever we have, show something a person can recognize rather than an id.
 const displayName = member.name || member.email || member.phone || "Uten navn";
 const contact = member.name ? (member.email ?? member.phone) : member.phone;
+// Where they stand, as one word (specs/use-cases/curate-member-list.md).
 // Someone recorded but with no completed payment is not lapsed — they have
 // never been current. Calling that "Utløpt" would read as a member who left.
-const standing = latest ? status : "unpaid";
-const label = { active: "Aktiv", lapsed: "Utløpt", unpaid: "Ikke betalt" }[standing];
+// And a member whose arrangement has ended is not lapsed either: they are
+// active until their paid period runs out, and the one to talk to now.
+const standing = memberStanding(entry);
+const label = standingLabel[standing];
 const period = latest
   ? status === "active"
     ? `Betalt for ${periodLabel(latest.periodYear)}`
@@ -49,7 +53,7 @@ const recruitsTitle =
   <span class="name">{displayName}</span>
   {contact && <span class="contact">{contact}</span>}
   <span class="meta">
-    <span class:list={["pill", standing]}>{label}</span>
+    <span class:list={["pill", standing]} title={standingDescription[standing]}>{label}</span>
     {heartsLabel && (
       <span class="hearts" title={heartsTitle}>
         {heartsLabel}
@@ -60,7 +64,7 @@ const recruitsTitle =
         {recruitsLabel}
       </span>
     )}
-    <span class="period">{period}{renewing && latest ? " · fornyes" : ""}</span>
+    <span class="period">{period}</span>
     {unreachable && <span class="pill unreachable">Ingen e-post</span>}
   </span>
 </a>
@@ -119,10 +123,17 @@ const recruitsTitle =
     border: 1px solid transparent;
     white-space: nowrap;
   }
-  .pill.active {
+  .pill.renewing {
     color: var(--sm-success);
     background: var(--sm-success-bg);
     border-color: var(--sm-success-border);
+  }
+  /* Still active, but on its way out — the product's amber, because this is
+     something to notice and act on, not something that went wrong. */
+  .pill.ending {
+    color: var(--sm-accent-deep);
+    background: var(--sm-accent-soft);
+    border-color: var(--sm-accent);
   }
   .pill.unreachable {
     color: var(--sm-muted);

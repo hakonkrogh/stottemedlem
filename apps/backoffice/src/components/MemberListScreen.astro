@@ -7,19 +7,25 @@
 // The list PRESENTS members; correcting one is an action on that member's own
 // page, never a field in the list.
 import { periodLabel } from "@stottemedlem/core";
-import { countMembersByStatus, type MemberOverview, matchesMemberSearch } from "@stottemedlem/db";
+import { countMemberStandings, type MemberOverview, matchesMemberSearch } from "@stottemedlem/db";
 import Button from "@stottemedlem/ui/components/Button.astro";
 import Heading from "@stottemedlem/ui/components/Heading.astro";
 import Stack from "@stottemedlem/ui/components/Stack.astro";
 import Text from "@stottemedlem/ui/components/Text.astro";
 import TextField from "@stottemedlem/ui/components/TextField.astro";
 import TextLink from "@stottemedlem/ui/components/TextLink.astro";
+import { MEMBER_FILTERS, memberFilterFor } from "../lib/memberStanding";
 import MemberRow from "./MemberRow.astro";
 
 interface Props {
   members: MemberOverview[];
   /** What the administrator typed; filtering happens here so counts don't move. */
   search?: string;
+  /**
+   * Which standing the list is narrowed to, as it appears in the web address —
+   * absent or unknown means everybody.
+   */
+  filter?: string | null;
   membersPath: string;
   /**
    * The CSV download (specs/use-cases/export-member-list.md) — the register is
@@ -29,15 +35,48 @@ interface Props {
   exportHref?: string;
   currentYear: number;
 }
-const { members, search = "", membersPath, exportHref, currentYear } = Astro.props;
+const { members, search = "", filter = null, membersPath, exportHref, currentYear } = Astro.props;
 
-const { active, lapsed } = countMembersByStatus(members);
-const shown = members.filter((entry) => matchesMemberSearch(entry, search));
+const counts = countMemberStandings(members);
+const selected = memberFilterFor(filter);
+// Narrowed first, then searched: the pills say who to look among, the search
+// box says who to find. Both count over the WHOLE register, so neither one
+// moves the numbers the other reports.
+const shown = members
+  .filter((entry) => selected.matches(entry))
+  .filter((entry) => matchesMemberSearch(entry, search));
+
+// A pill's count is the whole register's answer, not the current view's.
+const countFor = (pill: (typeof MEMBER_FILTERS)[number]) => members.filter(pill.matches).length;
+// Only the standings an organization actually has — plus the two that always
+// make sense to ask for, and whichever pill is selected, so a filtered list can
+// never leave the pill it is standing on out of the row.
+const pills = MEMBER_FILTERS.filter(
+  (pill) =>
+    pill.key === "alle" || pill.key === "aktive" || pill.key === selected.key || countFor(pill) > 0,
+).map((pill) => {
+  const params = new URLSearchParams();
+  if (pill.key !== "alle") params.set("status", pill.key);
+  if (search.trim()) params.set("sok", search);
+  const query = params.toString();
+  return {
+    ...pill,
+    count: countFor(pill),
+    href: query ? `${membersPath}?${query}` : membersPath,
+    current: pill.key === selected.key,
+  };
+});
+
+// The headline answers "how are we doing" — the pills below it break it down,
+// so this says the one number and the one thing worth acting on.
 const summary =
   members.length === 0
     ? "Ingen støttemedlemmer ennå. Den første dukker opp her av seg selv når noen melder seg inn."
-    : `${active} ${active === 1 ? "aktivt medlem" : "aktive medlemmer"} i ${periodLabel(currentYear)}` +
-      (lapsed > 0 ? `, ${lapsed} utløpt.` : ".");
+    : `${counts.active} ${counts.active === 1 ? "aktivt medlem" : "aktive medlemmer"} i ${periodLabel(currentYear)}` +
+      (counts.ending > 0 ? ` — ${counts.ending} av dem fornyes ikke.` : ".");
+// Nothing matched: say which of the two narrowings is responsible, because the
+// way out differs — clear the search, or step back to the whole list.
+const emptyReason = shown.length > 0 ? null : search.trim() ? "search" : "filter";
 ---
 
 <Stack gap="lg">
@@ -57,7 +96,26 @@ const summary =
 
   {
     members.length > 0 && (
+      <nav class="filters" aria-label="Vis medlemmer">
+        {pills.map((pill) => (
+          <a
+            class:list={["filter", { current: pill.current }]}
+            href={pill.href}
+            aria-current={pill.current ? "true" : undefined}
+          >
+            {pill.label} <span class="count">{pill.count}</span>
+          </a>
+        ))}
+      </nav>
+    )
+  }
+
+  {
+    members.length > 0 && (
       <form method="get" class="search">
+        {/* The pills and the search box narrow the same list, so submitting one
+            must not throw the other away. */}
+        {selected.key !== "alle" && <input type="hidden" name="status" value={selected.key} />}
         <TextField
           label="Finn et medlem"
           name="sok"
@@ -74,9 +132,20 @@ const summary =
   }
 
   {
-    search && shown.length === 0 && (
+    members.length > 0 && emptyReason === "search" && (
       <Text variant="muted">
-        Ingen medlemmer passer «{search}». <TextLink href={membersPath}>Vis alle</TextLink>
+        Ingen medlemmer passer «{search}»
+        {selected.key === "alle" ? "" : ` blant dem som er «${selected.label.toLowerCase()}»`}.{" "}
+        <TextLink href={membersPath}>Vis alle</TextLink>
+      </Text>
+    )
+  }
+
+  {
+    members.length > 0 && emptyReason === "filter" && (
+      <Text variant="muted">
+        Ingen medlemmer er «{selected.label.toLowerCase()}» akkurat nå.{" "}
+        <TextLink href={membersPath}>Vis alle</TextLink>
       </Text>
     )
   }
@@ -103,6 +172,48 @@ const summary =
   /* The search field carries its own button (TextField's action slot). */
   .search {
     max-width: 34rem;
+  }
+  /* Narrowing the list is a row of links, not a control to configure: each one
+     is an address the administrator can bookmark, share, and reload. */
+  .filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--sm-space-sm);
+  }
+  .filter {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.3rem 0.75rem;
+    font-size: 0.85rem;
+    font-weight: 600;
+    border-radius: 999px;
+    border: 1px solid var(--sm-border-strong);
+    background: var(--sm-surface);
+    color: var(--sm-ink);
+    text-decoration: none;
+  }
+  .filter:hover {
+    border-color: var(--sm-accent);
+  }
+  .filter:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px var(--sm-focus-ring);
+  }
+  .filter.current {
+    background: var(--sm-accent-soft);
+    border-color: var(--sm-accent);
+    color: var(--sm-accent-deep);
+  }
+  /* The count is what the pill is worth looking at for, but it must not shout
+     louder than the word next to it. */
+  .count {
+    font-variant-numeric: tabular-nums;
+    font-weight: 500;
+    color: var(--sm-muted);
+  }
+  .filter.current .count {
+    color: inherit;
   }
   /* One member per row on a phone; several columns when the display allows. */
   .rows {

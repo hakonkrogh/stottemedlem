@@ -22,6 +22,7 @@ const members = await listOrganizationMembers(getDb(), org.id, currentPeriod);
     <MemberListScreen
       members={members}
       search={Astro.url.searchParams.get("sok") ?? ""}
+      filter={Astro.url.searchParams.get("status")}
       membersPath={`${orgPath(org.slug)}/medlemmer`}
       exportHref={`${orgPath(org.slug)}/medlemmer/eksport.csv`}
       currentYear={currentPeriod}

@@ -21,6 +21,20 @@ over year as a history of memberships.
 - A membership is **active** while its annual period is current and the fee for
   that period is paid; it becomes **lapsed** once the period ends without a paid
   renewal.
+- Being active and continuing are two questions, not one. An active membership
+  is either **renewing** — the yearly arrangement still runs, so the next
+  period is already covered — or **ending**: the arrangement has been ended, so
+  the current period is the last one. An ending membership is fully active
+  until its period runs out; nothing is taken away early. Together with lapsed,
+  and with a supporter who has never completed a payment, these are the
+  standings the organization sees and acts on
+  ([curate the member list](../use-cases/curate-member-list.md)).
+- Ending is the supporter's own act, and they may perform it anywhere the
+  arrangement lives — in the product, or directly in their payment app. The
+  product must reflect it either way: it re-reads the provider rather than
+  waiting to be told
+  ([payment reconciliation](payment-reconciliation.md)), so an arrangement
+  cancelled outside the product still shows as ending.
 - A membership comes into existence only on a successful payment of the annual
   fee — never by manual status change.
 - A membership lasts only as long as the payment behind it does. A payment

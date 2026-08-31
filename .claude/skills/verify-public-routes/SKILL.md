@@ -79,6 +79,46 @@ Local D1 lives in `apps/backoffice/.wrangler` and is shared **live** with a
 running `astro dev` — seed after starting the server, no restart needed. Seed
 only fictitious names/orgnr.
 
+**Gotcha when INSERTing your own rows against the seed:** the tier ids are
+`tier-1` / `tier-2`, NOT `tier-seed-1` — only the org, member and agreement ids
+carry the `-seed-` convention. Guessing wrong gets you
+`FOREIGN KEY constraint failed: SQLITE_CONSTRAINT_FOREIGNKEY` and nothing else;
+read the ids back (`d1.sh "SELECT id, key FROM membership_tiers WHERE
+org_id='org-seed-1'"`) rather than assuming.
+
+## Drive the member's own page (min-side)
+
+The other public surface, and the one no login can reach: `min-side` is opened
+with the agreement's `manage_token`, which IS the credential. The seed gives
+you two — `tok-seed-1` (Kari) and `tok-seed-2` (Ola):
+
+    curl -s "http://localhost:4322/bli-medlem/eksempel-musikkorps/min-side?n=tok-seed-1"
+
+**Force the states by editing the agreement, not by driving Vipps.** The page
+branches on `membership_agreements.status`, so every case is one UPDATE away —
+this is how the "cancelled in the Vipps app" path gets tested locally with no
+provider involved at all:
+
+    d1.sh "UPDATE membership_agreements SET status='STOPPED' WHERE id='agr-seed-1'"
+
+**The case worth always testing here: ONE MEMBER, TWO AGREEMENTS.** The page is
+per-AGREEMENT (`findAgreementByManageToken`) while the history it shows is
+per-MEMBER, and stopping + re-joining leaves a member holding a stopped
+agreement and a live one at once. Insert a second ACTIVE agreement for the same
+`member_id` and re-open the FIRST token — that is where money claims go wrong
+(fixed 2026-08-31; see `project-overview`). Never POST to the page while
+probing: the POST stops the agreement for real.
+
+`GET`s are safe and read-only. Strip the markup to read the copy:
+
+    curl -s "<url>" | python3 -c "
+    import sys,re,html
+    t=re.sub(r'<(script|style)[^>]*>.*?</\1>','',sys.stdin.read(),flags=re.S)
+    print('\n'.join(l.strip() for l in html.unescape(re.sub(r'<[^>]+>','\n',t)).split('\n') if l.strip()))"
+
+Manage tokens on STAGING/PRODUCTION are real members' — a `d1.sh` SELECT can
+read one for debugging, but never render it anywhere and never POST with it.
+
 ## Assert
 
     node .claude/skills/verify-public-routes/routes.mjs <url> [assertions...]

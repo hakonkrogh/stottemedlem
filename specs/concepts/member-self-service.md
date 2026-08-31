@@ -26,9 +26,21 @@ the organization and without the organization having to answer.
 - The card's address and this page's address are **different secrets** on
   purpose: this one can end the membership and must never be shared, while the
   card is made for sharing.
+- **Whether the membership continues is stated first**, alongside what is paid
+  and for which period — not further down the page. Checking exactly that is
+  why a member opens this page, and a membership they have already cancelled
+  must never read as an ordinary running one. The same is true whichever way
+  they cancelled: in the product, or directly in their payment app
+  ([membership](membership.md)).
 - It offers **ending the membership** as a real action, completed on the page.
   Ending it takes effect with the payment provider first; the product's record
   follows what the provider confirms.
+- **"You will not be charged again" is a promise about the member's money, not
+  about one arrangement.** A supporter who stops and joins again holds a
+  stopped arrangement and a live one at the same time, so the page never says
+  the payments have ended while another arrangement of theirs still runs — it
+  says this one has ended, and that the other continues. Being told the money
+  stopped when it has not is the one wrong thing this page could say.
 - Ending is not the same as a refund: the period already paid for runs to its
   end, and the member stays on the organization's list for it. Only the
   continuation stops. Getting money back is a separate thing, and not the

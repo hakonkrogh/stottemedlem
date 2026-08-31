@@ -303,6 +303,20 @@ lives in `specs/`, kept in sync with code by a mandatory `Stop`-hook harness.
   `whenLabel`, which adds the clock only when a day is shared). The
   duplicate-renewal alarm does NOT fire here: it only looks at RECURRING charges
   within one agreement.
+  **Third consequence, found 2026-08-31: `min-side` is per-AGREEMENT while the
+  member is not.** `findAgreementByManageToken` resolves ONE agreement (the
+  token is per-agreement), but `listMembershipHistory` beside it is
+  per-MEMBER — so any sentence on that page about the PERSON (above all
+  "du blir ikke belastet igjen") must be derived member-wide or it lies:
+  a member holding a stopped agreement and a live one gets promised the
+  payments stopped while the other renews. `hasOtherRunningAgreement` in
+  `@stottemedlem/db` is that check; use it for any new claim on that page.
+  Same asymmetry to watch for in any future token-addressed member surface.
+  **KNOWN AND UNHANDLED:** a member with TWO live agreements is charged twice
+  per period, and nothing detects, prevents or reports it — not the join
+  route, not reconcile, not the duplicate-renewal alarm. Deliberately left
+  open 2026-08-31 (it needs prevention at join time, not wording); the
+  self-service page only stopped MISDESCRIBING the state.
   **Renewals + repricing** (added 2026-08-20): `src/lib/renewals.ts`
   (`repriceAgreements`, `createDueRenewalCharges`) driven by `worker.ts`
   `scheduled` — 02:00 reconcile-then-reprice, 04:00 reprice-then-renew — with the jobs
@@ -408,10 +422,29 @@ lives in `specs/`, kept in sync with code by a mandatory `Stop`-hook harness.
   **Member list** (added 2026-08-24, spec `use-cases/curate-member-list.md`):
   `/o/[slug]/medlemmer` (list, `?sok=` search) + `/o/[slug]/medlemmer/[memberId]`
   (history + the one editable thing, contact details). Queries live in
-  `@stottemedlem/db` (`listOrganizationMembers`, `countMembersByStatus`,
+  `@stottemedlem/db` (`listOrganizationMembers`, `countMemberStandings`,
   `matchesMemberSearch`, `getOrganizationMember`, `updateMemberContactDetails`);
   status is DERIVED (never a column, never settable) and a supporter with no
-  completed payment renders as "Ikke betalt", not lapsed. Two conventions this
+  completed payment renders as "Ikke betalt", not lapsed.
+  **Standing is FOUR values, not two** (added 2026-08-31, branch
+  member-status-filters): `memberStanding(entry)` in `@stottemedlem/db` folds
+  the two derived facts — `status` active/lapsed and `renewing` (any ACTIVE
+  agreement) — into `renewing | ending | lapsed | unpaid`, and `unpaid` wins
+  over everything because a supporter recorded on approval has a live
+  agreement seconds before any money lands. **`ending` is the one that was
+  missing**: a member who cancels in the VIPPS APP stays fully active until
+  their period runs out, and the product already knew (webhook/reconcile set
+  the agreement STOPPED — verified against staging D1) but only whispered it
+  in a prose sentence, which is exactly the complaint that prompted this.
+  `countMembersByStatus` is GONE — it also mis-counted `unpaid` people as
+  lapsed. The WORDS and the filter pills live in
+  `apps/backoffice/src/lib/memberStanding.ts` (`standingLabel`,
+  `standingDescription`, `MEMBER_FILTERS`, `memberFilterFor`), imported by the
+  row, the member page AND `eksport.csv.ts`, so the three can't disagree —
+  put any new member-facing wording there, not inline in a screen. List pills
+  are plain `?status=<key>` links (Norwegian keys: `aktive`, `fornyes`,
+  `slutter`, `utlopt`, `ikke-betalt`) that compose with `?sok=`; each pill's
+  count is over the WHOLE register, never the narrowed view. Two conventions this
   established, worth following for new back-office screens: (1) the page is thin
   — `requireOrgAccess(session, slug)` in `src/lib/orgAccess.ts` resolves the org
   + checks WorkOS membership (an org you may not see and one that does not exist
@@ -680,6 +713,14 @@ lives in `specs/`, kept in sync with code by a mandatory `Stop`-hook harness.
   dependency graph. Use `pnpm turbo run build --filter=@stottemedlem/marketing`
   (Turbo builds deps first) or build the packages before the app. `astro preview`
   serves `dist/` live, so the visual loop is: turbo build → preview → screenshot.
+  **This bites a PACKAGE's own unit tests too, not just app builds** (hit
+  2026-08-31): `cd packages/db && npx vitest run` dies with `Failed to resolve
+  entry for package "@stottemedlem/core"` — `packages/db` imports core, and a
+  fresh worktree has no `packages/core/dist/`. It reads like a broken test file
+  and is a missing build. Never reach for a bare `npx vitest` to iterate on one
+  package; `pnpm turbo run test --filter=@stottemedlem/db --force` is the same
+  speed (~1.6s) and builds core first. (`--force` for the reason below: turbo
+  replays cached output across worktrees.)
 - Conventions: ESM everywhere; never use the `any` type; use `ast-grep` for structural search.
 - Tooling gotchas: `astro check` emits false ts(6133) "declared but never read"
   *hints* for symbols used only after a frontmatter early-`return` (0 errors =
@@ -695,12 +736,23 @@ lives in `specs/`, kept in sync with code by a mandatory `Stop`-hook harness.
   you just introduced, isn't. Restart via `devlog.sh start` and re-verify.
   **`pnpm lint` (Biome) is GREEN as of 2026-08-27 and is enforced in CI** — this
   REPLACES the long-standing "lint is red even on a clean tree" (true
-  2026-08-12 → 2026-08-27). It exits 0 with **0 errors and ~296 warnings**:
+  2026-08-12 → 2026-08-27). It exits 0 with **0 errors and ~380 warnings**
+  (~296 on 2026-08-27, ~383 on 2026-08-31 — the count grows with every new
+  `.astro` file, so treat it as noise, never as a regression):
   `biome check` fails on errors only, and the warnings are the known false
   positives — Biome parses only `.astro` frontmatter, so imports/props used
   solely in the template trip noUnusedImports/noUnusedVariables (Shell,
   PublicShell, CreateOrgScreen, …). **Never "fix" those by deleting the
-  imports**, and don't add `--error-on-warnings`. The 8 errors that used to
+  imports**, and don't add `--error-on-warnings`.
+  **When `pnpm lint` DOES go red, don't grep its output for "error"** — the
+  hundreds of warnings print the word too, and Biome truncates with
+  "Diagnostics not shown: 363", so the real failures are usually not even in
+  the output. Ask for them directly:
+  `npx biome check --diagnostic-level=error .` prints only the errors, with
+  the exact formatter diff. Then `npx biome check --write <paths>` fixes the
+  safe ones (format + import order — the two that a hand-written import line
+  or a new export in a test file will trip every time; both hit 2026-08-31).
+  Run the pair after any edit, since `.claude/` is linted too. The 8 errors that used to
   make it red were cleared like this: 4 `noControlCharactersInRegex` in
   `packages/core/src/index.ts` were a FALSE POSITIVE — stripping control
   characters is what `normalizeMembershipTierDescription` is for — so they got

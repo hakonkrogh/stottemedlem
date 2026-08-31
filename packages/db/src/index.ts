@@ -7,7 +7,7 @@
  */
 import type { D1Database } from "@cloudflare/workers-types";
 import { membershipTierKey, slugifyOrganizationName } from "@stottemedlem/core";
-import { and, asc, desc, eq, gte, inArray, isNull, like, lt, lte, sql } from "drizzle-orm";
+import { and, asc, desc, eq, gte, inArray, isNull, like, lt, lte, ne, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import {
   type AgreementStatus,
@@ -371,6 +371,35 @@ export async function findAgreementByManageToken(
     .from(membershipAgreements)
     .where(eq(membershipAgreements.manageToken, manageToken));
   return row ?? null;
+}
+
+/**
+ * Whether this supporter has some OTHER arrangement still running.
+ *
+ * "Will I be charged again?" is a question about a person and their money, not
+ * about one agreement — and one supporter can hold several. Stopping and
+ * joining again drafts a NEW agreement rather than reviving the old one, so a
+ * member can hold a stopped one and a live one at the same time (seen on
+ * staging 27.8.2026, 41 seconds apart). Answering from the stopped agreement
+ * alone would promise that no more money will be taken while the other one
+ * renews on schedule.
+ */
+export async function hasOtherRunningAgreement(
+  db: Db,
+  memberId: string,
+  exceptAgreementId: string,
+): Promise<boolean> {
+  const [row] = await db
+    .select({ id: membershipAgreements.id })
+    .from(membershipAgreements)
+    .where(
+      and(
+        eq(membershipAgreements.memberId, memberId),
+        eq(membershipAgreements.status, "ACTIVE"),
+        ne(membershipAgreements.id, exceptAgreementId),
+      ),
+    );
+  return Boolean(row);
 }
 
 /** The identity a supporter consented to share, captured once at joining. */
@@ -1134,14 +1163,50 @@ export async function countActiveMembers(
   return new Set(rows.map((row) => row.memberId)).size;
 }
 
-/** How many supporters are current and how many have lapsed. */
-export function countMembersByStatus(members: MemberOverview[]): {
-  active: number;
-  lapsed: number;
-} {
-  let active = 0;
-  for (const entry of members) if (entry.status === "active") active++;
-  return { active, lapsed: members.length - active };
+/**
+ * Where a supporter stands with the organization, as one word.
+ *
+ * Being current and continuing to support are different questions, and the
+ * answer an organization acts on is the pair of them: someone who has ended
+ * their arrangement is still a member until their paid period runs out, but
+ * they are the one to talk to now, not next year. Two booleans state that; a
+ * name is what makes it something to look for, count, and filter by
+ * (specs/use-cases/curate-member-list.md).
+ *
+ * Derived like everything else about standing — never stored, never set by an
+ * administrator.
+ */
+export type MemberStanding = "renewing" | "ending" | "lapsed" | "unpaid";
+
+export function memberStanding(entry: MemberOverview): MemberStanding {
+  // Never having paid comes first: a supporter recorded seconds ago has an
+  // arrangement that will renew, and calling them "renewing" would claim money
+  // arrived. They are current in neither direction yet.
+  if (!entry.latest) return "unpaid";
+  if (entry.status === "lapsed") return "lapsed";
+  return entry.renewing ? "renewing" : "ending";
+}
+
+/** Whether a member is current — either kind of active. */
+export function isCurrentMember(entry: MemberOverview): boolean {
+  const standing = memberStanding(entry);
+  return standing === "renewing" || standing === "ending";
+}
+
+/**
+ * How many supporters stand where. Counted over the whole register, so the
+ * numbers describe the organization and do not move while somebody searches.
+ */
+export function countMemberStandings(
+  members: MemberOverview[],
+): Record<MemberStanding, number> & { all: number; active: number } {
+  const counts = { all: members.length, active: 0, renewing: 0, ending: 0, lapsed: 0, unpaid: 0 };
+  for (const entry of members) {
+    const standing = memberStanding(entry);
+    counts[standing]++;
+    if (standing === "renewing" || standing === "ending") counts.active++;
+  }
+  return counts;
 }
 
 /**

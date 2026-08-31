@@ -3,6 +3,7 @@
 import MemberDetailScreen from "./MemberDetailScreen.astro";
 import {
   continuing,
+  endingAfterThisYear,
   fixturePayment,
   fixturePeriod,
   lapsed,
@@ -41,6 +42,23 @@ export const Continuing = {
     entry: { ...continuing, history: [fixturePeriod("m-1", 2026, 300)] },
     values: { name: "Ingrid Solheim", email: "ingrid@eksempel.example", phone: "4711111111" },
     payments: [fixturePayment(2026, 300)],
+  }),
+};
+
+/**
+ * Cancelled in the Vipps app rather than here (the case that prompted this
+ * standing, staging 31.8.2026): still a paid-up member of the current period,
+ * and the one the organization should talk to now. The product learned it by
+ * re-reading Vipps, not by being told.
+ */
+export const EndingAfterThisPeriod = {
+  args: inFrame("m-2", {
+    entry: {
+      ...endingAfterThisYear,
+      history: [fixturePeriod("m-2", 2026, 240), fixturePeriod("m-2", 2025, 300)],
+    },
+    values: { name: "Bjørn Aas", email: "bjorn@eksempel.example", phone: "4722222222" },
+    payments: [fixturePayment(2026, 240), fixturePayment(2025, 300)],
   }),
 };
 
