@@ -7,47 +7,41 @@
  * what rides along with their receipt. Keeping it a single artifact is the
  * point — the card someone shares must be the card they were shown.
  *
- * Three constraints shape the drawing:
+ * Two constraints shape the drawing:
  *  - **No emoji.** The card is rasterized on a server with exactly one
  *    embedded font and no colour-emoji font, so every heart — including the
  *    brand mark in the attribution — is a vector path, which
  *    specs/concepts/brand-mark.md explicitly allows for surfaces that cannot
  *    rely on emoji fonts.
- *  - **1.91:1 when it is shared.** That is the shape social platforms preview
- *    without cropping, and a card that gets cropped loses the name or the
- *    attribution.
- *  - **A second, upright shape for narrow screens.** A picture keeps its
- *    aspect ratio, so a 1.91:1 card poured into a phone's width shrinks its QR
- *    code to something nobody can scan and its captions to something nobody
- *    can read. The upright card is the same card, laid out down the page
- *    instead of across it, and the surfaces that show it pick per viewport.
+ *  - **Upright, and only upright.** A picture cannot reflow, and the surface
+ *    that matters is a phone: an across-the-page card poured into a phone's
+ *    width shrinks its QR code to something nobody can scan and its captions
+ *    to something nobody can read. The card is laid out down the page so it
+ *    is readable and scannable where it is actually held. A wide variant used
+ *    to exist alongside it, purely because link previews show 1.91:1
+ *    uncropped; it was dropped 2026-08-31 — one card, drawn once, is worth
+ *    more than a preview that crops well.
  *
- * Nothing here is placed at a hand-picked y: each layout stacks its blocks and
+ * Nothing here is placed at a hand-picked y: the layout stacks its blocks and
  * centres the stack, so a member with one heart and a member with four rows of
  * them both get a balanced card instead of one with a hole in it.
  */
 
 import { create } from "qrcode";
 
-/** Card canvas — 1.91:1, the aspect ratio link previews show uncropped. */
-export const MEMBER_CARD_WIDTH = 1200;
-export const MEMBER_CARD_HEIGHT = 628;
+/**
+ * Card canvas — upright, because a phone is where a member looks at their card
+ * and where they hold its QR code up to a camera. There is exactly ONE card
+ * (decided 2026-08-31): a second, wide version previewed better in a social
+ * feed but meant two drawings to keep saying the same thing, and the card a
+ * member is shown must be the card they share.
+ */
+export const MEMBER_CARD_WIDTH = 760;
+export const MEMBER_CARD_HEIGHT = 1040;
 
-/** The upright card, for viewports too narrow to read the wide one. */
-export const MEMBER_CARD_TALL_WIDTH = 760;
-export const MEMBER_CARD_TALL_HEIGHT = 1120;
-
-/** Which way the card is laid out. `wide` is the one that gets shared. */
-export type MemberCardShape = "wide" | "tall";
-
-/** The canvas a shape draws on — what an `<img>` needs to reserve space. */
-export function memberCardSize(shape: MemberCardShape = "wide"): {
-  width: number;
-  height: number;
-} {
-  return shape === "tall"
-    ? { width: MEMBER_CARD_TALL_WIDTH, height: MEMBER_CARD_TALL_HEIGHT }
-    : { width: MEMBER_CARD_WIDTH, height: MEMBER_CARD_HEIGHT };
+/** The canvas — what an `<img>` needs to reserve space. */
+export function memberCardSize(): { width: number; height: number } {
+  return { width: MEMBER_CARD_WIDTH, height: MEMBER_CARD_HEIGHT };
 }
 
 const CREAM = "#fdf8f0";
@@ -92,8 +86,6 @@ export interface MemberCardOptions {
    * reader cannot make.
    */
   logoDataUri?: string | null;
-  /** Wide (shared, 1.91:1) or upright (narrow viewports). Defaults to wide. */
-  shape?: MemberCardShape;
 }
 
 function escapeXml(value: string): string {
@@ -192,17 +184,10 @@ function heartGeometry(count: number, maxWidth: number) {
 }
 
 /**
- * Draw the hearts. Left-aligned in the wide card, where they sit in a column
- * beside the QR code; centred in the upright one, where every other line is.
- * The last row centres on its own width, so a part-full row does not hang.
+ * Draw the hearts, centred on `x` like every other line on the card. The last
+ * row centres on its own width, so a part-full row does not hang.
  */
-function heartRows(
-  count: number,
-  x: number,
-  y: number,
-  maxWidth: number,
-  align: "start" | "middle",
-): string {
+function heartRows(count: number, x: number, y: number, maxWidth: number): string {
   const { rows, size, step } = heartGeometry(count, maxWidth);
   if (rows === 0) return "";
 
@@ -210,7 +195,7 @@ function heartRows(
   for (let row = 0; row < rows; row++) {
     const inRow = Math.min(HEARTS_PER_ROW, count - row * HEARTS_PER_ROW);
     const rowWidth = inRow * step - HEART_GAP;
-    const startX = align === "middle" ? x - rowWidth / 2 : x;
+    const startX = x - rowWidth / 2;
     for (let column = 0; column < inRow; column++) {
       shapes.push(heartPath(startX + column * step, y + row * step, size, HEART));
     }
@@ -223,16 +208,10 @@ function heartRows(
  * membership is current is the question the card exists to answer at a
  * glance, so it gets a shape of its own.
  */
-function validityChip(
-  x: number,
-  y: number,
-  text: string,
-  lapsed: boolean,
-  align: "start" | "middle",
-): string {
+function validityChip(x: number, y: number, text: string, lapsed: boolean): string {
   const size = 18;
   const width = estimateWidth(text, size) + 62;
-  const left = align === "middle" ? x - width / 2 : x;
+  const left = x - width / 2;
   return `<rect x="${r(left)}" y="${r(y)}" width="${r(width)}" height="${CHIP_HEIGHT}" rx="${CHIP_HEIGHT / 2}" fill="${lapsed ? PAST_BG : VALID_BG}"/>
   <circle cx="${r(left + 24)}" cy="${r(y + CHIP_HEIGHT / 2)}" r="5" fill="${lapsed ? FAINT : VALID_DOT}"/>
   ${textEl(left + 40, y + CHIP_HEIGHT / 2 + 6.5, text, {
@@ -289,13 +268,13 @@ function accentStrip(width: number, inner: number): string {
 }
 
 /** The brand attribution, with its heart drawn rather than typed. */
-function attribution(x: number, baseline: number, align: "start" | "middle"): string {
+function attribution(x: number, baseline: number): string {
   const size = 15;
   const label = "støttemedlem.no";
   const heartSize = 17;
   const gap = 9;
   const total = heartSize + gap + estimateWidth(label, size);
-  const left = align === "middle" ? x - total / 2 : x;
+  const left = x - total / 2;
   return `${heartPath(left, baseline - heartSize + 2, heartSize, HEART)}
   ${textEl(left + heartSize + gap, baseline, label, { size, fill: FAINT })}`;
 }
@@ -320,76 +299,12 @@ function logoCircle(cx: number, cy: number, size: number, dataUri: string): stri
 }
 
 /**
- * The shared card: identity across the top, the member down the left, the QR
- * code in its own column on the right.
+ * The card: the content down the middle of the page, at sizes a thumb-width
+ * screen can actually read and a camera can scan.
  */
-function drawWide(content: CardContent): string {
+function drawCard(content: CardContent): string {
   const width = MEMBER_CARD_WIDTH;
   const height = MEMBER_CARD_HEIGHT;
-  const inner = 22;
-  const pad = 46;
-  const left = inner + pad;
-  const right = width - inner - pad;
-
-  const bandHeight = 136;
-  const bandBottom = inner + bandHeight;
-  const hasLogo = Boolean(content.logoDataUri);
-  const logoSize = 84;
-  const textX = hasLogo ? left + logoSize + 26 : left;
-  const org = fitLine(content.orgName, right - textX, 32, 18);
-
-  // The QR column is fixed, so what is left over is the member's column.
-  const qrSize = 210;
-  const panel = qrSize + 36;
-  const panelX = right - panel;
-  const captionCenter = panelX + panel / 2;
-  // Centred under the panel, so it must fit the panel or it hangs off the card.
-  const qrCaptionOrg = fitLine(content.orgName, panel, 14, 11);
-  const columnWidth = panelX - 40 - left;
-
-  const attributionBaseline = height - inner - 40;
-  const ruleY = attributionBaseline - 40;
-  const bodyTop = bandBottom;
-  const bodyHeight = ruleY - bodyTop;
-
-  // The QR block: panel plus its two caption lines, centred in the body.
-  const qrBlockHeight = panel + 60;
-  const qrTop = bodyTop + (bodyHeight - qrBlockHeight) / 2;
-
-  const name = fitLine(content.memberName, columnWidth, 60, 30);
-  const { height: heartsHeight } = heartGeometry(content.hearts, columnWidth);
-  const scoreBlock = content.hearts > 0 ? 28 + heartsHeight + 10 + 20 : 0;
-  const nameAdvance = name.size * 0.92;
-  const blockHeight = nameAdvance + 16 + CHIP_HEIGHT + scoreBlock;
-  const blockTop = bodyTop + (bodyHeight - blockHeight) / 2;
-  const chipY = blockTop + nameAdvance + 16;
-  const heartsY = chipY + CHIP_HEIGHT + 28;
-
-  return `${frame(width, height, inner, 30)}
-  <g clip-path="url(#card-clip)"><rect x="${inner}" y="${inner}" width="${width - inner * 2}" height="${bandHeight}" fill="${BAND}"/></g>
-  ${accentStrip(width, inner)}
-  <line x1="${inner}" y1="${bandBottom}" x2="${width - inner}" y2="${bandBottom}" stroke="${EDGE}" stroke-width="2"/>
-${hasLogo ? `  ${logoCircle(left + logoSize / 2, inner + bandHeight / 2, logoSize, content.logoDataUri ?? "")}\n` : ""}  ${textEl(textX, inner + 58, "STØTTEMEDLEM", { size: 13, weight: 700, fill: ACCENT, letterSpacing: 3.2 })}
-  ${textEl(textX, inner + 100, org.value, { size: org.size, weight: 600, fill: DEEP })}
-
-  ${textEl(left, blockTop + name.size * 0.74, name.value, { size: name.size, weight: 700, fill: INK })}
-  ${validityChip(left, chipY, content.validity, content.lapsed, "start")}
-${content.hearts > 0 ? `${heartRows(content.hearts, left, heartsY, columnWidth, "start")}\n  ${textEl(left, heartsY + heartsHeight + 26, content.scoreLabel, { size: 17, fill: MUTED })}\n` : ""}
-  ${qrPanel(panelX, qrTop, qrSize, content.qr)}
-  ${textEl(captionCenter, qrTop + panel + 32, "Skann og bli støttemedlem", { size: 16, weight: 600, fill: MUTED, anchor: "middle" })}
-  ${textEl(captionCenter, qrTop + panel + 56, `i ${qrCaptionOrg.value}`, { size: qrCaptionOrg.size, fill: FAINT, anchor: "middle" })}
-
-  <line x1="${left}" y1="${ruleY}" x2="${right}" y2="${ruleY}" stroke="${HAIRLINE}" stroke-width="2"/>
-  ${attribution(left, attributionBaseline, "start")}`;
-}
-
-/**
- * The upright card, for a phone: the same content down the middle of the page,
- * at sizes a thumb-width screen can actually read and a camera can scan.
- */
-function drawTall(content: CardContent): string {
-  const width = MEMBER_CARD_TALL_WIDTH;
-  const height = MEMBER_CARD_TALL_HEIGHT;
   const inner = 20;
   const pad = 40;
   const left = inner + pad;
@@ -413,7 +328,9 @@ function drawTall(content: CardContent): string {
   const scoreBlock = content.hearts > 0 ? 30 + heartsHeight + 10 + 20 : 0;
   const nameAdvance = name.size * 0.92;
 
-  const qrSize = 240;
+  // Big enough that a phone held up to it scans first time, and no bigger —
+  // past that the code takes the card away from the member, who is its point.
+  const qrSize = 196;
   const panel = qrSize + 36;
   const qrCaptionOrg = fitLine(content.orgName, columnWidth, 15, 12);
   const qrBlockHeight = 40 + panel + 60;
@@ -432,14 +349,14 @@ ${hasLogo ? `  ${logoCircle(center, inner + 46 + logoSize / 2, logoSize, content
   ${textEl(center, bandBottom - 38, org.value, { size: org.size, weight: 600, fill: DEEP, anchor: "middle" })}
 
   ${textEl(center, blockTop + name.size * 0.74, name.value, { size: name.size, weight: 700, fill: INK, anchor: "middle" })}
-  ${validityChip(center, chipY, content.validity, content.lapsed, "middle")}
-${content.hearts > 0 ? `${heartRows(content.hearts, center, heartsY, columnWidth, "middle")}\n  ${textEl(center, heartsY + heartsHeight + 26, content.scoreLabel, { size: 17, fill: MUTED, anchor: "middle" })}\n` : ""}
+  ${validityChip(center, chipY, content.validity, content.lapsed)}
+${content.hearts > 0 ? `${heartRows(content.hearts, center, heartsY, columnWidth)}\n  ${textEl(center, heartsY + heartsHeight + 26, content.scoreLabel, { size: 17, fill: MUTED, anchor: "middle" })}\n` : ""}
   ${qrPanel(center - panel / 2, qrTop, qrSize, content.qr)}
   ${textEl(center, qrTop + panel + 34, "Skann og bli støttemedlem", { size: 17, weight: 600, fill: MUTED, anchor: "middle" })}
   ${textEl(center, qrTop + panel + 58, `i ${qrCaptionOrg.value}`, { size: qrCaptionOrg.size, fill: FAINT, anchor: "middle" })}
 
   <line x1="${left}" y1="${ruleY}" x2="${right}" y2="${ruleY}" stroke="${HAIRLINE}" stroke-width="2"/>
-  ${attribution(center, attributionBaseline, "middle")}`;
+  ${attribution(center, attributionBaseline)}`;
 }
 
 export function memberCardSvg(options: MemberCardOptions): string {
@@ -447,8 +364,7 @@ export function memberCardSvg(options: MemberCardOptions): string {
   const recruits = Math.max(0, Math.floor(options.recruits ?? 0));
   const orgName = options.organizationName.trim();
   const memberName = options.memberName?.trim() || "Støttemedlem";
-  const shape = options.shape ?? "wide";
-  const { width, height } = memberCardSize(shape);
+  const { width, height } = memberCardSize();
 
   const yearLabel = hearts === 1 ? "1 år som støttemedlem" : `${hearts} år som støttemedlem`;
   const recruitLabel =
@@ -468,7 +384,7 @@ export function memberCardSvg(options: MemberCardOptions): string {
     alt: `Medlemsbevis: ${memberName} er støttemedlem i ${orgName}, med ${hearts} hjerter.`,
   };
 
-  const body = shape === "tall" ? drawTall(content) : drawWide(content);
+  const body = drawCard(content);
 
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}" width="${width}" height="${height}" role="img" aria-label="${escapeXml(content.alt)}">
   <title>${escapeXml(content.alt)}</title>

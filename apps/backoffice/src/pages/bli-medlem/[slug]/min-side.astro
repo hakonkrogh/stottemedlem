@@ -13,15 +13,10 @@ import Heading from "@stottemedlem/ui/components/Heading.astro";
 import Stack from "@stottemedlem/ui/components/Stack.astro";
 import Text from "@stottemedlem/ui/components/Text.astro";
 import TextLink from "@stottemedlem/ui/components/TextLink.astro";
-import HeartRows from "../../../components/HeartRows.astro";
 import MemberCardFigure from "../../../components/MemberCardFigure.astro";
 import PublicShell from "../../../layouts/PublicShell.astro";
 import { getDb } from "../../../lib/db";
-import {
-  loadMemberCardForMemberId,
-  memberCardDisplayUrl,
-  memberCardUrl,
-} from "../../../lib/memberCard";
+import { loadMemberCardForMemberId, memberCardUrl } from "../../../lib/memberCard";
 import { getVippsForOrg } from "../../../lib/vipps";
 import { getWorkOS } from "../../../lib/workos";
 
@@ -79,46 +74,52 @@ const chargedElsewhere =
     ? await hasOtherRunningAgreement(db, agreement.memberId, agreement.id)
     : false;
 
-// The card comes first (specs/concepts/member-card.md): the member's own page
-// leads with the proof of what they are, and only then offers the paperwork
-// and the way out. There is no card before a payment has completed.
+// The page is the card, then the paperwork (specs/concepts/member-card.md).
+// What the card already says — the hearts collected, the year it is good for —
+// is not repeated underneath it: the picture is the statement, and a page that
+// explains its own illustration is longer without saying more. There is no
+// card before a payment has completed.
 const card = agreement.memberId ? await loadMemberCardForMemberId(db, agreement.memberId) : null;
 const cardToken = card?.member.cardToken ?? null;
 const cardAlt = card
   ? `Medlemsbevis for ${card.member.name?.trim() || "deg"} i ${org.name}, med ${card.hearts} hjerter.`
   : "";
+
+// One line for the whole state: what was paid for which period, and — the
+// question the member opened this page to answer — whether it continues. It
+// stands directly under the card, before anything that could be mistaken for
+// an ordinary running membership. When another arrangement of theirs still
+// runs, it speaks about this one rather than about their support as a whole.
+const statusLine = current
+  ? [
+      `${current.tierName} i ${org.name} — ${current.paidNok} kr betalt for ${periodLabel(current.periodYear)}.`,
+      stopped
+        ? chargedElsewhere
+          ? "Denne avtalen fornyes ikke."
+          : "Den fornyes ikke."
+        : `Fornyes automatisk ved årsskiftet til ${agreement.annualFeeNok} kr i året.`,
+    ].join(" ")
+  : `Medlemskapet i ${org.name} er ikke bekreftet ennå.`;
+
 const title = `Ditt støttemedlemskap — ${org.name}`;
 ---
 
 <PublicShell title={title} description={`Administrer støttemedlemskapet ditt i ${org.name}.`} noindex>
   <Stack gap="lg">
-    {card && cardToken && <MemberCardFigure cardToken={cardToken} alt={cardAlt} />}
+    <Heading>Ditt støttemedlemskap</Heading>
 
-    <Stack gap="sm">
-      <Heading>Ditt støttemedlemskap</Heading>
-      {
-        current ? (
-          <Text variant="lead">
-            {[
-              `${current.tierName} i ${org.name} — ${current.paidNok} kr betalt for ${periodLabel(current.periodYear)}, gyldig ut perioden.`,
-              // Whether it continues belongs in the FIRST thing they read: the
-              // member opened this page to check exactly that, and a cancelled
-              // membership that looks ordinary until you scroll is the whole
-              // complaint (specs/concepts/member-self-service.md). When another
-              // arrangement of theirs still runs, this narrows to the one
-              // arrangement rather than claiming the support has ended.
-              stopped
-                ? chargedElsewhere
-                  ? "Denne avtalen fornyes ikke."
-                  : "Den fornyes ikke."
-                : "Den fornyes automatisk.",
-            ].join(" ")}
-          </Text>
-        ) : (
-          <Text variant="lead">Medlemskapet i {org.name} er ikke bekreftet ennå.</Text>
-        )
-      }
-    </Stack>
+    {
+      card && cardToken && (
+        <MemberCardFigure
+          cardToken={cardToken}
+          alt={cardAlt}
+          shareUrl={memberCardUrl(cardToken)}
+          shareTitle={`Medlemsbeviset mitt i ${org.name}`}
+        />
+      )
+    }
+
+    <Text variant="lead">{statusLine}</Text>
 
     {stopFailed && <Alert variant="error">Vi fikk ikke stoppet medlemskapet nå. Prøv igjen om litt.</Alert>}
 
@@ -139,47 +140,13 @@ const title = `Ditt støttemedlemskap — ${org.name}`;
         </Stack>
       ) : (
         <Stack gap="sm">
-          <Text>
-            Medlemskapet fornyes automatisk ved årsskiftet til {agreement.annualFeeNok} kr i året.
-            Du får varsel i Vipps-appen før hver fornyelse.
-          </Text>
+          <Text>Du får varsel i Vipps-appen før hver fornyelse.</Text>
           <form method="post">
             <Button type="submit" variant="secondary">Si opp medlemskapet</Button>
           </form>
           <Text variant="small">
             Sier du opp, står du som støttemedlem ut året du har betalt for — du blir bare ikke
             belastet på nytt.
-          </Text>
-        </Stack>
-      )
-    }
-
-    {
-      history.length > 0 && (
-        <Stack gap="sm">
-          <Heading level={2}>Dine hjerter</Heading>
-          <HeartRows count={history.length} />
-          <Text variant="small">
-            Ett hjerte for hvert år du har støttet {org.name}. De blir stående — år for år.
-          </Text>
-        </Stack>
-      )
-    }
-
-    {
-      cardToken && (
-        <Stack gap="sm">
-          <Heading level={2}>Del medlemsbeviset</Heading>
-          <Text>
-            Beviset over er ditt å dele. Alle som åpner lenken ser det, og ingen kan endre
-            medlemskapet ditt fra den.
-          </Text>
-          <Text variant="small">
-            <TextLink href={memberCardUrl(cardToken)}>{memberCardDisplayUrl(cardToken)}</TextLink>
-          </Text>
-          <Text variant="small">
-            Skanner noen QR-koden på beviset og blir støttemedlem, teller det som en verving
-            for deg.
           </Text>
         </Stack>
       )

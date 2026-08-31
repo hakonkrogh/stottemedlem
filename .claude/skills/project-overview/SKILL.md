@@ -238,7 +238,14 @@ lives in `specs/`, kept in sync with code by a mandatory `Stop`-hook harness.
   `kvittering.astro` is the redirect landing page (asks Vipps, never trusts the
   redirect — also the polling fallback); `min-side.astro?n=<manage_token>` is
   the member's own page (spec `concepts/member-self-service.md`: no login, the
-  unguessable token IS the credential, offers a real stop, noindex);
+  unguessable token IS the credential, offers a real stop, noindex).
+  **Simplified 2026-08-31** (branch simplify-membership-page) to four things:
+  the h1, the full-bleed card, ONE status line built in the FRONTMATTER
+  (`statusLine` — `<tier> i <org> — <paid> kr betalt for <period>.` plus
+  renews / does not renew), then the stop action. The "Dine hjerter" and "Del
+  medlemsbeviset" sections are GONE: the card already shows the hearts and now
+  carries its own share button, and the spec now forbids this page captioning
+  its own card. `memberCardDisplayUrl` went with them;
   `POST /api/vipps/[slug]` is the per-org webhook receiver (HMAC-verified →
   401, unknown org → 404, apply failure → 500 so Vipps redelivers; `/api/vipps/*`
   is public in middleware). Shared logic in `src/lib/membership.ts`
@@ -392,20 +399,45 @@ lives in `specs/`, kept in sync with code by a mandatory `Stop`-hook harness.
   period; a full refund takes its heart), rendered by
   `components/HeartRows.astro` as a game-HUD buildup, ten ❤️ per row, no empty
   placeholders, count-form "❤️ 12" where space is tight (MemberRow, CSV
-  export's "Hjerter" column). Surfaces: min-side "Dine hjerter", member detail
-  history, member list, export, marketing perks row.
+  export's "Hjerter" column). Surfaces: member detail history, member list,
+  export, marketing perks row — plus the member card, which is how hearts now
+  reach min-side and the receipts (the standalone "Dine hjerter" section on
+  min-side was REMOVED 2026-08-31, see the card note below).
   **Member card + referrals** (added 2026-08-31, branch member-validity-card,
   spec `concepts/member-card.md` NEW; this REPLACES the old note that recruit
   counts / referrals / printable proof were unbuilt — they are built): the card
   is the member's proof of support — name, org + circled logo, hearts, validity,
   QR, brand attribution — drawn ONCE by `memberCardSvg` in `@stottemedlem/qr`
   and reused everywhere, so what a member shares is what they were shown.
-  **Two shapes since 2026-08-31** (`shape: "wide" | "tall"`): wide 1200x628 is
-  the shared one (link previews, og:image, the receipt attachment), tall
-  760x1120 is what phone-width surfaces show — an image cannot reflow, so the
-  wide card in a 350px column has a QR nobody can scan. Any NEW card surface
-  must pick a shape; `MemberCardFigure.astro` does it with a `<picture>`.
+  **ONE card, 760x1040 UPRIGHT, since 2026-08-31** (branch
+  simplify-membership-page). It briefly had TWO shapes (`shape: "wide" |
+  "tall"`, wide 1200x628 for link previews) — the user killed the wide one the
+  same day: "we only need one version of the card… the one that's best
+  suitable for mobile phones". Gone with it: `MemberCardShape`,
+  `memberCardSize(shape)`, `MEMBER_CARD_TALL_*`, core's
+  `MEMBER_CARD_SHAPE_PARAM`/`MEMBER_CARD_TALL_SHAPE` and the `?form=staaende`
+  query, `memberCardShapeFromQuery`, the `shape` args on `memberCardOptions` /
+  `renderMemberCardSvg`, render-card's `--shape`, and the `Upright*` stories.
+  **Accepted cost, don't "fix" it:** og:image/twitter:image are now portrait,
+  so feeds that preview 1.91:1 crop the card to its middle (name, chip,
+  hearts, top of QR). That was the trade the user made.
+  **The card is a self-contained block, and every layout number in it is
+  coupled**: `drawCard` centres one stacked block between the header band and
+  the attribution rule, so shrinking the QR (210→172, then the single card's
+  240→196) does not tighten the card, it opens a hole in the middle — the
+  canvas dropped 1120→1040 to compensate. Before changing any of them, compute
+  the WORST case (`LongLoyalty`, 34 hearts → 4 shrunken rows) against the body
+  height, confirm with `render-card --raster`, and re-decode with `verify-qr` —
+  a smaller QR is only smaller until it stops scanning.
   Review card artwork with the `render-card` skill, not in Storybook alone.
+  `MemberCardFigure.astro` is now a bare `<img>` (no `<picture>`) and owns two
+  page-level behaviours: FULL-BLEED by default, cancelling `PublicShell`'s
+  gutter (published as `--sm-page-gutter` — don't hard-code 1.25rem), capped
+  at `max-width: 24rem` above 34rem so an upright card does not become a
+  poster on desktop; and an optional `shareUrl` puts a share pill in the
+  card's bottom-right (`navigator.share` → clipboard → plain navigation; drive
+  both branches with `drive-page`). It is shared by min-side, kvittering AND
+  `/medlemsbevis/[token]`, so a change there lands on three public pages.
   Public at `/medlemsbevis/<cardToken>` (+ `/kort.svg`, `/kort.png`), embedded
   on min-side, kvittering and the receipt email (which now LEADS with the card
   and attaches the PNG). Two separate secrets, and confusing them is the one
@@ -722,6 +754,17 @@ lives in `specs/`, kept in sync with code by a mandatory `Stop`-hook harness.
   speed (~1.6s) and builds core first. (`--force` for the reason below: turbo
   replays cached output across worktrees.)
 - Conventions: ESM everywhere; never use the `any` type; use `ast-grep` for structural search.
+- **A client `<script>` in an `.astro` component is typechecked under the DOM
+  tsconfig, and two things bite there** (both hit 2026-08-31 writing the member
+  card's share button, and both are invisible to `pnpm test`/`build` —
+  only `astro check` sees them): (1) `for (const el of
+  document.querySelectorAll(...))` fails with ts(2488) "must have a
+  `[Symbol.iterator]()`" — use `.forEach()`, and type the collection with
+  `querySelectorAll<HTMLAnchorElement>(…)` so the element is not `Element`;
+  (2) an unbalanced brace inside the script is reported as ts(1005) "')'
+  expected" pointing at the `</script>` LINE, not at the actual mistake — read
+  the block, don't trust the line number. Prove such a script actually works
+  with the `drive-page` skill; nothing else in the repo executes it.
 - Tooling gotchas: `astro check` emits false ts(6133) "declared but never read"
   *hints* for symbols used only after a frontmatter early-`return` (0 errors =
   still green — don't chase them). A NEW PACKAGE needs `.js` extensions on its
@@ -908,12 +951,13 @@ Hard rules and exact wording live in the yaml and in the guide's own tables — 
 | (skill) `vipps-test-rig` | drive a REAL recurring subscription on apitest from the CLI (agreement → MT-app approval → charges → webhooks → stop) + the local receiver and tunnel; the sandbox-DNS gotcha when verifying a tunnel |
 | (skill) `verify-workflow` | `node .claude/skills/verify-workflow/run-steps.mjs <workflow.yml> [job] --force-turbo` — run a GitHub Actions job's `run:` steps locally in a scrubbed, runner-like env; proves a CI change before pushing. Skips `uses:` steps and any step with a `${{ }}` expression (that guard is what stops it firing a real deploy / `--remote` D1 migration) |
 | (skill) `verify-qr` | decode a generated QR PNG (file or URL) + assert payload — real scan-level proof |
-| (skill) `render-card` | `node .claude/skills/render-card/render.mjs --raster` — draw the member card (both shapes) + the org QR card from real `@stottemedlem/qr` with NO server/D1/auth, rasterize through the SHIPPED resvg + embedded-Fraunces path, and emit a browser-vs-resvg contact sheet. The only way to see what a shared PNG / og:image / receipt attachment really looks like: resvg applies no variable font axes, so its text is bolder AND WIDER than any browser preview |
+| (skill) `render-card` | `node .claude/skills/render-card/render.mjs --raster` — draw the member card + the org QR card from real `@stottemedlem/qr` with NO server/D1/auth, rasterize through the SHIPPED resvg + embedded-Fraunces path, and emit a browser-vs-resvg contact sheet. The only way to see what a shared PNG / og:image / receipt attachment really looks like: resvg applies no variable font axes, so its text is bolder AND WIDER than any browser preview |
 | (skill) `verify-public-routes` | + `d1.sh "<SQL>" [local\|staging\|production]` — read D1 rows as JSON, now including the DEPLOYED databases (SELECT-only off local; ask staging what shapes it really holds before trusting a fixture) (the member-registry tables incl.); assert the public join pages over real HTTP (status, `/org/*` 301s, `x-sm-cache` miss→hit, brand attribution) + `seed.sh`, the tier-aware local D1 seed |
 | (canonical) `docs/architecture/overview.md` | proposed architecture: 2 deployables (Astro static marketing + one Astro-SSR Worker for backoffice/API/webhooks/cron/queues), D1 as system of record, WorkOS org-gated admin, Vipps Login for members, 11-step scaffolding plan |
 | (skill) `stack-docs` | verified platform gotchas: Astro CF adapter custom worker entry, WorkOS SDK on Workers |
 | (skill) `spec-lint` | `node .claude/skills/spec-lint/check.mjs` — validates spec links + INDEX registration after any specs/ edit |
 | (skill) `preview-screenshot` | headless-Chrome screenshot of any local URL → Read the PNG; the visual validation loop for UI work |
+| (skill) `drive-page` | `node .claude/skills/drive-page/drive.mjs <url> click=… assert=…` — CLICK a real page and assert what happens, incl. `--stub` for browser APIs a headless run lacks (`navigator.share`, clipboard). The only loop that executes an `.astro` client `<script>`; the screenshot loop's behavioural twin |
 | (skill) `dev-logs` | `bash .claude/skills/dev-logs/devlog.sh start\|tail\|grep` — read the dev server's stdout (console.log/error, request lines, SSR stack traces) via `astro dev --background` + `.astro/dev.log`; foreground `pnpm dev` output is unreadable to agents |
 | (skill) `cloud-logs` | search the DEPLOYED backoffice Workers' stored logs (staging + prod, 7-day retention) via `node .claude/skills/cloud-logs/cloudlogs.mjs` — search/filter/count/invocations over the Cloudflare observability query API (needs the dashboard-minted read token in `~/.config/stottemedlem/cloudflare-logs-token`; wrangler OAuth can't do it) + `wrangler tail` for live; errors also in Sentry (~90 d) via the Sentry MCP |
 | (canonical) `docs/vipps-local-recurring-test.md` | runbook for rehearsing a real recurring subscription on apitest from the CLI: prerequisites (test keys, MT app + test users, cloudflared), the tunnel and why it's needed, the lifecycle commands, what to look for at each step, cleanup, troubleshooting |

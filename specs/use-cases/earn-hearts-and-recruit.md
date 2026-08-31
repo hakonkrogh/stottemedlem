@@ -31,8 +31,10 @@ From the supporting member's point of view:
    every [receipt](../concepts/payment-receipt.md) they are sent, and it has a
    public address of its own.
 3. The member can **share** that address with anyone — in a chat, in a social
-   feed — and what appears is the card itself. They can also save it as a
-   picture to print or hand over.
+   feed — and what appears is the card itself. The card itself carries the way
+   to do it: one action on the card hands the address to whatever the member's
+   device uses for sharing. They can also save the card as a picture to print
+   or hand over.
 4. Anyone who scans the QR code lands in the organization's join flow with a
    referral pointing back to that member.
 5. When a referred person completes joining (becomes a paying supporting
@@ -61,8 +63,9 @@ From the organization's point of view:
 ## Out of scope
 - Rewards, discounts, or tier changes tied to hearts or recruits — recognition
   only, for now.
-- Ready-made "share to Facebook/Instagram" buttons; the product gives the
-  member an address that previews well and lets them post it themselves.
+- Per-network "share to Facebook/Instagram" buttons; the product hands the
+  card's address to the device's own sharing and lets the member choose where
+  it goes.
 - Cross-organization aggregation of hearts.
 - Telling a member *who* they recruited — the count is the recognition, and
   naming the recruits would expose other members' memberships.

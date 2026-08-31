@@ -74,7 +74,6 @@ const ORG_CASES = {
 function parseArgs(argv) {
   const options = {
     kind: "member",
-    shapes: ["wide", "tall"],
     cases: null,
     raster: false,
     build: true,
@@ -86,10 +85,7 @@ function parseArgs(argv) {
     const arg = argv[i];
     const next = () => argv[++i];
     if (arg === "--org-card") options.kind = "org";
-    else if (arg === "--shape") {
-      const value = next();
-      options.shapes = value === "both" ? ["wide", "tall"] : value.split(",");
-    } else if (arg === "--case") options.cases = next().split(",");
+    else if (arg === "--case") options.cases = next().split(",");
     else if (arg === "--raster") options.raster = true;
     else if (arg === "--no-build") options.build = false;
     else if (arg === "--list") options.list = true;
@@ -115,7 +111,6 @@ const USAGE = `render-card — draw the project's cards without a server
 
   node .claude/skills/render-card/render.mjs [options]
 
-  --shape wide|tall|both   member-card shape(s) to draw (default both)
   --case A,B               fixture name(s) to draw (default all); --list to see them
   --set key=value          override one fixture field, repeatable
                            e.g. --set hearts=17 --set memberName=null
@@ -125,7 +120,7 @@ const USAGE = `render-card — draw the project's cards without a server
   --no-build               skip rebuilding @stottemedlem/qr first
   --list                   list fixture names and exit
 
-Writes card-<shape>-<case>.svg, raster-*.png with --raster, and index.html —
+Writes card-<case>.svg, raster-*.png with --raster, and index.html —
 open that with the preview-screenshot skill to see them all at once.`;
 
 async function main() {
@@ -163,21 +158,17 @@ async function main() {
   const qr = await import(`${pathToFileURL(QR_DIST).href}?t=${Date.now()}`);
 
   const names = options.cases ?? Object.keys(cases);
-  const shapes = options.kind === "org" ? ["card"] : options.shapes;
   await mkdir(options.out, { recursive: true });
 
   const rendered = [];
-  for (const shape of shapes) {
-    for (const name of names) {
-      const fixture = cases[name];
-      if (!fixture) throw new Error(`no such fixture: ${name} (try --list)`);
-      const args = { ...fixture, ...options.overrides };
-      const svg =
-        options.kind === "org" ? qr.qrCardSvg(args) : qr.memberCardSvg({ ...args, shape });
-      const file = `card-${shape}-${name}`;
-      await writeFile(resolve(options.out, `${file}.svg`), svg);
-      rendered.push({ file, name, shape, svg });
-    }
+  for (const name of names) {
+    const fixture = cases[name];
+    if (!fixture) throw new Error(`no such fixture: ${name} (try --list)`);
+    const args = { ...fixture, ...options.overrides };
+    const svg = options.kind === "org" ? qr.qrCardSvg(args) : qr.memberCardSvg(args);
+    const file = `card-${name}`;
+    await writeFile(resolve(options.out, `${file}.svg`), svg);
+    rendered.push({ file, name, kind: options.kind, svg });
   }
 
   if (options.raster) await rasterize(rendered, options.out, qr);
@@ -207,9 +198,9 @@ async function rasterize(rendered, out, qr) {
 
   for (const item of rendered) {
     const width =
-      item.shape === "card"
+      item.kind === "org"
         ? Number(item.svg.match(/viewBox="0 0 ([\d.]+)/)?.[1] ?? 800)
-        : qr.memberCardSize(item.shape).width;
+        : qr.memberCardSize().width;
     const renderer = new Resvg(item.svg, {
       fitTo: { mode: "width", value: width },
       font: { fontBuffers: [font], defaultFontFamily: "Fraunces", loadSystemFonts: false },
@@ -223,7 +214,7 @@ function contactSheet(rendered, raster) {
   const rows = rendered
     .map(
       (item) => `<section>
-  <h2>${item.shape} · ${item.name}</h2>
+  <h2>${item.name}</h2>
   <div class="pair">
     <figure><figcaption>browser (variable weights)</figcaption>${item.svg}</figure>
     ${raster ? `<figure><figcaption>resvg — what gets shared</figcaption><img src="raster-${item.file}.png" alt=""></figure>` : ""}

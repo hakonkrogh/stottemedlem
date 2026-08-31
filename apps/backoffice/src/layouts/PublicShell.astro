@@ -109,10 +109,14 @@ const { title, description, noindex, previewImage, previewImageAlt } = Astro.pro
     min-height: 100lvh;
   }
   main {
+    /* Published so content that is meant to run wider than the reading column
+     * — the member's card on a phone — can cancel exactly this much padding
+     * instead of hard-coding a number that would drift. */
+    --sm-page-gutter: 1.25rem;
     width: 100%;
     max-width: 38rem;
     margin-inline: auto;
-    padding: 3rem 1.25rem 2rem;
+    padding: 3rem var(--sm-page-gutter) 2rem;
     /* The measured status-bar compensation from the arrival script in <head>:
      * 0 in the normal state, the viewport-growth delta when the arrival bug
      * lays the page out under the status bar. */
