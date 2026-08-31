@@ -1,0 +1,84 @@
+---
+// A single checkbox with its label beside it, and an optional inline error.
+// The label is a SLOT rather than a string: the things worth ticking a box for
+// tend to link somewhere (an agreement, terms), and a plain string prop cannot
+// carry a link.
+//
+// The box stays top-aligned with the first line so a label that wraps to two
+// or three lines still reads as one block rather than a centred blob.
+interface Props {
+  name: string;
+  id?: string;
+  value?: string;
+  checked?: boolean;
+  required?: boolean;
+  error?: string | null;
+}
+const { name, id = name, value = "1", checked, required, error } = Astro.props;
+const errorId = `${id}-error`;
+---
+
+<div class="checkbox-field">
+  <label class="checkbox-label" for={id}>
+    <input
+      class="checkbox-input"
+      type="checkbox"
+      id={id}
+      name={name}
+      value={value}
+      checked={checked}
+      required={required}
+      aria-invalid={error ? "true" : undefined}
+      aria-describedby={error ? errorId : undefined}
+    />
+    <span class="checkbox-text"><slot /></span>
+  </label>
+  {error && <p class="checkbox-error" id={errorId}>{error}</p>}
+</div>
+
+<style>
+  /* Every rule is class-scoped on purpose. Component styles are NOT scoped in
+   * Storybook, and a bare `input { … }` elsewhere in this package already
+   * leaks across stories — so this styles only what it owns, and pins the
+   * box's own size so someone else's `width: 100%` cannot stretch it. */
+  .checkbox-field {
+    display: grid;
+    gap: 0.4rem;
+  }
+  .checkbox-label {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--sm-space-sm);
+    cursor: pointer;
+  }
+  .checkbox-input {
+    width: 1.05rem;
+    min-width: 1.05rem;
+    height: 1.05rem;
+    margin: 0;
+    /* Nudged down to sit on the first line's text rather than above it. */
+    margin-top: 0.15rem;
+    /* The deep accent, not the light one: a checked box fills with this and
+     * draws a white tick on it, which the pale amber cannot carry. */
+    accent-color: var(--sm-accent-deep);
+    flex: none;
+  }
+  .checkbox-input:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px var(--sm-focus-ring);
+    border-radius: var(--sm-radius-sm);
+  }
+  .checkbox-text {
+    font-size: 0.9rem;
+    line-height: 1.45;
+    /* Stated, not inherited: a sibling component's unscoped `label { font-weight:
+     * 600 }` bolds this whole sentence in Storybook otherwise. A checkbox label
+     * is prose, and prose is not a field label. */
+    font-weight: 400;
+  }
+  .checkbox-error {
+    margin: 0;
+    font-size: 0.85rem;
+    color: var(--sm-danger);
+  }
+</style>

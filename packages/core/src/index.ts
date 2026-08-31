@@ -143,6 +143,21 @@ export function slugifyOrganizationName(name: string): string {
  */
 export const JOIN_PAGE_PATH_SEGMENT = "bli-medlem";
 
+/**
+ * The data processing agreement between an organization and the product
+ * (specs/concepts/data-processing-agreement.md) — one standard text, public so
+ * it can be read before signing up and re-read afterwards.
+ */
+export const DPA_PATH = "/databehandleravtale";
+
+/**
+ * Which version of that text is current. Dated rather than numbered, because
+ * what an organization needs to know is *when* the terms it accepted were
+ * written. Change this when the agreement changes in substance, and every
+ * organization is asked to accept the new one; leave it alone for typos.
+ */
+export const DPA_VERSION = "2026-08-31";
+
 /** The join page's path on the canonical origin, e.g. `/bli-medlem/<slug>`. */
 export function joinPagePath(slug: string): string {
   return `/${JOIN_PAGE_PATH_SEGMENT}/${slug}`;
@@ -151,6 +166,17 @@ export function joinPagePath(slug: string): string {
 /** The sales-terms page's path, beneath the join page: `/bli-medlem/<slug>/vilkar`. */
 export function joinPageTermsPath(slug: string): string {
   return `${joinPagePath(slug)}/vilkar`;
+}
+
+/**
+ * The privacy notice's path, beneath the join page:
+ * `/bli-medlem/<slug>/personvern`. A supporter must be able to read what is
+ * collected about them, and why, BEFORE they leave for the payment app — so
+ * this address is reachable from the join page rather than only afterwards
+ * (specs/concepts/member-data.md).
+ */
+export function joinPagePrivacyPath(slug: string): string {
+  return `${joinPagePath(slug)}/personvern`;
 }
 
 /**

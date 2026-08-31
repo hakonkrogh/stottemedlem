@@ -12,7 +12,10 @@ interface ScreenProps {
   name?: string;
   values?: { orgnr: string; contactEmail: string };
   annualFee?: string;
-  fieldErrors?: Partial<Record<"name" | "orgnr" | "contactEmail" | "annualFee", string>>;
+  acceptedDpa?: boolean;
+  fieldErrors?: Partial<
+    Record<"name" | "orgnr" | "contactEmail" | "annualFee" | "godtarAvtale", string>
+  >;
   error?: string;
 }
 
@@ -27,6 +30,22 @@ export const Filled = {
     name: "Nordnes Skolekorps",
     values: { orgnr: "923 609 016", contactEmail: "post@nordnesskolekorps.no" },
     annualFee: "300",
+    acceptedDpa: true,
+  }),
+};
+
+/**
+ * Everything filled in but the agreement left unticked — the one failure that
+ * stops creation on its own (specs/concepts/data-processing-agreement.md).
+ */
+export const AgreementNotAccepted = {
+  args: inFrame({
+    name: "Nordnes Skolekorps",
+    values: { orgnr: "923 609 016", contactEmail: "post@nordnesskolekorps.no" },
+    annualFee: "300",
+    fieldErrors: {
+      godtarAvtale: "Du må godta databehandleravtalen for å opprette organisasjonen.",
+    },
   }),
 };
 

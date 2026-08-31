@@ -10,7 +10,7 @@ import type { OrgVippsKeys } from "./vippsKeys";
 export type OrgWarningTab = "innstillinger" | "medlemskap";
 
 export interface OrgWarning {
-  id: "profile" | "no-tiers" | "no-vipps-keys" | "payment-events";
+  id: "profile" | "no-tiers" | "no-vipps-keys" | "payment-events" | "dpa";
   tab: OrgWarningTab;
   /** What is wrong, in the administrator's language. */
   message: string;
@@ -27,10 +27,28 @@ export interface OrgWarningInput {
   vippsKeys: OrgVippsKeys | null;
   /** Where this deployment expects the org's payment events to be delivered. */
   webhookUrl: string;
+  /** Has the org accepted the CURRENT data processing agreement? */
+  dpaAccepted: boolean;
 }
 
 export function orgWarnings(input: OrgWarningInput): OrgWarning[] {
   const warnings: OrgWarning[] = [];
+
+  // An organization created before the agreement existed never saw it, and one
+  // on a superseded version has not agreed to what is current. Either way it is
+  // asked rather than assumed (specs/concepts/data-processing-agreement.md) —
+  // and asked first, because it governs everything the rest of the back office
+  // does with member data.
+  if (!input.dpaAccepted) {
+    warnings.push({
+      id: "dpa",
+      tab: "innstillinger",
+      message:
+        "Databehandleravtalen er ikke godtatt ennå. Den sier hvordan støttemedlem.no behandler medlemsopplysningene på vegne av organisasjonen.",
+      actionLabel: "Les og godta",
+      href: `${input.orgPath}/innstillinger#databehandleravtale`,
+    });
+  }
 
   if (input.orgnr === null || input.contactEmail === null) {
     warnings.push({

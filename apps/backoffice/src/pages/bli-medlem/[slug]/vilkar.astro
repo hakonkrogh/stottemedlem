@@ -1,5 +1,5 @@
 ---
-import { formatOrganisasjonsnummer, joinPagePath } from "@stottemedlem/core";
+import { formatOrganisasjonsnummer, joinPagePath, joinPagePrivacyPath } from "@stottemedlem/core";
 import { getOrganizationBySlug, listMembershipTiers } from "@stottemedlem/db";
 import Heading from "@stottemedlem/ui/components/Heading.astro";
 import Stack from "@stottemedlem/ui/components/Stack.astro";
@@ -112,8 +112,18 @@ const singleTier = tiers.length === 1 ? tiers[0] : undefined;
       </Text>
     </section>
 
+    <section>
+      <Heading level={2}>Personopplysninger</Heading>
+      <Text>
+        Når du melder deg inn, deler du navn, e-postadresse og telefonnummer fra Vipps-profilen din
+        med organisasjonen. Hva som lagres, hvorfor, hvor lenge, og hvordan du får det slettet, står
+        i <TextLink href={joinPagePrivacyPath(org.slug)}>personvernerklæringen</TextLink>.
+      </Text>
+    </section>
+
     <Text variant="small">
-      <TextLink href={joinPagePath(org.slug)}>Tilbake til {org.name}</TextLink>
+      <TextLink href={joinPagePath(org.slug)}>Tilbake til {org.name}</TextLink> ·
+      <TextLink href={joinPagePrivacyPath(org.slug)}>Personvern</TextLink>
     </Text>
   </Stack>
 </PublicShell>

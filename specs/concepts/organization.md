@@ -49,6 +49,8 @@ support.
 - Defines one [annual fee](annual-fee.md).
 
 ## Referenced by
+- [Concept: Data processing agreement](data-processing-agreement.md) — what the
+  organization accepts by signing up, about the register it is answerable for
 - [Use case: Access the back office](../use-cases/access-the-back-office.md)
 - [Use case: Set up a supporting membership](../use-cases/set-up-supporting-membership.md)
 - [Use case: Curate the member list](../use-cases/curate-member-list.md)

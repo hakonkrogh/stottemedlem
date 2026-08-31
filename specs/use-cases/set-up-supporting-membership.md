@@ -28,7 +28,16 @@ From the organization's point of view:
    provider evaluates the public page against a real, priced product; the
    creation step keeps it to a single amount so it doesn't stall getting
    started, and everything about it can be changed later.
-3. The administrator refines the membership offer in the back office. The
+3. **The administrator ticks a box accepting the
+   [data processing agreement](../concepts/data-processing-agreement.md)**
+   before the organization can be created. The box is empty until they tick it,
+   sits above the create button, and links the agreement, which is readable
+   without signing in. There is nothing to sign and nothing to negotiate: the
+   organization owns its register, and the product processes it on the
+   organization's behalf only. Leaving it unticked stops the creation and says
+   why. When a new version of the agreement is written, the organization is
+   asked to accept it in its back office.
+4. The administrator refines the membership offer in the back office. The
    **front page previews the whole offer** — the memberships as the supporter
    sees them — with one way on to the **membership place** of the
    [back office](../concepts/back-office.md), which **lists all its
@@ -51,13 +60,13 @@ From the organization's point of view:
    can be renamed, repriced, and archived — never deleted — a rename never
    changes the key, and the **last active tier cannot be archived** (the
    organization always offers at least one membership).
-4. The organization is given a stable slug and, from it, its one public
+5. The organization is given a stable slug and, from it, its one public
    address: a shareable [join page](../concepts/join-page.md) — a link the
    organization can put on its site or social media, or turn into a
    [QR code card](promote-with-qr-card.md) for posters and external websites —
    with its sales-terms page beneath the same address. Those two URLs are what
    the payment-provider order form asks for.
-5. The administrator connects the organization's own Vipps agreement by adding
+6. The administrator connects the organization's own Vipps agreement by adding
    its [Vipps API keys](../concepts/vipps-api-keys.md). The product proves the
    keys work with a live check against Vipps before keeping them; until they
    are added, the back office prompts for them. Storing the keys is the last
@@ -68,7 +77,7 @@ From the organization's point of view:
    the delivery is *not* connected, the back office says so and lets the
    administrator have the repair made now instead of waiting for the next
    scheduled run.
-6. Once configured, the organization is ready to receive supporting members; no
+7. Once configured, the organization is ready to receive supporting members; no
    further setup is required to take the first payment.
 
 An organization created before a profile field was required (or before this
@@ -97,6 +106,19 @@ immediately. A name change never changes the slug or the public addresses.
       membership's annual fee; all are required at creation, and the created
       organization immediately offers one membership at that fee under the
       default membership name.
+- [ ] The creation form carries an unticked, required checkbox accepting the
+      [data processing agreement](../concepts/data-processing-agreement.md),
+      above the create button, linking the agreement; the agreement is readable
+      without being signed in.
+- [ ] Submitting the form without ticking it creates nothing and returns the
+      form with the reason — enforced on the server, not only in the browser —
+      and a rejected submission keeps whatever was already filled in, the tick
+      included.
+- [ ] A created organization records which version of the agreement was
+      accepted, and when.
+- [ ] An organization that has not accepted the current agreement — because a
+      new version was written — is told so in its back office and can accept it
+      there.
 - [ ] Membership tiers are managed after creation in the back office: the
       administrator can add a tier (name, optional description, annual fee),
       edit it, and archive it — except the last active tier, which cannot be
@@ -156,6 +178,8 @@ immediately. A name change never changes the slug or the public addresses.
 - [Concept: Back office](../concepts/back-office.md)
 - [Concept: Presenting and editing](../concepts/presenting-and-editing.md)
 - [Concept: Organization](../concepts/organization.md)
+- [Concept: Data processing agreement](../concepts/data-processing-agreement.md) —
+  accepted by creating the organization
 - [Concept: Membership tier](../concepts/membership-tier.md)
 - [Concept: Annual fee](../concepts/annual-fee.md)
 - [Concept: Vipps API keys](../concepts/vipps-api-keys.md)

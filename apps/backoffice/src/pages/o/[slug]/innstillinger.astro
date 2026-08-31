@@ -1,6 +1,8 @@
 ---
 import { env } from "cloudflare:workers";
+import { DPA_VERSION } from "@stottemedlem/core";
 import {
+  acceptDataProcessingAgreement,
   type OrganizationImages,
   type OrganizationProfile,
   updateOrganizationProfile,
@@ -45,6 +47,21 @@ let saved = false;
 
 if (Astro.request.method === "POST") {
   const form = await Astro.request.formData();
+
+  // Accepting the agreement is its OWN form and must return before the profile
+  // handling below — that path reads every profile field off the form, so
+  // letting a one-field post fall through would blank the public profile
+  // (specs/concepts/data-processing-agreement.md).
+  if (form.get("godta") === "databehandleravtale") {
+    org = (await acceptDataProcessingAgreement(getDb(), org.id, DPA_VERSION)) ?? org;
+    // Redirect rather than re-render: the acceptance settles a warning in the
+    // chrome, and a plain GET recomputes all of it without this page having to.
+    return new Response(null, {
+      status: 303,
+      headers: { location: `${orgPath(org.slug)}/innstillinger#databehandleravtale` },
+    });
+  }
+
   const parsed = parseProfileForm(form);
   values = parsed.values;
   fieldErrors = parsed.fieldErrors;

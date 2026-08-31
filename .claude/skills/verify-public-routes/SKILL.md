@@ -79,6 +79,23 @@ Local D1 lives in `apps/backoffice/.wrangler` and is shared **live** with a
 running `astro dev` — seed after starting the server, no restart needed. Seed
 only fictitious names/orgnr.
 
+**NEVER swallow wrangler's stderr when WRITING to D1.** `d1.sh` is SELECT-only,
+so setting up a fixture means raw `wrangler d1 execute DB --local --command`,
+and a failed write there is reported ONLY on stderr — the exit code and stdout
+look ordinary. Piping it to `>/dev/null 2>&1` turns a rejected write into a
+silent no-op, and the next assertion then measures the OLD state and blames the
+code under test (cost a wrong "the retention sweep is broken" conclusion,
+2026-08-31: three chained UPDATEs were rejected as one batch and I read the
+untouched rows as a failing sweep). Multi-statement `--command "A; B; C"` is
+fine — wrangler runs them and prints `N commands executed successfully` — but
+they are ONE batch: any statement failing rolls back all of them.
+
+**Ageing a member's history trips a UNIQUE index.** `memberships` is unique on
+`(member_id, period_year)`, so `UPDATE memberships SET period_year=<one year>
+WHERE member_id=…` collapses a multi-year supporter onto one year and fails.
+Shift instead: `SET period_year = period_year - 7`. This is the setup for
+anything retention- or history-shaped (specs/concepts/member-data.md).
+
 **Gotcha when INSERTing your own rows against the seed:** the tier ids are
 `tier-1` / `tier-2`, NOT `tier-seed-1` — only the org, member and agreement ids
 carry the `-seed-` convention. Guessing wrong gets you
@@ -118,6 +135,46 @@ probing: the POST stops the agreement for real.
 
 Manage tokens on STAGING/PRODUCTION are real members' — a `d1.sh` SELECT can
 read one for debugging, but never render it anywhere and never POST with it.
+
+## Prove an erasure (specs/use-cases/erase-member-data.md)
+
+Erasure is the one member operation whose whole point is what is GONE, so
+asserting the page said "slettet" proves nothing — read the row back, and check
+that the personal addresses stopped resolving.
+
+The member's own route needs a STOPPED agreement (a running one is refused, and
+stopping it for real calls Vipps, which local placeholder keys cannot do):
+
+    d1.sh-write "UPDATE membership_agreements SET status='STOPPED' WHERE id='agr-seed-2'"
+    curl -s -X POST -H "Origin: http://localhost:4322" \
+      -H "Content-Type: application/x-www-form-urlencoded" --data "handling=slett" \
+      "http://localhost:4322/bli-medlem/eksempel-musikkorps/min-side?n=tok-seed-2"
+
+Then the four things that actually matter:
+
+    d1.sh "SELECT name, email, phone, vipps_sub, card_token, anonymized_at
+           FROM supporting_members WHERE id='mem-seed-2'"   # all NULL but the timestamp
+    d1.sh "SELECT count(*), sum(paid_nok) FROM memberships WHERE member_id='mem-seed-2'"
+    # their own page and their card must die, and NOBODY ELSE'S may:
+    node $R localhost:4322/bli-medlem/eksempel-musikkorps/min-side?n=tok-seed-2 --status 404
+    node $R localhost:4322/medlemsbevis/kort-seed-2 --status 404
+    node $R localhost:4322/medlemsbevis/kort-seed-1 --status 200
+
+**The retention sweep** runs inside the nightly reconcile cron, so drive it the
+same way as any scheduled job (`project-overview`, `vipps-test-rig/cron.sh`) —
+age a member past retention first, shifting years rather than assigning one:
+
+    d1.sh-write "UPDATE memberships SET period_year = period_year - 7 WHERE member_id='mem-seed-1'"
+    d1.sh-write "UPDATE membership_agreements SET status='STOPPED' WHERE id='agr-seed-1'"
+    curl -s "http://localhost:4322/cdn-cgi/handler/scheduled?cron=0+2+*+*+*"
+    devlog.sh grep retention     # → [retention] erased members past retention { erased: 1, failed: 0 }
+
+Run the cron a second time and grep again: a correct sweep logs NOTHING on the
+second pass. Re-seed afterwards — and note `seed.sh` will NOT overwrite details
+you clobbered (it is insert-if-absent), so restore edited columns by hand.
+
+(`d1.sh-write` is shorthand here for raw `CI=1 pnpm exec wrangler d1 execute DB
+--local --command "…"` from `apps/backoffice` — `d1.sh` itself refuses writes.)
 
 ## Assert
 

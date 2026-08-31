@@ -8,8 +8,8 @@
 // This is also the place the settings tab's badge points at, so anything not
 // in order that belongs here is stated in full at the top — a count on a tab
 // is never left unexplained once you have followed it.
-import { formatOrganisasjonsnummer } from "@stottemedlem/core";
-import type { Organization } from "@stottemedlem/db";
+import { DPA_PATH, DPA_VERSION, formatOrganisasjonsnummer } from "@stottemedlem/core";
+import { hasAcceptedDpa, type Organization } from "@stottemedlem/db";
 import Alert from "@stottemedlem/ui/components/Alert.astro";
 import Button from "@stottemedlem/ui/components/Button.astro";
 import Heading from "@stottemedlem/ui/components/Heading.astro";
@@ -67,6 +67,10 @@ const settingsPath = `${orgPath}/innstillinger`;
 const vippsPath = `${orgPath}/vipps`;
 const validatedDate = vippsKeys
   ? new Date(vippsKeys.validatedAt).toLocaleDateString("nb-NO")
+  : null;
+const dpaAccepted = hasAcceptedDpa(org, DPA_VERSION);
+const acceptedDate = org.dpaAcceptedAt
+  ? new Date(org.dpaAcceptedAt).toLocaleDateString("nb-NO")
   : null;
 const bannerPosition =
   org.bannerFocusX !== null && org.bannerFocusY !== null
@@ -173,6 +177,41 @@ const bannerPosition =
           ) : (
             <Text variant="small">Ingen nøkler lagret ennå.</Text>
           )}
+        </section>
+
+        {/* The agreement governing everything the rest of this page does with
+            member data (specs/concepts/data-processing-agreement.md). Signing
+            up accepts it, so an org that signed up sees only WHEN — the button
+            exists for the ones that predate the agreement, or that a new
+            version has been written for. */}
+        <section class="section" id="databehandleravtale">
+          <div class="section-head">
+            <Heading level={3}>Databehandleravtale</Heading>
+            <Button variant="secondary" href={DPA_PATH}>Les avtalen</Button>
+          </div>
+          {
+            dpaAccepted ? (
+              <InfoList
+                layout="columns"
+                items={[
+                  { label: "Godtatt", value: acceptedDate },
+                  { label: "Versjon", value: org.dpaVersion },
+                ]}
+              />
+            ) : (
+              <>
+                <Text>
+                  {org.dpaAcceptedAt
+                    ? "Avtalen er endret siden organisasjonen godtok den. Les den nye og godta den for å fortsette."
+                    : "Organisasjonen har ikke godtatt databehandleravtalen ennå. Den sier hva støttemedlem.no gjør med medlemsopplysningene på vegne av organisasjonen — og hva vi ikke gjør."}
+                </Text>
+                <form method="post">
+                  <input type="hidden" name="godta" value="databehandleravtale" />
+                  <Button>Godta databehandleravtalen</Button>
+                </form>
+              </>
+            )
+          }
         </section>
       </>
     )

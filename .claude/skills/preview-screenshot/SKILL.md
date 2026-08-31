@@ -110,8 +110,18 @@ description: Render any local URL (marketing/backoffice dev or preview server) t
   Since 2026-08-31 the root alias `pnpm story` (= `pnpm stories`) does the
   core+db pre-build AND starts Storybook in one go; the manual form is
   `pnpm --filter @stottemedlem/ui run storybook --ci`
-  (port 6006, ready in seconds, hot-reloads). Then shoot a story's iframe URL
+  (port 6006, ready in seconds, hot-reloads). **Start it with `nohup … &
+  disown`, NOT with the Bash tool's `run_in_background`** (hit 2026-08-31):
+  backgrounded that way the task reports "completed, exit 0" while the server
+  is dead and every later curl returns `000`, which reads as "Storybook is
+  broken" rather than "nothing is running". From `packages/ui`:
+  `nohup pnpm exec storybook dev -p 6006 --no-open --quiet > /tmp/sb.log 2>&1 &
+  disown`, then poll `curl -so /dev/null -w '%{http_code}' localhost:6006`
+  until it is 200 (about a second). Then shoot a story's iframe URL
   directly: `http://localhost:6006/iframe.html?id=<story-id>&viewMode=story`.
+  Running Storybook did NOT dirty `package.json` / `pnpm-lock.yaml`
+  (hash-checked before and after, 2026-08-31) — but `verify-workflow` warns it
+  can, so hash them yourself rather than trusting either claim before a push.
   **List the ids before shooting — do not derive them from the component
   name:** `curl -s localhost:6006/index.json | python3 -c "import json,sys;
   print('\n'.join(sorted(json.load(sys.stdin)['entries'])))"`. Story TITLES in

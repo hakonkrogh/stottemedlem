@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   countMemberStandings,
+  hasAcceptedDpa,
   isCurrentMember,
   isProfileComplete,
   type MemberFeeStanding,
@@ -265,5 +266,31 @@ describe("renewalFeeNok", () => {
 
   it("passes a price cut on immediately — being charged less is no surprise", () => {
     expect(renewalFeeNok(standing({ tierFee: 200, knownFeeNok: 200, ripeFeeNok: 250 }))).toBe(200);
+  });
+});
+
+describe("hasAcceptedDpa", () => {
+  // The data processing agreement is accepted by signing up
+  // (specs/concepts/data-processing-agreement.md). What this decides is whether
+  // the back office asks — so "accepted something once" must not count as
+  // "accepted what is current".
+  const org = (dpaAcceptedAt: string | null, dpaVersion: string | null): Organization =>
+    ({ ...base, dpaAcceptedAt, dpaVersion }) as Organization;
+
+  it("accepts an organization on the current version", () => {
+    expect(hasAcceptedDpa(org("2026-08-31T09:00:00.000Z", "2026-08-31"), "2026-08-31")).toBe(true);
+  });
+
+  it("does not accept an organization that predates the agreement", () => {
+    expect(hasAcceptedDpa(org(null, null), "2026-08-31")).toBe(false);
+  });
+
+  it("does not accept an organization left on a superseded version", () => {
+    expect(hasAcceptedDpa(org("2026-08-31T09:00:00.000Z", "2026-08-31"), "2027-01-15")).toBe(false);
+  });
+
+  it("does not accept a version recorded without a date, or a date without a version", () => {
+    expect(hasAcceptedDpa(org(null, "2026-08-31"), "2026-08-31")).toBe(false);
+    expect(hasAcceptedDpa(org("2026-08-31T09:00:00.000Z", null), "2026-08-31")).toBe(false);
   });
 });

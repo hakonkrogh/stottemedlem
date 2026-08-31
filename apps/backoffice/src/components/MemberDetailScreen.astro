@@ -40,6 +40,12 @@ interface Props {
   refunded?: RefundResult | null;
   /** Why a refund did not happen, in words the administrator can act on. */
   refundError?: string | null;
+  /** The erasure is waiting to be confirmed (specs/use-cases/erase-member-data.md). */
+  erasing?: boolean;
+  /** The member's personal data was just erased. */
+  erased?: boolean;
+  /** Why an erasure did not happen, in words the administrator can act on. */
+  eraseError?: string | null;
   membersPath: string;
   /** This member's own address, which the edit action opens. */
   memberPath: string;
@@ -54,12 +60,24 @@ const {
   confirming = null,
   refunded = null,
   refundError = null,
+  erasing = false,
+  erased = false,
+  eraseError = null,
   membersPath,
   memberPath,
 } = Astro.props;
 const { member, latest, status, renewing, history } = entry;
 
-const displayName = member.name || member.email || member.phone || "Uten navn";
+// An erased member is a record of support, not a person any more: there is
+// nobody left to correct, to reach, or to erase again
+// (specs/concepts/member-data.md).
+const anonymized = Boolean(member.anonymizedAt);
+
+// An erased member is named as erased rather than as "Uten navn": the list
+// must not read as if the product lost something.
+const displayName = anonymized
+  ? "Slettet medlem"
+  : member.name || member.email || member.phone || "Uten navn";
 // The same word the member list puts on this person's row, so looking someone
 // up confirms what the list said rather than restating it in prose only.
 const standing = memberStanding(entry);
@@ -141,6 +159,47 @@ const periodSurvives =
 
   {saved && <Alert variant="success">Kontaktopplysningene er oppdatert.</Alert>}
 
+  {erased && <Alert variant="success">Opplysningene om medlemmet er slettet. Betalingene står igjen uten navn.</Alert>}
+  {eraseError && <Alert variant="error">{eraseError}</Alert>}
+  {
+    anonymized && !erased && (
+      <Alert variant="info">
+        Opplysningene om dette medlemmet er slettet
+        {member.anonymizedAt && ` ${new Date(member.anonymizedAt).toLocaleDateString("nb-NO")}`}.
+        Det som står igjen er hva som ble betalt, uten navn.
+      </Alert>
+    )
+  }
+
+  {
+    /* Erasing is irreversible and cannot be undone by re-typing the details —
+       the person is gone from the payment provider's side of it too — so it is
+       never one click away (specs/use-cases/erase-member-data.md). */
+    erasing && !anonymized && (
+      <section class="confirm">
+        <Heading level={3}>Slette opplysningene om {displayName}?</Heading>
+        <Text>
+          Navn, e-postadresse og telefonnummer fjernes fra registeret. Betalingene blir liggende —
+          hvor mye, når og for hvilket år — men uten navn, så tallene for året endrer seg ikke.
+        </Text>
+        <Text variant="small">
+          Dette kan ikke angres. Medlemssiden og medlemsbeviset slutter å virke, hjertene
+          nullstilles, og melder personen seg inn igjen, blir det som et nytt medlem. Gjør dette når
+          medlemmet har bedt om det.
+        </Text>
+        <form method="post">
+          <input type="hidden" name="slett" value="1" />
+          <Stack gap="sm">
+            <Button variant="danger">Slett opplysningene</Button>
+            <Text variant="small">
+              <TextLink href={memberPath}>Avbryt</TextLink>
+            </Text>
+          </Stack>
+        </form>
+      </section>
+    )
+  }
+
   {
     refunded && (
       <Alert variant="success">
@@ -193,7 +252,7 @@ const periodSurvives =
       <div class="section-head">
         <Heading level={3}>Kontaktopplysninger</Heading>
         {
-          !editing && (
+          !editing && !anonymized && (
             <Button variant="secondary" href={`${memberPath}?rediger=1`}>
               Endre
             </Button>
@@ -201,8 +260,9 @@ const periodSurvives =
         }
       </div>
       <Text variant="small">
-        Hentet fra Vipps-profilen da medlemmet meldte seg inn. Rett dem gjerne — det endrer
-        ingenting ved hva som er betalt.
+        {anonymized
+          ? "Medlemmet har bedt om å bli slettet, eller opplysningene ble slettet da de ikke lenger måtte oppbevares. Det er ingenting igjen å rette."
+          : "Hentet fra Vipps-profilen da medlemmet meldte seg inn. Rett dem gjerne — det endrer ingenting ved hva som er betalt."}
       </Text>
       {
         editing ? (
@@ -237,6 +297,16 @@ const periodSurvives =
               { label: "Telefon", value: member.phone },
             ]}
           />
+        )
+      }
+      {
+        /* The organization is the one a member's erasure request reaches, so
+           the organization needs a way to act on it. It is a quiet link rather
+           than a button: nobody should erase a member by aiming badly. */
+        !editing && !anonymized && !erasing && (
+          <Text variant="small">
+            <TextLink href={`${memberPath}?slett=1`}>Slett opplysningene om medlemmet</TextLink>
+          </Text>
         )
       }
     </section>
