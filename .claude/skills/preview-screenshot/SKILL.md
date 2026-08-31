@@ -112,9 +112,17 @@ description: Render any local URL (marketing/backoffice dev or preview server) t
   `pnpm --filter @stottemedlem/ui run storybook --ci`
   (port 6006, ready in seconds, hot-reloads). Then shoot a story's iframe URL
   directly: `http://localhost:6006/iframe.html?id=<story-id>&viewMode=story`.
-  Story ids slugify title + export: "Primitives/Button" + `Primary` →
-  `primitives-button--primary`; "Backoffice/Opprett organisasjon" + `WithError`
-  → `backoffice-opprett-organisasjon--with-error`. **A playwright shot of a
+  **List the ids before shooting — do not derive them from the component
+  name:** `curl -s localhost:6006/index.json | python3 -c "import json,sys;
+  print('\n'.join(sorted(json.load(sys.stdin)['entries'])))"`. Story TITLES in
+  this repo are Norwegian while the components are English, so the obvious
+  guess is wrong: `MemberListScreen.stories.ts` is
+  `backoffice-medlemsliste--default`, NOT `screens-memberlistscreen--default`
+  (cost a wasted shot 2026-08-31, and a wrong id renders a "Couldn't find story
+  matching" error page that looks like a broken build). Ids otherwise slugify
+  title + export: "Primitives/Button" + `Primary` → `primitives-button--primary`;
+  "Backoffice/Opprett organisasjon" + `WithError` →
+  `backoffice-opprett-organisasjon--with-error`. **A playwright shot of a
   COLD story is a blank page or a lone spinner** (hit 2026-08-31): playwright
   shoots at `load`, but a first-visit story still compiles/fetches its module
   after that. Add `--wait-for-timeout=4000` (and re-shoot if still blank —
@@ -133,6 +141,23 @@ description: Render any local URL (marketing/backoffice dev or preview server) t
   at once with `pnpm turbo build --filter='@stottemedlem/backoffice^...'`
   (hit 2026-08-28). The dark pill at the bottom
   of astro-dev screenshots is Astro's dev toolbar, not the page.
+- **A component that pulls its content from a server endpoint cannot be
+  reviewed in Storybook** — Storybook serves no app routes, so an
+  `<img src="/medlemsbevis/…/kort.svg">` (MemberCardFigure) or
+  `<img src="/api/qr/…">` renders a broken-image icon and proves nothing. When
+  the content underneath is a PURE function, add a story-only wrapper that
+  calls it and inlines the result: `MemberCardStory.astro` +
+  `MemberCard.stories.ts` (`Backoffice/Medlemsbevis`) is the worked example —
+  same function, same output, no server. Two things to carry over: the wrapper
+  belongs beside the component with a "nothing in the app imports it" comment
+  (the `StoryScreen.astro` precedent), and **a browser-drawn SVG is not
+  pixel-identical to a resvg-rasterized one** (variable font weights apply in
+  the browser, not in resvg — see qr-codes.md), so judge layout in Storybook
+  and weight against the real PNG.
+  **Still unreviewable this way:** the ORGANIZATION's QR card (`qrCardSvg`) has
+  no story at all — it is reachable only through `/api/qr/<slug>` (dev server +
+  a seeded org) or baked into the marketing page at build time. Same fix
+  applies whenever someone needs to iterate on it.
 - **Reviewing the org back office**: every screen has a story that renders
   inside the real tab chrome (`StoryScreen` wraps `OrgScreen`), and every
   in-app link is rewritten to the story behind it
@@ -147,11 +172,8 @@ description: Render any local URL (marketing/backoffice dev or preview server) t
   shell and looks like a bug):
   `"/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" --headless=new
   --disable-gpu --virtual-time-budget=20000 --dump-dom "<iframe url>" | grep -o
-  'href="[^"]*"'`. List every story id with
-  `curl -s localhost:6006/index.json | python3 -c "import json,sys;
-  print('\n'.join(sorted(json.load(sys.stdin)['entries'])))"` — cheaper and
-  surer than guessing the title→id slug (Norwegian letters slugify oddly; keep
-  new story titles/exports ASCII). Note `playwright` is NOT an installed
+  'href="[^"]*"'`. (Story ids come from `index.json` — see the listing command
+  above; keep new story titles/exports ASCII.) Note `playwright` is NOT an installed
   package — `import { chromium } from "playwright"` fails; only the `npx
   playwright screenshot` CLI path works.
 - **PUBLIC backoffice pages** (`/bli-medlem/<slug>`, `/bli-medlem/<slug>/vilkar`, `/api/qr/*`)

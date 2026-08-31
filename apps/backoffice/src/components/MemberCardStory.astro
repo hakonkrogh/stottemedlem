@@ -1,0 +1,43 @@
+---
+// STORY-ONLY wrapper for the member's card (specs/concepts/member-card.md).
+// Nothing in the app imports it.
+//
+// The shipped surfaces embed the card as an image pointing at
+// `/medlemsbevis/<token>/kort.svg` (see MemberCardFigure.astro), and Storybook
+// serves no such address — a story of that component would show a broken image
+// icon and prove nothing. What actually needs reviewing is the artwork, and
+// `memberCardSvg` is a pure function, so this renders its real output inline.
+// Same drawing, same code path, no server.
+//
+// **What Storybook shows is not pixel-identical to what gets shared.** Here a
+// BROWSER draws the SVG, applying Fraunces' variable weights, so the secondary
+// lines come out light. The card people actually receive — the og:image, the
+// receipt attachment — is rasterized by resvg, which does not apply variable
+// axes and renders every line at the font's default (heavy) instance. So judge
+// layout, wrapping and hierarchy-by-size here, and check WEIGHT against the
+// real thing: `/medlemsbevis/<token>/kort.png` (see qr-codes.md).
+import { type MemberCardOptions, memberCardSvg } from "@stottemedlem/qr";
+
+type Props = MemberCardOptions;
+const svg = memberCardSvg(Astro.props);
+---
+
+<figure class="member-card">
+  <Fragment set:html={svg} />
+</figure>
+
+<style>
+  .member-card {
+    margin: 0;
+    /* Wider than a back-office screen frame on purpose: the card is 1.91:1 and
+       is judged at the size people actually see it shared at. */
+    max-width: 46rem;
+    border-radius: 1rem;
+    overflow: hidden;
+  }
+  .member-card :global(svg) {
+    display: block;
+    width: 100%;
+    height: auto;
+  }
+</style>

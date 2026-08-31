@@ -39,3 +39,5 @@ and never competes with an organization's own identity.
 
 ## Referenced by
 - [Concept: Brand attribution](brand-attribution.md)
+- [Concept: Member card](member-card.md) — a surface with no emoji font at all,
+  where the red heart shape stands in for the character throughout.

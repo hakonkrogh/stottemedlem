@@ -1,0 +1,78 @@
+---
+import { memberCardImagePath, periodLabel, referredJoinPath } from "@stottemedlem/core";
+import Heading from "@stottemedlem/ui/components/Heading.astro";
+import Stack from "@stottemedlem/ui/components/Stack.astro";
+import Text from "@stottemedlem/ui/components/Text.astro";
+import TextLink from "@stottemedlem/ui/components/TextLink.astro";
+import MemberCardFigure from "../../../components/MemberCardFigure.astro";
+import PublicShell from "../../../layouts/PublicShell.astro";
+import { getDb } from "../../../lib/db";
+import { loadMemberCard, memberCardImageUrl } from "../../../lib/memberCard";
+
+// The member's card at its own public address (specs/concepts/member-card.md):
+// the one page a supporting member can hand to anybody. It offers nothing but
+// looking at the card and following it into joining — the token here is not
+// the membership's manage token, and cannot stop anything.
+//
+// An address matching no card is a bare 404: it reveals neither the
+// organization nor that some other card exists.
+const token = Astro.params.token ?? "";
+const card = await loadMemberCard(getDb(), token);
+if (!card) return new Response("Fant ikke medlemsbeviset", { status: 404 });
+
+const cardToken = card.member.cardToken ?? token;
+const memberName = card.member.name?.trim() || "Et støttemedlem";
+const org = card.organization;
+const period = periodLabel(card.latest?.periodYear ?? 0);
+// Relative on purpose: a visitor who arrived on one origin stays on it.
+const joinPath = referredJoinPath(org.slug, cardToken);
+
+const title = `${memberName} — støttemedlem i ${org.name}`;
+const description =
+  card.status === "active"
+    ? `${memberName} støtter ${org.name} i ${period}. Bli støttemedlem du også.`
+    : `${memberName} har støttet ${org.name}. Bli støttemedlem du også.`;
+const alt = `Medlemsbevis for ${memberName} i ${org.name}, med ${card.hearts} hjerter.`;
+---
+
+<PublicShell
+  title={title}
+  description={description}
+  previewImage={memberCardImageUrl(cardToken)}
+  previewImageAlt={alt}
+  noindex
+>
+  <Stack gap="lg">
+    <MemberCardFigure cardToken={cardToken} alt={alt} />
+
+    <Stack gap="sm">
+      <Heading>
+        {
+          card.status === "active"
+            ? `${memberName} er støttemedlem i ${org.name}`
+            : `${memberName} har støttet ${org.name}`
+        }
+      </Heading>
+      <Text variant="lead">
+        {
+          card.hearts === 1
+            ? "Ett hjerte for året som støttemedlem."
+            : `${card.hearts} hjerter — ett for hvert år som støttemedlem.`
+        }
+        {card.recruits > 0 && ` ${card.recruits} ${card.recruits === 1 ? "medlem" : "medlemmer"} har blitt med etter å ha sett dette beviset.`}
+      </Text>
+    </Stack>
+
+    <Stack gap="sm">
+      <Text>
+        <TextLink href={joinPath}>Bli støttemedlem i {org.name}</TextLink>{" "}
+        — det samme som QR-koden på beviset fører til.
+      </Text>
+      <Text variant="small">
+        <TextLink href={`${memberCardImagePath(cardToken, "png")}?bredde=2400&last=1`}>
+          Last ned beviset som bilde
+        </TextLink>
+      </Text>
+    </Stack>
+  </Stack>
+</PublicShell>

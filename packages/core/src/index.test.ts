@@ -11,11 +11,15 @@ import {
   isoWeekScheme,
   isRenewalWindow,
   isValidOrganisasjonsnummer,
+  JOIN_REFERRAL_PARAM,
   joinPagePath,
   joinPageTermsPath,
   joinPageTermsUrl,
   joinPageUrl,
   MEMBERSHIP_TIER_KEY_MAX_LENGTH,
+  memberCardImagePath,
+  memberCardPath,
+  memberSelfServicePath,
   membershipTierKey,
   nextAnnualPeriod,
   normalizeMembershipTierDescription,
@@ -23,6 +27,7 @@ import {
   periodLabel,
   proratedJoinFeeNok,
   REFUND_WINDOW_DAYS,
+  referredJoinPath,
   refundRefusal,
   renewalPeriodYear,
   slugifyOrganizationName,
@@ -144,6 +149,32 @@ describe("joinPageUrl / joinPageTermsUrl", () => {
   it("exposes the bare path for same-origin links and route matching", () => {
     expect(joinPagePath("nordnes-skolekorps")).toBe("/bli-medlem/nordnes-skolekorps");
     expect(joinPageTermsPath("nordnes-skolekorps")).toBe("/bli-medlem/nordnes-skolekorps/vilkar");
+  });
+});
+
+describe("the member's card address", () => {
+  it("is short and top-level, so it reads well pasted into a post", () => {
+    expect(memberCardPath("kort-1")).toBe("/medlemsbevis/kort-1");
+    expect(memberCardImagePath("kort-1")).toBe("/medlemsbevis/kort-1/kort.png");
+    expect(memberCardImagePath("kort-1", "svg")).toBe("/medlemsbevis/kort-1/kort.svg");
+  });
+
+  it("escapes the token, since it ends up in a URL", () => {
+    expect(memberCardPath("a/b")).toBe("/medlemsbevis/a%2Fb");
+  });
+
+  it("leads a scanner into the org's join page carrying the referral", () => {
+    expect(referredJoinPath("nordnes-skolekorps", "kort-1")).toBe(
+      "/bli-medlem/nordnes-skolekorps?verva=kort-1",
+    );
+    expect(JOIN_REFERRAL_PARAM).toBe("verva");
+  });
+
+  it("is never the address that can stop the membership", () => {
+    // The card is made to be shared; the self-service page must never be
+    // (specs/concepts/member-card.md).
+    expect(memberCardPath("tok")).not.toBe(memberSelfServicePath("nordnes-skolekorps", "tok"));
+    expect(memberCardPath("tok")).not.toContain("min-side");
   });
 });
 

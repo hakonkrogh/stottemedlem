@@ -27,7 +27,12 @@ exit 0 = every assertion held; non-zero = first failure is printed.`);
   process.exit(args.length === 0 ? 1 : 0);
 }
 
-const url = args[0];
+// A scheme-less `localhost:4322/path` is what anyone actually types (and what
+// this skill's own examples showed), but `fetch` reads "localhost:" as the
+// PROTOCOL and dies — with an error that reads exactly like a dead server.
+// Normalize it here so the obvious invocation works.
+const rawUrl = args[0];
+const url = /^https?:\/\//.test(rawUrl) ? rawUrl : `http://${rawUrl}`;
 const opts = { headers: [], contains: [], notContains: [], repeat: 1 };
 for (let i = 1; i < args.length; i++) {
   const a = args[i];
@@ -66,6 +71,7 @@ for (let attempt = 1; attempt <= opts.repeat; attempt++) {
   } catch (error) {
     console.error(`FAIL  ${url}: request failed — ${error.message}`);
     console.error("      (dev server down? note `git stash` can kill it — see project-overview)");
+    console.error(`      (reached for: ${url} — pass host:port or a full http(s) URL)`);
     process.exit(1);
   }
   body = await response.text();

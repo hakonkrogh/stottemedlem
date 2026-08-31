@@ -187,6 +187,48 @@ export function memberSelfServicePath(slug: string, manageToken: string): string
 }
 
 /**
+ * The path segment a member's card lives under
+ * (specs/concepts/member-card.md). Norwegian "medlemsbevis" — proof of
+ * membership. It sits at the top level rather than beneath the organization:
+ * the card is the member's own object, and a short address is what makes it
+ * shareable.
+ */
+export const MEMBER_CARD_PATH_SEGMENT = "medlemsbevis";
+
+/**
+ * A member's card — the address they may share with anyone
+ * (specs/concepts/member-card.md). The token identifies the card and grants
+ * nothing but looking at it, which is exactly what separates it from
+ * `memberSelfServicePath`: that one can end the membership and must never be
+ * shared.
+ */
+export function memberCardPath(cardToken: string): string {
+  return `/${MEMBER_CARD_PATH_SEGMENT}/${encodeURIComponent(cardToken)}`;
+}
+
+/** The card's image, beneath its page: what a social feed previews. */
+export function memberCardImagePath(cardToken: string, format: "png" | "svg" = "png"): string {
+  return `${memberCardPath(cardToken)}/kort.${format}`;
+}
+
+/**
+ * The query parameter carrying a referral into the join page
+ * (specs/concepts/member-card.md): the card token of the member whose card was
+ * scanned. Norwegian "verva" — recruited.
+ */
+export const JOIN_REFERRAL_PARAM = "verva";
+
+/**
+ * The join page as a member's card advertises it: the organization's ordinary
+ * join address with the referral attached, so a completed join can be credited
+ * back to the member who handed the card on
+ * (specs/use-cases/earn-hearts-and-recruit.md).
+ */
+export function referredJoinPath(slug: string, cardToken: string): string {
+  return `${joinPagePath(slug)}?${JOIN_REFERRAL_PARAM}=${encodeURIComponent(cardToken)}`;
+}
+
+/**
  * A CSV document the way desktop spreadsheet tools actually open it
  * (specs/use-cases/export-member-list.md): semicolon-delimited (what Excel
  * expects under a Norwegian locale), CRLF line ends, and a UTF-8 BOM so æøå

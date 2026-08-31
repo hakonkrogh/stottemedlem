@@ -33,9 +33,14 @@ day, 72 minutes apart, both pointing at one membership — was invisible in
 Storybook and obvious in one staging query (2026-08-27). Non-local targets
 refuse anything but SELECT/WITH; they read, never write.
 
-`seed.sh` also writes ONE supporting member with an ACTIVE agreement, a
-captured charge and a current-year membership, so member-list queries have a
-baseline. It is a single happy-path member — the member list's other states
+`seed.sh` also writes TWO supporting members (extended 2026-08-31), so
+member-list queries and the member's card have a baseline: **Kari Eksempel**
+(`mem-seed-1`, card token `kort-seed-1`) with an ACTIVE agreement, a captured
+charge, a current-period membership AND three prior periods — so her card draws
+four hearts rather than proving only that the layout renders — plus **Ola
+Eksempel** (`kort-seed-2`), whose `referred_by_member_id` points at Kari, which
+is what makes her recruit count non-zero. Both are happy-path — the member
+list's other states
 (lapsed, no name, approved-but-not-yet-paid) are covered by Storybook fixtures
 in `apps/backoffice/src/components/memberFixtures.ts`, not by the seed. Note
 the seeded org (`org-seed-1`/`wos-seed-1`) is fictitious and belongs to no
@@ -99,11 +104,39 @@ The full sweep after a routing change (dev server on 4322):
     node $R localhost:4322/org/<slug> --redirect localhost:4322/bli-medlem/<slug>
     node $R "localhost:4322/org/<slug>/logo?v=abc" --redirect "localhost:4322/bli-medlem/<slug>/logo?v=abc"
 
-(Prefix each URL with `http://`.) The `--contains "støttemedlem.no"` is the
+Plus the member's card (specs/concepts/member-card.md), which lives at the top
+level rather than under `/bli-medlem/` and is served from a DIFFERENT apex zone
+route — so a routing change can break it while every join-page check above
+still passes:
+
+    node $R localhost:4322/medlemsbevis/kort-seed-1 --status 200 \
+      --contains "støttemedlem.no" --contains "noindex"
+    node $R localhost:4322/medlemsbevis/kort-seed-1/kort.svg --status 200
+    node $R localhost:4322/medlemsbevis/kort-seed-1/kort.png --status 200
+    node $R localhost:4322/medlemsbevis/finnes-ikke --status 404
+
+(`kort-seed-1` is seeded by `seed.sh`. A card address that matches nothing must
+be a bare 404 — it may not hint at which organization it belonged to.)
+
+A scheme-less `host:port/path` is fine — the runner adds `http://`. The
+`--contains "støttemedlem.no"` is the
 [brand-attribution](../../../specs/concepts/brand-attribution.md) check every
 public surface owes.
 
+**Check the exit code of each call — do NOT rely on `set -e`.** In the agent
+Bash harness `set -e` did not abort a failing `node $R …` (2026-08-31), so a
+sweep chained with `&&`/`;` printed seven `FAIL` lines and then a cheerful
+"ALL OK". Either run one assertion per command and read `rc=$?`, or collect
+failures explicitly.
+
 ## Gotchas found driving this
+
+- **A scheme-less URL used to die with the wrong error** (fixed 2026-08-31, and
+  the skill's own examples had been un-runnable). `fetch("localhost:4322/x")`
+  reads `localhost:` as the PROTOCOL and throws — which the runner reported as
+  "dev server down?", sending you to restart a server that was running fine.
+  `routes.mjs` now prefixes `http://` itself and echoes the URL it actually
+  reached for.
 
 - **After a deploy, staging/production still serve the PREVIOUS page copy on
   the first visit** (`x-sm-cache: hit` on stale HTML — the saved copy heals in

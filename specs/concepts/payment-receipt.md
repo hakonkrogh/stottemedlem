@@ -25,6 +25,13 @@ every payment, so neither the member nor the organization ever has to
 reconstruct one.
 
 ## Rules & invariants
+- **The [member card](member-card.md) comes first, the paperwork after it.**
+  Both forms lead with the card — the member's name, their organization, their
+  hearts, the address they can share — and only then give the payment
+  documentation below it. A receipt is a thank-you before it is a document, and
+  the card is the thank-you. The email additionally carries the card as an
+  attached picture where one can be made, so the member keeps it even if their
+  mail client will not load images.
 - A receipt carries the § 5-1-1 nr. 2–5 information:
   - **nr. 2, the parties** — the organization by name and
     organisasjonsnummer; the member by name (or, failing a name, the address
@@ -72,6 +79,7 @@ reconstruct one.
 - Delivered to one [supporting member](supporting-member.md), on behalf of one
   [organization](organization.md).
 - The email form is a kind of [member notice](member-notice.md).
+- Leads with, and carries, the member's [card](member-card.md).
 - The page form is the confirmation step of
   [joining](../use-cases/join-as-supporting-member.md).
 

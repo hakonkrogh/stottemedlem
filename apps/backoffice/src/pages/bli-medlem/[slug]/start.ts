@@ -1,4 +1,9 @@
-import { getOrganizationBySlug, listMembershipTiers } from "@stottemedlem/db";
+import { JOIN_REFERRAL_PARAM } from "@stottemedlem/core";
+import {
+  findMemberIdByCardToken,
+  getOrganizationBySlug,
+  listMembershipTiers,
+} from "@stottemedlem/db";
 import type { APIRoute } from "astro";
 import { getDb } from "../../../lib/db";
 import { publicOrigin, startJoin } from "../../../lib/membership";
@@ -27,8 +32,21 @@ export const POST: APIRoute = async ({ params, request }) => {
   const vipps = await getVippsForOrg(getWorkOS(), org.workosOrgId);
   if (!vipps) return redirectToJoinPage(org.slug, "ikke-klar");
 
+  // Word of mouth, carried from a scanned member card
+  // (specs/use-cases/earn-hearts-and-recruit.md). A token nobody recognizes is
+  // no reason to refuse a payment: the join goes ahead unattributed.
+  const referral = String(form.get(JOIN_REFERRAL_PARAM) ?? "").trim();
+  const referredByMemberId = referral ? await findMemberIdByCardToken(db, org.id, referral) : null;
+
   try {
-    const { confirmationUrl } = await startJoin(db, vipps, org, tier, publicOrigin(request));
+    const { confirmationUrl } = await startJoin(
+      db,
+      vipps,
+      org,
+      tier,
+      publicOrigin(request),
+      referredByMemberId,
+    );
     // 303: the browser must follow with GET, and the back button must not
     // re-post and draft a second agreement.
     return new Response(null, { status: 303, headers: { location: confirmationUrl } });

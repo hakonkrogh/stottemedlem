@@ -308,6 +308,12 @@ export interface DraftedAgreement {
   annualFeeNok: number;
   /** Secret in the member's own management URL; generated when absent. */
   manageToken?: string;
+  /**
+   * The member whose card was scanned to get here, if any. Held on the
+   * agreement because the joiner is still anonymous at this point
+   * (specs/use-cases/earn-hearts-and-recruit.md).
+   */
+  referredByMemberId?: string | null;
 }
 
 /**
@@ -373,6 +379,13 @@ export interface SupporterIdentity {
   name?: string | null;
   email?: string | null;
   phone?: string | null;
+  /**
+   * Who brought them in, when the join began by scanning a card. Only ever
+   * applied to a person we are meeting for the first time: someone who has
+   * supported this organization before was not recruited today, and a recruit
+   * belongs to at most one recruiter (specs/concepts/scorecard.md).
+   */
+  referredByMemberId?: string | null;
 }
 
 /**
@@ -411,7 +424,16 @@ export async function ensureSupportingMember(
 
   const [created] = await db
     .insert(supportingMembers)
-    .values({ id: crypto.randomUUID(), orgId, vippsSub: identity.vippsSub, ...details })
+    .values({
+      id: crypto.randomUUID(),
+      orgId,
+      vippsSub: identity.vippsSub,
+      // Every member has a card from the moment they exist
+      // (specs/concepts/member-card.md).
+      cardToken: crypto.randomUUID(),
+      referredByMemberId: identity.referredByMemberId ?? null,
+      ...details,
+    })
     .returning();
   if (!created) throw new Error("insert into supporting_members returned no row");
   return created;
@@ -429,7 +451,12 @@ export async function activateAgreement(
 ): Promise<{ agreement: MembershipAgreement; member: SupportingMember } | null> {
   const agreement = await findAgreementByVippsId(db, vippsAgreementId);
   if (!agreement) return null;
-  const member = await ensureSupportingMember(db, agreement.orgId, identity);
+  // The referral was captured when the agreement was drafted, before anyone
+  // knew who was joining; now that they have a name, it can follow them.
+  const member = await ensureSupportingMember(db, agreement.orgId, {
+    referredByMemberId: agreement.referredByMemberId,
+    ...identity,
+  });
   const [updated] = await db
     .update(membershipAgreements)
     .set({
@@ -1003,6 +1030,34 @@ export interface MemberOverview {
    * period takes its heart with it.
    */
   hearts: number;
+  /**
+   * How many supporting members they brought in and who then paid
+   * (specs/concepts/scorecard.md) — so the organization can see and thank its
+   * best recruiters.
+   */
+  recruits: number;
+}
+
+/**
+ * How many paying recruits each member of an organization brought in, keyed by
+ * the recruiter. Members who have recruited nobody are simply absent.
+ */
+async function recruitCountsByReferrer(db: Db, orgId: string): Promise<Map<string, number>> {
+  const rows = await db
+    .selectDistinct({
+      referrer: supportingMembers.referredByMemberId,
+      recruit: supportingMembers.id,
+    })
+    .from(supportingMembers)
+    .innerJoin(memberships, eq(memberships.memberId, supportingMembers.id))
+    .where(eq(supportingMembers.orgId, orgId));
+
+  const counts = new Map<string, number>();
+  for (const row of rows) {
+    if (!row.referrer) continue;
+    counts.set(row.referrer, (counts.get(row.referrer) ?? 0) + 1);
+  }
+  return counts;
 }
 
 /**
@@ -1037,6 +1092,8 @@ export async function listOrganizationMembers(
     ).flatMap((row) => (row.memberId ? [row.memberId] : [])),
   );
 
+  const recruits = await recruitCountsByReferrer(db, orgId);
+
   const byMember = new Map<string, MemberOverview>();
   for (const { member, membership } of rows) {
     const seen = byMember.get(member.id);
@@ -1054,6 +1111,7 @@ export async function listOrganizationMembers(
       renewing: live.has(member.id),
       // Periods are unique per member and year, so each joined row is a heart.
       hearts: (seen?.hearts ?? 0) + (membership ? 1 : 0),
+      recruits: recruits.get(member.id) ?? 0,
     });
   }
   return [...byMember.values()];
@@ -1126,7 +1184,125 @@ export async function getOrganizationMember(
     status: latest ? membershipStatus(latest.periodYear, currentPeriodKey) : "lapsed",
     renewing: Boolean(live),
     hearts: history.length,
+    recruits: await countRecruits(db, member.id),
     history,
+  };
+}
+
+// ── The member's card (specs/concepts/member-card.md) ──────────────────────
+
+/**
+ * The address of this member's card, minted if they have none yet.
+ *
+ * Every member gets one when they are created, and the migration gave one to
+ * everyone who already existed — but a row inserted by hand (a seed, a
+ * repair) can still arrive without, and a member without a card address has no
+ * card at all. So this mints rather than assumes, and is safe to call on every
+ * view: an existing token is returned untouched, because a card's address must
+ * never change under someone who has already shared it.
+ */
+export async function ensureMemberCardToken(db: Db, memberId: string): Promise<string | null> {
+  const [member] = await db
+    .select({ cardToken: supportingMembers.cardToken })
+    .from(supportingMembers)
+    .where(eq(supportingMembers.id, memberId));
+  if (!member) return null;
+  if (member.cardToken) return member.cardToken;
+
+  const cardToken = crypto.randomUUID();
+  await db
+    .update(supportingMembers)
+    .set({ cardToken })
+    .where(and(eq(supportingMembers.id, memberId), isNull(supportingMembers.cardToken)));
+  // Re-read rather than trust the write: two requests racing for the same
+  // missing token must end up showing the same card address.
+  const [settled] = await db
+    .select({ cardToken: supportingMembers.cardToken })
+    .from(supportingMembers)
+    .where(eq(supportingMembers.id, memberId));
+  return settled?.cardToken ?? cardToken;
+}
+
+/**
+ * How many supporting members joined on this member's referral and went on to
+ * actually pay (specs/concepts/scorecard.md — a scan scores nothing; only a
+ * completed join counts).
+ */
+export async function countRecruits(db: Db, memberId: string): Promise<number> {
+  const rows = await db
+    .selectDistinct({ recruitId: supportingMembers.id })
+    .from(supportingMembers)
+    .innerJoin(memberships, eq(memberships.memberId, supportingMembers.id))
+    .where(eq(supportingMembers.referredByMemberId, memberId));
+  return rows.length;
+}
+
+/**
+ * The member behind a card address, for crediting a referral — nothing more,
+ * so it deliberately reads no history.
+ *
+ * Scoped to the organization being joined: a card from one organization can
+ * never credit a recruit in another, because a scorecard is per organization
+ * (specs/concepts/scorecard.md). An unknown or foreign token simply yields
+ * nothing, and the join proceeds unattributed rather than failing.
+ */
+export async function findMemberIdByCardToken(
+  db: Db,
+  orgId: string,
+  cardToken: string,
+): Promise<string | null> {
+  if (!cardToken) return null;
+  const [row] = await db
+    .select({ id: supportingMembers.id })
+    .from(supportingMembers)
+    .where(and(eq(supportingMembers.orgId, orgId), eq(supportingMembers.cardToken, cardToken)));
+  return row?.id ?? null;
+}
+
+/** Everything a member's card shows, gathered from what is already true. */
+export interface MemberCard {
+  member: SupportingMember;
+  organization: Organization;
+  /** One per supported annual period — the hearts, newest period first. */
+  history: Membership[];
+  hearts: number;
+  recruits: number;
+  /** The most recent period paid for; null when none ever completed. */
+  latest: Membership | null;
+  status: "active" | "lapsed";
+}
+
+/**
+ * The card behind a card address (specs/concepts/member-card.md). An address
+ * that matches nothing yields nothing at all — never a hint of which
+ * organization it might have belonged to.
+ *
+ * A member who has not completed a payment has no card: there is nothing to
+ * prove yet.
+ */
+export async function findMemberCardByToken(
+  db: Db,
+  cardToken: string,
+  currentPeriodKey: number,
+): Promise<MemberCard | null> {
+  const [row] = await db
+    .select({ member: supportingMembers, organization: organizations })
+    .from(supportingMembers)
+    .innerJoin(organizations, eq(supportingMembers.orgId, organizations.id))
+    .where(eq(supportingMembers.cardToken, cardToken));
+  if (!row) return null;
+
+  const history = await listMembershipHistory(db, row.member.id);
+  if (history.length === 0) return null;
+  const latest = history[0] ?? null;
+
+  return {
+    ...row,
+    history,
+    hearts: history.length,
+    recruits: await countRecruits(db, row.member.id),
+    latest,
+    status: latest ? membershipStatus(latest.periodYear, currentPeriodKey) : "lapsed",
   };
 }
 

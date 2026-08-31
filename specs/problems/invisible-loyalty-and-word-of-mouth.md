@@ -26,8 +26,8 @@ thanked, or repeated deliberately.
 ## What "solved" looks like
 - A member can see and show off how many years they have supported the
   organization and how many members they have brought in.
-- A member can hand someone a physical, scannable way to join that credits the
-  join back to them.
+- A member can hand someone a scannable way to join — on a screen, in a chat,
+  or printed — that credits the join back to them.
 - The organization can see who its most loyal members and best recruiters are,
   and thank them.
 
@@ -35,5 +35,6 @@ thanked, or repeated deliberately.
 - [Use case: Earn hearts and recruit new members](../use-cases/earn-hearts-and-recruit.md)
 
 ## Related
+- [Concept: Member card](../concepts/member-card.md)
 - [Concept: Scorecard](../concepts/scorecard.md)
 - [Concept: Supporting member](../concepts/supporting-member.md)

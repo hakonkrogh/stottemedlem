@@ -18,8 +18,16 @@ interface Props {
    * and belongs to nobody else.
    */
   noindex?: boolean;
+  /**
+   * The picture this page previews as when its address is pasted into a chat
+   * or a social feed. A member's card is made to be shared, and a shared card
+   * must show the card itself rather than a bare link
+   * (specs/concepts/member-card.md).
+   */
+  previewImage?: string;
+  previewImageAlt?: string;
 }
-const { title, description, noindex } = Astro.props;
+const { title, description, noindex, previewImage, previewImageAlt } = Astro.props;
 ---
 
 <html lang="no">
@@ -28,6 +36,19 @@ const { title, description, noindex } = Astro.props;
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     {description && <meta name="description" content={description} />}
     {noindex && <meta name="robots" content="noindex" />}
+    <meta property="og:title" content={title} />
+    {description && <meta property="og:description" content={description} />}
+    <meta property="og:type" content="website" />
+    {
+      previewImage && (
+        <>
+          <meta property="og:image" content={previewImage} />
+          {previewImageAlt && <meta property="og:image:alt" content={previewImageAlt} />}
+          <meta name="twitter:card" content="summary_large_image" />
+          <meta name="twitter:image" content={previewImage} />
+        </>
+      )
+    }
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <title>{title}</title>
     <script is:inline>

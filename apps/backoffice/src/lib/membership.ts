@@ -69,6 +69,12 @@ export async function startJoin(
   org: Organization,
   tier: MembershipTier,
   origin: string,
+  /**
+   * The member whose card was scanned to get here, when the join began that
+   * way (specs/use-cases/earn-hearts-and-recruit.md). Held on the agreement
+   * until Vipps says who is joining.
+   */
+  referredByMemberId: string | null = null,
 ): Promise<JoinDraft> {
   const period = periods.periodFor();
   const paidNok = periods.proratedJoinFeeNok(tier.annualFeeNok, new Date());
@@ -125,6 +131,7 @@ export async function startJoin(
     externalId,
     annualFeeNok: tier.annualFeeNok,
     manageToken,
+    referredByMemberId,
   });
 
   // The first charge exists from this moment on Vipps' side, so record it now:

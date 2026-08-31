@@ -25,6 +25,14 @@
     {
       "pattern": "xn--stttemedlem-hgb.no/org/*",
       "zone_name": "xn--stttemedlem-hgb.no"
+    },
+    // A member's card is shared by the member, into chats and social feeds
+    // (specs/concepts/member-card.md), so it lives on the canonical apex
+    // rather than the app host — the short address IS what makes it
+    // shareable.
+    {
+      "pattern": "xn--stttemedlem-hgb.no/medlemsbevis/*",
+      "zone_name": "xn--stttemedlem-hgb.no"
     }
   ],
   "assets": {

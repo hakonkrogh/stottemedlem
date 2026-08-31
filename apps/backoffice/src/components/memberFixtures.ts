@@ -18,6 +18,8 @@ export function fixtureMember(
     email,
     phone,
     vippsSub: `sub-${id}`,
+    cardToken: `kort-${id}`,
+    referredByMemberId: null,
     messagesDeclinedAt: null,
     createdAt: "2026-01-04",
   };
@@ -52,6 +54,7 @@ export const continuing: MemberOverview = {
   status: "active",
   renewing: true,
   hearts: 3,
+  recruits: 2,
 };
 
 /** Paid for this year, then ended the arrangement — still a member until 31 Dec. */
@@ -61,6 +64,7 @@ export const endingAfterThisYear: MemberOverview = {
   status: "active",
   renewing: false,
   hearts: 1,
+  recruits: 0,
 };
 
 /** Supported for two years and stopped — the one to invite back. */
@@ -70,6 +74,7 @@ export const lapsed: MemberOverview = {
   status: "lapsed",
   renewing: false,
   hearts: 2,
+  recruits: 0,
 };
 
 /** Consented to a contact address but no name. */
@@ -79,6 +84,7 @@ export const withoutName: MemberOverview = {
   status: "active",
   renewing: true,
   hearts: 1,
+  recruits: 0,
 };
 
 /** Approved seconds ago; the first payment has not landed yet. */
@@ -88,6 +94,7 @@ export const nothingPaidYet: MemberOverview = {
   status: "lapsed",
   renewing: true,
   hearts: 0,
+  recruits: 0,
 };
 
 /** Paying, but joined without sharing an address — nobody can be told anything. */
@@ -97,6 +104,7 @@ export const noWayToReach: MemberOverview = {
   status: "active",
   renewing: true,
   hearts: 12,
+  recruits: 0,
 };
 
 /** One payment as the member's page presents it (specs/use-cases/refund-a-payment.md). */

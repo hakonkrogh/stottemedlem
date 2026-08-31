@@ -15,6 +15,9 @@ const base = {
   paidDate: "2026-03-14T09:30:00.000Z",
   kind: "join" as const,
   manageUrl: "https://app.example/bli-medlem/eksempel/min-side?n=tok",
+  hearts: 3,
+  recruits: 0,
+  cardUrl: "https://xn--stttemedlem-hgb.no/medlemsbevis/kort-tok",
 };
 
 describe("membershipReceipt", () => {
@@ -75,5 +78,48 @@ describe("membershipReceipt", () => {
     expect(message.replyTo).toBeUndefined();
     expect(message.text).toContain("ta kontakt med Eksempel Musikkorps direkte");
     expect(message.html).not.toContain("org.nr.");
+  });
+});
+
+describe("membershipReceipt — the member's card", () => {
+  it("leads with the card, and puts the bookkeeping after it", () => {
+    const message = membershipReceipt(base);
+    // The card comes first: the receipt is what the law wants, the card is
+    // what the member wants (specs/concepts/member-card.md).
+    const cardAt = message.text.indexOf("DITT MEDLEMSBEVIS");
+    const receiptAt = message.text.indexOf("Medlemskontingent");
+    expect(cardAt).toBeGreaterThan(-1);
+    expect(cardAt).toBeLessThan(receiptAt);
+    expect(message.html.indexOf("STØTTEMEDLEM")).toBeLessThan(
+      message.html.indexOf("Medlemskontingent"),
+    );
+  });
+
+  it("draws one heart per supported year and links the shareable address", () => {
+    const message = membershipReceipt(base);
+    expect(message.text).toContain("❤️❤️❤️");
+    expect(message.text).toContain("3 år som støttemedlem");
+    expect(message.text).toContain(base.cardUrl);
+    expect(message.html).toContain(base.cardUrl);
+  });
+
+  it("breaks the hearts into rows of ten, like every other surface", () => {
+    const message = membershipReceipt({ ...base, hearts: 12 });
+    expect(message.text).toContain(`${"❤️".repeat(10)}\n${"❤️".repeat(2)}`);
+  });
+
+  it("mentions recruits only once there are any", () => {
+    expect(membershipReceipt(base).text).not.toContain("vervet");
+    const recruited = membershipReceipt({ ...base, recruits: 1 });
+    expect(recruited.text).toContain("vervet 1 medlem");
+    expect(membershipReceipt({ ...base, recruits: 2 }).text).toContain("vervet 2 medlemmer");
+  });
+
+  it("attaches the card as a picture when one could be drawn, and not otherwise", () => {
+    expect(membershipReceipt(base).attachments).toBeUndefined();
+    const withCard = membershipReceipt({ ...base, cardPngBase64: "aGVsbG8=" });
+    expect(withCard.attachments).toEqual([
+      { filename: "medlemsbevis.png", contentBase64: "aGVsbG8=", contentType: "image/png" },
+    ]);
   });
 });
