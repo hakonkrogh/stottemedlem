@@ -90,8 +90,11 @@ const log = logger("reconcile");
 
 /**
  * Say so, loudly, when one period holds two renewal charges that can both
- * take money. Reconciliation only reads — the discrepancy is for a person to
- * resolve — but a double charge must never look like ordinary bookkeeping.
+ * take money. This one the sweep does NOT settle itself — two renewals on one
+ * agreement is not the same shape as a second arrangement's payment landing on
+ * a bought period (which `applyCharge` gives back), and which of two live
+ * charges should go is a person's call — but a double charge must never look
+ * like ordinary bookkeeping.
  */
 function reportDuplicateRenewals(
   vippsAgreementId: string,

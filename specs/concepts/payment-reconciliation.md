@@ -30,8 +30,14 @@ schedule, not merely *accumulated* from notifications.
 - The payment provider is the authority on money. Where the product's record of
   a payment disagrees with the provider's, the provider wins and the product
   corrects itself — never the other way round.
-- Reconciliation only ever **reads** and corrects. It never creates, cancels, or
-  alters a payment; a discrepancy is resolved by learning, not by acting.
+- Reconciliation **never asks for money**. It creates no payment and raises no
+  amount; a discrepancy is resolved by learning, not by billing. Reading is
+  almost all it does — but not quite all, because one discovery cannot be left
+  alone once made: a payment for a period the supporter already bought is
+  given back, the same as it would be had the product noticed at the time
+  ([joining](../use-cases/join-as-supporting-member.md)). Money is only ever
+  returned this way, never taken. Everything else it finds it records and,
+  where a person must decide, says loudly.
 - It works by comparison, never by memory. It asks what is true now instead of
   remembering what it did last time, so running it twice changes nothing and
   skipping a night costs nothing but delay.
