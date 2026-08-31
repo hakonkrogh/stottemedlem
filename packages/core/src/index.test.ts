@@ -159,6 +159,18 @@ describe("the member's card address", () => {
     expect(memberCardImagePath("kort-1", "svg")).toBe("/medlemsbevis/kort-1/kort.svg");
   });
 
+  it("asks for the upright card only when a surface explicitly needs it", () => {
+    // The wide card is what gets shared, so it is what an unqualified address
+    // gives — a preview must never come back the wrong shape.
+    expect(memberCardImagePath("kort-1", "svg", "wide")).toBe("/medlemsbevis/kort-1/kort.svg");
+    expect(memberCardImagePath("kort-1", "svg", "tall")).toBe(
+      "/medlemsbevis/kort-1/kort.svg?form=staaende",
+    );
+    expect(memberCardImagePath("kort-1", "png", "tall")).toBe(
+      "/medlemsbevis/kort-1/kort.png?form=staaende",
+    );
+  });
+
   it("escapes the token, since it ends up in a URL", () => {
     expect(memberCardPath("a/b")).toBe("/medlemsbevis/a%2Fb");
   });

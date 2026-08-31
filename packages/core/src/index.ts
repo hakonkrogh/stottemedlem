@@ -206,9 +206,26 @@ export function memberCardPath(cardToken: string): string {
   return `/${MEMBER_CARD_PATH_SEGMENT}/${encodeURIComponent(cardToken)}`;
 }
 
-/** The card's image, beneath its page: what a social feed previews. */
-export function memberCardImagePath(cardToken: string, format: "png" | "svg" = "png"): string {
-  return `${memberCardPath(cardToken)}/kort.${format}`;
+/**
+ * The query parameter asking for the upright card instead of the wide one
+ * (specs/concepts/member-card.md). Norwegian "stående" — standing. The wide
+ * card is the default because it is the one that gets shared; the upright one
+ * exists for screens too narrow to read the wide one.
+ */
+export const MEMBER_CARD_SHAPE_PARAM = "form";
+export const MEMBER_CARD_TALL_SHAPE = "staaende";
+
+/**
+ * The card's image, beneath its page: what a social feed previews, and — asked
+ * for upright — what a phone-width surface shows instead.
+ */
+export function memberCardImagePath(
+  cardToken: string,
+  format: "png" | "svg" = "png",
+  shape: "wide" | "tall" = "wide",
+): string {
+  const query = shape === "tall" ? `?${MEMBER_CARD_SHAPE_PARAM}=${MEMBER_CARD_TALL_SHAPE}` : "";
+  return `${memberCardPath(cardToken)}/kort.${format}${query}`;
 }
 
 /**

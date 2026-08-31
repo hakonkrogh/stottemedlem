@@ -386,6 +386,12 @@ lives in `specs/`, kept in sync with code by a mandatory `Stop`-hook harness.
   is the member's proof of support — name, org + circled logo, hearts, validity,
   QR, brand attribution — drawn ONCE by `memberCardSvg` in `@stottemedlem/qr`
   and reused everywhere, so what a member shares is what they were shown.
+  **Two shapes since 2026-08-31** (`shape: "wide" | "tall"`): wide 1200x628 is
+  the shared one (link previews, og:image, the receipt attachment), tall
+  760x1120 is what phone-width surfaces show — an image cannot reflow, so the
+  wide card in a 350px column has a QR nobody can scan. Any NEW card surface
+  must pick a shape; `MemberCardFigure.astro` does it with a `<picture>`.
+  Review card artwork with the `render-card` skill, not in Storybook alone.
   Public at `/medlemsbevis/<cardToken>` (+ `/kort.svg`, `/kort.png`), embedded
   on min-side, kvittering and the receipt email (which now LEADS with the card
   and attaches the PNG). Two separate secrets, and confusing them is the one
@@ -836,6 +842,7 @@ Hard rules and exact wording live in the yaml and in the guide's own tables — 
 | (skill) `vipps-test-rig` | drive a REAL recurring subscription on apitest from the CLI (agreement → MT-app approval → charges → webhooks → stop) + the local receiver and tunnel; the sandbox-DNS gotcha when verifying a tunnel |
 | (skill) `verify-workflow` | `node .claude/skills/verify-workflow/run-steps.mjs <workflow.yml> [job] --force-turbo` — run a GitHub Actions job's `run:` steps locally in a scrubbed, runner-like env; proves a CI change before pushing. Skips `uses:` steps and any step with a `${{ }}` expression (that guard is what stops it firing a real deploy / `--remote` D1 migration) |
 | (skill) `verify-qr` | decode a generated QR PNG (file or URL) + assert payload — real scan-level proof |
+| (skill) `render-card` | `node .claude/skills/render-card/render.mjs --raster` — draw the member card (both shapes) + the org QR card from real `@stottemedlem/qr` with NO server/D1/auth, rasterize through the SHIPPED resvg + embedded-Fraunces path, and emit a browser-vs-resvg contact sheet. The only way to see what a shared PNG / og:image / receipt attachment really looks like: resvg applies no variable font axes, so its text is bolder AND WIDER than any browser preview |
 | (skill) `verify-public-routes` | + `d1.sh "<SQL>" [local\|staging\|production]` — read D1 rows as JSON, now including the DEPLOYED databases (SELECT-only off local; ask staging what shapes it really holds before trusting a fixture) (the member-registry tables incl.); assert the public join pages over real HTTP (status, `/org/*` 301s, `x-sm-cache` miss→hit, brand attribution) + `seed.sh`, the tier-aware local D1 seed |
 | (canonical) `docs/architecture/overview.md` | proposed architecture: 2 deployables (Astro static marketing + one Astro-SSR Worker for backoffice/API/webhooks/cron/queues), D1 as system of record, WorkOS org-gated admin, Vipps Login for members, 11-step scaffolding plan |
 | (skill) `stack-docs` | verified platform gotchas: Astro CF adapter custom worker entry, WorkOS SDK on Workers |

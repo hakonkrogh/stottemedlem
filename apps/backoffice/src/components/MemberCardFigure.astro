@@ -5,31 +5,57 @@
 // own image rather than re-laying it out in HTML, so what someone sees here
 // and what lands in a social feed can never drift apart. The alt text carries
 // what the picture says, since the picture is the whole content.
+//
+// Responsive by picking the card's SHAPE, not by scaling one: an image keeps
+// its aspect ratio, so the wide 1.91:1 card poured into a phone's column ends
+// up with a QR code too small to scan and captions too small to read. Below
+// the breakpoint the browser fetches the upright card instead, which lays the
+// same content down the page at readable sizes. The wide card stays the
+// default and the `<img>` fallback, because it is the one that gets shared.
 import { memberCardImagePath } from "@stottemedlem/core";
-import { MEMBER_CARD_HEIGHT, MEMBER_CARD_WIDTH } from "@stottemedlem/qr";
+import { memberCardSize } from "@stottemedlem/qr";
 
 interface Props {
   cardToken: string;
   alt: string;
 }
 const { cardToken, alt } = Astro.props;
+
+const wide = memberCardSize("wide");
+const tall = memberCardSize("tall");
+
+/**
+ * The public content column caps at 38rem, so above this breakpoint the wide
+ * card always renders at its full column width and its QR code stays around
+ * 105px. Below it the column shrinks with the viewport and the wide card's QR
+ * goes with it, so the upright card takes over — its QR is 177px on a 390px
+ * phone, the width where someone actually holds the card up to be scanned.
+ */
+const TALL_BELOW = "40rem";
 ---
 
 <figure class="member-card">
-  <img
-    src={memberCardImagePath(cardToken, "svg")}
-    alt={alt}
-    width={MEMBER_CARD_WIDTH}
-    height={MEMBER_CARD_HEIGHT}
-  />
+  <picture>
+    <source
+      media={`(max-width: ${TALL_BELOW})`}
+      srcset={memberCardImagePath(cardToken, "svg", "tall")}
+      width={tall.width}
+      height={tall.height}
+    />
+    <img
+      src={memberCardImagePath(cardToken, "svg")}
+      alt={alt}
+      width={wide.width}
+      height={wide.height}
+    />
+  </picture>
 </figure>
 
 <style>
   .member-card {
     margin: 0;
-    border-radius: 1rem;
-    overflow: hidden;
   }
+  .member-card picture,
   .member-card img {
     display: block;
     width: 100%;

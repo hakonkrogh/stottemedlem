@@ -20,20 +20,18 @@ import { type MemberCardOptions, memberCardSvg } from "@stottemedlem/qr";
 
 type Props = MemberCardOptions;
 const svg = memberCardSvg(Astro.props);
+// The wide card is judged at the size people see it shared at; the upright one
+// at roughly the phone width it exists for.
+const maxWidth = Astro.props.shape === "tall" ? "24rem" : "46rem";
 ---
 
-<figure class="member-card">
+<figure class="member-card" style={`max-width:${maxWidth}`}>
   <Fragment set:html={svg} />
 </figure>
 
 <style>
   .member-card {
     margin: 0;
-    /* Wider than a back-office screen frame on purpose: the card is 1.91:1 and
-       is judged at the size people actually see it shared at. */
-    max-width: 46rem;
-    border-radius: 1rem;
-    overflow: hidden;
   }
   .member-card :global(svg) {
     display: block;

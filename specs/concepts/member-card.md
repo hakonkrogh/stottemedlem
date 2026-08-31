@@ -52,6 +52,18 @@ surface the member happens to be looking at.
 - **A shared card must preview well.** When the address is pasted into a chat
   or a social feed, the card itself is what appears — an image of the card, not
   a bare link.
+- **The card takes the shape the surface can show it in.** It is a picture, so
+  it cannot reflow: poured into a phone-width column, a card laid out across
+  the page ends up with a QR code too small to scan and lines too small to
+  read, and a card nobody can scan has lost the half of its purpose that
+  recruits. So the card has two shapes — one laid out across the page, one down
+  it — and a surface shows whichever fits the reader's screen. The across-the-
+  page shape is the one that gets shared, because it is the one link previews
+  show whole.
+- **Both shapes are the same card.** They say the same things about the same
+  member, lead to the same join address, and are made from the same derived
+  truth. Which one a reader got is a fact about their screen, never about their
+  membership.
 - **Anyone may look; only the member can change it.** The card page offers no
   actions on the membership. A visitor who is not the member sees exactly what
   the member sees.
