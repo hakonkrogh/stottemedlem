@@ -8,6 +8,16 @@ const config = {
     name: "@storybook-astro/framework",
     options: {},
   },
+  // Storybook's own onboarding boxes — the sidebar "Getting started" checklist,
+  // its menu entry, and the "what's new in Storybook" popup — sell addons and
+  // release notes we have not asked for. Turn them all off.
+  features: {
+    sidebarOnboardingChecklist: false,
+    menuOnboardingChecklist: false,
+  },
+  core: {
+    disableWhatsNewNotifications: true,
+  },
 };
 
 export default config;

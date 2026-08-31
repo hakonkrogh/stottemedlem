@@ -590,7 +590,21 @@ lives in `specs/`, kept in sync with code by a mandatory `Stop`-hook harness.
   `packages/ui/.storybook/main.ts` pulls in app screen stories from
   `apps/backoffice/src` (e.g. CreateOrgScreen, wrapped in the shared
   `ScreenFrame.astro` via a configured-component slot since decorators aren't
-  supported yet). Screenshot loop: see `preview-screenshot` skill. Gotcha that
+  supported yet). **Storybook's own onboarding UI is turned off** in
+  `packages/ui/.storybook/main.ts` (2026-08-31): `features.sidebarOnboardingChecklist`
+  + `features.menuOnboardingChecklist` = false kill the "Getting started"
+  checklist box at the top of the sidebar and its Guide menu entry, and
+  `core.disableWhatsNewNotifications: true` kills the "Learn what's new in
+  Storybook" popup bottom-left. These flags are undocumented in the release
+  notes — the way to find such a switch is to grep the shipped manager bundle:
+  `grep -o -E "FEATURES\?\.[A-Za-z]+" packages/ui/node_modules/storybook/dist/manager/runtime.js
+  | sort -u` lists every manager-side feature flag (also `changeDetection`,
+  `controls`, `interactions`, `viewport`), and `python3` + a regex window around
+  a UI string finds the component that reads it. Verifying a change to Storybook's
+  own chrome means shooting the MANAGER url, not a story iframe:
+  `npx playwright screenshot --channel=chrome --viewport-size=1440,900
+  --wait-for-timeout=7000 "http://localhost:6006/?path=/story/primitives-button--primary" out.png`.
+  Screenshot loop: see `preview-screenshot` skill. Gotcha that
   motivated the package: Astro `<style>` in a layout is scoped, so styling
   slotted page content from `Shell.astro` silently does nothing — never style
   across the slot boundary; use the primitives.
