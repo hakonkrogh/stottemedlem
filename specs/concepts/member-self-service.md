@@ -53,6 +53,25 @@ the organization and without the organization having to answer.
   the payments have ended while another arrangement of theirs still runs — it
   says this one has ended, and that the other continues. Being told the money
   stopped when it has not is the one wrong thing this page could say.
+- **It offers the way back, too.** Once ended, the page offers picking the
+  membership up again — as plainly as it offered ending it, and next to the
+  sentence saying it has ended. Changing your mind is an ordinary thing to do,
+  and a member who has to find the join page again to do it is being told the
+  door only swings one way.
+- **Resuming here costs nothing while the period is already paid for.** This
+  is the one place the product knows *who* is asking before the payment app
+  does, so it is the one place a resumed arrangement can ask for nothing and
+  simply start renewing again at the next period. (From the public
+  [join page](join-page.md) the same person is anonymous until they have paid,
+  which is why a second payment there is taken and then given back —
+  [joining](../use-cases/join-as-supporting-member.md).) A **lapsed** member
+  resuming is joining like anyone else, and pays for this period; the page
+  says which of the two it is, with the amount, before the button is pressed.
+- The way back is **not offered where it would be untrue**: not while another
+  arrangement of theirs already renews, and not into a
+  [membership tier](membership-tier.md) the organization no longer offers —
+  that member goes to the [join page](join-page.md), which shows what is
+  actually on offer today.
 - Ending is not the same as a refund: the period already paid for runs to its
   end, and the member stays on the organization's list for it. Only the
   continuation stops. Getting money back is a separate thing, and not the

@@ -49,6 +49,16 @@ over year as a history of memberships.
   [supporting member](supporting-member.md) remains recorded, with nothing paid
   — the same state as someone whose first payment never completed.
 - At most one membership exists per supporting member per annual period.
+- And it is paid for **once**. A period is bought by one payment; money that
+  arrives for a period already bought has bought nothing, and is given back of
+  the product's own accord rather than kept and quietly booked against the
+  membership that already stood. This is what makes joining safe to do twice
+  ([join as a supporting member](../use-cases/join-as-supporting-member.md)).
+- A supporting member holds **at most one running arrangement** per
+  organization. They may hold several over time — a payment app cannot revive
+  an ended arrangement, so resuming means a new one — but only one of them
+  ever renews. Two that both renew is a double payment already promised for
+  the next period, so the newer one is ended when it appears.
 - A renewal creates the next period's membership for the same supporting member,
   rather than a new person.
 - Memberships continue by themselves: a supporter agrees once to a yearly

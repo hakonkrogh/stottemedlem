@@ -632,3 +632,55 @@ export async function stableUuid(seed: string): Promise<string> {
     hex.slice(20, 32),
   ].join("-");
 }
+
+// ── A join onto a period already paid for (specs/use-cases/join-as-supporting-member.md) ──
+
+/**
+ * What to do about money that arrived for a period the supporter already
+ * holds — and, when it can be told apart, about the arrangement that sent it.
+ *
+ * - `refund` — give the payment back and leave the arrangement running. This
+ *   is the supporter who ended their arrangement and joined again inside a
+ *   period they had already paid for: continuing is exactly what they came
+ *   for, and Vipps cannot revive a stopped agreement, so the new one is how
+ *   their renewal comes back. Only the second payment for one period is wrong.
+ * - `refund-and-stop` — give it back and end the arrangement too, because
+ *   another one of theirs still runs. Two live arrangements for one supporter
+ *   is not a duplicate payment yet; it is next period's, promised.
+ */
+export type RedundantJoinAction = "refund" | "refund-and-stop";
+
+/** What deciding about a redundant payment needs to know. */
+export interface RedundantJoinInput {
+  /** The payment's status at the provider. Only captured money can be given back. */
+  chargeStatus: string;
+  /** The arrangement that made this payment. */
+  agreementId: string;
+  /**
+   * The arrangement whose payment established the period's membership — null
+   * when that is not recorded, which is never grounds to move anyone's money.
+   */
+  periodBoughtByAgreementId: string | null;
+  /** Does the supporter hold some OTHER arrangement that still runs? */
+  otherAgreementRunning: boolean;
+}
+
+/**
+ * Whether a captured payment bought nothing, and what follows from that.
+ *
+ * A supporting member pays for an annual period once. When a payment lands
+ * on a period whose membership another arrangement already bought, the money
+ * bought nothing — the product gives it back rather than keeping it and
+ * counting on somebody noticing (seen on staging 31.8.2026: a supporter who
+ * cancelled and joined again the same day paid 400 kr twice for one period,
+ * and both payments settled quietly onto the one membership).
+ *
+ * Null means there is nothing to undo: the payment established the period
+ * itself, or no money was taken.
+ */
+export function redundantJoinAction(input: RedundantJoinInput): RedundantJoinAction | null {
+  if (input.chargeStatus !== "CHARGED") return null;
+  if (!input.periodBoughtByAgreementId) return null;
+  if (input.periodBoughtByAgreementId === input.agreementId) return null;
+  return input.otherAgreementRunning ? "refund-and-stop" : "refund";
+}

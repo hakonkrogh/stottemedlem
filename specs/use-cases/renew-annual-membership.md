@@ -54,7 +54,20 @@ organization's list stays accurate as periods turn over.
 7. A lapsed supporter can come back by joining again; renewal and return both
    reuse the supporter's existing identity — they do not re-register as a new
    person, and their membership history accumulates across periods.
-8. The valid-until date after renewal is 31 December of the new period.
+8. **Ending is not final for the supporter, only for the arrangement.** A
+   payment app cannot revive an arrangement once ended, so resuming always
+   means a new one — but that is the product's problem, not the member's. The
+   member's own
+   [self-service page](../concepts/member-self-service.md) offers picking the
+   membership back up right where it says it has ended, and from then on they
+   are renewing again, whichever arrangement carries it. Resuming inside a
+   period they have already paid for **costs nothing** — only the continuation
+   starts again; resuming after lapsing is an ordinary join and pays for the
+   period. Coming back through the public
+   [join page](join-as-supporting-member.md) instead reaches the same place,
+   the long way: nobody there knows who they are until they have paid, so a
+   payment for a period they already hold is taken and then returned.
+9. The valid-until date after renewal is 31 December of the new period.
 
 ## Acceptance criteria
 - [ ] A continuing membership renews into the next period without the member or
@@ -66,6 +79,10 @@ organization's list stays accurate as periods turn over.
       still being retried.
 - [ ] A member who ends the arrangement stays active until their paid period
       runs out, and is not charged again.
+- [ ] A member who ends the arrangement can pick it back up from the same page,
+      without going looking for the join page.
+- [ ] Picking it back up inside a period they already paid for charges them
+      nothing, and renewal resumes at the next period.
 - [ ] Renewal extends the same supporting member's history rather than creating a
       duplicate person.
 - [ ] The list and counts reflect lapse and renewal without manual admin action.

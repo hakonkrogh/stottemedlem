@@ -2,6 +2,7 @@ import { env } from "cloudflare:workers";
 import {
   memberSelfServicePath,
   periodLabel,
+  redundantJoinAction,
   refundRefusal,
   stableUuid,
   tierAgreementExternalId,
@@ -14,6 +15,7 @@ import {
   type Db,
   findAgreementByVippsId,
   grantMembershipForCapturedCharge,
+  hasOtherRunningAgreement,
   listUnappliedCaptures,
   type MembershipAgreement,
   type MembershipCharge,
@@ -24,8 +26,14 @@ import {
   revokeMembershipForRefundedCharge,
 } from "@stottemedlem/db";
 import type { Agreement, Charge, ChargeStatus, VippsClient } from "@stottemedlem/vipps";
+import { logger } from "./log";
 import { periods } from "./periods";
 import { RefundNotPossible } from "./refunds";
+
+// Giving a redundant payment back is the product acting on the organization's
+// money without being asked, so it says so where an operator can see it
+// (specs/concepts/operational-alerting.md).
+const log = logger("membership");
 
 // Joining, and everything that happens afterwards (specs/use-cases/
 // join-as-supporting-member.md). Both entry points — the webhook receiver and
@@ -51,8 +59,26 @@ export function publicOrigin(request: Request): string {
 export interface JoinDraft {
   /** Where to send the supporter to approve in Vipps. */
   confirmationUrl: string;
-  /** What they pay now: pro-rated for the rest of the calendar year. */
+  /** What they pay now: pro-rated for the rest of the calendar year, or 0. */
   paidNok: number;
+}
+
+/** The circumstances of one join, beyond who is being joined. */
+export interface JoinOptions {
+  /**
+   * The member whose card was scanned to get here, when the join began that
+   * way (specs/use-cases/earn-hearts-and-recruit.md). Held on the agreement
+   * until Vipps says who is joining.
+   */
+  referredByMemberId?: string | null;
+  /**
+   * The supporter already holds the current period, so this arrangement asks
+   * for nothing now and starts charging at the next renewal. Only ever true
+   * where the supporter is known BEFORE the payment app is — resuming from
+   * their own page (specs/concepts/member-self-service.md), never a join from
+   * the public page, where nobody has a name yet.
+   */
+  periodAlreadyPaid?: boolean;
 }
 
 /**
@@ -62,6 +88,10 @@ export interface JoinDraft {
  *
  * Nothing about membership is created here — only the intent to pay. The
  * membership follows from money actually arriving.
+ *
+ * The one exception is `periodAlreadyPaid`: an arrangement resumed inside a
+ * period its supporter has already bought asks for nothing on approval and
+ * begins charging at the next renewal, because there is nothing left to buy.
  */
 export async function startJoin(
   db: Db,
@@ -69,15 +99,10 @@ export async function startJoin(
   org: Organization,
   tier: MembershipTier,
   origin: string,
-  /**
-   * The member whose card was scanned to get here, when the join began that
-   * way (specs/use-cases/earn-hearts-and-recruit.md). Held on the agreement
-   * until Vipps says who is joining.
-   */
-  referredByMemberId: string | null = null,
+  { referredByMemberId = null, periodAlreadyPaid = false }: JoinOptions = {},
 ): Promise<JoinDraft> {
   const period = periods.periodFor();
-  const paidNok = periods.proratedJoinFeeNok(tier.annualFeeNok, new Date());
+  const paidNok = periodAlreadyPaid ? 0 : periods.proratedJoinFeeNok(tier.annualFeeNok, new Date());
   // Our own id for this arrangement, carried on the Vipps agreement so a
   // delivery we have never seen before can still be traced back.
   const externalId = tierAgreementExternalId(tier.key, crypto.randomUUID());
@@ -106,14 +131,21 @@ export async function startJoin(
       productDescription: vippsProductDescription(
         tier.description ?? `Årlig støttemedlemskap i ${org.name}.`,
       ),
-      initialCharge: {
-        amount: toOre(paidNok),
-        description:
-          paidNok === tier.annualFeeNok
-            ? `${tier.name} ${periodLabel(period.year)}`
-            : `${tier.name} — resten av ${periodLabel(period.year)}`,
-        transactionType: "DIRECT_CAPTURE",
-      },
+      // No first charge when the period is already theirs: Vipps makes the
+      // initial charge optional, so an arrangement can be set going again
+      // without asking for money that would only have to be given back.
+      ...(periodAlreadyPaid
+        ? {}
+        : {
+            initialCharge: {
+              amount: toOre(paidNok),
+              description:
+                paidNok === tier.annualFeeNok
+                  ? `${tier.name} ${periodLabel(period.year)}`
+                  : `${tier.name} — resten av ${periodLabel(period.year)}`,
+              transactionType: "DIRECT_CAPTURE" as const,
+            },
+          }),
       // The minimum identity needed to list someone as a supporting member.
       scope: "name email phoneNumber",
       externalId,
@@ -196,7 +228,12 @@ export async function syncAgreement(
  * receiver, the receipt page, or the nightly sweep that reads charges back
  * without waiting to be told (specs/concepts/payment-reconciliation.md).
  */
-export async function applyCharge(db: Db, vippsAgreementId: string, charge: Charge): Promise<void> {
+export async function applyCharge(
+  db: Db,
+  vipps: VippsClient,
+  vippsAgreementId: string,
+  charge: Charge,
+): Promise<void> {
   // The period a payment belongs to follows from when it was due, read
   // through the environment's period scheme — a calendar year in production,
   // an ISO week on accelerated staging.
@@ -228,7 +265,7 @@ export async function applyCharge(db: Db, vippsAgreementId: string, charge: Char
 
   const local = await findAgreementByVippsId(db, vippsAgreementId);
   if (!local) return;
-  await grantMembershipForCapturedCharge(db, charge.id, {
+  const membership = await grantMembershipForCapturedCharge(db, charge.id, {
     periodYear,
     // A renewal covers the whole period; a first, pro-rated charge covers
     // from the day it was paid.
@@ -237,6 +274,87 @@ export async function applyCharge(db: Db, vippsAgreementId: string, charge: Char
     annualFeeNok: local.annualFeeNok,
     paidNok: fromOre(charge.amount),
   });
+  if (membership) await settleRedundantPayment(db, vipps, local, membership, charge);
+}
+
+/**
+ * Give back money that bought nothing, the moment it is recognized as such.
+ *
+ * A supporting member pays for a period once (specs/concepts/membership.md).
+ * Whether a payment is the second one for its period cannot be known before it
+ * is taken: who is joining comes from the payment app's consent, which arrives
+ * with the capture and not before — so the guard cannot live on the join page,
+ * only here, where the money and the person are known together. Reached from
+ * all three directions (webhook, receipt page, nightly sweep), so it settles
+ * whichever way the news comes in.
+ *
+ * The arrangement is ended BEFORE the refund, for the reason a refund always
+ * is (see `refundMembershipPayment`): the state never to leave behind is money
+ * handed back on an arrangement that goes on charging.
+ */
+async function settleRedundantPayment(
+  db: Db,
+  vipps: VippsClient,
+  agreement: MembershipAgreement,
+  membership: { agreementId: string | null; periodYear: number },
+  charge: Charge,
+): Promise<void> {
+  if (!agreement.memberId) return;
+  const action = redundantJoinAction({
+    chargeStatus: charge.status,
+    agreementId: agreement.id,
+    periodBoughtByAgreementId: membership.agreementId,
+    otherAgreementRunning: await hasOtherRunningAgreement(db, agreement.memberId, agreement.id),
+  });
+  if (!action) return;
+
+  const capturedOre = charge.summary?.captured ?? charge.amount;
+  log.warn("a payment landed on a period already paid for, and is being given back", {
+    vippsAgreementId: agreement.vippsAgreementId,
+    vippsChargeId: charge.id,
+    periodYear: membership.periodYear,
+    refundedNok: fromOre(capturedOre),
+    action,
+  });
+
+  // A refund we cannot make must not cost the supporter their page or the
+  // organization its books: the payment stands, correctly documented, and the
+  // alarm is what brings a person to it (specs/concepts/operational-alerting.md).
+  try {
+    if (action === "refund-and-stop" && agreement.status === "ACTIVE") {
+      await vipps.updateAgreement(
+        agreement.vippsAgreementId,
+        { status: "STOPPED" },
+        await stableUuid(`stop:${agreement.vippsAgreementId}`),
+      );
+      await closeAgreement(db, agreement.vippsAgreementId, "STOPPED");
+    }
+
+    await vipps.refundCharge(
+      agreement.vippsAgreementId,
+      charge.id,
+      {
+        amount: capturedOre,
+        description: `Allerede betalt for ${periodLabel(membership.periodYear)}`.slice(0, 100),
+      },
+      // The same derived key the administrator's own refund would use, so a
+      // human pressing refund afterwards lands on this refund rather than
+      // asking for a second one.
+      await stableUuid(`refund:${charge.id}`),
+    );
+
+    // Read the outcome back, which is what records the refunded status and
+    // releases this charge from the period it did not buy. The re-entry stops
+    // here: the charge now reads REFUNDED, and `applyCharge` returns above
+    // without granting anything.
+    await syncCharge(db, vipps, agreement.vippsAgreementId, charge.id);
+  } catch (error) {
+    log.error("could not give back a payment for a period already paid for", error, {
+      vippsAgreementId: agreement.vippsAgreementId,
+      vippsChargeId: charge.id,
+      periodYear: membership.periodYear,
+    });
+  }
 }
 
 /** Fetch one payment from Vipps and apply it. */
@@ -246,7 +364,12 @@ export async function syncCharge(
   vippsAgreementId: string,
   vippsChargeId: string,
 ): Promise<void> {
-  await applyCharge(db, vippsAgreementId, await vipps.getCharge(vippsAgreementId, vippsChargeId));
+  await applyCharge(
+    db,
+    vipps,
+    vippsAgreementId,
+    await vipps.getCharge(vippsAgreementId, vippsChargeId),
+  );
 }
 
 /**
@@ -325,7 +448,7 @@ export async function refundMembershipPayment(
   const capturedOre = remote.summary?.captured ?? remote.amount;
   if (remote.status !== "CHARGED" || capturedOre <= 0) {
     // Vipps knows something we did not; believe it rather than the local row.
-    await applyCharge(db, agreement.vippsAgreementId, remote);
+    await applyCharge(db, vipps, agreement.vippsAgreementId, remote);
     throw new RefundNotPossible(
       remote.status === "REFUNDED" || remote.status === "PARTIALLY_REFUNDED"
         ? "already-refunded"

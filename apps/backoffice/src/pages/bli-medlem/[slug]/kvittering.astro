@@ -8,6 +8,7 @@ import {
   getSupportingMember,
   listChargesForAgreement,
   listMembershipHistory,
+  membershipStatus,
 } from "@stottemedlem/db";
 import Heading from "@stottemedlem/ui/components/Heading.astro";
 import InfoList from "@stottemedlem/ui/components/InfoList.astro";
@@ -21,6 +22,7 @@ import { getDb } from "../../../lib/db";
 import { getEmailSender } from "../../../lib/email";
 import { loadMemberCardForMemberId, memberCardUrl } from "../../../lib/memberCard";
 import { publicOrigin, syncAgreement, syncCharge } from "../../../lib/membership";
+import { periods } from "../../../lib/periods";
 import { sendOwedReceipts } from "../../../lib/receipts";
 import { getVippsForOrg } from "../../../lib/vipps";
 import { getWorkOS } from "../../../lib/workos";
@@ -51,7 +53,32 @@ const tokenAgreement = token ? await findAgreementByManageToken(db, token) : nul
 const agreementId = tokenAgreement?.vippsAgreementId ?? Astro.url.searchParams.get("agreementId");
 if (!agreementId) return Astro.redirect(`/bli-medlem/${org.slug}`);
 
-let status: "active" | "pending" | "stopped" | "unknown" = "unknown";
+let status: "active" | "already-a-member" | "pending" | "stopped" | "unknown" = "unknown";
+
+/**
+ * The supporter came back holding the period already, so this arrangement
+ * bought them nothing — which is not the same as nothing having happened.
+ * Two ways to arrive here, and the page owes a different sentence about the
+ * money for each:
+ *
+ * - they **resumed** from their own page, which asks for nothing
+ *   (specs/concepts/member-self-service.md) — `returned` is null;
+ * - they **joined again** from the public page, where nobody could know who
+ *   they were until the payment was taken, so it was given straight back
+ *   (specs/use-cases/join-as-supporting-member.md).
+ *
+ * Either way they ARE a supporting member, and the page says so rather than
+ * thanking them for a payment that never stood.
+ */
+interface AlreadyAMember {
+  /** The period they already held, in words. */
+  period: string;
+  /** What was given back, when money moved at all. */
+  returned: string | null;
+  /** Whether THIS arrangement carries their renewal onward. */
+  renews: boolean;
+}
+let already: AlreadyAMember | null = null;
 
 /** The confirmed payment, presented as the payment documentation it is. */
 interface ReceiptDetails {
@@ -89,8 +116,16 @@ if (vipps) {
         await syncCharge(db, vipps, agreementId, charge.id);
       }
       const settled = await findAgreementByVippsId(db, agreementId);
+      // Our own record, not `remote`: that was read before the charges were
+      // synced, and syncing a redundant join can end the arrangement in the
+      // very lines above.
+      const agreementStatus = settled?.status ?? remote.status;
       status =
-        remote.status === "ACTIVE" ? "active" : remote.status === "PENDING" ? "pending" : "stopped";
+        agreementStatus === "ACTIVE"
+          ? "active"
+          : agreementStatus === "PENDING"
+            ? "pending"
+            : "stopped";
 
       if (settled?.memberId) {
         // The email receipt goes out from here too — the supporter's own
@@ -101,6 +136,33 @@ if (vipps) {
         const member = await getSupportingMember(db, settled.memberId);
         const charges = await listChargesForAgreement(db, settled.id);
         const captured = charges.filter((charge) => charge.status === "CHARGED").at(-1);
+
+        // Nothing of this arrangement's money stands. Either it asked for none
+        // (a resume) or what it took has gone back (a second join) — in both
+        // cases a period of theirs stands on somebody else's payment, and that
+        // is what the page has to talk about.
+        const givenBack = captured
+          ? undefined
+          : charges.find((charge) => charge.status === "REFUNDED");
+        const stillHeld =
+          !captured && (givenBack || charges.length === 0)
+            ? (await listMembershipHistory(db, settled.memberId)).find(
+                (row) =>
+                  row.agreementId !== settled.id &&
+                  (givenBack
+                    ? row.periodYear === givenBack.periodYear
+                    : membershipStatus(row.periodYear, periods.periodFor().year) === "active"),
+              )
+            : undefined;
+        if (stillHeld) {
+          status = "already-a-member";
+          already = {
+            period: periodLabel(stillHeld.periodYear),
+            returned: givenBack ? kr(givenBack.amountNok) : null,
+            renews: agreementStatus === "ACTIVE",
+          };
+        }
+
         const membership = captured?.membershipId
           ? (await listMembershipHistory(db, settled.memberId)).find(
               (row) => row.id === captured.membershipId,
@@ -126,7 +188,12 @@ if (vipps) {
   }
 }
 
-const title = `Takk for støtten — ${org.name}`;
+const title =
+  status === "already-a-member"
+    ? already?.returned
+      ? `Du er allerede støttemedlem — ${org.name}`
+      : `Medlemskapet fortsetter — ${org.name}`
+    : `Takk for støtten — ${org.name}`;
 ---
 
 <PublicShell title={title} description={`Kvittering for støttemedlemskap i ${org.name}.`} noindex>
@@ -149,7 +216,28 @@ const title = `Takk for støtten — ${org.name}`;
       )
     }
     {
-      status === "active" && card?.member.cardToken && (
+      /* Already theirs: the period was paid for once, and the second payment
+         is on its way back (specs/use-cases/join-as-supporting-member.md). */
+      status === "already-a-member" && already && (
+        <Stack gap="sm">
+          <Heading>
+            {already.returned ? "Du er allerede støttemedlem ❤️" : "Medlemskapet fortsetter ❤️"}
+          </Heading>
+          <Text variant="lead">
+            {already.returned
+              ? `Du støtter ${org.name} for ${already.period} fra før, så denne betalingen skulle ikke vært tatt. ${already.returned} er betalt tilbake til deg.`
+              : `Du støtter ${org.name} for ${already.period} fra før, så du betalte ingenting nå.`}
+          </Text>
+          <Text>
+            {already.renews
+              ? "Medlemskapet ditt fornyes igjen automatisk ved årsskiftet til den årlige kontingenten. Du får varsel i Vipps-appen før hver fornyelse, og kan si opp når som helst."
+              : "Du har fra før en avtale som løper videre, så denne nye er avsluttet. Du finner den som gjelder i Vipps-appen."}
+          </Text>
+        </Stack>
+      )
+    }
+    {
+      (status === "active" || status === "already-a-member") && card?.member.cardToken && (
         <Stack gap="sm">
           <MemberCardFigure
             cardToken={card.member.cardToken}
