@@ -303,6 +303,20 @@ lives in `specs/`, kept in sync with code by a mandatory `Stop`-hook harness.
   `whenLabel`, which adds the clock only when a day is shared). The
   duplicate-renewal alarm does NOT fire here: it only looks at RECURRING charges
   within one agreement.
+  **Third consequence, found 2026-08-31: `min-side` is per-AGREEMENT while the
+  member is not.** `findAgreementByManageToken` resolves ONE agreement (the
+  token is per-agreement), but `listMembershipHistory` beside it is
+  per-MEMBER — so any sentence on that page about the PERSON (above all
+  "du blir ikke belastet igjen") must be derived member-wide or it lies:
+  a member holding a stopped agreement and a live one gets promised the
+  payments stopped while the other renews. `hasOtherRunningAgreement` in
+  `@stottemedlem/db` is that check; use it for any new claim on that page.
+  Same asymmetry to watch for in any future token-addressed member surface.
+  **KNOWN AND UNHANDLED:** a member with TWO live agreements is charged twice
+  per period, and nothing detects, prevents or reports it — not the join
+  route, not reconcile, not the duplicate-renewal alarm. Deliberately left
+  open 2026-08-31 (it needs prevention at join time, not wording); the
+  self-service page only stopped MISDESCRIBING the state.
   **Renewals + repricing** (added 2026-08-20): `src/lib/renewals.ts`
   (`repriceAgreements`, `createDueRenewalCharges`) driven by `worker.ts`
   `scheduled` — 02:00 reconcile-then-reprice, 04:00 reprice-then-renew — with the jobs
