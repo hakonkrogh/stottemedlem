@@ -93,7 +93,8 @@ export function qrCardSvg(options: QrCardOptions): string {
   const name = options.organizationName.trim();
   const title = options.title ?? "Bli støttemedlem";
   const hint = options.hint ?? "Skann med mobilen — betal med Vipps";
-  const footer = options.footer ?? "støttemedlem.no";
+  // The heart is the brand mark — it travels with the attribution.
+  const footer = options.footer ?? "❤️ støttemedlem.no";
 
   const { path, moduleCount } = qrModulesPath(options.joinUrl);
   const qrSize = 264;

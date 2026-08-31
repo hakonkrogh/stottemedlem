@@ -50,6 +50,7 @@ pnpm dev             # run the stack: marketing :4321, backoffice :4322 (real
                      #   `pnpm --filter <app> exec astro dev stop`, not kill
 pnpm build           # build all packages + the app
 pnpm test            # run tests (vitest)
+pnpm story           # run Storybook (packages/ui, port 6006; alias: pnpm stories)
 pnpm typecheck       # type-check all packages
 pnpm lint            # biome check
 pnpm format          # biome format --write

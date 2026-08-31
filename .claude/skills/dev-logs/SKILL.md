@@ -35,6 +35,12 @@ description: Read the backend's stdout locally — console.log/error, request li
   human to watch the same shared server live.)
 - `.astro/dev.json` records `pid` and `background`; `astro dev status`/`stop`
   work on foreground servers too (that's how `start` converts one).
+- **Don't start the server with a bare `astro dev`** (hit 2026-08-31): without
+  `--port` the backoffice daemonizes on 4321 — marketing's port, not 4322 — and
+  the CLI exits 0 while the daemon keeps running, so a "completed" command +
+  `curl: 000` on 4322 looks like a broken server. Always go through
+  `devlog.sh start` (right port, migrations, readable logs); recover with
+  `pnpm --filter @stottemedlem/backoffice exec astro dev stop`.
 
 ## Typical loop
 

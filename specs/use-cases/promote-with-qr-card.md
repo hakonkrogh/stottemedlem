@@ -64,6 +64,6 @@ browsing the organization's own site can join in seconds.
 - [Concept: Organization](../concepts/organization.md)
 - [Use case: Set up a supporting membership](set-up-supporting-membership.md)
 - [Use case: Join as a supporting member](join-as-supporting-member.md)
-- [Use case: Earn stars and recruit new members](earn-stars-and-recruit.md) —
+- [Use case: Earn hearts and recruit new members](earn-hearts-and-recruit.md) —
   the *member's* personal referral QR code; this card is the *organization's*
   own, unattributed QR code. Same scan-to-join behaviour, different owner.

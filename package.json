@@ -9,6 +9,8 @@
     "build": "turbo run build",
     "dev": "turbo run dev",
     "test": "turbo run test",
+    "story": "pnpm run stories",
+    "stories": "turbo run build --filter=@stottemedlem/core --filter=@stottemedlem/db && pnpm --filter @stottemedlem/ui run storybook",
     "typecheck": "turbo run typecheck",
     "lint": "biome check .",
     "format": "biome format --write .",

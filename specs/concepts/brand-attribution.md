@@ -26,6 +26,8 @@ competing with the organization's own identity, which always comes first.
 - **Written with the ø** — "støttemedlem.no", never the ASCII fallback
   "stottemedlem.no" — in visible text. (Links/hrefs use the punycode origin as
   the [join page](join-page.md) rules already require.)
+- **Carries the [brand mark](brand-mark.md)**: the red heart precedes the
+  wordmark in visible text ("❤️ støttemedlem.no").
 - **Subtle, never dominant.** It is an attribution (footer line, small print),
   not a headline. The organization's name and call to action always outrank it.
 - Where the surface is interactive (a web page), the mention is a **link** to
@@ -37,6 +39,8 @@ competing with the organization's own identity, which always comes first.
   attribution is a spec violation, not a styling choice.
 
 ## Relationships
+- The [brand mark](brand-mark.md) — the red heart — travels with the wordmark
+  this attribution places.
 - Rides on the [join page](join-page.md)'s canonical-origin
   rules for how the domain is written in URLs vs. display text.
 - The [organization](organization.md)'s own identity always takes visual

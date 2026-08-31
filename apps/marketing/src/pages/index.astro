@@ -22,6 +22,7 @@ const previewCardSvg = qrCardSvg({
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <title>støttemedlem — register og årskontingent for støttemedlemmer</title>
     <meta
       name="description"
@@ -32,7 +33,7 @@ const previewCardSvg = qrCardSvg({
     <HeroBackdrop>
       <header>
         <p class="eyebrow">Kommer snart</p>
-        <h1>støttemedlem.no</h1>
+        <h1><span class="brand-heart" aria-hidden="true">❤️</span> støttemedlem.no</h1>
         <p class="tagline">Register og årskontingent for støttemedlemmer — med Vipps.</p>
         <p class="intro">
           For korps, kor, lag og foreninger som vil la folk i lokalmiljøet støtte dem — år
@@ -73,19 +74,19 @@ const previewCardSvg = qrCardSvg({
       </section>
       <section class="perks">
         <h2>Medlemmene får noe å samle på — og vise fram</h2>
-        <p class="stars" aria-hidden="true">★ ★ ★ ★ ★ ★ ★ ★</p>
+        <p class="hearts" aria-hidden="true">❤️ ❤️ ❤️ ❤️ ❤️ ❤️ ❤️ ❤️</p>
         <div class="perk-grid">
           <div>
-            <h3>Én stjerne for hvert år</h3>
+            <h3>Ett hjerte for hvert år</h3>
             <p>
-              Hvert år som støttemedlem gir en ny stjerne. Åtte års støtte er åtte stjerner —
+              Hvert år som støttemedlem gir et nytt hjerte. Åtte års støtte er åtte hjerter —
               lojalitet som synes, år for år.
             </p>
           </div>
           <div>
             <h3>Støttebevis med QR-kode</h3>
             <p>
-              Medlemmet kan skrive ut et bevis på støtten sin, med stjernene og en personlig
+              Medlemmet kan skrive ut et bevis på støtten sin, med hjertene og en personlig
               QR-kode. Den som skanner koden, melder seg inn — og vervingen krediteres
               medlemmet.
             </p>
@@ -211,6 +212,12 @@ const previewCardSvg = qrCardSvg({
     text-wrap: balance;
     margin: 0 0 1rem;
   }
+  /* The heart is the brand mark; slightly smaller than the wordmark so the
+     domain name stays the headline. */
+  .brand-heart {
+    font-size: 0.72em;
+    vertical-align: 0.06em;
+  }
   /* The domain-name headline is one unbreakable word — below 40rem the
      3.25rem floor no longer fits, so track the viewport instead. */
   @media (max-width: 40rem) {
@@ -300,17 +307,16 @@ const previewCardSvg = qrCardSvg({
       background: #fdf3df;
     }
   }
-  .stars {
-    color: #b97c0a;
-    font-size: 1.4rem;
-    letter-spacing: 0.35rem;
+  .hearts {
+    font-size: 1.3rem;
+    letter-spacing: 0.2rem;
     margin: 0.25rem 0 1.25rem;
   }
   @media (max-width: 40rem) {
-    /* Keep all eight stars on one line on phones. */
-    .stars {
-      font-size: 1.05rem;
-      letter-spacing: 0.2rem;
+    /* Keep all eight hearts on one line on phones. */
+    .hearts {
+      font-size: 0.95rem;
+      letter-spacing: 0.1rem;
     }
     section {
       padding: 1.5rem;

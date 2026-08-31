@@ -49,7 +49,7 @@ that year.
    authoritative for money).
 8. Afterwards the register agrees with the money: the refunded period is no
    longer a supported period, so the member is no longer counted as active for
-   it, and their [scorecard](../concepts/scorecard.md) loses the star that
+   it, and their [scorecard](../concepts/scorecard.md) loses the heart that
    period gave them. The person themselves is **not** deleted — they are still
    someone the organization has heard from, now with nothing paid.
 9. What was paid and given back stays in the books. The payment is not erased;
@@ -107,8 +107,8 @@ that year.
 
 ## Related
 - [Concept: Membership](../concepts/membership.md)
-- [Concept: Scorecard](../concepts/scorecard.md) — stars follow periods, so a
-  refunded period takes its star with it
+- [Concept: Scorecard](../concepts/scorecard.md) — hearts follow periods, so a
+  refunded period takes its heart with it
 - [Concept: Back office](../concepts/back-office.md) — this lives under
   **Medlemmer**, on the member's own page
 - [Use case: Curate the member list](../use-cases/curate-member-list.md)

@@ -67,7 +67,7 @@ export function feeChangeNotice(notice: FeeChangeNotice): EmailMessage {
     `Hilsen ${orgName}`,
     "",
     "—",
-    `Sendt via ${BRAND_NAME} på vegne av ${orgName}. Du får denne meldingen fordi du`,
+    `Sendt via ❤️ ${BRAND_NAME} på vegne av ${orgName}. Du får denne meldingen fordi du`,
     "betaler for et medlemskap som endrer pris.",
     contactNote,
   ];
@@ -83,7 +83,7 @@ blir ikke belastet noe ekstra nå.</p>
 <p>Vil du ikke fortsette, kan du <a href="${escapeHtml(manageUrl)}">stoppe medlemskapet her</a>.</p>
 <p>Hilsen ${org}</p>
 <hr style="border:0;border-top:1px solid #e6ddd1;margin:2rem 0 1rem">
-<p style="font-size:13px;color:#6b5d4d">Sendt via <a href="${BRAND_URL}" style="color:#6b5d4d">${BRAND_NAME}</a>
+<p style="font-size:13px;color:#6b5d4d">Sendt via <a href="${BRAND_URL}" style="color:#6b5d4d">❤️ ${BRAND_NAME}</a>
 på vegne av ${org}. Du får denne meldingen fordi du betaler for et medlemskap som endrer pris.
 ${escapeHtml(contactNote)}</p>
 </div>`;

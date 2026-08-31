@@ -51,6 +51,7 @@ export const continuing: MemberOverview = {
   latest: fixturePeriod("m-1", 2026, 300),
   status: "active",
   renewing: true,
+  hearts: 3,
 };
 
 /** Paid for this year, then ended the arrangement — still a member until 31 Dec. */
@@ -59,6 +60,7 @@ export const endingAfterThisYear: MemberOverview = {
   latest: fixturePeriod("m-2", 2026, 240),
   status: "active",
   renewing: false,
+  hearts: 1,
 };
 
 /** Supported for two years and stopped — the one to invite back. */
@@ -67,6 +69,7 @@ export const lapsed: MemberOverview = {
   latest: fixturePeriod("m-3", 2024, 250),
   status: "lapsed",
   renewing: false,
+  hearts: 2,
 };
 
 /** Consented to a contact address but no name. */
@@ -75,6 +78,7 @@ export const withoutName: MemberOverview = {
   latest: fixturePeriod("m-4", 2026, 125),
   status: "active",
   renewing: true,
+  hearts: 1,
 };
 
 /** Approved seconds ago; the first payment has not landed yet. */
@@ -83,6 +87,7 @@ export const nothingPaidYet: MemberOverview = {
   latest: null,
   status: "lapsed",
   renewing: true,
+  hearts: 0,
 };
 
 /** Paying, but joined without sharing an address — nobody can be told anything. */
@@ -91,6 +96,7 @@ export const noWayToReach: MemberOverview = {
   latest: fixturePeriod("m-6", 2026, 300),
   status: "active",
   renewing: true,
+  hearts: 12,
 };
 
 /** One payment as the member's page presents it (specs/use-cases/refund-a-payment.md). */

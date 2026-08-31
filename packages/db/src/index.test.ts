@@ -75,6 +75,7 @@ const overview = (
   latest: null,
   status,
   renewing: false,
+  hearts: 0,
 });
 
 describe("countMembersByStatus", () => {
