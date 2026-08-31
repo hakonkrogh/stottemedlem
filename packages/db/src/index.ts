@@ -7,7 +7,7 @@
  */
 import type { D1Database } from "@cloudflare/workers-types";
 import { membershipTierKey, slugifyOrganizationName } from "@stottemedlem/core";
-import { and, asc, desc, eq, gte, inArray, isNull, like, lt, lte, sql } from "drizzle-orm";
+import { and, asc, desc, eq, gte, inArray, isNull, like, lt, lte, ne, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import {
   type AgreementStatus,
@@ -371,6 +371,35 @@ export async function findAgreementByManageToken(
     .from(membershipAgreements)
     .where(eq(membershipAgreements.manageToken, manageToken));
   return row ?? null;
+}
+
+/**
+ * Whether this supporter has some OTHER arrangement still running.
+ *
+ * "Will I be charged again?" is a question about a person and their money, not
+ * about one agreement — and one supporter can hold several. Stopping and
+ * joining again drafts a NEW agreement rather than reviving the old one, so a
+ * member can hold a stopped one and a live one at the same time (seen on
+ * staging 27.8.2026, 41 seconds apart). Answering from the stopped agreement
+ * alone would promise that no more money will be taken while the other one
+ * renews on schedule.
+ */
+export async function hasOtherRunningAgreement(
+  db: Db,
+  memberId: string,
+  exceptAgreementId: string,
+): Promise<boolean> {
+  const [row] = await db
+    .select({ id: membershipAgreements.id })
+    .from(membershipAgreements)
+    .where(
+      and(
+        eq(membershipAgreements.memberId, memberId),
+        eq(membershipAgreements.status, "ACTIVE"),
+        ne(membershipAgreements.id, exceptAgreementId),
+      ),
+    );
+  return Boolean(row);
 }
 
 /** The identity a supporter consented to share, captured once at joining. */

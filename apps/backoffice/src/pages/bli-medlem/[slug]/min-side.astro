@@ -4,6 +4,7 @@ import {
   closeAgreement,
   findAgreementByManageToken,
   getOrganizationBySlug,
+  hasOtherRunningAgreement,
   listMembershipHistory,
 } from "@stottemedlem/db";
 import Alert from "@stottemedlem/ui/components/Alert.astro";
@@ -69,6 +70,15 @@ if (Astro.request.method === "POST" && !stopped) {
 const history = agreement.memberId ? await listMembershipHistory(db, agreement.memberId) : [];
 const current = history[0];
 
+// "Will I be charged again?" is about this person's money, not about this one
+// agreement — and stopping and re-joining leaves them holding both a stopped
+// one and a live one. Promising no further payment while another arrangement
+// renews would be the one wrong thing this page could say.
+const chargedElsewhere =
+  stopped && agreement.memberId
+    ? await hasOtherRunningAgreement(db, agreement.memberId, agreement.id)
+    : false;
+
 // The card comes first (specs/concepts/member-card.md): the member's own page
 // leads with the proof of what they are, and only then offers the paperwork
 // and the way out. There is no card before a payment has completed.
@@ -89,8 +99,20 @@ const title = `Ditt støttemedlemskap — ${org.name}`;
       {
         current ? (
           <Text variant="lead">
-            {current.tierName} i {org.name} — {current.paidNok} kr betalt for{" "}
-            {periodLabel(current.periodYear)}, gyldig ut perioden.
+            {[
+              `${current.tierName} i ${org.name} — ${current.paidNok} kr betalt for ${periodLabel(current.periodYear)}, gyldig ut perioden.`,
+              // Whether it continues belongs in the FIRST thing they read: the
+              // member opened this page to check exactly that, and a cancelled
+              // membership that looks ordinary until you scroll is the whole
+              // complaint (specs/concepts/member-self-service.md). When another
+              // arrangement of theirs still runs, this narrows to the one
+              // arrangement rather than claiming the support has ended.
+              stopped
+                ? chargedElsewhere
+                  ? "Denne avtalen fornyes ikke."
+                  : "Den fornyes ikke."
+                : "Den fornyes automatisk.",
+            ].join(" ")}
           </Text>
         ) : (
           <Text variant="lead">Medlemskapet i {org.name} er ikke bekreftet ennå.</Text>
@@ -105,7 +127,14 @@ const title = `Ditt støttemedlemskap — ${org.name}`;
         <Stack gap="sm">
           <Alert variant="success">Medlemskapet er sagt opp.</Alert>
           <Text>
-            Du blir ikke belastet igjen. {current && `Du er støttemedlem ut ${periodLabel(current.periodYear)}.`}
+            {[
+              chargedElsewhere
+                ? "Denne avtalen belastes ikke igjen, men du har en annen avtale med oss som fortsatt løper. Du finner den i Vipps-appen."
+                : "Du blir ikke belastet igjen.",
+              current ? `Du er støttemedlem ut ${periodLabel(current.periodYear)}.` : null,
+            ]
+              .filter(Boolean)
+              .join(" ")}
           </Text>
         </Stack>
       ) : (
