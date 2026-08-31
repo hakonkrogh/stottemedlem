@@ -1,5 +1,5 @@
 import { csvDocument, periodLabel } from "@stottemedlem/core";
-import { listOrganizationMembers } from "@stottemedlem/db";
+import { listOrganizationMembers, type MemberStanding, memberStanding } from "@stottemedlem/db";
 import type { APIRoute } from "astro";
 import { getDb } from "../../../../lib/db";
 import { requireOrgAccess } from "../../../../lib/orgAccess";
@@ -17,10 +17,14 @@ export const GET: APIRoute = async ({ locals, params }) => {
   const currentPeriod = periods.periodFor().year;
   const members = await listOrganizationMembers(getDb(), org.id, currentPeriod);
 
-  const statusLabel = (entry: (typeof members)[number]): string => {
-    // Mirrors the list: no completed payment ever is "Ikke betalt", not lapsed.
-    if (!entry.latest) return "Ikke betalt";
-    return entry.status === "active" ? "Aktiv" : "Utløpt";
+  // The same four standings the member list names, spelled out for a column a
+  // spreadsheet will be sorted and filtered by — so "who is stopping" is a
+  // question the organization's own tools can answer too.
+  const statusLabel: Record<MemberStanding, string> = {
+    renewing: "Aktiv",
+    ending: "Aktiv, fornyes ikke",
+    lapsed: "Utløpt",
+    unpaid: "Ikke betalt",
   };
 
   const csv = csvDocument([
@@ -41,7 +45,7 @@ export const GET: APIRoute = async ({ locals, params }) => {
       entry.member.name,
       entry.member.email,
       entry.member.phone,
-      statusLabel(entry),
+      statusLabel[memberStanding(entry)],
       entry.hearts,
       entry.recruits,
       entry.latest?.tierName ?? null,

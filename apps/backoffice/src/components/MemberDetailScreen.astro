@@ -9,7 +9,7 @@
 // deliberate actions behind a button, so looking someone up never means facing
 // a form — and never means being one slip away from moving money.
 import { periodLabel } from "@stottemedlem/core";
-import type { MemberOverview, Membership } from "@stottemedlem/db";
+import { type MemberOverview, type Membership, memberStanding } from "@stottemedlem/db";
 import Alert from "@stottemedlem/ui/components/Alert.astro";
 import Button from "@stottemedlem/ui/components/Button.astro";
 import Heading from "@stottemedlem/ui/components/Heading.astro";
@@ -19,6 +19,7 @@ import Text from "@stottemedlem/ui/components/Text.astro";
 import TextField from "@stottemedlem/ui/components/TextField.astro";
 import TextLink from "@stottemedlem/ui/components/TextLink.astro";
 import type { MemberContactFieldErrors, MemberContactFormValues } from "../lib/memberContact";
+import { standingLabel } from "../lib/memberStanding";
 import type { RefundResult } from "../lib/membership";
 import type { PaymentView, RefundRefusal } from "../lib/refunds";
 import HeartRows from "./HeartRows.astro";
@@ -59,7 +60,10 @@ const {
 const { member, latest, status, renewing, history } = entry;
 
 const displayName = member.name || member.email || member.phone || "Uten navn";
-const standing =
+// The same word the member list puts on this person's row, so looking someone
+// up confirms what the list said rather than restating it in prose only.
+const standing = memberStanding(entry);
+const standingText =
   status === "active"
     ? `Aktivt støttemedlem, betalt for ${latest ? periodLabel(latest.periodYear) : ""}.`
     : latest
@@ -74,7 +78,7 @@ const continuation = renewing
     : "";
 // Joined in the frontmatter: an Astro template collapses the space between
 // text and an expression that a formatter has put on separate lines.
-const lead = [standing, continuation].filter(Boolean).join(" ");
+const lead = [standingText, continuation].filter(Boolean).join(" ");
 const totalPaid = history.reduce((sum, period) => sum + period.paidNok, 0);
 
 // What became of each payment, and — where it cannot be given back — why not.
@@ -128,7 +132,10 @@ const periodSurvives =
 
 <Subpage backHref={membersPath} backLabel="Tilbake til medlemslisten">
   <Stack gap="sm">
-    <Heading level={2}>{displayName}</Heading>
+    <div class="title">
+      <Heading level={2}>{displayName}</Heading>
+      <span class:list={["pill", standing]}>{standingLabel[standing]}</span>
+    </div>
     <Text variant="lead">{lead}</Text>
   </Stack>
 
@@ -311,6 +318,40 @@ const periodSurvives =
 </Subpage>
 
 <style>
+  /* The standing sits with the name, not under it: it is part of who this
+     person currently is to the organization. */
+  .title {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--sm-space-sm);
+  }
+  .pill {
+    padding: 0.2rem 0.6rem;
+    font-size: 0.8rem;
+    font-weight: 600;
+    border-radius: 999px;
+    border: 1px solid transparent;
+    white-space: nowrap;
+  }
+  .pill.renewing {
+    color: var(--sm-success);
+    background: var(--sm-success-bg);
+    border-color: var(--sm-success-border);
+  }
+  /* Still active, but on its way out — amber, matching the member list. */
+  .pill.ending {
+    color: var(--sm-accent-deep);
+    background: var(--sm-accent-soft);
+    border-color: var(--sm-accent);
+  }
+  .pill.lapsed,
+  .pill.unpaid {
+    color: var(--sm-muted);
+    background: var(--sm-bg);
+    border-color: var(--sm-border-strong);
+  }
+
   /* Details and history stand side by side once the display has room. */
   .columns {
     display: grid;

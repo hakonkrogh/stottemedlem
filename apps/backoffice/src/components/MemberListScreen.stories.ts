@@ -3,7 +3,7 @@
 // link leads to the story showing the screen behind it.
 import type { MemberOverview } from "@stottemedlem/db";
 import MemberListScreen from "./MemberListScreen.astro";
-import { everyone } from "./memberFixtures";
+import { continuing, everyone } from "./memberFixtures";
 import StoryScreen from "./StoryScreen.astro";
 import { ORG_PATH } from "./storyFixtures";
 
@@ -15,6 +15,7 @@ export default {
 interface ScreenProps {
   members: MemberOverview[];
   search?: string;
+  filter?: string | null;
   membersPath: string;
   exportHref?: string;
   currentYear: number;
@@ -47,3 +48,22 @@ export const Searching = { args: inFrame({ search: "solheim" }) };
 
 /** A search nobody matches still offers the way back. */
 export const SearchWithNoMatch = { args: inFrame({ search: "kvitfjell" }) };
+
+/** The question this screen was asked for: who is about to stop supporting us. */
+export const OnlyEnding = { args: inFrame({ filter: "slutter" }) };
+
+/** Both kinds of current supporter together — the pill counts stay whole-register. */
+export const OnlyActive = { args: inFrame({ filter: "aktive" }) };
+
+/** The ones to invite back. */
+export const OnlyLapsed = { args: inFrame({ filter: "utlopt" }) };
+
+/** Narrowing and searching compose; either one can be what emptied the list. */
+export const FilteredAndSearching = {
+  args: inFrame({ filter: "fornyes", search: "solheim" }),
+};
+
+/** A standing nobody has right now still names itself rather than going blank. */
+export const FilterWithNoMatch = {
+  args: inFrame({ members: [continuing], filter: "utlopt" }),
+};

@@ -1,10 +1,12 @@
 import { describe, expect, it } from "vitest";
 import {
-  countMembersByStatus,
+  countMemberStandings,
+  isCurrentMember,
   isProfileComplete,
   type MemberFeeStanding,
   type MemberOverview,
   matchesMemberSearch,
+  memberStanding,
   membershipStatus,
   owesFeeChangeNotice,
   renewalFeeNok,
@@ -56,43 +58,104 @@ describe("membershipStatus", () => {
   });
 });
 
+const period = (memberId: string, year: number): MemberOverview["latest"] => ({
+  id: `ms-${memberId}-${year}`,
+  orgId: base.id,
+  memberId,
+  agreementId: `agr-${memberId}`,
+  tierId: "tier-1",
+  tierName: "Støttemedlem",
+  periodYear: year,
+  periodStart: `${year}-01-01`,
+  periodEnd: `${year}-12-31`,
+  annualFeeNok: 300,
+  paidNok: 300,
+  createdAt: `${year}-01-01 00:00:00`,
+});
+
 const overview = (
   name: string | null,
   status: "active" | "lapsed",
   extra: Partial<MemberOverview["member"]> = {},
-): MemberOverview => ({
-  member: {
-    id: name ?? "anon",
-    orgId: base.id,
-    name,
-    email: null,
-    phone: null,
-    vippsSub: null,
-    cardToken: null,
-    referredByMemberId: null,
-    messagesDeclinedAt: null,
-    createdAt: "2026-01-01 00:00:00",
-    ...extra,
-  },
-  latest: null,
-  status,
-  renewing: false,
-  hearts: 0,
-  recruits: 0,
+  /** Standing is the pair of these two, so both are steerable per fixture. */
+  standing: { paid?: boolean; renewing?: boolean } = {},
+): MemberOverview => {
+  const id = name ?? "anon";
+  const { paid = true, renewing = false } = standing;
+  return {
+    member: {
+      id,
+      orgId: base.id,
+      name,
+      email: null,
+      phone: null,
+      vippsSub: null,
+      cardToken: null,
+      referredByMemberId: null,
+      messagesDeclinedAt: null,
+      createdAt: "2026-01-01 00:00:00",
+      ...extra,
+    },
+    latest: paid ? period(id, status === "active" ? 2026 : 2024) : null,
+    status,
+    renewing,
+    hearts: paid ? 1 : 0,
+    recruits: 0,
+  };
+};
+
+describe("memberStanding", () => {
+  it("separates a supporter who continues from one whose arrangement has ended", () => {
+    expect(memberStanding(overview("Ingrid", "active", {}, { renewing: true }))).toBe("renewing");
+    expect(memberStanding(overview("Bjørn", "active", {}, { renewing: false }))).toBe("ending");
+  });
+
+  it("counts both of those as current — support ends when the period does", () => {
+    expect(isCurrentMember(overview("Ingrid", "active", {}, { renewing: true }))).toBe(true);
+    expect(isCurrentMember(overview("Bjørn", "active", {}, { renewing: false }))).toBe(true);
+    expect(isCurrentMember(overview("Marit", "lapsed"))).toBe(false);
+  });
+
+  it("is lapsed once the paid period has passed, whatever the arrangement says", () => {
+    expect(memberStanding(overview("Marit", "lapsed", {}, { renewing: false }))).toBe("lapsed");
+    expect(memberStanding(overview("Marit", "lapsed", {}, { renewing: true }))).toBe("lapsed");
+  });
+
+  it("never claims a supporter with no completed payment is renewing", () => {
+    // Recorded on approval, seconds before the first payment lands: the
+    // arrangement is live, but no money has arrived.
+    const justApproved = overview("Ny", "lapsed", {}, { paid: false, renewing: true });
+    expect(memberStanding(justApproved)).toBe("unpaid");
+    expect(isCurrentMember(justApproved)).toBe(false);
+  });
 });
 
-describe("countMembersByStatus", () => {
-  it("counts current supporters apart from lapsed ones", () => {
-    const counts = countMembersByStatus([
-      overview("Ingrid", "active"),
-      overview("Bjørn", "active"),
+describe("countMemberStandings", () => {
+  it("counts each standing, and both kinds of current supporter as active", () => {
+    const counts = countMemberStandings([
+      overview("Ingrid", "active", {}, { renewing: true }),
+      overview("Bjørn", "active", {}, { renewing: false }),
       overview("Marit", "lapsed"),
+      overview("Ny", "lapsed", {}, { paid: false, renewing: true }),
     ]);
-    expect(counts).toEqual({ active: 2, lapsed: 1 });
+    expect(counts).toEqual({ all: 4, active: 2, renewing: 1, ending: 1, lapsed: 1, unpaid: 1 });
+  });
+
+  it("keeps a supporter who never paid out of the lapsed count", () => {
+    const counts = countMemberStandings([overview("Ny", "lapsed", {}, { paid: false })]);
+    expect(counts.lapsed).toBe(0);
+    expect(counts.unpaid).toBe(1);
   });
 
   it("is zero for an organization with no supporters yet", () => {
-    expect(countMembersByStatus([])).toEqual({ active: 0, lapsed: 0 });
+    expect(countMemberStandings([])).toEqual({
+      all: 0,
+      active: 0,
+      renewing: 0,
+      ending: 0,
+      lapsed: 0,
+      unpaid: 0,
+    });
   });
 });
 
