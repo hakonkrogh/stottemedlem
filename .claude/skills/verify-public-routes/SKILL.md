@@ -19,6 +19,19 @@ with the query intact, and the stale-while-revalidate cache must go
 Wrangler wraps every result in banners and a table, so ad-hoc `d1 execute`
 calls need re-quoting and grepping each time; this prints just the rows, and
 carries the load-bearing `CI=1`. Read-only by convention — `seed.sh` writes.
+
+**A failing query says why** (fixed 2026-08-31): D1 answers a bad column or a
+syntax error with a JSON *object*, not the success *array*, and the old parser
+sliced from the first `[` — which landed inside the error's own `"notes": [`
+and crashed with a JSON syntax error naming a character offset. The real
+message (`no such column: updated_at … SQLITE_ERROR`) was nowhere. stderr is
+kept too, since `wrangler: command not found` — a worktree never
+`pnpm install`ed — appears only there. Exit code 1 on either.
+
+Two columns that do not exist, and cost a round-trip each: `membership_agreements`
+and `member_notices` have **no `updated_at`** (agreements carry `activated_at` /
+`stopped_at` / `last_reconciled_at`; notices carry `sent_at`). `membership_charges`
+does have one.
 Since migration 0005 the interesting tables are the member registry:
 `supporting_members`, `membership_agreements`, `memberships`,
 `membership_charges` (see `project-overview`). Handy for proving an invariant
@@ -57,6 +70,22 @@ tiers**. The tiers matter: since tiering landed (2026-08-19)
 `organizations.annual_fee_nok` is LEGACY and unused, so an org seeded without
 `membership_tiers` rows renders the *zero-tier degraded* page, not the real
 offer — a silently wrong baseline for screenshots and assertions.
+
+**`seed.sh` cannot repair a database you edited — reset it.** It is idempotent
+over its OWN rows, not over yours: probing states by editing D1 (deleting a
+membership, nulling a charge's `membership_id`) leaves rows it then trips over,
+and re-running dies with `FOREIGN KEY constraint failed` — a re-seed that looks
+like it worked from the exit code alone. Local D1 is a scratch fixture, so
+throw it away and let migrations rebuild it:
+
+    rm -f apps/backoffice/.wrangler/state/v3/d1/miniflare-D1DatabaseObject/*.sqlite*
+    bash .claude/skills/verify-public-routes/seed.sh   # applies migrations first
+
+Two constraints worth knowing before probing: `memberships` is UNIQUE on
+`(member_id, period_year)` (so you cannot renumber a period onto one that
+exists), and `membership_charges.membership_id` is a FK (so a membership will
+not delete until the charges pointing at it are released). Do this AFTER
+stopping the dev server, and re-seed before the next run.
 
     bash .claude/skills/verify-public-routes/seed-images.sh [slug]  # after seed.sh
 
@@ -123,8 +152,19 @@ per-AGREEMENT (`findAgreementByManageToken`) while the history it shows is
 per-MEMBER, and stopping + re-joining leaves a member holding a stopped
 agreement and a live one at once. Insert a second ACTIVE agreement for the same
 `member_id` and re-open the FIRST token — that is where money claims go wrong
-(fixed 2026-08-31; see `project-overview`). Never POST to the page while
-probing: the POST stops the agreement for real.
+(fixed 2026-08-31; see `project-overview`). Never POST `handling=stopp` or
+`slett` while probing: they act for real.
+
+**To probe a POST branch that is safe to run** — `handling=fortsett`, whose
+Vipps call fails closed without keys — remember curl needs the Origin header
+or Astro answers **403 in ~1ms with no body and no log line** (see the CSRF
+gotcha under "Gotchas found driving this"; it reads exactly like a routing
+bug, and cost a detour again on 2026-08-31 by living too far from here):
+
+    curl -s -H "Origin: http://localhost:4322" -X POST -d "handling=fortsett" "<url>"
+
+That is enough to prove the handler ran, the guard decided, and the error
+alert rendered — everything short of Vipps itself.
 
 `GET`s are safe and read-only. Strip the markup to read the copy:
 
@@ -135,6 +175,28 @@ probing: the POST stops the agreement for real.
 
 Manage tokens on STAGING/PRODUCTION are real members' — a `d1.sh` SELECT can
 read one for debugging, but never render it anywhere and never POST with it.
+
+## The receipt page (kvittering) is the one you CANNOT force from D1
+
+Unlike `min-side`, every state `kvittering.astro` can show sits inside
+`if (vipps)` — and `getVippsForOrg` returns null when the org has no keys in
+WorkOS Vault and `.dev.vars` carries none. The page then skips the whole sync
+block and renders **"Medlemskapet ble ikke opprettet"** no matter what D1
+holds. So a local `curl` / `preview-screenshot` / `drive-page` of it is a
+**false negative**, not a passing check, and no amount of seeding changes that
+(hit 2026-08-31 adding the "already a member" state). It also re-reads Vipps on
+every render, so it is never a pure D1 view even with keys.
+
+Its states are proven one of three ways, all of them outside this skill:
+
+| want to see | how |
+|-------------|-----|
+| any state end to end | `vipps-test-rig` with real apitest keys — a live agreement, then open `/kvittering?n=<manage_token>` |
+| the copy alone | read the branch in the source; the `status` union names every case |
+| a state that already happened | STAGING: `d1.sh … staging` for the shape, then the deployed page with that member's `manage_token` |
+
+What IS provable locally: that the route exists, redirects to the join page
+when `n=` is missing, and 404s an unknown org.
 
 ## Prove an erasure (specs/use-cases/erase-member-data.md)
 
