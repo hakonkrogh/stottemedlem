@@ -144,6 +144,9 @@ raised, so there was nobody to notify and no data to erase — everything landed
 before the first real member. Re-check with
 `bash .claude/skills/verify-public-routes/d1.sh "SELECT count(*) FROM supporting_members" production`.
 
+Shipped as one commit in **PR #70** (https://github.com/hakonkrogh/stottemedlem/pull/70) — the diff and its review
+are the fastest way to see how each of the five was actually closed.
+
 **How to validate any of it:** `verify-public-routes` now carries the recipe
 (erasure end-to-end + driving the retention sweep through the cron endpoint).
 
