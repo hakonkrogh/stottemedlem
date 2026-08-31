@@ -561,14 +561,20 @@ lives in `specs/`, kept in sync with code by a mandatory `Stop`-hook harness.
   SOURCE (no build step) — the backoffice `astro.config.mjs` lists it in
   `vite.ssr.noExternal`. **Storybook** (since 2026-07-28, replacing earlier
   dev-only story pages): root alias `pnpm story` / `pnpm stories` (added
-  2026-08-31; pre-builds core+db first) or
+  2026-08-31; pre-builds core+db+qr first — the backoffice screen stories
+  import `@stottemedlem/qr`, so without its `dist/` the build dies with
+  "Failed to resolve entry for package") or
   `pnpm --filter @stottemedlem/ui run storybook --ci`
   (port 6006) via the community `@storybook-astro/framework` (Storybook 10 +
   Astro 7; storybook-astro.org).
+  Pinned at `storybook` + `@storybook/builder-vite` `^10.5.10` and
+  `@storybook-astro/framework` `^1.10.0` (upgraded and re-locked deliberately
+  2026-08-31; `build-storybook` verified green). Framework 1.11.0 exists but is
+  held back by the workspace's 7-day `minimumReleaseAge` quarantine — that is
+  policy, not a bug, so do not fight it with `minimumReleaseAgeExclude`.
   **Running Storybook can rewrite `packages/ui/package.json` and break CI**
-  (hit 2026-08-31): an automigration bumped `storybook` +
-  `@storybook/builder-vite` from `^10.5.3` to `^10.5.10` in the MANIFEST while
-  leaving `pnpm-lock.yaml` alone, so `pnpm install --frozen-lockfile` — the
+  (hit 2026-08-31): an automigration bumped those specifiers in the MANIFEST
+  while leaving `pnpm-lock.yaml` alone, so `pnpm install --frozen-lockfile` — the
   FIRST step of ci.yml — dies with "specifiers in the lockfile don't match
   specifiers in package.json" before a single test runs. Nothing local catches
   it: test/typecheck/build/lint all stay green against the already-installed
@@ -577,7 +583,8 @@ lives in `specs/`, kept in sync with code by a mandatory `Stop`-hook harness.
   check` exits 1 on "Install dependencies" with ERR_PNPM_OUTDATED_LOCKFILE) —
   which is the argument for running it before every push, not just after
   editing a workflow. Bare `pnpm install --frozen-lockfile` is the same check,
-  cheaper. Either revert the bump or re-lock it deliberately. Stories are CSF colocated with components
+  cheaper. Fix it by re-locking deliberately (`pnpm install`), not by hand-
+  editing either file back. Stories are CSF colocated with components
   (`*.stories.ts`); slots pass via `args.slots.default` (HTML string, component
   ref, or configured `{ component, props, slots }`); a second glob in
   `packages/ui/.storybook/main.ts` pulls in app screen stories from
@@ -609,6 +616,11 @@ lives in `specs/`, kept in sync with code by a mandatory `Stop`-hook harness.
   command not found` / `turbo: command not found`, which is a missing install,
   not a broken tree. Run `pnpm install` once per worktree first (~seconds, the
   store is shared).
+- **Dependency changes have three workspace-level rules** (`catalog:` shared
+  versions, a 7-day `minimumReleaseAge` quarantine, blocked postinstall
+  scripts) and one trap that reads as an unrelated types error: a filtered
+  `pnpm --filter X update` leaves every OTHER package without `node_modules`.
+  Read `dependencies.md` before any `pnpm add` / `pnpm update`.
 - **The local `main` ref in a worktree is stale**, so `git log main..HEAD` lists
   commits that are already merged and makes a one-commit branch look like ten.
   Scope a branch/PR against `origin/main` (`git log --oneline origin/main..HEAD`)
@@ -816,6 +828,7 @@ Hard rules and exact wording live in the yaml and in the guide's own tables — 
 | (canonical) `specs/INDEX.md` | high-level product map / spec registry |
 | (canonical) `README.md` | monorepo layout, commands, toolchain |
 | stop-hooks.md | how the two Stop hooks compose + how to test a hook locally. **Write `specs/**` with the Write/Edit tool, never a bash heredoc/python:** the spec hook only reads Edit/Write/MultiEdit/NotebookEdit calls out of the transcript, so Bash-written specs are invisible and it blocks the stop claiming you reconciled nothing — the default outcome in bypass-permissions mode, and it costs a turn every time (hit again 2026-08-27) |
+| dependencies.md | pnpm workspace policy — `catalog:` centralised versions; the 7-day `minimumReleaseAge` supply-chain quarantine (why `pnpm update --latest` silently lands below npm's latest, and why `minimumReleaseAgeExclude` is the wrong fix); `onlyBuiltDependencies`; **the filtered-update trap** — `pnpm --filter X update` strands every OTHER package's `node_modules` and surfaces as a bogus `TS2304: Cannot find name 'crypto'`; re-lock check before pushing |
 | qr-codes.md | @stottemedlem/qr package split, the /api/qr/[slug] embed contract (backoffice), the front-page card preview (marketing), qrcode-lib gotchas, open domain-routing item |
 | (canonical) `docs/research/pii-in-admin-urls-and-phone-masking.md` | precedent research (2026-08-28) behind the ACCEPTED search-term-in-URL open question: search-in-URL is the industry norm (Stripe/Zendesk ship it as a feature), no GDPR enforcement on the pattern, no competitor masks admin-facing phone numbers, Vipps' masking = strangers-payment pattern; + the hardening options if revisited |
 | phone-number-privacy.md | verified legal ground truth on masking/displaying member phone numbers: NO law requires masking (PCI DSS masks card PANs, nothing similar for phone); GDPR art. 5(1)(c)/25(2) analysis, why full display to org admins is within purpose, + the 2026-08-28 audit of every phone surface and the real gaps (search-in-URL, phone-as-title) |
