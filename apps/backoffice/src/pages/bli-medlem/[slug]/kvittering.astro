@@ -17,6 +17,7 @@ import Text from "@stottemedlem/ui/components/Text.astro";
 import TextLink from "@stottemedlem/ui/components/TextLink.astro";
 import MemberCardFigure from "../../../components/MemberCardFigure.astro";
 import OrgIdentityHeader from "../../../components/OrgIdentityHeader.astro";
+import ReceiptPaper from "../../../components/ReceiptPaper.astro";
 import PublicShell from "../../../layouts/PublicShell.astro";
 import { getDb } from "../../../lib/db";
 import { loadMemberCardForMemberId, memberCardUrl } from "../../../lib/memberCard";
@@ -259,31 +260,32 @@ const title =
     {
       status === "active" && receipt && (
         <Stack gap="sm">
-          <Heading level={2}>Kvittering</Heading>
-          <InfoList
-            items={[
-              { label: "Organisasjon", value: receipt.seller },
-              { label: "Medlem", value: receipt.memberLabel },
-              { label: "Gjelder", value: receipt.what },
-              { label: "Periode", value: receipt.period },
-              { label: "Betalt", value: receipt.paid },
-              {
-                label: "Merverdiavgift",
-                value: "0 kr",
-                hint: "Medlemskontingent er unntatt mva.",
-              },
-            ]}
-          />
-          <Text variant="small">
-            Ta gjerne vare på kvitteringen.
-            {
-              receipt.email
-                ? receipt.email.sent
-                  ? ` Den er også sendt til ${receipt.email.address}.`
-                  : ` Den kommer også på e-post til ${receipt.email.address}.`
-                : ""
-            }
-          </Text>
+          <ReceiptPaper>
+            <Stack gap="sm">
+              <Heading level={2}>Kvittering</Heading>
+              <InfoList
+                items={[
+                  { label: "Organisasjon", value: receipt.seller },
+                  { label: "Medlem", value: receipt.memberLabel },
+                  { label: "Gjelder", value: receipt.what },
+                  { label: "Periode", value: receipt.period },
+                  { label: "Betalt", value: receipt.paid },
+                  {
+                    label: "Merverdiavgift",
+                    value: "0 kr",
+                    hint: "Medlemskontingent er unntatt mva.",
+                  },
+                ]}
+              />
+            </Stack>
+          </ReceiptPaper>
+          {receipt.email && (
+            <Text variant="small">
+              {receipt.email.sent
+                ? `Kvitteringen er også sendt til ${receipt.email.address}.`
+                : `Kvitteringen kommer også på e-post til ${receipt.email.address}.`}
+            </Text>
+          )}
         </Stack>
       )
     }

@@ -1,0 +1,50 @@
+---
+// The slip of paper the payment documentation is printed on
+// (specs/concepts/payment-receipt.md): white, torn at the top and bottom the
+// way a receipt is torn off a roll. The page around it stays cream, so the
+// receipt reads as a document lying ON the page — not one more section of it.
+---
+
+<div class="receipt-paper">
+  <div class="body">
+    <slot />
+  </div>
+</div>
+
+<style>
+  .receipt-paper {
+    /* Width of one tooth in the torn edge; the tear reaches half that deep. */
+    --tooth: 16px;
+    width: 100%;
+    max-width: 26rem;
+    margin-inline: auto;
+    /* The shadow follows the torn silhouette, not a rectangle. */
+    filter: drop-shadow(0 8px 30px rgba(80, 60, 30, 0.12));
+  }
+
+  /* The torn edges: a strip of the same paper, masked into teeth. Each strip
+   * is a little taller than the tear is deep, so it overlaps the body and no
+   * hairline gap can open between them. */
+  .receipt-paper::before,
+  .receipt-paper::after {
+    content: "";
+    display: block;
+    height: calc(var(--tooth) * 0.75);
+    background: var(--sm-surface);
+  }
+  .receipt-paper::before {
+    mask: conic-gradient(from 135deg at top, #0000, #000 1deg 89deg, #0000 90deg) 50% /
+      var(--tooth) 100%;
+    margin-bottom: -1px;
+  }
+  .receipt-paper::after {
+    mask: conic-gradient(from -45deg at bottom, #0000, #000 1deg 89deg, #0000 90deg) 50% /
+      var(--tooth) 100%;
+    margin-top: -1px;
+  }
+
+  .body {
+    background: var(--sm-surface);
+    padding: var(--sm-space-lg) clamp(1.25rem, 4vw, 1.75rem);
+  }
+</style>
