@@ -52,6 +52,15 @@ renewing.
   reports on — in particular, not on the product's own member-email sending.
 - **Quiet success is recorded, not announced.** Normal work leaves a log
   trail (and context for the next alert), never an email.
+- **A situation the product handles by itself is not a failure.** Something
+  the product recognizes and puts right on its own — a second payment for a
+  period already paid for being
+  [given back](../use-cases/join-as-supporting-member.md), an event redelivered
+  after it was already applied — is recorded, not alerted. Only the handling
+  *failing* reaches the operator. Alerting the operator about outcomes nobody
+  has to act on trains them to ignore the channel, which costs the alert that
+  matters (decided 2026-09-01, after a supporter cancelling and re-joining on
+  staging raised an alarm about the refund working as intended).
 - The vendor behind the channel is an implementation choice and must stay
   swappable; the product's behaviour is defined by the rules above, not by any
   vendor's feature set.
