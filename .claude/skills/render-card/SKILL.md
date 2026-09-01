@@ -15,6 +15,7 @@ contact sheet showing browser-rendered and rasterized side by side. Screenshot
 that one file and you have reviewed every case at once.
 
     --case A,B               fixture(s) to draw (default all)
+    --time N                 with --raster: ms per render (the CPU budget)
     --set key=value          override one field, repeatable
     --org-card               the ORGANISATION's qrCardSvg instead
     --raster                 also rasterize via the shipped resvg path
@@ -55,3 +56,26 @@ docs). Keep them in step with `apps/backoffice/src/components/MemberCard.stories
 
 `.card-preview/` is scratch output; write it to the session scratchpad with
 `--out` if you would rather not leave it in the tree.
+
+## What a render costs — check before putting one on a request path
+
+    node .claude/skills/render-card/render.mjs --case WithLogo --raster --time 3
+
+Measured 2026-08-31: **~310 ms per card** at the card's own width (~570 ms at
+1024 px) on an M-series Mac — resvg parses the whole 360 KB Fraunces for every
+call, so the cost is per render and does not amortize. A Cloudflare Worker is
+slower still, while the rest of this app's requests sit at **10–80 ms CPU**
+(`cloud-logs` → `cost`).
+
+So one rasterization is roughly an order of magnitude more CPU than a whole
+normal request, and a loop that renders per row scales straight into
+Cloudflare's CPU limit — the browser shows **Error 1102, "Worker exceeded
+resource limits"**, and the request is killed before it can log anything or
+write down the work it finished. That is exactly what
+`sendOwedReceipts` (a card PNG per owed receipt, called inline from the Vipps
+webhook receiver AND the receipt page) did on staging on 2026-08-31: two owed
+receipts ≈ 2 s CPU ≈ dead, and dying before recording the send kept them owed,
+so every webhook retry repeated it.
+
+Rule of thumb: rasterize at most once per request, and prefer a cron/queue or a
+cached PNG for anything that could need several.

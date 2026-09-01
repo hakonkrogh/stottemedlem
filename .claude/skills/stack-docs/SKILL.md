@@ -42,6 +42,29 @@ Verified v14 behaviours (from the scaffold):
 
 ## TypeScript: Workers runtime types vs DOM (dual tsconfig)
 
+**Before believing a `Property 'X' does not exist on type 'Env'` error, check
+for `.dev.vars`** (verified 2026-08-31). `wrangler types` builds
+`worker-configuration.d.ts` from wrangler.jsonc **plus `.dev.vars`**, and that
+file is gitignored, so a fresh worktree has no `WORKOS_API_KEY`,
+`VIPPS_SUBSCRIPTION_KEY`, `VIPPS_MSN` or `VIPPS_WEBHOOK_SECRET` on `Env` — and
+`tsc -p tsconfig.worker.json` then reports four errors in files nobody touched.
+Real bindings from wrangler.jsonc (D1, KV, R2, Queues) are always there;
+secret-only vars are the tell. To typecheck a worktree without the real file:
+
+    cp .dev.vars.example .dev.vars && pnpm typecheck; rm .dev.vars
+
+**Never read a check's result through a pipe.** `pnpm typecheck 2>&1 | tail -6`
+exits with *tail's* status, so a failing typecheck reports success — which is
+exactly how the missing-`.dev.vars` errors above got mistaken for a passing run
+(2026-08-31). Redirect to a file and echo `$?`, and read turbo's own verdict
+(`Failed: @stottemedlem/backoffice#typecheck`) rather than the tail of the
+output:
+
+    pnpm typecheck > /tmp/tc.log 2>&1; echo "exit=$?"; tail -5 /tmp/tc.log
+
+Turbo also caches the task (`13 cached, 14 total`), so an unchanged package's
+"success" is a replay, not a run — fine, as long as the exit code is real.
+
 `wrangler types` generates `worker-configuration.d.ts` (gitignored) whose runtime
 globals **conflict with the DOM lib** that Astro's JSX types require. Pattern used in
 `apps/backoffice`: app `tsconfig.json` (Astro strict + DOM) excludes `src/worker.ts` +

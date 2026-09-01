@@ -4,7 +4,7 @@
 //
 //   node .claude/skills/cloud-logs/cloudlogs.mjs [command] [options]
 //
-// Commands: events (default) | invocations | count | keys | values <key>
+// Commands: events (default) | invocations | cost | count | keys | values <key>
 // See SKILL.md next to this file for usage, auth setup, and examples.
 
 import { readFileSync } from "node:fs";
@@ -104,6 +104,7 @@ for (let i = 0; i < args.length; i++) {
   -n, --limit N                  max events / groups (default 50)
       --cursor ID                next page ($metadata.id of last event)
       --group-by KEY             for count (default $metadata.message)
+      (cost takes no options of its own: it reads CPU/wall off the same events)
       --json                     raw API JSON instead of formatted lines
       --full                     don't truncate long payloads`,
     );
@@ -112,8 +113,8 @@ for (let i = 0; i < args.length; i++) {
   else positional.push(a);
 }
 if (positional.length) command = positional.shift();
-if (!["events", "invocations", "count", "keys", "values"].includes(command))
-  fail(`unknown command "${command}" (events|invocations|count|keys|values)`);
+if (!["events", "invocations", "cost", "count", "keys", "values"].includes(command))
+  fail(`unknown command "${command}" (events|invocations|cost|count|keys|values)`);
 if (opts.env === "prod") opts.env = "production";
 if (!opts.all && !opts.service) {
   opts.service = SERVICES[opts.env];
@@ -270,6 +271,45 @@ if (command === "events" || command === "invocations") {
     }
     console.log(`-- ${ids.length} invocations, ${windowNote}`);
   }
+} else if (command === "cost") {
+  // What each invocation actually spent. `exceededCpu` (Cloudflare error 1102
+  // in the browser) says nothing about WHERE the time went; this does, by
+  // putting the killed requests next to the healthy ones so the outlier is
+  // obvious. The numbers live on $workers, which the events view already
+  // carries — no separate query, no --json + jq dance.
+  const result = await call("query", queryBody("events"));
+  if (opts.json) {
+    console.log(JSON.stringify(result, null, 2));
+    process.exit(0);
+  }
+  const seen = new Set();
+  const rows = [];
+  for (const e of result.events?.events ?? []) {
+    const w = e.$workers ?? {};
+    if (w.cpuTimeMs === undefined || seen.has(w.requestId)) continue;
+    seen.add(w.requestId);
+    rows.push({
+      ts: new Date(e.timestamp).toISOString(),
+      cpu: w.cpuTimeMs,
+      wall: w.wallTimeMs,
+      outcome: w.outcome ?? "?",
+      trigger: e.$metadata?.trigger ?? "",
+      req: w.requestId ?? "",
+    });
+  }
+  for (const r of rows) {
+    console.log(
+      `${r.ts} ${String(r.outcome).padStart(11)} cpu=${String(r.cpu).padStart(6)}ms ` +
+        `wall=${String(r.wall).padStart(6)}ms  ${r.trigger}  req=${r.req}`,
+    );
+  }
+  const cpus = rows.map((r) => r.cpu).sort((a, b) => a - b);
+  if (cpus.length)
+    console.log(
+      `-- ${rows.length} invocations, cpu median ${cpus[Math.floor(cpus.length / 2)]}ms, ` +
+        `max ${cpus[cpus.length - 1]}ms, ${windowNote}`,
+    );
+  else console.log(`-- no invocations with timings, ${windowNote}`);
 } else if (command === "count") {
   const result = await call("query", queryBody("calculations"));
   if (opts.json) {
