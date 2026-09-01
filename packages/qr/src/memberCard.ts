@@ -52,6 +52,8 @@ export function memberCardSize(): { width: number; height: number } {
   return { width: MEMBER_CARD_WIDTH, height: MEMBER_CARD_HEIGHT };
 }
 
+/** The canvas behind the card — a step deeper than the card so it reads as an object. */
+const GROUND = "#f2e9d8";
 const CREAM = "#fdf8f0";
 const CARD = "#ffffff";
 const BAND = "#fbf2e1";
@@ -232,9 +234,9 @@ function validityCorner(rightX: number, centerY: number, periodText: string, lap
 }
 
 /**
- * The QR code in a panel of its own, with its quiet zone built in. Cream
- * rather than white so the panel reads as an object on the card, and light
- * enough that a scanner still sees full contrast.
+ * The QR code in a panel of its own, with its quiet zone built in. White on
+ * the cream card, so the panel is the brightest thing on it — an object a
+ * scanner gets full contrast from and an eye finds first.
  */
 function qrPanel(
   left: number,
@@ -244,11 +246,11 @@ function qrPanel(
 ): string {
   const pad = 18;
   const panel = qrSize + pad * 2;
-  return `<rect x="${r(left)}" y="${r(top)}" width="${r(panel)}" height="${r(panel)}" rx="22" fill="${CREAM}" stroke="${EDGE}" stroke-width="2"/>
+  return `<rect x="${r(left)}" y="${r(top)}" width="${r(panel)}" height="${r(panel)}" rx="22" fill="${CARD}" stroke="${EDGE}" stroke-width="2"/>
   <g transform="translate(${r(left + pad)} ${r(top + pad)}) scale(${r(qrSize / qr.moduleCount)})"><path d="${qr.path}" fill="${INK}"/></g>`;
 }
 
-/** The card's frame: cream ground, white card, a hairline edge and a soft shadow. */
+/** The card's frame: a warm ground, the cream card, a hairline edge and a soft shadow. */
 function frame(width: number, height: number, inner: number, radius: number): string {
   const w = width - inner * 2;
   const h = height - inner * 2;
@@ -258,8 +260,8 @@ function frame(width: number, height: number, inner: number, radius: number): st
       <feDropShadow dx="0" dy="6" stdDeviation="10" flood-color="#8a7355" flood-opacity="0.16"/>
     </filter>
   </defs>
-  <rect width="${width}" height="${height}" fill="${CREAM}"/>
-  <rect x="${inner}" y="${inner}" width="${w}" height="${h}" rx="${radius}" fill="${CARD}" filter="url(#card-shadow)"/>
+  <rect width="${width}" height="${height}" fill="${GROUND}"/>
+  <rect x="${inner}" y="${inner}" width="${w}" height="${h}" rx="${radius}" fill="${CREAM}" filter="url(#card-shadow)"/>
   <rect x="${inner}" y="${inner}" width="${w}" height="${h}" rx="${radius}" fill="none" stroke="${EDGE}" stroke-width="2"/>`;
 }
 
