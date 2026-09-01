@@ -284,7 +284,18 @@ lives in `specs/`, kept in sync with code by a mandatory `Stop`-hook harness.
   renews / does not renew), then the stop action. The "Dine hjerter" and "Del
   medlemsbeviset" sections are GONE: the card already shows the hearts and now
   carries its own share button, and the spec now forbids this page captioning
-  its own card. `memberCardDisplayUrl` went with them;
+  its own card. `memberCardDisplayUrl` went with them.
+  **A fifth thing since 2026-08-31 (PR #72): the way back.** A STOPPED
+  agreement is offered a `handling=fortsett` button beside the stop, gated
+  three ways — the tier must still be on offer (`getMembershipTier`, not
+  `archivedAt`), the org must have Vipps keys, and `hasOtherRunningAgreement`
+  must be false (never a second live arrangement). It drafts a NEW agreement
+  (Vipps cannot un-stop one) and `resumeCostsNow` in `@stottemedlem/db`
+  decides whether it costs anything: inside a period they already paid for it
+  drafts with NO `initialCharge` and moves no money, lapsed it is an ordinary
+  pro-rated join. The button must SAY which before it is pressed. See the
+  constraint note further down for WHY this can only live here and not on the
+  public join page.
   `POST /api/vipps/[slug]` is the per-org webhook receiver (HMAC-verified →
   401, unknown org → 404, apply failure → 500 so Vipps redelivers; `/api/vipps/*`
   is public in middleware). Shared logic in `src/lib/membership.ts`
@@ -358,11 +369,47 @@ lives in `specs/`, kept in sync with code by a mandatory `Stop`-hook harness.
   payments stopped while the other renews. `hasOtherRunningAgreement` in
   `@stottemedlem/db` is that check; use it for any new claim on that page.
   Same asymmetry to watch for in any future token-addressed member surface.
-  **KNOWN AND UNHANDLED:** a member with TWO live agreements is charged twice
-  per period, and nothing detects, prevents or reports it — not the join
-  route, not reconcile, not the duplicate-renewal alarm. Deliberately left
-  open 2026-08-31 (it needs prevention at join time, not wording); the
-  self-service page only stopped MISDESCRIBING the state.
+  **HANDLED since 2026-08-31** (branch fix-canceled-membership-r, PR #72 —
+  this block used to say KNOWN AND UNHANDLED; it no longer is): a second
+  payment for a period the supporter already bought is given back
+  automatically. `redundantJoinAction` in `@stottemedlem/core` decides
+  (unit-tested, no I/O), `settleRedundantPayment` in `lib/membership.ts`
+  acts, and it hangs off `applyCharge` — the ONE path from money to
+  membership — so it settles whichever of the three ways the news arrives
+  (webhook, kvittering polling, nightly sweep). Two outcomes: `refund` leaves
+  the new agreement RUNNING (the supporter stopped and rejoined; continuing is
+  what they came for and Vipps cannot revive a stopped agreement, so the new
+  one IS their renewal), `refund-and-stop` also ends it because another
+  agreement of theirs still runs. Stop-before-refund, same order and the same
+  `stableUuid` keys as `refundMembershipPayment`, wrapped in try/catch so a
+  refund that fails costs an alarm and not the supporter's page.
+  `periodBoughtByAgreementId` is a nullable ID rather than a boolean ON
+  PURPOSE: `memberships.agreementId` is nullable and unknown provenance must
+  never move money.
+
+  **The constraint that shapes every fix in this area** (re-derived in
+  discussion 2026-09-01 — read this before redesigning it): the public join
+  page **charges before it knows who paid**. Identity comes from the payment
+  app's consent (`sub` → userinfo) and arrives WITH the capture, so a price
+  must be named on the draft before we can tell whether that person already
+  holds the period. Prevention is therefore impossible there and correction
+  after the fact is structural — flipping WHICH agreement survives does not
+  avoid the refund, because the refund is caused by charging before knowing,
+  not by who wins. The member's own page is the mirror image: it knows the
+  member BEFORE Vipps, which is why resuming from min-side (`handling=fortsett`,
+  `resumeCostsNow` in `@stottemedlem/db`) can draft with NO `initialCharge`
+  at all and move no money. Removing the round-trip from the PUBLIC page would
+  mean learning identity first (phone-number lookup, or a Vipps Login step) —
+  which leaks membership status to anyone who can type a phone number.
+  A duplicate payment can never create a duplicate period regardless:
+  `memberships` is UNIQUE on (member_id, period_year).
+  **Open question, deliberately not built:** a rejoin at a DIFFERENT tier is
+  an upgrade, and today's rule refunds it and leaves the member on the old
+  tier — us overruling them. Splitting on tier (same tier = accident, old
+  wins; different tier = intent, new wins) is the candidate fix, but the
+  pricing is the ugly part (they have paid both tiers for the period, and the
+  older payment may be outside Vipps' refund window), so tier changes probably
+  belong on min-side where the difference can be computed.
   **Renewals + repricing** (added 2026-08-20): `src/lib/renewals.ts`
   (`repriceAgreements`, `createDueRenewalCharges`) driven by `worker.ts`
   `scheduled` — 02:00 reconcile-then-reprice, 04:00 reprice-then-renew — with the jobs
