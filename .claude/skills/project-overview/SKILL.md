@@ -81,7 +81,12 @@ lives in `specs/`, kept in sync with code by a mandatory `Stop`-hook harness.
   (2026-09-01: the redundant-payment refund in `lib/membership.ts` logged at
   `warn` and raised BACKOFFICE-SERVER-6 on staging for a supporter who
   cancelled and re-joined — the refund working exactly as specified. Now
-  `info`; the "could not give back" catch stays `error`.) Since 2026-08-27
+  `info`; the "could not give back" catch stays `error`.)
+  Triage loop, no dashboard needed: paste the issue's dashboard URL straight
+  into the Sentry MCP's `get_sentry_resource` (it returns message, tags, the
+  `extra` context and the culprit URL), then `update_issue` with
+  `status:"resolved"` and a `reason:` — the reason is posted as a comment on
+  the issue's activity feed, which is where the "why this was noise" belongs. Since 2026-08-27
   BOTH deployed envs report to the ONE Sentry project (org `stottemedlem`,
   project `backoffice-server`, region de.sentry.io — the Sentry MCP's
   `find_dsns` can read the DSN, no need to ask the user), told apart by the
