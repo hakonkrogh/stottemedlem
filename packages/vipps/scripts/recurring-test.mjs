@@ -313,6 +313,70 @@ async function listAgreements() {
   }
 }
 
+/**
+ * Move a LIVE agreement to another membership tier, exactly as the product's
+ * `changeTier` does: product name, description, externalId and price all
+ * change in ONE update, on an agreement that keeps running
+ * (specs/use-cases/change-membership-tier.md).
+ *
+ * This is the only proof that Vipps accepts that combination on an ACTIVE
+ * agreement — the OpenAPI spec permits each field, but permitting each is not
+ * the same as accepting all four together, and being wrong means a member who
+ * changes tier is left mid-change. Reads the agreement back afterwards,
+ * because the update answers with no body.
+ */
+async function retierAgreement() {
+  const agreementId = currentAgreementId();
+  const before = await client.getAgreement(agreementId).catch(reportApiError);
+  if (before.status !== "ACTIVE") {
+    console.log(`Agreement ${agreementId} is ${before.status}, not ACTIVE — a tier change`);
+    console.log("only ever happens on a running agreement. Pass --agreement <an ACTIVE one>.");
+    process.exit(1);
+  }
+
+  const amount = typeof flags.amount === "string" ? Number(flags.amount) : null;
+  const name = typeof flags.name === "string" ? flags.name : null;
+  const description = typeof flags.description === "string" ? flags.description : null;
+  const externalId = typeof flags["external-id"] === "string" ? flags["external-id"] : null;
+  if (amount === null && !name && !description && !externalId) {
+    console.log("Nothing to change. Pass at least one of:");
+    console.log("  --amount <NOK>  --name <text>  --description <text>  --external-id <key:uuid>");
+    process.exit(1);
+  }
+
+  const body = {
+    ...(name ? { productName: name } : {}),
+    ...(description ? { productDescription: description } : {}),
+    ...(externalId ? { externalId } : {}),
+    ...(amount === null ? {} : { pricing: { amount: toOre(amount) } }),
+  };
+
+  console.log("before:");
+  print("  status", before.status);
+  print("  productName", before.productName);
+  print("  productDescription", before.productDescription);
+  print("  externalId", before.externalId);
+  print("  amount", `${fromOre(before.pricing.amount)} NOK`);
+  console.log(`\nPATCH ${Object.keys(body).join(", ")} …`);
+
+  await client.updateAgreement(agreementId, body, idempotencyKey()).catch(reportApiError);
+
+  const after = await client.getAgreement(agreementId).catch(reportApiError);
+  console.log("\nafter:");
+  print("  status", after.status);
+  print("  productName", after.productName);
+  print("  productDescription", after.productDescription);
+  print("  externalId", after.externalId);
+  print("  amount", `${fromOre(after.pricing.amount)} NOK`);
+
+  const stillRunning = after.status === "ACTIVE";
+  console.log(
+    stillRunning
+      ? "\n✓ the agreement is still ACTIVE — the member keeps the arrangement they approved"
+      : `\n✗ the agreement is now ${after.status} — a tier change must NEVER end it`,
+  );
+}
+
 /** Milliseconds as a human "3h 20m" — the number the retention answer is in. */
 function formatElapsed(ms) {
   const minutes = Math.round(ms / 60000);
@@ -760,6 +824,10 @@ function help() {
                     whole captured amount by default; --amount <NOK> rehearses the
                     partial refund only Vipps' portal can make  --description <text>
   agreements      List agreements  --status ACTIVE (one status per call)
+  retier          Move a LIVE agreement to another tier, as changeTier does:
+                  name + description + externalId + price in ONE update
+                    --amount <NOK>  --name <text>  --description <text>
+                    --external-id <tierKey:uuid>
   idempotency     Create a probe charge, then replay the identical request + key on
                   every later run to measure Idempotency-Key retention
                     --fresh (new probe)  --cleanup (cancel probe charge, clear)
@@ -785,6 +853,7 @@ const commands = {
   "cancel-charge": cancelCharge,
   refund: refundCharge,
   agreements: listAgreements,
+  retier: retierAgreement,
   idempotency: runIdempotencyProbe,
   stop: stopAgreement,
   webhooks,

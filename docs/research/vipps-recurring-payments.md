@@ -192,6 +192,16 @@ Sources:
   signed and active." (For RESERVE_CAPTURE initial charges, "successful payment" means
   the reservation succeeding; capture happens later.)
 
+- **An agreement may be drafted with NO `initialCharge` at all — VERIFIED against
+  apitest 2026-09-01.** `initialCharge` is optional in the v3 spec, but the docs only
+  ever describe activation *with* one, so this was an assumption the product depended on
+  and had never tested. `vt agreement --no-charge` drafted `agr_Xu7FEz2`: accepted, no
+  charge id returned, and a valid approval deeplink issued. This is what lets a member
+  resume inside a period they have already paid for without money moving and coming back
+  (`specs/concepts/member-self-service.md`). Note what is still untested: that such an
+  agreement goes ACTIVE on approval. Drafting is where a rejection would have happened,
+  but the approval half needs the MT app.
+
 Sources:
 - https://developer.vippsmobilepay.com/docs/APIs/recurring-api/recurring-api-quick-start/
 - https://developer.vippsmobilepay.com/docs/APIs/recurring-api/how-it-works/payment-agreement/
@@ -241,6 +251,15 @@ Sources:
 - Stop-and-recreate is nowhere recommended in the docs and forces the member through a
   full new in-app approval; reserve it for cases where the agreement's pricing *type*
   must change.
+- **All four tier fields change together in ONE PATCH on a LIVE agreement, and it stays
+  ACTIVE — VERIFIED against apitest 2026-09-01.** The docs permit each field separately,
+  which is not the same as accepting all of them in one request on a running agreement,
+  and being wrong would leave a member mid-change. Driven with `vt retier` on an ACTIVE
+  agreement: `productName`, `productDescription`, `externalId` and `pricing.amount` sent
+  together, all four read back changed, `status` still `ACTIVE`, and the same agreement
+  id throughout — the member keeps the arrangement they approved, its manage token and
+  their own page. Restored to its original values afterwards. This is what
+  `specs/use-cases/change-membership-tier.md` rests on.
 
 Sources:
 - https://developer.vippsmobilepay.com/docs/APIs/recurring-api/recurring-api-guide/ (sections "Update an agreement", "Legacy pricing")

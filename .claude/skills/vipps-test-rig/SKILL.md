@@ -39,6 +39,12 @@ vt refund                  # give a CHARGED charge's money back — the real pro
                            #   status + summary read back AFTER (the refund answers 204
                            #   with no body). Does NOT stop the agreement — run `stop` too,
                            #   as the product's own action does.
+vt retier                  # move a LIVE agreement to another tier the way changeTier
+                           #   does: productName + productDescription + externalId +
+                           #   pricing.amount in ONE update, then read back. Proves the
+                           #   agreement stays ACTIVE (specs/use-cases/change-membership-
+                           #   tier.md). --amount <NOK> --name --description --external-id
+                           #   RESTORE the values afterwards: the test agreement is shared.
 vt stop                    # merchant-side stop (irreversible)
 vt state | vt reset        # saved ids (packages/vipps/.vipps-test-state.json, gitignored)
 ```
@@ -145,6 +151,25 @@ future.
 **Set the agreement's `annual_fee_nok` equal to its tier's fee, or the reprice
 step two lines later really will change the price in the test user's app.**
 Clean up the seeded rows afterwards.
+
+## Settled by a live run — do not re-derive these
+
+Both were assumptions the product depended on; both held (2026-09-01, apitest).
+
+- **A draft with NO `initialCharge` is accepted.** `vt agreement --no-charge` → an
+  agreement id, no charge id, a valid approval deeplink. The resume-inside-a-paid-period
+  path is real. Still untested: that it goes ACTIVE on approval (needs the MT app).
+- **All four tier fields change in one PATCH on an ACTIVE agreement, which stays
+  ACTIVE.** `vt retier` on a live agreement: name, description, externalId and price all
+  read back changed, same agreement id, status unchanged. Written up in §7 and §9 of
+  `docs/research/vipps-recurring-payments.md`.
+
+**Getting credentials into a fresh worktree:** they are NOT in the main checkout — look
+in the sibling worktrees under `~/.superset/worktrees/<id>/*/apps/backoffice/.dev.vars`
+and copy the file across (it is gitignored in every one, so nothing can be committed).
+Check which keys are actually set before assuming a file is real — several worktrees
+carry the placeholder copy of `.dev.vars.example`, whose `VIPPS_*` values are all empty.
+`pnpm --filter @stottemedlem/vipps run smoke` confirms them without creating anything.
 
 ## Gotchas found the hard way
 

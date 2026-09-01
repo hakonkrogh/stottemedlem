@@ -465,7 +465,13 @@ lives in `specs/`, kept in sync with code by a mandatory `Stop`-hook harness.
   second half and swap only the key — `retierAgreementExternalId` in core does
   exactly that. Vipps goes FIRST and the local write follows (proved locally:
   with no Vipps keys the POST fails and `tier_id`, `annual_fee_nok`,
-  `external_id` and the notice count are all untouched). And note what `memberships` already
+  `external_id` and the notice count are all untouched).
+  **PROVED against apitest 2026-09-01** with `vt retier` (a new command in the
+  rig): all four fields sent in ONE update on an ACTIVE agreement, all four
+  read back changed, status still ACTIVE, same agreement id. The same run also
+  settled the OTHER long-open assumption — a draft with **no `initialCharge`**
+  is accepted (the resume path). Both are written into §7 and §9 of
+  `docs/research/vipps-recurring-payments.md`; neither needs re-deriving. And note what `memberships` already
   does: `tier_id` + `tier_name` + `annual_fee_nok` are FROZEN per period at
   payment time, so per-period tier history needs no new storage.
   **Still NOT built, deliberately:** the `refund-and-stop` half of a rejoin at
