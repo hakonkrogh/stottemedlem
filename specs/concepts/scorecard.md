@@ -29,12 +29,18 @@ perk of being a member, and a growth loop for the organization.
   never another's loss.
 - A scorecard is **per organization** — hearts count years supporting *that*
   organization and do not transfer between organizations.
-- **Hearts are drawn as an accumulating buildup, ten to a row**: each heart is
-  shown individually (like hearts in a video game HUD), a row fills up at ten,
-  and the eleventh heart starts a new row underneath. Only earned hearts are
-  drawn — there are no empty placeholders, because there is no maximum. Where
-  a surface is too tight for the full buildup (a list row, a spreadsheet
-  export), the count stands in ("❤️ 12").
+- **On the [member card](member-card.md), the years read as a streak** (chosen
+  2026-09-01): one big brand heart carrying the count — "3", then "3 år som
+  støttemedlem!" — rather than a heart per year. The card celebrates the
+  number, and the number stays legible whether the member is in year one or
+  year thirty. There is still no maximum and no empty placeholder — the heart
+  simply counts what is there.
+- **Elsewhere, hearts are drawn as an accumulating buildup, ten to a row**:
+  each heart shown individually (like hearts in a video game HUD), a row
+  filling up at ten, the eleventh starting a new row underneath — only earned
+  hearts, no empty placeholders, because there is no maximum. Where a surface
+  is too tight for the full buildup (a list row, a spreadsheet export), the
+  count stands in ("❤️ 12").
 - Hearts appear wherever the member is looked at: their own
   [member card](member-card.md) — which is how they reach the member's
   [self-service page](member-self-service.md) and their

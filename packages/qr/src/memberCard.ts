@@ -7,6 +7,14 @@
  * what rides along with their receipt. Keeping it a single artifact is the
  * point — the card someone shares must be the card they were shown.
  *
+ * The layout (chosen 2026-09-01 from a field study of wallet passes, badges
+ * and streak cards): an identity band across the top — the organization's
+ * logo and name on the left, the validity as a label-over-year corner on the
+ * right — then the member's name large, their years as a count inside one big
+ * heart (the streak), a celebratory line, the QR code, and the attribution.
+ * The card stays colour-neutral cream and ink so any organization's logo sits
+ * comfortably in the band; the heart red is the one strong colour.
+ *
  * Two constraints shape the drawing:
  *  - **No emoji.** The card is rasterized on a server with exactly one
  *    embedded font and no colour-emoji font, so every heart — including the
@@ -23,8 +31,8 @@
  *    more than a preview that crops well.
  *
  * Nothing here is placed at a hand-picked y: the layout stacks its blocks and
- * centres the stack, so a member with one heart and a member with four rows of
- * them both get a balanced card instead of one with a hole in it.
+ * centres the stack, so a first-year member and a decade-long one both get a
+ * balanced card instead of one with a hole in it.
  */
 
 import { create } from "qrcode";
@@ -54,23 +62,23 @@ const DEEP = "#43331f";
 const MUTED = "#7a6a58";
 const FAINT = "#9c8d7b";
 const HEART = "#e0182d";
+/** The heart of a lapsed card: still there, no longer cheering. */
+const HEART_PAST = "#c9ab9e";
 const ACCENT = "#b8860b";
-const ACCENT_LIGHT = "#f2b64a";
-const VALID_BG = "#e9f3ea";
 const VALID_INK = "#2f6b3a";
-const VALID_DOT = "#4c9a5e";
-const PAST_BG = "#f3ece1";
-const FONT = "Fraunces, Georgia, serif";
-
-const HEARTS_PER_ROW = 10;
-const HEART_GAP = 8;
-const CHIP_HEIGHT = 40;
+/**
+ * The stack a browser resolves when it draws the SVG itself: "Fraunces" is
+ * the rasterizer's embedded face; "Fraunces Variable" is the same family as
+ * the website loads (packages/ui tokens), so an inline card matches the
+ * shipped PNG instead of falling back to Georgia.
+ */
+const FONT = "Fraunces, 'Fraunces Variable', Georgia, serif";
 
 export interface MemberCardOptions {
   /** The member's own name; falls back to a neutral label when unknown. */
   memberName?: string | null;
   organizationName: string;
-  /** One heart per supported annual period (specs/concepts/scorecard.md). */
+  /** Supported annual periods — the count shown inside the streak heart (specs/concepts/scorecard.md). */
   hearts: number;
   /** Shown only when there are any — a zero is not worth showing. */
   recruits?: number;
@@ -103,10 +111,11 @@ function r(value: number): number {
 }
 
 /**
- * Fraunces averages a little over half the em per character. Erring wide is
- * deliberate: the rasterizer draws every line at the font's heavy default
- * instance, wider than the browser's variable rendering, and a line that
- * overruns the card in the shared PNG is worse than one shrunk a step early.
+ * Fraunces averages a little over half the em per character. The estimate was
+ * calibrated against the font's Black cut and kept after the embedded face
+ * became the brand's 650 cut (2026-09-01, narrower): erring wide is
+ * deliberate, because a line that overruns the card in the shared PNG is
+ * worse than one shrunk a step early.
  */
 const WIDTH_PER_POINT = 0.57;
 
@@ -131,7 +140,7 @@ interface TextOptions {
   size: number;
   fill: string;
   weight?: number;
-  anchor?: "start" | "middle";
+  anchor?: "start" | "middle" | "end";
   letterSpacing?: number;
 }
 
@@ -144,7 +153,7 @@ function textEl(x: number, y: number, value: string, options: TextOptions): stri
     `fill="${options.fill}"`,
   ];
   if (options.weight) parts.push(`font-weight="${options.weight}"`);
-  if (options.anchor === "middle") parts.push('text-anchor="middle"');
+  if (options.anchor && options.anchor !== "start") parts.push(`text-anchor="${options.anchor}"`);
   if (options.letterSpacing) parts.push(`letter-spacing="${options.letterSpacing}"`);
   return `<text ${parts.join(" ")}>${escapeXml(value)}</text>`;
 }
@@ -169,56 +178,57 @@ function qrModulesPath(url: string): { path: string; moduleCount: number } {
 }
 
 /**
- * The hearts as a game-HUD buildup: ten to a row, a new row underneath, only
- * ever the hearts actually earned (specs/concepts/scorecard.md). A member with
- * a long history gets smaller hearts rather than a card that overflows.
+ * The streak: the member's years as a number inside one big heart — the brand
+ * mark carrying the count, rather than a heart per year
+ * (specs/concepts/scorecard.md). The number's ink box centres at 0.47 of the
+ * heart's box — the shape's optical middle, tuned by eye between its red
+ * centroid (0.433, measured from a rendered card; reads high for a wide
+ * two-digit number) and its ink midpoint (0.51; reads low, the lobes carry
+ * the mass). Fraunces digits span roughly 0 to 0.72 em, so half their ink
+ * height is ~0.36 of the font size.
  */
-function heartGeometry(count: number, maxWidth: number) {
-  if (count <= 0) return { rows: 0, size: 0, step: 0, height: 0 };
-  const rows = Math.ceil(count / HEARTS_PER_ROW);
-  // Fit ten across the column, then shrink again if the rows stack too deep.
-  let size = Math.min(34, (maxWidth - HEART_GAP * (HEARTS_PER_ROW - 1)) / HEARTS_PER_ROW);
-  if (rows > 3) size = Math.min(size, 22);
-  const step = size + HEART_GAP;
-  return { rows, size, step, height: rows * step - HEART_GAP };
+function streakHeart(
+  cx: number,
+  top: number,
+  size: number,
+  count: number,
+  lapsed: boolean,
+): string {
+  const digits = String(count).length;
+  const numberSize = size * (digits >= 2 ? 0.3 : 0.4);
+  const baseline = top + size * 0.47 + numberSize * 0.36;
+  return `${heartPath(cx - size / 2, top, size, lapsed ? HEART_PAST : HEART)}
+  ${textEl(cx, baseline, String(count), { size: numberSize, weight: 650, fill: CARD, anchor: "middle" })}`;
 }
 
 /**
- * Draw the hearts, centred on `x` like every other line on the card. The last
- * row centres on its own width, so a part-full row does not hang.
+ * The validity as a wallet-pass corner: a small label over the year, in the
+ * band's top right — the one thing you check, in a fixed place. A lapsed card
+ * still tells the truth, just without the green.
  */
-function heartRows(count: number, x: number, y: number, maxWidth: number): string {
-  const { rows, size, step } = heartGeometry(count, maxWidth);
-  if (rows === 0) return "";
-
-  const shapes: string[] = [];
-  for (let row = 0; row < rows; row++) {
-    const inRow = Math.min(HEARTS_PER_ROW, count - row * HEARTS_PER_ROW);
-    const rowWidth = inRow * step - HEART_GAP;
-    const startX = x - rowWidth / 2;
-    for (let column = 0; column < inRow; column++) {
-      shapes.push(heartPath(startX + column * step, y + row * step, size, HEART));
-    }
-  }
-  return shapes.join("");
-}
-
-/**
- * The validity, as a status chip rather than a line of prose: whether the
- * membership is current is the question the card exists to answer at a
- * glance, so it gets a shape of its own.
- */
-function validityChip(x: number, y: number, text: string, lapsed: boolean): string {
-  const size = 18;
-  const width = estimateWidth(text, size) + 62;
-  const left = x - width / 2;
-  return `<rect x="${r(left)}" y="${r(y)}" width="${r(width)}" height="${CHIP_HEIGHT}" rx="${CHIP_HEIGHT / 2}" fill="${lapsed ? PAST_BG : VALID_BG}"/>
-  <circle cx="${r(left + 24)}" cy="${r(y + CHIP_HEIGHT / 2)}" r="5" fill="${lapsed ? FAINT : VALID_DOT}"/>
-  ${textEl(left + 40, y + CHIP_HEIGHT / 2 + 6.5, text, {
-    size,
-    weight: 600,
+function validityCorner(rightX: number, centerY: number, periodText: string, lapsed: boolean) {
+  const label = lapsed ? "STØTTET T.O.M." : "GYLDIG";
+  const labelSize = 13;
+  const valueSize = 27;
+  // letter-spacing widens the label beyond the plain estimate.
+  const width = Math.max(
+    estimateWidth(label, labelSize) + label.length * 2.4,
+    estimateWidth(periodText, valueSize),
+  );
+  const markup = `${textEl(rightX, centerY - 8, label, {
+    size: labelSize,
+    weight: 650,
+    fill: FAINT,
+    letterSpacing: 2.4,
+    anchor: "end",
+  })}
+  ${textEl(rightX, centerY + 22, periodText, {
+    size: valueSize,
+    weight: 650,
     fill: lapsed ? MUTED : VALID_INK,
+    anchor: "end",
   })}`;
+  return { markup, width };
 }
 
 /**
@@ -238,16 +248,11 @@ function qrPanel(
   <g transform="translate(${r(left + pad)} ${r(top + pad)}) scale(${r(qrSize / qr.moduleCount)})"><path d="${qr.path}" fill="${INK}"/></g>`;
 }
 
-/** The card's frame: cream ground, white card, warm accent along its top edge. */
+/** The card's frame: cream ground, white card, a hairline edge and a soft shadow. */
 function frame(width: number, height: number, inner: number, radius: number): string {
   const w = width - inner * 2;
   const h = height - inner * 2;
   return `<defs>
-    <linearGradient id="card-accent" x1="0" y1="0" x2="1" y2="0">
-      <stop offset="0" stop-color="${ACCENT_LIGHT}"/>
-      <stop offset="0.55" stop-color="#e8a33c"/>
-      <stop offset="1" stop-color="${HEART}"/>
-    </linearGradient>
     <clipPath id="card-clip"><rect x="${inner}" y="${inner}" width="${w}" height="${h}" rx="${radius}"/></clipPath>
     <filter id="card-shadow" x="-10%" y="-10%" width="120%" height="130%">
       <feDropShadow dx="0" dy="6" stdDeviation="10" flood-color="#8a7355" flood-opacity="0.16"/>
@@ -256,15 +261,6 @@ function frame(width: number, height: number, inner: number, radius: number): st
   <rect width="${width}" height="${height}" fill="${CREAM}"/>
   <rect x="${inner}" y="${inner}" width="${w}" height="${h}" rx="${radius}" fill="${CARD}" filter="url(#card-shadow)"/>
   <rect x="${inner}" y="${inner}" width="${w}" height="${h}" rx="${radius}" fill="none" stroke="${EDGE}" stroke-width="2"/>`;
-}
-
-/**
- * The warm strip along the card's top edge — the one bit of the product's own
- * colour on a card that otherwise belongs to the organization. Drawn after the
- * identity band, which would otherwise cover it.
- */
-function accentStrip(width: number, inner: number): string {
-  return `<g clip-path="url(#card-clip)"><rect x="${inner}" y="${inner}" width="${width - inner * 2}" height="9" fill="url(#card-accent)"/></g>`;
 }
 
 /** The brand attribution, with its heart drawn rather than typed. */
@@ -283,8 +279,9 @@ interface CardContent {
   memberName: string;
   orgName: string;
   hearts: number;
-  scoreLabel: string;
-  validity: string;
+  headline: string;
+  recruitLine: string | null;
+  periodText: string;
   lapsed: boolean;
   logoDataUri: string | null;
   qr: { path: string; moduleCount: number };
@@ -299,8 +296,9 @@ function logoCircle(cx: number, cy: number, size: number, dataUri: string): stri
 }
 
 /**
- * The card: the content down the middle of the page, at sizes a thumb-width
- * screen can actually read and a camera can scan.
+ * The card: an identity band across the top, then the member down the middle
+ * of the page, at sizes a thumb-width screen can actually read and a camera
+ * can scan.
  */
 function drawCard(content: CardContent): string {
   const width = MEMBER_CARD_WIDTH;
@@ -312,11 +310,15 @@ function drawCard(content: CardContent): string {
   const center = width / 2;
   const columnWidth = right - left;
 
-  const hasLogo = Boolean(content.logoDataUri);
-  const logoSize = 108;
-  const bandHeight = hasLogo ? 254 : 156;
+  // The band: logo and organization on the left, validity in the corner.
+  const bandHeight = 128;
   const bandBottom = inner + bandHeight;
-  const org = fitLine(content.orgName, columnWidth, 30, 17);
+  const bandCenter = inner + bandHeight / 2;
+  const hasLogo = Boolean(content.logoDataUri);
+  const logoSize = 76;
+  const corner = validityCorner(right, bandCenter, content.periodText, content.lapsed);
+  const orgLeft = hasLogo ? left + logoSize + 22 : left;
+  const org = fitLine(content.orgName, right - corner.width - 28 - orgLeft, 30, 16);
 
   const attributionBaseline = height - inner - 42;
   const ruleY = attributionBaseline - 42;
@@ -324,36 +326,51 @@ function drawCard(content: CardContent): string {
   const bodyHeight = ruleY - bodyTop;
 
   const name = fitLine(content.memberName, columnWidth, 48, 26);
-  const { height: heartsHeight } = heartGeometry(content.hearts, columnWidth);
-  const scoreBlock = content.hearts > 0 ? 30 + heartsHeight + 10 + 20 : 0;
   const nameAdvance = name.size * 0.92;
+
+  const heartSize = 176;
+  const headline = content.hearts > 0 ? fitLine(content.headline, columnWidth, 32, 22) : null;
+  // Heart, headline, and the recruit line under it — absent entirely at zero.
+  const streakBlock = headline
+    ? heartSize + 10 + headline.size + (content.recruitLine ? 34 : 0) + 34
+    : 0;
 
   // Big enough that a phone held up to it scans first time, and no bigger —
   // past that the code takes the card away from the member, who is its point.
   const qrSize = 196;
   const panel = qrSize + 36;
-  const qrCaptionOrg = fitLine(content.orgName, columnWidth, 15, 12);
-  const qrBlockHeight = 40 + panel + 60;
+  const qrCaptionOrg = fitLine(`i ${content.orgName}`, columnWidth, 15, 12);
+  const qrBlockHeight = panel + 60;
 
-  const blockHeight = nameAdvance + 16 + CHIP_HEIGHT + scoreBlock + qrBlockHeight;
+  const roleAdvance = 15;
+  const blockHeight = roleAdvance + 18 + nameAdvance + 30 + streakBlock + qrBlockHeight;
   const blockTop = bodyTop + (bodyHeight - blockHeight) / 2;
-  const chipY = blockTop + nameAdvance + 16;
-  const heartsY = chipY + CHIP_HEIGHT + 30;
-  const qrTop = chipY + CHIP_HEIGHT + scoreBlock + 40;
+
+  const roleBaseline = blockTop + roleAdvance;
+  const nameBaseline = roleBaseline + 18 + name.size * 0.74;
+  const heartTop = roleBaseline + 18 + nameAdvance + 30;
+  const headlineBaseline = heartTop + heartSize + 10 + (headline?.size ?? 0) * 0.74;
+  const recruitBaseline = headlineBaseline + 34;
+  const qrTop = blockTop + roleAdvance + 18 + nameAdvance + 30 + streakBlock;
 
   return `${frame(width, height, inner, 32)}
   <g clip-path="url(#card-clip)"><rect x="${inner}" y="${inner}" width="${width - inner * 2}" height="${bandHeight}" fill="${BAND}"/></g>
-  ${accentStrip(width, inner)}
   <line x1="${inner}" y1="${bandBottom}" x2="${width - inner}" y2="${bandBottom}" stroke="${EDGE}" stroke-width="2"/>
-${hasLogo ? `  ${logoCircle(center, inner + 46 + logoSize / 2, logoSize, content.logoDataUri ?? "")}\n` : ""}  ${textEl(center, bandBottom - 78, "STØTTEMEDLEM", { size: 13, weight: 700, fill: ACCENT, letterSpacing: 3.2, anchor: "middle" })}
-  ${textEl(center, bandBottom - 38, org.value, { size: org.size, weight: 600, fill: DEEP, anchor: "middle" })}
+${hasLogo ? `  ${logoCircle(left + logoSize / 2, bandCenter, logoSize, content.logoDataUri ?? "")}\n` : ""}  ${textEl(orgLeft, bandCenter + org.size * 0.35, org.value, { size: org.size, weight: 650, fill: DEEP })}
+  ${corner.markup}
 
-  ${textEl(center, blockTop + name.size * 0.74, name.value, { size: name.size, weight: 700, fill: INK, anchor: "middle" })}
-  ${validityChip(center, chipY, content.validity, content.lapsed)}
-${content.hearts > 0 ? `${heartRows(content.hearts, center, heartsY, columnWidth)}\n  ${textEl(center, heartsY + heartsHeight + 26, content.scoreLabel, { size: 17, fill: MUTED, anchor: "middle" })}\n` : ""}
+  ${textEl(center, roleBaseline, "STØTTEMEDLEM", { size: 15, weight: 650, fill: ACCENT, letterSpacing: 3.6, anchor: "middle" })}
+  ${textEl(center, nameBaseline, name.value, { size: name.size, weight: 650, fill: INK, anchor: "middle" })}
+${
+  headline
+    ? `  ${streakHeart(center, heartTop, heartSize, content.hearts, content.lapsed)}
+  ${textEl(center, headlineBaseline, headline.value, { size: headline.size, weight: 650, fill: content.lapsed ? MUTED : DEEP, anchor: "middle" })}
+${content.recruitLine ? `  ${textEl(center, recruitBaseline, content.recruitLine, { size: 20, fill: MUTED, anchor: "middle" })}\n` : ""}`
+    : ""
+}
   ${qrPanel(center - panel / 2, qrTop, qrSize, content.qr)}
-  ${textEl(center, qrTop + panel + 34, "Skann og bli støttemedlem", { size: 17, weight: 600, fill: MUTED, anchor: "middle" })}
-  ${textEl(center, qrTop + panel + 58, `i ${qrCaptionOrg.value}`, { size: qrCaptionOrg.size, fill: FAINT, anchor: "middle" })}
+  ${textEl(center, qrTop + panel + 34, "Skann og bli støttemedlem", { size: 17, weight: 650, fill: MUTED, anchor: "middle" })}
+  ${textEl(center, qrTop + panel + 58, qrCaptionOrg.value, { size: qrCaptionOrg.size, fill: FAINT, anchor: "middle" })}
 
   <line x1="${left}" y1="${ruleY}" x2="${right}" y2="${ruleY}" stroke="${HAIRLINE}" stroke-width="2"/>
   ${attribution(center, attributionBaseline)}`;
@@ -364,30 +381,31 @@ export function memberCardSvg(options: MemberCardOptions): string {
   const recruits = Math.max(0, Math.floor(options.recruits ?? 0));
   const orgName = options.organizationName.trim();
   const memberName = options.memberName?.trim() || "Støttemedlem";
+  const lapsed = Boolean(options.lapsed);
   const { width, height } = memberCardSize();
-
-  const yearLabel = hearts === 1 ? "1 år som støttemedlem" : `${hearts} år som støttemedlem`;
-  const recruitLabel =
-    recruits > 0 ? ` · vervet ${recruits} ${recruits === 1 ? "medlem" : "medlemmer"}` : "";
 
   const content: CardContent = {
     memberName,
     orgName,
     hearts,
-    scoreLabel: `${yearLabel}${recruitLabel}`,
-    validity: options.lapsed
-      ? `Støttet til og med ${options.periodText}`
-      : `Gyldig medlemskap ${options.periodText}`,
-    lapsed: Boolean(options.lapsed),
+    // The exclamation mark is the card cheering; a lapsed card stays factual.
+    headline: `${hearts} år som støttemedlem${lapsed ? "" : "!"}`,
+    recruitLine:
+      recruits > 0 ? `Vervet ${recruits} ${recruits === 1 ? "medlem" : "medlemmer"}` : null,
+    periodText: options.periodText,
+    lapsed,
     logoDataUri: options.logoDataUri ?? null,
     qr: qrModulesPath(options.joinUrl),
-    alt: `Medlemsbevis: ${memberName} er støttemedlem i ${orgName}, med ${hearts} hjerter.`,
+    alt: `Medlemsbevis: ${memberName} er støttemedlem i ${orgName}${
+      hearts > 0 ? ` på ${hearts}. året` : ""
+    }, ${lapsed ? `støttet til og med ${options.periodText}` : `gyldig ${options.periodText}`}.`,
   };
 
   const body = drawCard(content);
 
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}" width="${width}" height="${height}" role="img" aria-label="${escapeXml(content.alt)}">
   <title>${escapeXml(content.alt)}</title>
+  <style>text{font-variation-settings:'SOFT' 50}</style>
   ${body}
 </svg>
 `;

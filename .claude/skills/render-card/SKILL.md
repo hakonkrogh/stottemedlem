@@ -30,16 +30,27 @@ Examples:
 
 ## Why `--raster` is the pass that counts
 
-**resvg applies no variable font axes.** It draws every line at Fraunces'
-DEFAULT (heavy) instance, so rasterized text is both bolder and *wider* than
-what a browser — or Storybook — shows. A line that fits in Storybook can still
-overrun the card in the PNG people actually receive. This is why
-`memberCardSvg`'s width estimate is a deliberately wide 0.57 em per character;
-if you retune it, retune it against `--raster` output, never the browser.
+**resvg applies no variable font axes.** Since 2026-09-01 the embedded
+Fraunces.ttf is a STATIC instance at the website's brand cut (wght 650,
+SOFT 50, opsz 36) and every font-weight in the card SVG is 650, so browser and
+raster track each other closely — but resvg still ignores axes, features and
+weights entirely, so any future weight/axis idea must be baked into the font
+file, never expressed in the SVG. `memberCardSvg`'s width estimate stays a
+deliberately wide 0.57 em per character (calibrated against the old Black
+cut); if you retune it, retune it against `--raster` output, never the
+browser.
 
 The rasterizer also has no system fonts and cannot fetch anything, so this pass
 is what catches a missing embedded font (text renders as *nothing at all*) and
 a logo referenced by URL instead of carried as a data URI.
+
+resvg likewise ignores `font-variant-numeric` and `font-feature-settings`
+(tested 2026-09-01 trying to force lining figures): OpenType features cannot be
+toggled at all — and a browser WOULD honor them, so such attributes silently
+split Storybook from the shipped PNG. Solve glyph-placement problems with
+geometry (the embedded Fraunces' digit ink spans ~0 to 0.72 em; measure real
+extents with opentype.js against apps/backoffice/src/assets/fonts/Fraunces.ttf,
+or measure rendered pixels with pngjs), never with font features.
 
 ## Where this fits among the other loops
 
@@ -62,8 +73,9 @@ docs). Keep them in step with `apps/backoffice/src/components/MemberCard.stories
     node .claude/skills/render-card/render.mjs --case WithLogo --raster --time 3
 
 Measured 2026-08-31: **~310 ms per card** at the card's own width (~570 ms at
-1024 px) on an M-series Mac — resvg parses the whole 360 KB Fraunces for every
-call, so the cost is per render and does not amortize. A Cloudflare Worker is
+1024 px) on an M-series Mac — and unchanged (308 ms, re-measured 2026-09-01)
+after the embedded font shrank from 360 KB to a 73 KB static instance, so the
+cost is resvg's rendering itself, is per render, and does not amortize. A Cloudflare Worker is
 slower still, while the rest of this app's requests sit at **10–80 ms CPU**
 (`cloud-logs` → `cost`).
 

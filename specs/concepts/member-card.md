@@ -35,11 +35,23 @@ surface the member happens to be looking at.
   [receipt](payment-receipt.md)'s bookkeeping detail is secondary to it, and
   belongs below it or in an attachment.
 - **What the card shows**, and nothing more: the member's name, the
-  organization's name and logo, the hearts earned, the period the membership is
-  good for, the QR code, and the [brand attribution](brand-attribution.md) with
-  its [heart](brand-mark.md). It never shows the member's email, phone, what
-  they paid, or anything about the organization's other members — it is made to
-  be shown to strangers.
+  organization's name and logo, the years supported — as a count inside one
+  big heart, the streak ([scorecard](scorecard.md)) — the recruit count once
+  above zero, the period the membership is good for, the QR code, and the
+  [brand attribution](brand-attribution.md) with its [heart](brand-mark.md).
+  It never shows the member's email, phone, what they paid, or anything about
+  the organization's other members — it is made to be shown to strangers.
+- **The organization owns the top of the card; the member owns the middle.**
+  The card opens with an identity band — the organization's logo and name,
+  with the validity as a small label over the year in its corner, the one
+  thing a checker looks for kept in one fixed place — and then the member is
+  the subject: their name large, their streak, their QR code. The card itself
+  stays colour-neutral (cream and ink) so any organization's logo sits
+  comfortably; the heart red is the product's one strong colour on it.
+- **The card speaks the brand's one typeface.** It is set in the same Fraunces
+  cut the website's headings use — people meet the card in feeds, emails and
+  print, and it must read as the same brand on every channel. One face, one
+  cut, everywhere the product writes.
 - **The card as a picture is drawn once per version of itself.** A card is
   looked at, previewed by every feed it is pasted into, and attached to
   receipts, while what it shows changes only when the member's own facts change
@@ -98,6 +110,11 @@ surface the member happens to be looking at.
   someone — a zero is not worth showing.
 - **A card exists once the membership does.** A supporter who has started but
   not completed a payment has no card yet; there is nothing to prove.
+- **A lapsed card keeps the years and drops the cheer.** The validity corner
+  says "Støttet t.o.m." with the last supported year instead of "Gyldig", the
+  streak heart goes muted, and the exclamation mark goes — the years were real
+  and stay counted, but the card stops celebrating. It never pretends the
+  membership is current.
 - A card that no longer matches a membership reveals nothing — not the
   organization, not that some other card exists.
 - The card is a **member's** object. The organization's own unattributed QR
@@ -105,10 +122,9 @@ surface the member happens to be looking at.
   is a different thing with a different owner.
 
 ## Open questions
-- **Lapsed members.** A card for a member whose latest period has ended still
-  shows their hearts truthfully, but "supporting member" is then a past tense.
-  How openly the card should say so — and whether a lapsed card should invite
-  the member themselves back — is not settled.
+- **Inviting a lapsed member back.** How a lapsed card *says* it is lapsed is
+  settled (above); whether it should also invite the member themselves to
+  renew is not.
 - **Wallet passes.** Apple/Google Wallet is the obvious next surface for
   something called a card, and is deliberately not attempted yet.
 

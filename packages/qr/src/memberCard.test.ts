@@ -28,11 +28,15 @@ describe("memberCardSvg", () => {
     expect(memberCardSize()).toEqual({ width: MEMBER_CARD_WIDTH, height: MEMBER_CARD_HEIGHT });
   });
 
-  it("draws one heart per supported year, plus the brand mark", () => {
-    // Three earned hearts and the one in the attribution.
-    expect(countHearts(memberCardSvg(base))).toBe(4);
+  it("draws the years as one streak heart carrying the count, plus the brand mark", () => {
+    // The streak heart and the one in the attribution — never one per year.
+    expect(countHearts(memberCardSvg(base))).toBe(2);
+    expect(memberCardSvg(base)).toContain("3 år som støttemedlem!");
+    expect(countHearts(memberCardSvg({ ...base, hearts: 12 }))).toBe(2);
+    expect(memberCardSvg({ ...base, hearts: 12 })).toContain("12 år som støttemedlem!");
+    // Nothing to count means no streak heart at all — only the attribution's.
     expect(countHearts(memberCardSvg({ ...base, hearts: 0 }))).toBe(1);
-    expect(countHearts(memberCardSvg({ ...base, hearts: 12 }))).toBe(13);
+    expect(memberCardSvg({ ...base, hearts: 0 })).not.toContain("år som støttemedlem");
   });
 
   it("uses no emoji at all — the rasterizer has no font for them", () => {
@@ -45,25 +49,30 @@ describe("memberCardSvg", () => {
     expect(memberCardSvg(base)).toContain("støttemedlem.no");
   });
 
-  it("says who the member is, who they support, and for how long", () => {
+  it("says who the member is, who they support, and until when", () => {
     const svg = memberCardSvg(base);
     expect(svg).toContain("Kari Nordmann");
     expect(svg).toContain("Eksempel Musikkorps");
-    expect(svg).toContain("Gyldig medlemskap 2026");
+    // The validity corner: a label over the year, green while current.
+    expect(svg).toContain("GYLDIG");
+    expect(svg).toContain(">2026</text>");
   });
 
   it("tells the truth about a member whose period has passed", () => {
     const svg = memberCardSvg({ ...base, lapsed: true, periodText: "2024" });
-    expect(svg).toContain("Støttet til og med 2024");
-    expect(svg).not.toContain("Gyldig medlemskap");
-    // The hearts stay: those years were supported.
-    expect(countHearts(svg)).toBe(4);
+    expect(svg).toContain("STØTTET T.O.M.");
+    expect(svg).toContain(">2024</text>");
+    expect(svg).not.toContain("GYLDIG");
+    // The streak stays — those years were supported — but the cheer goes.
+    expect(svg).toContain("3 år som støttemedlem");
+    expect(svg).not.toContain("3 år som støttemedlem!");
+    expect(countHearts(svg)).toBe(2);
   });
 
   it("mentions recruits only when there are any", () => {
-    expect(memberCardSvg(base)).not.toContain("vervet");
-    expect(memberCardSvg({ ...base, recruits: 1 })).toContain("vervet 1 medlem");
-    expect(memberCardSvg({ ...base, recruits: 4 })).toContain("vervet 4 medlemmer");
+    expect(memberCardSvg(base)).not.toContain("Vervet");
+    expect(memberCardSvg({ ...base, recruits: 1 })).toContain("Vervet 1 medlem");
+    expect(memberCardSvg({ ...base, recruits: 4 })).toContain("Vervet 4 medlemmer");
   });
 
   it("stands without a name, because a member may not have shared one", () => {
@@ -99,8 +108,9 @@ describe("memberCardSvg", () => {
     for (const said of [
       "Kari Nordmann",
       "Eksempel Musikkorps",
-      "Gyldig medlemskap 2026",
-      "5 år som støttemedlem · vervet 2 medlemmer",
+      "GYLDIG",
+      "5 år som støttemedlem!",
+      "Vervet 2 medlemmer",
       "Skann og bli støttemedlem",
       "støttemedlem.no",
       'href="data:image/png;base64,AAAA"',
@@ -111,8 +121,8 @@ describe("memberCardSvg", () => {
 
   it("keeps every drawn thing inside the canvas, however much there is", () => {
     // The card is laid out by stacking, so the case that would overflow a
-    // hand-placed layout — a long name and four rows of hearts — is the one
-    // worth proving.
+    // hand-placed layout — long names, a two-digit streak, everything on — is
+    // the one worth proving.
     const crowded = {
       ...base,
       memberName: "Anne-Margrethe Wollertsen Bjørnstad",
