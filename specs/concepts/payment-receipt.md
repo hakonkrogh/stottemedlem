@@ -60,16 +60,25 @@ reconstruct one.
   own contact address, recorded when sent, brand-attributed.
 - **A receipt that failed to send is still owed.** The product decides who is
   owed one by comparing captured payments against recorded receipts, not by
-  remembering to send — so the send is retried until it succeeds, from
-  whichever path notices the capture first (the confirmation page, the
-  payment event, or the nightly run). A capture older than the sweep's window
-  is no longer chased; in particular, payments captured before this feature
-  existed never earn a late receipt.
+  remembering to send — so the send is retried until it succeeds. A capture
+  older than the sweep's window is no longer chased; in particular, payments
+  captured before this feature existed never earn a late receipt.
+- **Noticing a payment and sending its receipt are separate.** Whichever path
+  first learns of a capture — the confirmation page the supporter is standing
+  on, or the payment event from the provider — only records that a receipt is
+  owed and asks for it to be sent; the sending happens away from them, and the
+  nightly run remains the backstop. Nobody waits on a receipt: a supporter's
+  own page must never be slower, or fail, because a receipt was being made
+  behind it, and the provider must never have a payment event go unanswered
+  for the same reason. The receipt still normally arrives within seconds of
+  the payment.
 - A member without an email address gets no email; the confirmation page
   carries the same content, and the unreachable member is counted, never
   hidden.
-- Page and email present the same facts. The page additionally says where the
-  email went, so the member knows to look for it.
+- Page and email present the same facts. The page additionally names the
+  address the email goes to, so the member knows where to look — saying
+  whether it has gone yet or is on its way, never claiming a send that has
+  not happened.
 - A refund does not recall a receipt: the receipt documented a payment that
   really happened, and the refund produces its own trail
   ([refund a payment](../use-cases/refund-a-payment.md)).

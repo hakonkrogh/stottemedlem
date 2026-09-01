@@ -1,6 +1,6 @@
 import { memberCardSize } from "@stottemedlem/qr";
 import type { APIRoute } from "astro";
-import { renderCardPng } from "../../../lib/cardImage";
+import { storedCardPng } from "../../../lib/cardImage";
 import { getDb } from "../../../lib/db";
 import { loadMemberCard, renderMemberCardSvg } from "../../../lib/memberCard";
 
@@ -28,7 +28,14 @@ export const GET: APIRoute = async ({ params, url }) => {
     ? Math.min(MAX_WIDTH, Math.max(600, Math.round(parsed)))
     : memberCardSize().width;
 
-  const png = await renderCardPng(await renderMemberCardSvg(card), width);
+  // Drawn once per version of the card and kept (src/lib/cardImage.ts) — a
+  // shared card is previewed by every feed it is pasted into, and none of them
+  // should cost a fresh rasterization.
+  const png = await storedCardPng(
+    card.member.cardToken ?? params.token ?? "",
+    await renderMemberCardSvg(card),
+    width,
+  );
   const headers = new Headers({
     "Content-Type": "image/png",
     "Cache-Control": "public, max-age=300",

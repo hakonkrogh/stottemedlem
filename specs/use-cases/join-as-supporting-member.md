@@ -80,8 +80,10 @@ From the supporter's point of view:
    once the payment is confirmed, the page shows the documentation Norwegian
    bookkeeping rules ask of a membership-fee payment (bokføringsforskriften
    § 5-1-6b, jf. § 5-1-1 nr. 2–5 — the parties, what was paid for, the period,
-   the amount and its date), and the same receipt is emailed to the member.
-   The email cannot be declined; a member with no address still has the page.
+   the amount and its date), and the same receipt is emailed to the member —
+   sent away from the page, which names the address it goes to rather than
+   waiting for it. The email cannot be declined; a member with no address
+   still has the page.
 
 ## Acceptance criteria
 - [ ] A supporter can complete joining and payment without the administrator

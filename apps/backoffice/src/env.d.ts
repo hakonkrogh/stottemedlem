@@ -83,8 +83,17 @@ interface Env {
   VIPPS_WEBHOOK_SECRET?: string;
   /** KV cache for Vipps access tokens (1 h test / 24 h prod lifetime). */
   VIPPS_TOKENS: import("@cloudflare/workers-types").KVNamespace;
-  /** R2 bucket for uploaded org media (logo/banner images). */
+  /**
+   * R2 bucket for uploaded org media (logo/banner images), and the store for
+   * rendered member-card pictures (src/lib/cardImage.ts).
+   */
   MEDIA: import("@cloudflare/workers-types").R2Bucket;
+  /**
+   * Work handed off the request path — today the receipt sweep, which draws
+   * member cards and is far too expensive to run while a supporter waits
+   * (specs/concepts/payment-receipt.md). Consumed in src/worker.ts.
+   */
+  VIPPS_EVENTS: import("@cloudflare/workers-types").Queue;
 }
 
 // Astro v6+ removed `Astro.locals.runtime.env`; the Cloudflare adapter now
