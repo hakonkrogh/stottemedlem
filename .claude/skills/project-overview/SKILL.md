@@ -247,6 +247,23 @@ lives in `specs/`, kept in sync with code by a mandatory `Stop`-hook harness.
   only and are counted `unreachable` (self-limiting: they age out of the
   lookback). The fee-rule queries filter `kind = "fee-change"`, so receipt
   rows cannot disturb the 14-day fee rule.
+  **Sending moved OFF the request path 2026-09-01** (branch
+  receipts-off-the-request-path), because it took staging down with
+  Cloudflare error 1102: a receipt draws the member's card, and one
+  rasterization costs ~an order of magnitude more CPU than an entire ordinary
+  request (10–80 ms healthy; the kills sat at 1600–2010 ms), so two owed
+  receipts ended both the kvittering page and the webhook receiver — and dying
+  before `recordMemberNotice` kept them owed, so every Vipps retry repeated
+  it. Now: those two paths call `requestReceiptSweep(orgSlug, origin)`, which
+  puts ONE message on the existing `vipps-events` queue and never throws; the
+  `queue` handler in `worker.ts` (was a drop-everything stub) collapses a batch
+  to one sweep per org, acks on success and `retry()`s on failure. A run sends
+  at most `MAX_RECEIPTS_PER_RUN` (5) — the queue has the SAME CPU limit, so an
+  uncapped sweep would only move the failure — and `hasMoreToSend()` asks for
+  another sweep when it stopped short (only after progress, so a permanently
+  failing send cannot loop). The nightly cron is still the backstop. The page
+  therefore no longer knows the email has gone: it says "kommer også på
+  e-post til …" until a `receipt` notice exists.
   **Joining + the payment loop** (added 2026-08-20, same branch): public
   `POST /bli-medlem/[slug]/start` drafts the Vipps agreement (full annual fee
   as the agreement price, PRO-RATED initial charge) and 303s to Vipps;
@@ -455,7 +472,14 @@ lives in `specs/`, kept in sync with code by a mandatory `Stop`-hook harness.
   `/medlemsbevis/[token]`, so a change there lands on three public pages.
   Public at `/medlemsbevis/<cardToken>` (+ `/kort.svg`, `/kort.png`), embedded
   on min-side, kvittering and the receipt email (which now LEADS with the card
-  and attaches the PNG). Two separate secrets, and confusing them is the one
+  and attaches the PNG). **The PNG is stored, not re-rendered** (2026-09-01):
+  `storedCardPng(cardToken, svg, width)` in `src/lib/cardImage.ts` keeps it in
+  R2 (`MEDIA`) under `cards/<token>/<sha256 of the SVG>.png`, so the DRAWING is
+  the cache key — a new period, heart, recruit, name or logo is a different key
+  and nothing needs invalidating. Measured through `/kort.png`: 1089 ms drawn,
+  then 43 ms and 10 ms; a renamed member 375 ms and a different digest; the
+  name reverted, 12 ms and the original picture back. Prove it with
+  `routes.mjs … --repeat 3` (ms + digest per response). Two separate secrets, and confusing them is the one
   real hazard here: `supporting_members.card_token` is safe to post publicly,
   `membership_agreements.manage_token` can STOP the membership — never render
   the latter anywhere shareable. Referral: the QR carries `?verva=<cardToken>`
