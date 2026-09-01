@@ -231,6 +231,13 @@ description: Render any local URL (marketing/backoffice dev or preview server) t
   script (TS generics stripped) into one file with a local test image, shoot
   it via `file://` — validates geometry/fade visually, but it's a COPY, so
   re-copy after editing the component (verified 2026-08-12).
+  The kvittering page's confirmed-payment states (member card + receipt on
+  `/bli-medlem/<slug>/kvittering`) are unreachable this way even though the
+  page is public: they need `getVippsForOrg` to return a client (real Vipps
+  keys via WorkOS) AND a synced agreement, else `status` stays "unknown".
+  Review those blocks via the same scratchpad-harness copy (worked for the
+  torn-paper ReceiptPaper slip, 2026-09-01) or the vipps-test-rig for a real
+  end-to-end agreement.
 - **Fresh-worktree wrangler ordering:** run `pnpm install` BEFORE any
   `npx wrangler … --local`. In a worktree without node_modules, npx fetches
   the LATEST wrangler, whose workerd writes a `.wrangler/state` schema the
