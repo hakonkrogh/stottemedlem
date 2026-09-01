@@ -19,6 +19,8 @@ alias vt="pnpm --filter @stottemedlem/vipps run recurring-test"
 vt help                    # every command + flag
 vt webhooks register       # all 10 recurring events → <tunnel>/webhook, saves the secret
 vt agreement --amount 250  # yearly LEGACY agreement + first-year charge; prints URL + QR
+                           #   --no-charge omits initialCharge entirely (the resume
+                           #   path) · --public-url <https://host> skips the tunnel
 vt confirm                 # reprint the approval URL + QR (drafting again orphans the old one)
 vt status --watch          # polls until it leaves PENDING (approve in the MT app first)
 vt userinfo                # consented name/email/phone — 168-hour window
@@ -70,13 +72,22 @@ the DNS artifact below entirely.
 Every command takes `--agreement <id>`; without it the last drafted one is used.
 Credentials come from `apps/backoffice/.dev.vars` (`VIPPS_CLIENT_ID`,
 `VIPPS_CLIENT_SECRET`, `VIPPS_SUBSCRIPTION_KEY`, `VIPPS_MSN`). **The file is
-gitignored and worktrees don't inherit it** — a fresh worktree has no
-credentials anywhere (verified 2026-08-25: absent from every checkout on this
-machine); ask the user to drop the file in before planning any live run. The
+gitignored and worktrees don't inherit it** — so a fresh worktree has none of
+its own. It does NOT follow that the machine has none: this file used to say
+they were "absent from every checkout" (2026-08-25), and on 2026-09-01 they
+were sitting in a sibling worktree the whole time. Look before asking the
+user — see "Getting credentials into a fresh worktree" below. The
 state file (`.vipps-test-state.json`) is per-worktree too, so saved
 agreement/webhook ids from other sessions are gone — `vt agreements` finds a
 still-ACTIVE agreement without a new phone approval. Credentials-only
 check, creates nothing: `pnpm --filter @stottemedlem/vipps run smoke`.
+
+**A draft-only check needs no tunnel.** `requirePublicUrl` only wants a public
+HTTPS host for `merchantRedirectUrl`/`merchantAgreementUrl`, and Vipps just has
+to resolve it — so `vt agreement --public-url https://staging.app.xn--stttemedlem-hgb.no`
+drafts fine with nothing running locally. Start the tunnel only when something
+must actually call BACK into this machine: webhooks, or approving and landing
+on `/retur`.
 
 ## The two background processes
 
