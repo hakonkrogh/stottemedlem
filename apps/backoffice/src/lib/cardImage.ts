@@ -24,6 +24,24 @@ import fraunces from "../assets/fonts/Fraunces.ttf?inline";
 /** The card's own typeface must be named exactly as the SVG asks for it. */
 export const CARD_FONT_FAMILY = "Fraunces";
 
+/**
+ * The card with its typeface riding inside — for serving the SVG to browsers.
+ *
+ * An SVG embedded as `<img>` loads no webfonts, so without this the card's
+ * text falls back to Georgia on the very pages the card exists for. The font
+ * is the same 73 KB brand-cut instance the rasterizer embeds, carried as a
+ * data URI (~97 KB of base64 on the response, cacheable). The weight range
+ * spans the face so a browser never fakes a bold on top of it.
+ *
+ * Only the SERVED SVG gets this: the rasterizer holds the same font as bytes
+ * and needs no @font-face, and the stored-PNG cache keys digest the SVG, so
+ * injecting it there would only churn perfectly good cached pictures.
+ */
+export function withEmbeddedCardFont(svg: string): string {
+  const face = `<style>@font-face{font-family:${CARD_FONT_FAMILY};font-weight:300 900;src:url(${String(fraunces)}) format("truetype")}</style>`;
+  return svg.replace("</title>", `</title>\n  ${face}`);
+}
+
 let wasmReady: Promise<void> | null = null;
 let fontBytes: Uint8Array | null = null;
 

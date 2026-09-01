@@ -88,6 +88,11 @@ description: Render any local URL (marketing/backoffice dev or preview server) t
   numbers off user screen-recording frames. To READ such a
   phone video: no ffmpeg here — dump frames with a Swift
   AVAssetImageGenerator script (see scratchpad pattern), then Read the PNGs.
+- **Don't crop tall shots with `sips`** (hit 2026-09-01): `--cropOffset` silently
+  does nothing in every flag order tried — the output keeps the full height while
+  sips exits 0. For a page taller than one shot, just Read the full playwright
+  `--full-page` PNG (legible up to ~4000px tall), or take a second viewport shot
+  with a taller height arg via shot.sh.
 - Typical loop (marketing, static): `pnpm turbo build --filter=@stottemedlem/marketing
   && pnpm --filter @stottemedlem/marketing preview --port 4399 &` → shot → Read →
   iterate. (astro preview serves `dist/` live, so rebuild + reload is enough;
@@ -115,9 +120,15 @@ description: Render any local URL (marketing/backoffice dev or preview server) t
   backgrounded that way the task reports "completed, exit 0" while the server
   is dead and every later curl returns `000`, which reads as "Storybook is
   broken" rather than "nothing is running". From `packages/ui`:
-  `nohup pnpm exec storybook dev -p 6006 --no-open --quiet > /tmp/sb.log 2>&1 &
+  `nohup pnpm exec storybook dev -p 6006 --ci --no-open --quiet > /tmp/sb.log 2>&1 &
   disown`, then poll `curl -so /dev/null -w '%{http_code}' localhost:6006`
-  until it is 200 (about a second). Then shoot a story's iframe URL
+  until it is 200 (about a second). **Keep `--ci` and expect 6006 to be taken
+  by ANOTHER worktree's Storybook** (hit 2026-09-01): without `--ci` a busy
+  port wedges the process on an interactive "use 6007 instead?" prompt, and
+  meanwhile the OTHER instance answers your curl with 200 — its index.json
+  serves that worktree's (or zero) stories, so the poll lies. Pick a unique
+  port (e.g. 6016) and confirm index.json lists YOUR story ids before
+  shooting. Then shoot a story's iframe URL
   directly: `http://localhost:6006/iframe.html?id=<story-id>&viewMode=story`.
   Running Storybook did NOT dirty `package.json` / `pnpm-lock.yaml`
   (hash-checked before and after, 2026-08-31) — but `verify-workflow` warns it

@@ -3,7 +3,7 @@
 // gets held up to a camera.
 // It is the one surface a supporting member shows to strangers, so what needs
 // reviewing here is whether it still reads well when the inputs are awkward:
-// a very long name, a decade of hearts, an organization with no logo, a
+// a very long name, a two-digit streak, an organization with no logo, a
 // membership that has lapsed.
 //
 // Rendered from the real `memberCardSvg` output — see MemberCardStory.astro
@@ -33,22 +33,19 @@ export const WithLogo = { args: { ...base, logoDataUri: LOGO } };
 /** No logo uploaded yet — the name takes the whole width instead. */
 export const WithoutLogo = { args: base };
 
-/** The first year. One heart, and nothing pretending there should be more. */
+/** The first year. A streak of one, and nothing pretending there should be more. */
 export const FirstYear = { args: { ...base, hearts: 1, logoDataUri: LOGO } };
 
 /** Word of mouth paying off — the recruit count only appears once it is above zero. */
 export const WithRecruits = { args: { ...base, hearts: 6, recruits: 3, logoDataUri: LOGO } };
 
-/** Exactly ten: the row is full and no second row has started. */
-export const FullRow = { args: { ...base, hearts: 10, logoDataUri: LOGO } };
+/** Two digits in the streak heart — the number shrinks to stay inside. */
+export const DoubleDigit = { args: { ...base, hearts: 12, logoDataUri: LOGO } };
 
-/** Eleven starts a new row underneath, like hearts in a game HUD. */
-export const SecondRowStarted = { args: { ...base, hearts: 13, logoDataUri: LOGO } };
-
-/** A decade and more. Past three rows the hearts shrink rather than overflow. */
+/** A decade and more, with everything else on the card at once. */
 export const LongLoyalty = { args: { ...base, hearts: 34, recruits: 12, logoDataUri: LOGO } };
 
-/** Stopped supporting: the hearts stay — those years were real — but the card says so. */
+/** Stopped supporting: the streak stays — those years were real — but the cheer goes. */
 export const Lapsed = {
   args: { ...base, hearts: 3, periodText: "2024", lapsed: true, logoDataUri: LOGO },
 };

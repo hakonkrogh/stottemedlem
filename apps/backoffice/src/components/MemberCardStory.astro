@@ -9,13 +9,13 @@
 // `memberCardSvg` is a pure function, so this renders its real output inline.
 // Same drawing, same code path, no server.
 //
-// **What Storybook shows is not pixel-identical to what gets shared.** Here a
-// BROWSER draws the SVG, applying Fraunces' variable weights, so the secondary
-// lines come out light. The card people actually receive — the og:image, the
-// receipt attachment — is rasterized by resvg, which does not apply variable
-// axes and renders every line at the font's default (heavy) instance. So judge
-// layout, wrapping and hierarchy-by-size here, and check WEIGHT against the
-// real thing: `/medlemsbevis/<token>/kort.png` (see qr-codes.md).
+// **What Storybook shows is close to what gets shared, but not identical.**
+// Here a BROWSER draws the SVG with the website's "Fraunces Variable"
+// webfont; the shipped PNG is rasterized by resvg with the embedded static
+// brand cut (wght 650, SOFT 50 — see qr-codes.md). Both land on weight 650,
+// so they track each other closely; small optical-size differences remain,
+// so for a final call check `/medlemsbevis/<token>/kort.png` or
+// `render-card --raster`.
 import { type MemberCardOptions, memberCardSvg } from "@stottemedlem/qr";
 
 type Props = MemberCardOptions;

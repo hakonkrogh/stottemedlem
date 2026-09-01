@@ -17,8 +17,8 @@ Distinct from the *member's personal referral* QR (`specs/use-cases/earn-stars-a
   STACKED, not hand-placed at fixed `y`s, so a
   long name plus four rows of hearts still fits (a unit test asserts every
   placed x/y stays inside the canvas). Text width is estimated at 0.57 em per
-  character DELIBERATELY wide: resvg draws every line at Fraunces' heavy
-  default instance, wider than the browser's variable rendering. It **contains
+  character DELIBERATELY wide (calibrated against Fraunces' Black cut and kept
+  after the embedded face became the narrower brand 650 cut — see below). It **contains
   no emoji at all**: hearts, including the
   brand mark in the attribution, are `<path>` shapes, because the card is
   rasterized server-side with one embedded text font and no colour-emoji font.
@@ -71,15 +71,23 @@ Distinct from the *member's personal referral* QR (`specs/use-cases/earn-stars-a
   (2) a Worker has NO system fonts, and text in a font resvg does not hold
   renders as NOTHING — so `src/assets/fonts/Fraunces.ttf` (OFL, committed with
   its licence) is inlined by Vite (`?inline` → base64 data URI) and passed as
-  `fontBuffers`. resvg does not apply variable-font axes here, so weight
-  hierarchy on the card comes from size and colour, not `font-weight`.
-  **Consequence for review:** the `Backoffice/Medlemsbevis` stories
-  (`MemberCard.stories.ts` + the story-only `MemberCardStory.astro`, which
-  inlines the real `memberCardSvg` output because Storybook cannot serve the
-  `/medlemsbevis/...` image endpoint) are drawn by a BROWSER, which DOES apply
-  the variable weights — so the story looks lighter than the PNG anyone
-  actually receives. Judge layout and wrapping in Storybook; judge weight
-  against `/medlemsbevis/<token>/kort.png`.
+  `fontBuffers`. Since 2026-09-01 that file is a STATIC instance of Fraunces
+  at the website's brand cut (wght 650, SOFT 50, opsz 36, WONK 1 — matching
+  packages/ui tokens; 73 KB instead of the 360 KB variable file), produced with
+  `fonttools varLib.instancer`. resvg applies no variable axes or OpenType
+  features regardless, so weight hierarchy on the card comes from size and
+  colour — every `font-weight` in the SVG is 650 so BROWSERS drawing the same
+  SVG (whose stack falls through to "Fraunces Variable", the website's family)
+  land on the same weight, and the `Backoffice/Medlemsbevis` stories now match
+  the shipped PNG closely instead of looking lighter.
+  Surfaces embed the card as `<img src=…/kort.svg>`, and an SVG-as-image
+  cannot load webfonts — so the SERVED SVG carries the font itself:
+  `withEmbeddedCardFont` (cardImage.ts) injects the same 73 KB face as a
+  data-URI @font-face into the kort.svg response (~110 KB total, cacheable).
+  Only the served SVG gets it — the rasterizer holds the font as bytes, and
+  the stored-PNG cache keys digest the SVG, so injecting earlier would churn
+  cached pictures. Proof mechanism: load the SVG via `<img>` in a local HTML
+  (webfont CSS never applies there) and compare glyphs with/without.
 
 ## Open item — domain routing (decided intent, not wired)
 The embed snippet + QR payloads use `https://xn--stttemedlem-hgb.no` paths

@@ -1,4 +1,5 @@
 import type { APIRoute } from "astro";
+import { withEmbeddedCardFont } from "../../../lib/cardImage";
 import { getDb } from "../../../lib/db";
 import { loadMemberCard, renderMemberCardSvg } from "../../../lib/memberCard";
 
@@ -13,7 +14,7 @@ export const GET: APIRoute = async ({ params }) => {
   const card = await loadMemberCard(getDb(), params.token ?? "");
   if (!card) return new Response("Fant ikke medlemsbeviset", { status: 404 });
 
-  return new Response(await renderMemberCardSvg(card), {
+  return new Response(withEmbeddedCardFont(await renderMemberCardSvg(card)), {
     headers: {
       "Content-Type": "image/svg+xml; charset=utf-8",
       // Short: a card gains a heart the moment a renewal is paid, and the
