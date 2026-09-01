@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   countMemberStandings,
+  feeMayBeChargedNow,
   hasAcceptedDpa,
   isCurrentMember,
   isProfileComplete,
@@ -245,6 +246,25 @@ describe("owesFeeChangeNotice", () => {
     expect(owesFeeChangeNotice(standing({ tierFee: 300, knownFeeNok: 300, ripeFeeNok: 250 }))).toBe(
       false,
     );
+  });
+});
+
+describe("feeMayBeChargedNow", () => {
+  const cutoff = "2026-08-17";
+
+  it("holds back a fee change the member has not known long enough", () => {
+    expect(feeMayBeChargedNow({ kind: "fee-change", sentAt: "2026-08-30" }, cutoff)).toBe(false);
+  });
+
+  it("lets through a fee change the member has known since before the cutoff", () => {
+    expect(feeMayBeChargedNow({ kind: "fee-change", sentAt: "2026-08-01" }, cutoff)).toBe(true);
+  });
+
+  it("charges a tier the member chose themselves at once, however fresh", () => {
+    // The waiting period protects against the ORGANIZATION's changes. Making a
+    // member wait for their own decision would charge them the old amount for
+    // another period.
+    expect(feeMayBeChargedNow({ kind: "tier-choice", sentAt: "2026-08-31" }, cutoff)).toBe(true);
   });
 });
 

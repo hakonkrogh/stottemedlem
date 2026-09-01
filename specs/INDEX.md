@@ -53,6 +53,7 @@ The one message the product itself sends a member is the necessary
 | [Set up a supporting membership](use-cases/set-up-supporting-membership.md) | Draft | [Collecting annual support](problems/collecting-annual-support.md) |
 | [Join as a supporting member](use-cases/join-as-supporting-member.md) | Draft | [Collecting annual support](problems/collecting-annual-support.md) |
 | [Change the annual fee](use-cases/change-the-annual-fee.md) | Draft | [Collecting annual support](problems/collecting-annual-support.md) |
+| [Change membership tier](use-cases/change-membership-tier.md) | Draft | [Collecting annual support](problems/collecting-annual-support.md) |
 | [Curate the member list](use-cases/curate-member-list.md) | Draft | [Keeping an accurate list](problems/keeping-an-accurate-member-list.md) |
 | [Export the member list](use-cases/export-member-list.md) | Draft | [Keeping an accurate list](problems/keeping-an-accurate-member-list.md) |
 | [Renew annual membership](use-cases/renew-annual-membership.md) | Draft | [Keeping an accurate list](problems/keeping-an-accurate-member-list.md) |

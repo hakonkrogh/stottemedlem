@@ -72,6 +72,15 @@ the organization and without the organization having to answer.
   [membership tier](membership-tier.md) the organization no longer offers —
   that member goes to the [join page](join-page.md), which shows what is
   actually on offer today.
+- **It offers giving more, or less, without leaving.** While the membership
+  runs, the page shows the organization's other
+  [tiers](membership-tier.md) and what each costs a year, and moving to one is
+  done here ([change membership tier](../use-cases/change-membership-tier.md)).
+  A supporter who wants to give more should never have to cancel first. The
+  change takes no money at the time and applies from the next renewal, and the
+  page says so before the choice is made. It is offered only while the
+  membership runs — a member whose membership has ended is offered the way
+  back first — and never into a tier the organization no longer offers.
 - Ending is not the same as a refund: the period already paid for runs to its
   end, and the member stays on the organization's list for it. Only the
   continuation stops. Getting money back is a separate thing, and not the

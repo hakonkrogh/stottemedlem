@@ -267,7 +267,16 @@ export type NewMembershipCharge = typeof membershipCharges.$inferInsert;
  * (specs/concepts/member-notice.md): a coming price, or the receipt for a
  * payment already taken (specs/concepts/payment-receipt.md).
  */
-export type MemberNoticeKind = "fee-change" | "receipt";
+/**
+ * What a member notice records (specs/concepts/member-notice.md).
+ *
+ * `fee-change` and `receipt` are messages the product SENT. `tier-choice` is
+ * the member's own act — they picked a tier on their page, so they know its
+ * price better than any email could tell them. It is recorded here because
+ * this table is what answers "what does this member know their fee to be",
+ * which is what decides what they may be charged.
+ */
+export type MemberNoticeKind = "fee-change" | "receipt" | "tier-choice";
 
 /**
  * Notices actually delivered to a supporting member.

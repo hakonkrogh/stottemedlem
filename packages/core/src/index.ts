@@ -108,6 +108,20 @@ export function tierKeyFromAgreementExternalId(externalId: string): string | nul
 }
 
 /**
+ * The same agreement's `externalId` under a different tier: the tier key is
+ * replaced, the identifier after it kept.
+ *
+ * A member moving between tiers keeps the arrangement they already have
+ * (specs/use-cases/change-membership-tier.md) — only what it is FOR changes.
+ * Keeping the second half means the agreement Vipps knows is still the same
+ * one when read back, while the key still names the tier it is now for.
+ */
+export function retierAgreementExternalId(externalId: string, tierKey: string): string {
+  const colon = externalId.indexOf(":");
+  return tierAgreementExternalId(tierKey, colon > 0 ? externalId.slice(colon + 1) : externalId);
+}
+
+/**
  * Canonical public origin, punycode form of støttemedlem.no. Anything printed
  * or embedded off-site (QR payloads, embed snippets) must use this ASCII form —
  * a raw ø breaks some scanners/clients.

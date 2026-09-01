@@ -8,6 +8,7 @@ import {
   getOrganizationBySlug,
   hasOtherRunningAgreement,
   listMembershipHistory,
+  listMembershipTiers,
   resumeCostsNow,
 } from "@stottemedlem/db";
 import Alert from "@stottemedlem/ui/components/Alert.astro";
@@ -20,7 +21,7 @@ import MemberCardFigure from "../../../components/MemberCardFigure.astro";
 import PublicShell from "../../../layouts/PublicShell.astro";
 import { getDb } from "../../../lib/db";
 import { loadMemberCardForMemberId, memberCardUrl } from "../../../lib/memberCard";
-import { publicOrigin, startJoin } from "../../../lib/membership";
+import { changeTier, publicOrigin, startJoin } from "../../../lib/membership";
 import { periods } from "../../../lib/periods";
 import { getVippsForOrg } from "../../../lib/vipps";
 import { getWorkOS } from "../../../lib/workos";
@@ -47,6 +48,13 @@ if (!agreement || agreement.orgId !== org.id) {
 let stopped = agreement.status === "STOPPED" || agreement.status === "EXPIRED";
 let stopFailed = false;
 let resumeFailed = false;
+let tierChangeFailed = false;
+let changedToTierName: string | null = null;
+// What the arrangement is for right now. A successful change moves these on,
+// so everything below describes the membership the member is leaving with
+// rather than the one they arrived on.
+let tierId = agreement.tierId;
+let annualFeeNok = agreement.annualFeeNok;
 // The member asked to be forgotten and it worked. Their token is void from
 // that moment, so this page can never be reached again — which is why the
 // confirmation has to be rendered here and now, not redirected to.
@@ -57,8 +65,34 @@ let eraseFailed = false;
 // the arrangement, or ending it AND erasing the person behind it. Erasing is
 // deliberately the same button plus a confirmation rather than a hidden
 // setting — it is the member's right, not an advanced option.
-const action =
-  Astro.request.method === "POST" ? (await Astro.request.formData()).get("handling") : null;
+const form = Astro.request.method === "POST" ? await Astro.request.formData() : null;
+const action = form?.get("handling") ?? null;
+
+// Giving more (or less) without leaving and coming back
+// (specs/use-cases/change-membership-tier.md). The arrangement the member
+// already approved is kept and re-pointed at the other tier — no new
+// agreement, no new manage token, and no money now: the new price applies
+// from the next renewal, like every other fee change.
+if (action === "bytt" && !stopped && agreement.memberId) {
+  const chosen = form?.get("medlemskap");
+  const tier = typeof chosen === "string" ? await getMembershipTier(db, org.id, chosen) : null;
+  const vipps = await getVippsForOrg(getWorkOS(), org.workosOrgId);
+  // Never into a membership the organization has stopped offering, and never
+  // a "change" to the tier they are already on.
+  if (tier && !tier.archivedAt && tier.id !== tierId && vipps) {
+    try {
+      await changeTier(db, vipps, org, agreement, tier);
+      tierId = tier.id;
+      annualFeeNok = tier.annualFeeNok;
+      changedToTierName = tier.name;
+    } catch (error) {
+      console.error("could not change tier", error);
+      tierChangeFailed = true;
+    }
+  } else {
+    tierChangeFailed = true;
+  }
+}
 
 // Changing their mind back is as much the member's to do as ending it was
 // (specs/concepts/member-self-service.md). A payment app cannot revive a
@@ -67,7 +101,7 @@ const action =
 // period is already theirs. That is the whole reason this belongs on this
 // page rather than on the public join page, where nobody has a name yet.
 if (action === "fortsett" && stopped && agreement.memberId) {
-  const tier = await getMembershipTier(db, org.id, agreement.tierId);
+  const tier = await getMembershipTier(db, org.id, tierId);
   const vipps = await getVippsForOrg(getWorkOS(), org.workosOrgId);
   // Never a second arrangement alongside a running one, and never back into a
   // membership the organization has stopped offering — those go through the
@@ -159,7 +193,7 @@ const chargedElsewhere =
 // alongside an arrangement of theirs that already renews.
 const resumeTier =
   stopped && agreement.memberId && !erased && !chargedElsewhere
-    ? await getMembershipTier(db, org.id, agreement.tierId)
+    ? await getMembershipTier(db, org.id, tierId)
     : null;
 const canResume = Boolean(resumeTier && !resumeTier.archivedAt);
 // Inside a period they paid for, resuming costs nothing and only starts the
@@ -169,6 +203,14 @@ const resumeNok =
   canResume && resumeTier && resumeCostsNow(current?.periodYear ?? null, periods.periodFor().year)
     ? periods.proratedJoinFeeNok(resumeTier.annualFeeNok, new Date())
     : null;
+
+// The other tiers on offer, for a member whose arrangement still runs
+// (specs/use-cases/change-membership-tier.md). An organization with a single
+// tier offers nothing to change to, and says nothing about it.
+const otherTiers =
+  !stopped && agreement.memberId && !erased
+    ? (await listMembershipTiers(db, org.id)).filter((tier) => tier.id !== tierId)
+    : [];
 
 // The page is the card, then the paperwork (specs/concepts/member-card.md).
 // What the card already says — the hearts collected, the year it is good for —
@@ -195,7 +237,7 @@ const statusLine = current
         ? chargedElsewhere
           ? "Denne avtalen fornyes ikke."
           : "Den fornyes ikke."
-        : `Fornyes automatisk ved årsskiftet til ${agreement.annualFeeNok} kr i året.`,
+        : `Fornyes automatisk ved årsskiftet til ${annualFeeNok} kr i året.`,
     ].join(" ")
   : `Medlemskapet i ${org.name} er ikke bekreftet ennå.`;
 
@@ -249,6 +291,8 @@ const title = `Ditt støttemedlemskap — ${org.name}`;
     {stopFailed && <Alert variant="error">Vi fikk ikke stoppet medlemskapet nå. Prøv igjen om litt.</Alert>}
     {resumeFailed && <Alert variant="error">Vi fikk ikke startet medlemskapet igjen nå. Prøv igjen om litt, eller meld deg inn på nytt fra støttemedlemssiden.</Alert>}
     {eraseFailed && !stopFailed && <Alert variant="error">Vi fikk ikke slettet opplysningene nå. Prøv igjen om litt.</Alert>}
+    {changedToTierName && <Alert variant="success">Du støtter nå {org.name} med {changedToTierName}. Den nye prisen gjelder fra neste fornyelse — du er ikke belastet noe nå.</Alert>}
+    {tierChangeFailed && <Alert variant="error">Vi fikk ikke endret støttenivået nå. Prøv igjen om litt.</Alert>}
 
     {
       stopped ? (
@@ -291,6 +335,31 @@ const title = `Ditt støttemedlemskap — ${org.name}`;
             Sier du opp, står du som støttemedlem ut året du har betalt for — du blir bare ikke
             belastet på nytt.
           </Text>
+        </Stack>
+      )
+    }
+
+    {/* Giving more, or less, without leaving (specs/use-cases/
+        change-membership-tier.md). One form per tier rather than a chooser:
+        the member sees what each level costs before pressing, and it works
+        with no JavaScript, like every other action on this page. */}
+    {
+      !stopped && otherTiers.length > 0 && (
+        <Stack gap="sm">
+          <Heading level={2}>Endre støttenivået ditt</Heading>
+          <Text>
+            Du kan gi mer eller mindre til {org.name} uten å melde deg ut og inn igjen. Du beholder
+            avtalen du har, og betaler ingenting nå — den nye prisen gjelder fra neste fornyelse.
+          </Text>
+          {otherTiers.map((tier) => (
+            <form method="post">
+              <input type="hidden" name="handling" value="bytt" />
+              <input type="hidden" name="medlemskap" value={tier.id} />
+              <Button type="submit" variant="secondary">
+                Bytt til {tier.name} — {tier.annualFeeNok} kr i året
+              </Button>
+            </form>
+          ))}
         </Stack>
       )
     }

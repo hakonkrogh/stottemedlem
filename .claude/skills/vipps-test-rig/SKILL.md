@@ -19,6 +19,8 @@ alias vt="pnpm --filter @stottemedlem/vipps run recurring-test"
 vt help                    # every command + flag
 vt webhooks register       # all 10 recurring events → <tunnel>/webhook, saves the secret
 vt agreement --amount 250  # yearly LEGACY agreement + first-year charge; prints URL + QR
+                           #   --no-charge omits initialCharge entirely (the resume
+                           #   path) · --public-url <https://host> skips the tunnel
 vt confirm                 # reprint the approval URL + QR (drafting again orphans the old one)
 vt status --watch          # polls until it leaves PENDING (approve in the MT app first)
 vt userinfo                # consented name/email/phone — 168-hour window
@@ -39,6 +41,12 @@ vt refund                  # give a CHARGED charge's money back — the real pro
                            #   status + summary read back AFTER (the refund answers 204
                            #   with no body). Does NOT stop the agreement — run `stop` too,
                            #   as the product's own action does.
+vt retier                  # move a LIVE agreement to another tier the way changeTier
+                           #   does: productName + productDescription + externalId +
+                           #   pricing.amount in ONE update, then read back. Proves the
+                           #   agreement stays ACTIVE (specs/use-cases/change-membership-
+                           #   tier.md). --amount <NOK> --name --description --external-id
+                           #   RESTORE the values afterwards: the test agreement is shared.
 vt stop                    # merchant-side stop (irreversible)
 vt state | vt reset        # saved ids (packages/vipps/.vipps-test-state.json, gitignored)
 ```
@@ -64,13 +72,22 @@ the DNS artifact below entirely.
 Every command takes `--agreement <id>`; without it the last drafted one is used.
 Credentials come from `apps/backoffice/.dev.vars` (`VIPPS_CLIENT_ID`,
 `VIPPS_CLIENT_SECRET`, `VIPPS_SUBSCRIPTION_KEY`, `VIPPS_MSN`). **The file is
-gitignored and worktrees don't inherit it** — a fresh worktree has no
-credentials anywhere (verified 2026-08-25: absent from every checkout on this
-machine); ask the user to drop the file in before planning any live run. The
+gitignored and worktrees don't inherit it** — so a fresh worktree has none of
+its own. It does NOT follow that the machine has none: this file used to say
+they were "absent from every checkout" (2026-08-25), and on 2026-09-01 they
+were sitting in a sibling worktree the whole time. Look before asking the
+user — see "Getting credentials into a fresh worktree" below. The
 state file (`.vipps-test-state.json`) is per-worktree too, so saved
 agreement/webhook ids from other sessions are gone — `vt agreements` finds a
 still-ACTIVE agreement without a new phone approval. Credentials-only
 check, creates nothing: `pnpm --filter @stottemedlem/vipps run smoke`.
+
+**A draft-only check needs no tunnel.** `requirePublicUrl` only wants a public
+HTTPS host for `merchantRedirectUrl`/`merchantAgreementUrl`, and Vipps just has
+to resolve it — so `vt agreement --public-url https://staging.app.xn--stttemedlem-hgb.no`
+drafts fine with nothing running locally. Start the tunnel only when something
+must actually call BACK into this machine: webhooks, or approving and landing
+on `/retur`.
 
 ## The two background processes
 
@@ -145,6 +162,25 @@ future.
 **Set the agreement's `annual_fee_nok` equal to its tier's fee, or the reprice
 step two lines later really will change the price in the test user's app.**
 Clean up the seeded rows afterwards.
+
+## Settled by a live run — do not re-derive these
+
+Both were assumptions the product depended on; both held (2026-09-01, apitest).
+
+- **A draft with NO `initialCharge` is accepted.** `vt agreement --no-charge` → an
+  agreement id, no charge id, a valid approval deeplink. The resume-inside-a-paid-period
+  path is real. Still untested: that it goes ACTIVE on approval (needs the MT app).
+- **All four tier fields change in one PATCH on an ACTIVE agreement, which stays
+  ACTIVE.** `vt retier` on a live agreement: name, description, externalId and price all
+  read back changed, same agreement id, status unchanged. Written up in §7 and §9 of
+  `docs/research/vipps-recurring-payments.md`.
+
+**Getting credentials into a fresh worktree:** they are NOT in the main checkout — look
+in the sibling worktrees under `~/.superset/worktrees/<id>/*/apps/backoffice/.dev.vars`
+and copy the file across (it is gitignored in every one, so nothing can be committed).
+Check which keys are actually set before assuming a file is real — several worktrees
+carry the placeholder copy of `.dev.vars.example`, whose `VIPPS_*` values are all empty.
+`pnpm --filter @stottemedlem/vipps run smoke` confirms them without creating anything.
 
 ## Gotchas found the hard way
 
