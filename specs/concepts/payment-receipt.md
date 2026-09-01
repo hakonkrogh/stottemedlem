@@ -46,6 +46,12 @@ reconstruct one.
   (merverdiavgiftsloven § 3-13) — in plain words, "medlemskontingent er
   unntatt mva". No sequential document number is required for membership
   fees, and none is invented.
+- **On the page, the receipt looks like one.** The confirmation page draws the
+  payment documentation on its own slip of white paper, torn at the top and
+  bottom as if off a receipt roll, so it reads as the document it is rather
+  than as one more section of the page. The page does not ask the member to
+  keep the receipt — a web page offers them no way to — it instead names the
+  email address the same receipt goes to.
 - **The receipt adheres to the law without referring to it.** The statutes
   above ground what the receipt must contain; they are never cited at the
   member. A receipt is a thank-you that happens to be complete

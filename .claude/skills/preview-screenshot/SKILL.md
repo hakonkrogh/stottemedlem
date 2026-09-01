@@ -231,6 +231,14 @@ description: Render any local URL (marketing/backoffice dev or preview server) t
   script (TS generics stripped) into one file with a local test image, shoot
   it via `file://` — validates geometry/fade visually, but it's a COPY, so
   re-copy after editing the component (verified 2026-08-12).
+  The kvittering page's confirmed-payment states (member card + receipt on
+  `/bli-medlem/<slug>/kvittering`) are unreachable this way even though the
+  page is public: they need `getVippsForOrg` to return a client (real Vipps
+  keys via WorkOS) AND a synced agreement, else `status` stays "unknown".
+  The receipt slip has a story — `backoffice-kvittering--default` (+
+  `--without-name`, `--long-values`), rendering the page's receipt block via
+  the story-only `ReceiptPaperStory.astro` wrapper (keep it in step with the
+  page). For the full page with a real agreement, use the vipps-test-rig.
 - **Fresh-worktree wrangler ordering:** run `pnpm install` BEFORE any
   `npx wrangler … --local`. In a worktree without node_modules, npx fetches
   the LATEST wrangler, whose workerd writes a `.wrangler/state` schema the
