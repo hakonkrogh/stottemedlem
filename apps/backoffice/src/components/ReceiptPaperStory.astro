@@ -1,0 +1,44 @@
+---
+// STORY-ONLY wrapper for the receipt slip on the confirmation page
+// (specs/concepts/payment-receipt.md). Nothing in the app imports it.
+//
+// The kvittering page only shows its receipt after a confirmed, synced Vipps
+// payment, which Storybook (and local dev without real Vipps keys) can never
+// have. So the story rebuilds the page's receipt block around the same
+// components — ReceiptPaper wrapping Heading + InfoList — with the receipt
+// fields as props. Keep the structure in step with
+// src/pages/bli-medlem/[slug]/kvittering.astro.
+import Heading from "@stottemedlem/ui/components/Heading.astro";
+import InfoList from "@stottemedlem/ui/components/InfoList.astro";
+import Stack from "@stottemedlem/ui/components/Stack.astro";
+import ReceiptPaper from "./ReceiptPaper.astro";
+
+interface Props {
+  seller: string;
+  memberLabel: string | null;
+  what: string;
+  period: string;
+  paid: string;
+}
+const { seller, memberLabel, what, period, paid } = Astro.props;
+---
+
+<ReceiptPaper>
+  <Stack gap="sm">
+    <Heading level={2}>Kvittering</Heading>
+    <InfoList
+      items={[
+        { label: "Organisasjon", value: seller },
+        { label: "Medlem", value: memberLabel },
+        { label: "Gjelder", value: what },
+        { label: "Periode", value: period },
+        { label: "Betalt", value: paid },
+        {
+          label: "Merverdiavgift",
+          value: "0 kr",
+          hint: "Medlemskontingent er unntatt mva.",
+        },
+      ]}
+    />
+  </Stack>
+</ReceiptPaper>

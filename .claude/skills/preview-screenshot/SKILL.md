@@ -235,9 +235,10 @@ description: Render any local URL (marketing/backoffice dev or preview server) t
   `/bli-medlem/<slug>/kvittering`) are unreachable this way even though the
   page is public: they need `getVippsForOrg` to return a client (real Vipps
   keys via WorkOS) AND a synced agreement, else `status` stays "unknown".
-  Review those blocks via the same scratchpad-harness copy (worked for the
-  torn-paper ReceiptPaper slip, 2026-09-01) or the vipps-test-rig for a real
-  end-to-end agreement.
+  The receipt slip has a story — `backoffice-kvittering--default` (+
+  `--without-name`, `--long-values`), rendering the page's receipt block via
+  the story-only `ReceiptPaperStory.astro` wrapper (keep it in step with the
+  page). For the full page with a real agreement, use the vipps-test-rig.
 - **Fresh-worktree wrangler ordering:** run `pnpm install` BEFORE any
   `npx wrangler … --local`. In a worktree without node_modules, npx fetches
   the LATEST wrangler, whose workerd writes a `.wrangler/state` schema the
