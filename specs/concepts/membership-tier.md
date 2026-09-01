@@ -55,6 +55,16 @@ organization sees in the Vipps portal — always names the tier.
 - Tier changes (name, description, fee) apply to **future** joins and
   renewals; they never retroactively alter what was already paid. A fee
   change reaches existing members' agreements at their next renewal.
+- **A member may move between tiers**, in either direction, without leaving
+  and joining again ([change membership tier](../use-cases/change-membership-tier.md)).
+  The arrangement they already have is kept and pointed at the other tier —
+  what a supporter gives is theirs to decide, and having to cancel in order
+  to give *more* would be the product working against both sides. The move
+  costs nothing at the time and takes effect at the next renewal, like every
+  other fee change. An archived tier cannot be moved to.
+- What a period was paid under — the tier, its name, and the fee — is recorded
+  with the period itself and never restated. Moving tiers changes what the
+  member pays next, never what they paid.
 - Tiers are **archived, never deleted**: existing memberships may reference
   them. An archived tier disappears from the
   [join page](join-page.md) and can no longer be joined, but keeps

@@ -76,6 +76,15 @@ From the supporter's point of view:
    they already had one still running, that one continues instead and the new
    one is ended, because two live arrangements for one supporter is next
    period's double payment already promised.
+   **Whichever arrangement survives is the one whose tier they are on.** A
+   supporter who joins again at a *different* tier has said something, and
+   when the new arrangement is the one that carries on, that is the tier they
+   keep — recorded as their own choice, so the next renewal charges it
+   ([change membership tier](change-membership-tier.md)). Where instead their
+   older arrangement is the one still running, nothing is concluded from the
+   one being ended: a second join is too easily an accident to re-price
+   somebody from, and their [own page](../concepts/member-self-service.md) is
+   where they change tier deliberately.
 8. The confirmation is also a **[payment receipt](../concepts/payment-receipt.md)**:
    once the payment is confirmed, the page shows the documentation Norwegian
    bookkeeping rules ask of a membership-fee payment (bokføringsforskriften

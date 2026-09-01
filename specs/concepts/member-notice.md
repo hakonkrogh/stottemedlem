@@ -50,6 +50,14 @@ decides what they may be charged.
 - **Every notice sent is recorded** — to which member, about what, saying which
   amount, and when. The record is what lets a later payment prove it was not a
   surprise.
+- The same record also holds **what the member decided for themselves**: a
+  member who picks a [tier](membership-tier.md) on their own page knows that
+  price better than any message could tell them
+  ([change membership tier](../use-cases/change-membership-tier.md)). It is
+  kept here because this record answers one question — *what does this member
+  understand their price to be* — and that answer is what decides what they
+  may be charged. A choice is not an email: nothing is sent, because the
+  member is the one who made it.
 - A notice states what is happening, when it takes effect, and how to stop it.
   A notice with nothing the member can do about it is a nuisance. The one
   exception is the [payment receipt](payment-receipt.md), whose point is

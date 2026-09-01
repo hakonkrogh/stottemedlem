@@ -31,6 +31,7 @@ import {
   referredJoinPath,
   refundRefusal,
   renewalPeriodYear,
+  retierAgreementExternalId,
   slugifyOrganizationName,
   stableUuid,
   tierAgreementExternalId,
@@ -113,6 +114,29 @@ describe("tierAgreementExternalId", () => {
   it("returns null for external ids not written by the convention", () => {
     expect(tierKeyFromAgreementExternalId("no-colon-here")).toBeNull();
     expect(tierKeyFromAgreementExternalId(":starts-with-colon")).toBeNull();
+  });
+});
+
+describe("retierAgreementExternalId", () => {
+  it("swaps the tier key and keeps the arrangement's own identifier", () => {
+    const id = tierAgreementExternalId("stottemedlem", "550e8400-e29b-41d4-a716-446655440000");
+    expect(retierAgreementExternalId(id, "gullmedlem")).toBe(
+      "gullmedlem:550e8400-e29b-41d4-a716-446655440000",
+    );
+  });
+
+  it("is stable: re-tiering to the same tier changes nothing", () => {
+    const id = tierAgreementExternalId("solvmedlem", "550e8400-e29b-41d4-a716-446655440000");
+    expect(retierAgreementExternalId(id, "solvmedlem")).toBe(id);
+  });
+
+  it("treats an externalId with no tier key as the whole identifier", () => {
+    expect(retierAgreementExternalId("550e8400", "gullmedlem")).toBe("gullmedlem:550e8400");
+  });
+
+  it("refuses to build one too long for Vipps", () => {
+    const id = tierAgreementExternalId("a", "550e8400-e29b-41d4-a716-446655440000");
+    expect(() => retierAgreementExternalId(id, "x".repeat(40))).toThrow();
   });
 });
 

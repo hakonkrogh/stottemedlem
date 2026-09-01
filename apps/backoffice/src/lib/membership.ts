@@ -4,6 +4,7 @@ import {
   periodLabel,
   redundantJoinAction,
   refundRefusal,
+  retierAgreementExternalId,
   stableUuid,
   tierAgreementExternalId,
   VIPPS_PRODUCT_NAME_MAX_LENGTH,
@@ -20,9 +21,11 @@ import {
   type MembershipAgreement,
   type MembershipCharge,
   type MembershipTier,
+  moveAgreementToTier,
   type Organization,
   recordCharge,
   recordDraftedAgreement,
+  recordFeeChoice,
   revokeMembershipForRefundedCharge,
 } from "@stottemedlem/db";
 import type { Agreement, Charge, ChargeStatus, VippsClient } from "@stottemedlem/vipps";
@@ -183,6 +186,64 @@ export async function startJoin(
 }
 
 /**
+ * Move a member's existing arrangement to a different tier
+ * (specs/use-cases/change-membership-tier.md).
+ *
+ * Not a new arrangement: Vipps lets an agreement's product name, description,
+ * externalId and price all change while it runs, and those are the whole of
+ * what a tier projects into Vipps (specs/concepts/membership-tier.md). So the
+ * member keeps the agreement they approved, its manage token and this very
+ * page — nothing is stopped, nothing is redrawn, and no money moves. The new
+ * price applies from their next renewal, like every other fee change.
+ *
+ * Vipps goes first and our record follows, for the same reason stopping does:
+ * a price the provider has not accepted is not a price the member is on.
+ *
+ * Recording the member's choice is the half that is easy to miss — without it
+ * the renewal would fall back to what they last PAID and charge the old
+ * amount for another year. See `recordFeeChoice`.
+ */
+export async function changeTier(
+  db: Db,
+  vipps: VippsClient,
+  org: Organization,
+  agreement: MembershipAgreement,
+  tier: MembershipTier,
+): Promise<void> {
+  if (agreement.tierId !== tier.id) {
+    await vipps.updateAgreement(
+      agreement.vippsAgreementId,
+      {
+        productName: `${tier.name} — ${org.name}`.slice(0, VIPPS_PRODUCT_NAME_MAX_LENGTH),
+        productDescription: vippsProductDescription(
+          tier.description ?? `Årlig støttemedlemskap i ${org.name}.`,
+        ),
+        externalId: retierAgreementExternalId(agreement.externalId, tier.key),
+        pricing: { amount: toOre(tier.annualFeeNok) },
+      },
+      // Derived, so a double press asks Vipps for the same change rather than
+      // a second one.
+      await stableUuid(`tier:${agreement.id}:${tier.id}`),
+    );
+    await moveAgreementToTier(db, agreement.id, {
+      tierId: tier.id,
+      annualFeeNok: tier.annualFeeNok,
+      externalId: retierAgreementExternalId(agreement.externalId, tier.key),
+    });
+  }
+
+  if (!agreement.memberId) return;
+  await recordFeeChoice(db, {
+    orgId: org.id,
+    memberId: agreement.memberId,
+    agreementId: agreement.id,
+    tierId: tier.id,
+    feeNok: tier.annualFeeNok,
+    previousFeeNok: agreement.annualFeeNok,
+  });
+}
+
+/**
  * Bring our record of an agreement in line with what Vipps says about it, and
  * attach the person once they have consented. Safe to run repeatedly and from
  * either direction — the webhook and the receipt page both call it, and
@@ -307,6 +368,26 @@ async function settleRedundantPayment(
     otherAgreementRunning: await hasOtherRunningAgreement(db, agreement.memberId, agreement.id),
   });
   if (!action) return;
+
+  // `refund` leaves THIS arrangement running, so from here on it is the one
+  // the member is on — including the tier they just picked, which may not be
+  // the one they held before. A renewal only charges the new tier's price if
+  // the choice is written down, or it falls back to what they last paid and
+  // quietly bills the old amount for another year
+  // (specs/use-cases/change-membership-tier.md). `refund-and-stop` is the
+  // other way round: the arrangement carrying the choice is the one ending,
+  // so nothing is assumed from it and the member's page is where they change
+  // tier deliberately.
+  if (action === "refund") {
+    await recordFeeChoice(db, {
+      orgId: agreement.orgId,
+      memberId: agreement.memberId,
+      agreementId: agreement.id,
+      tierId: agreement.tierId,
+      feeNok: agreement.annualFeeNok,
+      previousFeeNok: null,
+    });
+  }
 
   const capturedOre = charge.summary?.captured ?? charge.amount;
   log.warn("a payment landed on a period already paid for, and is being given back", {

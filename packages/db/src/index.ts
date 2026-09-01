@@ -778,6 +778,75 @@ export async function updateAgreementFee(
 }
 
 /**
+ * Point an existing arrangement at a different tier
+ * (specs/use-cases/change-membership-tier.md). The arrangement itself is not
+ * replaced — a member changing what they give is not a member leaving and
+ * coming back — so its id, its Vipps agreement and its manage token all stay
+ * exactly as they were. Only what it is FOR changes.
+ */
+export async function moveAgreementToTier(
+  db: Db,
+  agreementId: string,
+  tier: { tierId: string; annualFeeNok: number; externalId: string },
+): Promise<void> {
+  await db
+    .update(membershipAgreements)
+    .set({
+      tierId: tier.tierId,
+      annualFeeNok: tier.annualFeeNok,
+      externalId: tier.externalId,
+    })
+    .where(eq(membershipAgreements.id, agreementId));
+}
+
+/**
+ * Write down that the member chose this price for themselves, which is what
+ * lets the next renewal actually charge it.
+ *
+ * Without this the renewal falls back to what they LAST PAID
+ * (`listMemberFeeStandings`), so a member who moved up a tier would quietly be
+ * charged the old amount for another year. Recording the choice is therefore
+ * not bookkeeping — it is the half of the change that makes it real.
+ *
+ * Records nothing when the member's newest record for this tier already says
+ * the same, so a repeated settle or a double press cannot pile up rows.
+ * Returns whether anything was written.
+ */
+export async function recordFeeChoice(
+  db: Db,
+  choice: {
+    orgId: string;
+    memberId: string;
+    agreementId: string;
+    tierId: string;
+    feeNok: number;
+    previousFeeNok: number | null;
+  },
+): Promise<boolean> {
+  const [newest] = await db
+    .select()
+    .from(memberNotices)
+    .where(
+      and(
+        eq(memberNotices.memberId, choice.memberId),
+        eq(memberNotices.tierId, choice.tierId),
+        inArray(memberNotices.kind, ["fee-change", "tier-choice"]),
+      ),
+    )
+    .orderBy(desc(memberNotices.sentAt))
+    .limit(1);
+  if (newest?.kind === "tier-choice" && newest.feeNok === choice.feeNok) return false;
+
+  const { previousFeeNok, ...rest } = choice;
+  await recordMemberNotice(db, {
+    ...rest,
+    kind: "tier-choice",
+    ...(previousFeeNok === null ? {} : { previousFeeNok }),
+  });
+  return true;
+}
+
+/**
  * The payment already arranged for a period, if any. The guard that stops a
  * renewal job creating a second charge for a year it has already handled — and
  * the reason a late fee change cannot alter a renewal a member was already
@@ -1637,10 +1706,17 @@ export async function listMemberFeeStandings(
     .where(and(eq(membershipAgreements.orgId, orgId), eq(membershipAgreements.status, "ACTIVE")));
   if (rows.length === 0) return [];
 
+  // Both kinds of "this member knows the price": what we told them, and what
+  // they chose for themselves (specs/use-cases/change-membership-tier.md).
   const notices = await db
     .select()
     .from(memberNotices)
-    .where(and(eq(memberNotices.orgId, orgId), eq(memberNotices.kind, "fee-change")))
+    .where(
+      and(
+        eq(memberNotices.orgId, orgId),
+        inArray(memberNotices.kind, ["fee-change", "tier-choice"]),
+      ),
+    )
     .orderBy(desc(memberNotices.sentAt));
 
   // What they last actually paid — the fee they know when they have never been
@@ -1667,7 +1743,7 @@ export async function listMemberFeeStandings(
     if (!notice.tierId) continue;
     const k = key(notice.memberId, notice.tierId);
     if (!newest.has(k)) newest.set(k, notice);
-    if (!newestRipe.has(k) && notice.sentAt <= cutoff) newestRipe.set(k, notice);
+    if (!newestRipe.has(k) && feeMayBeChargedNow(notice, cutoff)) newestRipe.set(k, notice);
   }
 
   return rows.map(({ agreement, tier, member }) => {
@@ -1685,6 +1761,23 @@ export async function listMemberFeeStandings(
       lastNoticeAt: newest.get(k)?.sentAt ?? null,
     };
   });
+}
+
+/**
+ * Whether a recorded fee is one the member may be charged from now on.
+ *
+ * The waiting period is protection from the ORGANIZATION's changes: it buys a
+ * member time to notice a price they did not ask for and get out of it before
+ * it is taken (specs/use-cases/change-the-annual-fee.md). A price the member
+ * picked themselves needs no such time — they are the one who picked it, and
+ * making them wait for their own decision would only charge them the old
+ * amount for another year (specs/use-cases/change-membership-tier.md).
+ */
+export function feeMayBeChargedNow(
+  notice: { kind: MemberNoticeKind; sentAt: string },
+  cutoff: string,
+): boolean {
+  return notice.kind === "tier-choice" || notice.sentAt <= cutoff;
 }
 
 /** Whether this member has yet to hear about the price they are now on. */
