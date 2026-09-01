@@ -428,6 +428,40 @@ lives in `specs/`, kept in sync with code by a mandatory `Stop`-hook harness.
   would be emailed (no opt-out) and who is unreachable; the confirm form
   re-submits the values as hidden fields with `bekreft=1`, Avbryt links back
   to the tier list. A change affecting nobody saves straight through.
+  **The notice rule silently swallows a fee RISE that the member asked for**
+  (traced 2026-09-01 while designing tier changes; nothing is built on this
+  yet, so read it before raising anyone's fee by any route other than the org
+  editing the tier). `renewalFeeNok(standing)` is
+  `min(tier.annualFeeNok, ripeFeeNok)`, and `ripeFeeNok` in
+  `listMemberFeeStandings` is `newest ripe fee-change notice for
+  (memberId, tierId) ?? what the member LAST PAID ?? agreement.annualFeeNok`.
+  So move a member from a 200 kr tier to a 500 kr one and — with no notice row
+  for the new tier — the fallback is their last payment, and the renewal
+  charges **200**. The upgrade does not happen, and nothing says so until a
+  renewal runs. DOWNGRADES are fine for free: `min()` lets a price cut through
+  at once, deliberately ("being charged less than announced is not the kind of
+  surprise the rule guards against"). Two consequences: notices are keyed
+  per (member, TIER), so a notice on the old tier does not carry over; and a
+  member-initiated rise needs its own consent recorded as what makes the new
+  fee known — the 14-day ripeness should NOT gate it, because that rule exists
+  to stop the ORGANIZATION surprising a member, not to make a member wait for
+  their own choice.
+  **A tier change is a field update, not a redraft** (verified against
+  `UpdateAgreementRequest` 2026-09-01): Vipps lets `productName`,
+  `productDescription`, `externalId` AND `pricing.amount` change on a LIVE
+  agreement — which is the whole of what a tier projects into Vipps
+  (`concepts/membership-tier.md`), so moving a member between tiers needs no
+  new agreement, no stop, and no second manage token. `repriceAgreements`
+  already proves the mechanism. Keep the `<tierKey>:<uuid>` externalId's
+  second half and swap only the key. And note what `memberships` already
+  does: `tier_id` + `tier_name` + `annual_fee_nok` are FROZEN per period at
+  payment time, so per-period tier history needs no new storage.
+  **Why "pay the difference now" is not a small feature:** such a charge lands
+  on a period the member already holds, so `settleRedundantPayment` would
+  refund it. Any immediate-upgrade design must teach that guard the
+  difference first; taking tier changes at the next renewal (which is already
+  the tier spec's rule — changes never retroactively alter what was paid)
+  avoids the collision, the proration maths and the refund window together.
   Renewal timing lives in core
   (`isRenewalWindow`/`renewalPeriodYear`, tested): arranged from 1 Dec, due
   1 Jan, `retryDays: 7`. The renewal charge's Idempotency-Key is DERIVED
