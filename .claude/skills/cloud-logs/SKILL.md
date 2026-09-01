@@ -43,8 +43,9 @@ suggesting a shared service name — the query API uses the script name).
 `node .claude/skills/cloud-logs/cloudlogs.mjs [command] [options]`
 
 Commands: `events` (default, one greppable line per log event) ·
-`invocations` (events grouped by request) · `count --group-by <key>` ·
-`keys` (discover fields) · `values <key>` (discover values).
+`invocations` (events grouped by request) · `cost` (CPU/wall per invocation) ·
+`count --group-by <key>` · `keys` (discover fields) · `values <key>`
+(discover values).
 
 Options: `-e staging|production` (default production) · `--since 30m|6h|2d`
 (default 1h) · `--from/--to ISO` · `-s "text"` full-text search (`--regex`) ·
@@ -64,6 +65,9 @@ node .claude/skills/cloud-logs/cloudlogs.mjs invocations -e production -f '$work
 
 # what messages are noisiest this week?
 node .claude/skills/cloud-logs/cloudlogs.mjs count --since 7d -e production
+
+# who is burning CPU? (the answer to a browser "Error 1102")
+node .claude/skills/cloud-logs/cloudlogs.mjs cost -e staging --since 6h
 
 # webhook deliveries (public POST /api/vipps/…)
 node .claude/skills/cloud-logs/cloudlogs.mjs -e production -f '$metadata.trigger^=POST /api/vipps' --since 2d
@@ -100,3 +104,39 @@ runs.
   Sentry integration reported; Workers Logs has EVERYTHING the worker
   emitted, including bare `console.*` and request lines — but only 7 days
   of it.
+
+## Error 1102 — "Worker exceeded resource limits" (recipe, used 2026-08-31)
+
+Cloudflare's 1102 page means the invocation was killed for CPU; the Ray ID on
+it is useless here (Workers Logs keys on `$workers.requestId`). Go by time:
+
+    cloudlogs.mjs cost -e staging --since 6h        # every invocation, cpu + wall
+    cloudlogs.mjs -e staging -f '$workers.outcome=exceededCpu' --since 7d
+
+`cost` exists because the diagnosis is a *comparison*: this app's healthy
+requests sit at **10–80 ms CPU**, so a request at 1600–2010 ms stands out
+instantly, and the `$metadata.trigger` column then names the endpoints that
+share the expensive code. `count --group-by '$metadata.trigger' -f
+'$workers.outcome=exceededCpu'` gives the same shape as a tally.
+
+Two things that will otherwise mislead you:
+
+- **A killed request usually logs NOTHING of its own.** Only the platform's
+  exception line survives, so `invocations` on the failing requestId looks
+  empty and the `console.*` breadcrumbs you would use to place the work are
+  missing. Locate the code by which *triggers* fail (what they share), not by
+  the logs inside them.
+- **`cpu=10ms` with `outcome=exceededCpu`** appears alongside the real
+  offender: concurrent requests sharing the isolate are torn down too and
+  report their own tiny CPU. The invocation with the big number is the cause;
+  the 10 ms ones are collateral.
+
+Known expensive path in this product: rasterizing a member card
+(`renderCardPng`, resvg WASM + a 360 KB font parsed per call) — see the
+`render-card` skill for the measured cost. Anything that does it more than
+once per request is a candidate.
+
+**`--json` must go to a file, not a pipe.** The agent shell truncates stdout at
+64 KB, which lands mid-JSON and produces a parse error naming a character
+offset (`char 65536`) that looks like an API bug and is not:
+`cloudlogs.mjs … --json > "$SCRATCHPAD/logs.json"`, then read the file.

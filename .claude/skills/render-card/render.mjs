@@ -76,6 +76,7 @@ function parseArgs(argv) {
     kind: "member",
     cases: null,
     raster: false,
+    time: 0,
     build: true,
     list: false,
     out: resolve(ROOT, ".card-preview"),
@@ -87,6 +88,7 @@ function parseArgs(argv) {
     if (arg === "--org-card") options.kind = "org";
     else if (arg === "--case") options.cases = next().split(",");
     else if (arg === "--raster") options.raster = true;
+    else if (arg === "--time") options.time = Number(argv[++i] ?? 3);
     else if (arg === "--no-build") options.build = false;
     else if (arg === "--list") options.list = true;
     else if (arg === "--out") options.out = resolve(process.cwd(), next());
@@ -116,6 +118,8 @@ const USAGE = `render-card — draw the project's cards without a server
                            e.g. --set hearts=17 --set memberName=null
   --org-card               draw the ORGANISATION's qrCardSvg instead
   --raster                 also rasterize via the shipped resvg + Fraunces path
+  --time N                 with --raster: rasterize each card N extra times and
+                           report ms per render — the Worker's CPU budget
   --out DIR                where to write (default <repo>/.card-preview)
   --no-build               skip rebuilding @stottemedlem/qr first
   --list                   list fixture names and exit
@@ -171,7 +175,7 @@ async function main() {
     rendered.push({ file, name, kind: options.kind, svg });
   }
 
-  if (options.raster) await rasterize(rendered, options.out, qr);
+  if (options.raster) await rasterize(rendered, options.out, qr, options.time);
   await writeFile(resolve(options.out, "index.html"), contactSheet(rendered, options.raster));
 
   console.log(`${rendered.length} card(s) → ${options.out}`);
@@ -184,7 +188,7 @@ async function main() {
  * uses, the same embedded Fraunces, and system fonts off — so what lands here
  * is what an og:image or a receipt attachment would be.
  */
-async function rasterize(rendered, out, qr) {
+async function rasterize(rendered, out, qr, times = 0) {
   // resvg and the font both belong to the backoffice, so resolve from there —
   // this script sits outside every workspace package, so a bare specifier
   // ("@resvg/resvg-wasm") does not resolve from here at all.
@@ -201,11 +205,31 @@ async function rasterize(rendered, out, qr) {
       item.kind === "org"
         ? Number(item.svg.match(/viewBox="0 0 ([\d.]+)/)?.[1] ?? 800)
         : qr.memberCardSize().width;
-    const renderer = new Resvg(item.svg, {
-      fitTo: { mode: "width", value: width },
-      font: { fontBuffers: [font], defaultFontFamily: "Fraunces", loadSystemFonts: false },
-    });
-    await writeFile(resolve(out, `raster-${item.file}.png`), renderer.render().asPng());
+    const draw = () =>
+      new Resvg(item.svg, {
+        fitTo: { mode: "width", value: width },
+        font: { fontBuffers: [font], defaultFontFamily: "Fraunces", loadSystemFonts: false },
+      })
+        .render()
+        .asPng();
+    await writeFile(resolve(out, `raster-${item.file}.png`), draw());
+
+    // A render is the single most expensive thing this product asks a Worker
+    // to do, and a Worker's CPU allowance is small — so the cost is worth
+    // being able to measure, not guess, whenever a code path gains a render.
+    if (times > 0) {
+      const runs = [];
+      for (let i = 0; i < times; i++) {
+        const started = performance.now();
+        draw();
+        runs.push(performance.now() - started);
+      }
+      const each = runs.reduce((a, b) => a + b, 0) / runs.length;
+      console.log(
+        `⏱  ${item.file}: ${each.toFixed(0)} ms per render (${runs.length}× on this machine; ` +
+          `a Worker is slower)`,
+      );
+    }
   }
 }
 

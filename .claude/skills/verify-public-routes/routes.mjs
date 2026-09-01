@@ -1,4 +1,6 @@
 #!/usr/bin/env node
+import { createHash } from "node:crypto";
+
 // Assert the HTTP contract of the product's public surface, the way a browser,
 // a QR scanner, or Vipps' website verification sees it. See SKILL.md.
 //
@@ -18,9 +20,11 @@ assertions:
   --contains <text>     response body must contain text
   --not-contains <text> response body must NOT contain text
   --repeat <n>          request n times; assertions apply to the LAST response,
-                        and every response's status + x-sm-cache is printed
-                        (this is how you prove the stale-while-revalidate
-                        cache goes miss -> hit)
+                        and every response's status, x-sm-cache, ms and body
+                        digest is printed (this is how you prove the
+                        stale-while-revalidate cache goes miss -> hit, and how
+                        you prove a COMPUTED response is being reused: an
+                        expensive first ms, cheap ones after, one digest)
   --quiet               print only failures
 
 exit 0 = every assertion held; non-zero = first failure is printed.`);
@@ -65,6 +69,7 @@ const check = (ok, message) => {
 let response;
 let body = "";
 for (let attempt = 1; attempt <= opts.repeat; attempt++) {
+  const started = performance.now();
   try {
     // `redirect: manual` is the whole point for the legacy-path checks.
     response = await fetch(url, { redirect: "manual" });
@@ -74,10 +79,21 @@ for (let attempt = 1; attempt <= opts.repeat; attempt++) {
     console.error(`      (reached for: ${url} — pass host:port or a full http(s) URL)`);
     process.exit(1);
   }
-  body = await response.text();
+  // Bytes, not text(): an image or a PDF has to survive this intact for its
+  // digest to mean anything, and the text form is derived from the same read.
+  const bytes = new Uint8Array(await response.arrayBuffer());
+  body = new TextDecoder().decode(bytes);
   if (opts.repeat > 1 && !opts.quiet) {
     const cache = response.headers.get("x-sm-cache") ?? "-";
-    console.log(`  #${attempt}  ${response.status}  x-sm-cache=${cache}`);
+    // ms and digest are what expose a cache with no header of its own — a
+    // stored rendering, an R2-backed image. Same digest + a collapse in ms
+    // means it was reused; same digest + the same ms means it was recomputed.
+    const ms = Math.round(performance.now() - started);
+    const digest = createHash("sha256").update(bytes).digest("hex").slice(0, 12);
+    console.log(
+      `  #${attempt}  ${response.status}  x-sm-cache=${cache}  ${ms}ms  ` +
+        `${bytes.length}B  ${digest}`,
+    );
   }
 }
 

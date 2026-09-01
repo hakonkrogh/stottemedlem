@@ -1,6 +1,6 @@
 ---
 name: verify-workflow
-description: Run a GitHub Actions workflow's `run:` steps locally in a runner-like scrubbed env, to prove CI is green BEFORE pushing. Use after editing anything in .github/workflows/, AND before any push that could touch a package.json or pnpm-lock.yaml (adding a dependency, or merely running `pnpm story`) — it replays `pnpm install --frozen-lockfile`, the one failure nothing else local catches.
+description: Run a GitHub Actions workflow's `run:` steps locally in a runner-like scrubbed env, to prove CI is green BEFORE pushing. Use before ANY push — it replays `pnpm install --frozen-lockfile` (the one failure nothing else local catches, after a dependency change or merely running `pnpm story`) and it runs `pnpm lint` over the WHOLE repo, which catches formatting in files the app's own typecheck never looks at. Also use after editing anything in .github/workflows/.
 ---
 # Verify a GitHub Actions workflow locally
 
@@ -26,7 +26,17 @@ node .claude/skills/verify-workflow/run-steps.mjs .github/workflows/ci.yml --for
 ```
 
 
-## It also catches lockfile drift — run it before ANY push
+## It catches more than the workflow — run it before ANY push
+
+Verified 2026-09-01: a push touching only `.claude/skills/` and app source
+(no dependency change at all) failed the replay on **Lint** — one missing
+blank line after an import in `routes.mjs`, in a file no app typecheck
+covers. `pnpm lint` is `biome check .` over the whole repo, and CI runs it
+as its own step, so anything biome formats can fail a PR that every other
+local check passed. The replay costs one command; a red PR costs a
+round-trip.
+
+## It also catches lockfile drift
 
 The job's first step is `pnpm install --frozen-lockfile`, so this replays the
 one failure mode nothing else local sees: a `package.json` whose specifiers no

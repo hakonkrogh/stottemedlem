@@ -64,6 +64,51 @@ export async function renderCardPng(
   return new Uint8Array(renderer.render().asPng());
 }
 
+/**
+ * The same picture, drawn once and kept.
+ *
+ * Rasterizing is by an order of magnitude the most expensive thing this
+ * product asks a Worker to do — far more than a whole ordinary request — while
+ * the card itself changes only when something on it changes: a new period,
+ * another heart, a recruit, a new name or logo. So the drawing decides the
+ * address. The key is a digest of the SVG, which means there is nothing to
+ * invalidate and nothing to remember: a card that has changed simply asks for
+ * a picture that does not exist yet and gets drawn, and a card that has not
+ * is read back instead of redrawn.
+ *
+ * Kept under the card's own token so the stored pictures of one member's card
+ * stay findable — and so a member erased from the register takes their
+ * pictures with them.
+ */
+export async function storedCardPng(
+  cardToken: string,
+  svg: string,
+  width = MEMBER_CARD_WIDTH,
+): Promise<Uint8Array<ArrayBuffer>> {
+  const key = await cardImageKey(cardToken, svg, width);
+  const stored = await env.MEDIA.get(key);
+  if (stored) return new Uint8Array(await stored.arrayBuffer());
+
+  const png = await renderCardPng(svg, width);
+  // Keeping the picture is an optimization, never the point: a bucket that
+  // will not take it must not cost the member their card.
+  try {
+    await env.MEDIA.put(key, png);
+  } catch {
+    // Drawn is drawn — the next asker simply draws it again.
+  }
+  return png;
+}
+
+/** Where one drawing of one card lives: `cards/<token>/<digest of the drawing>.png`. */
+async function cardImageKey(cardToken: string, svg: string, width: number): Promise<string> {
+  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(`${width}:${svg}`));
+  const hex = Array.from(new Uint8Array(digest))
+    .map((byte) => byte.toString(16).padStart(2, "0"))
+    .join("");
+  return `cards/${encodeURIComponent(cardToken)}/${hex}.png`;
+}
+
 /** Image types the card may embed — the ones organizations can upload. */
 const MIME_BY_MAGIC: Array<[string, number[]]> = [
   ["image/png", [0x89, 0x50, 0x4e, 0x47]],

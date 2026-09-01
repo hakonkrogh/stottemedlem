@@ -53,3 +53,20 @@ bash .claude/skills/dev-logs/devlog.sh grep "vipps"
 
 Related: `preview-screenshot` (visual loop; its "dark error overlay" gotcha says
 to check these logs for the request that actually threw).
+
+## A 500 on every SSR route right after you changed config — restart, don't debug
+
+Symptom (hit 2026-08-31): every page and endpoint answers **500**, and the log
+says `Re-optimizing dependencies because vite config has changed` followed by
+`The file does not exist at .../node_modules/.vite/deps_ssr/<chunk>.js?v=…
+which is in the optimize deps directory`. The running server is holding
+pre-bundled dependency chunks that its own re-optimization has just replaced.
+
+It is not your code. Anything that rewrites config under the app — notably
+`wrangler types` (which `pnpm typecheck` runs) or adding/removing `.dev.vars`
+— can trigger it mid-session, so a route that worked five minutes ago starts
+failing with no edit to blame.
+
+    bash .claude/skills/dev-logs/devlog.sh stop && bash .claude/skills/dev-logs/devlog.sh start
+
+Then re-run the request. If a 500 survives a restart, THEN it is worth reading.

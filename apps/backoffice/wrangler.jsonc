@@ -4,7 +4,8 @@
   "compatibility_date": "2026-06-01",
   "compatibility_flags": ["nodejs_compat"],
   // Custom worker entry: re-exports Astro's fetch handler and adds the
-  // scheduled (cron) and queue (webhook consumer) handlers.
+  // scheduled (cron) and queue (receipt sweeps — work moved off the request
+  // path, see specs/concepts/payment-receipt.md) handlers.
   "main": "./src/worker.ts",
   // Custom domain (app.støttemedlem.no in punycode) — wrangler manages DNS +
   // certs on deploy; the CI token needs zone-level permission (same as marketing).

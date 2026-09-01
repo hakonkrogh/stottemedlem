@@ -19,11 +19,10 @@ import MemberCardFigure from "../../../components/MemberCardFigure.astro";
 import OrgIdentityHeader from "../../../components/OrgIdentityHeader.astro";
 import PublicShell from "../../../layouts/PublicShell.astro";
 import { getDb } from "../../../lib/db";
-import { getEmailSender } from "../../../lib/email";
 import { loadMemberCardForMemberId, memberCardUrl } from "../../../lib/memberCard";
 import { publicOrigin, syncAgreement, syncCharge } from "../../../lib/membership";
 import { periods } from "../../../lib/periods";
-import { sendOwedReceipts } from "../../../lib/receipts";
+import { requestReceiptSweep } from "../../../lib/receipts";
 import { getVippsForOrg } from "../../../lib/vipps";
 import { getWorkOS } from "../../../lib/workos";
 
@@ -87,8 +86,11 @@ interface ReceiptDetails {
   what: string;
   period: string;
   paid: string;
-  /** Where the same receipt also went, when it could be emailed. */
-  emailedTo: string | null;
+  /**
+   * Where the same receipt is emailed, and whether it has left yet — the
+   * member is told the address either way, so they know to look for it.
+   */
+  email: { address: string; sent: boolean } | null;
 }
 let receipt: ReceiptDetails | null = null;
 
@@ -128,9 +130,12 @@ if (vipps) {
             : "stopped";
 
       if (settled?.memberId) {
-        // The email receipt goes out from here too — the supporter's own
-        // arrival is usually the first moment the capture is known.
-        await sendOwedReceipts(db, org, publicOrigin(Astro.request), getEmailSender());
+        // The supporter's own arrival is usually the first moment the capture
+        // is known, so this is where the receipt email is asked for — but not
+        // where it is sent. Sending draws member cards, which costs more than
+        // this whole page render, and the supporter is standing here waiting
+        // (specs/concepts/payment-receipt.md).
+        await requestReceiptSweep(org.slug, publicOrigin(Astro.request));
 
         card = await loadMemberCardForMemberId(db, settled.memberId);
         const member = await getSupportingMember(db, settled.memberId);
@@ -178,7 +183,7 @@ if (vipps) {
             what: `Medlemskontingent — «${membership.tierName}»`,
             period: `${dato(membership.periodStart)} – ${dato(membership.periodEnd)} (${periodLabel(membership.periodYear)})`,
             paid: `${kr(captured.amountNok)} den ${dato(captured.capturedAt ?? captured.updatedAt)}, via Vipps`,
-            emailedTo: emailed && member?.email ? member.email : null,
+            email: member?.email ? { address: member.email, sent: Boolean(emailed) } : null,
           };
         }
       }
@@ -271,7 +276,13 @@ const title =
           />
           <Text variant="small">
             Ta gjerne vare på kvitteringen.
-            {receipt.emailedTo ? ` Den er også sendt til ${receipt.emailedTo}.` : ""}
+            {
+              receipt.email
+                ? receipt.email.sent
+                  ? ` Den er også sendt til ${receipt.email.address}.`
+                  : ` Den kommer også på e-post til ${receipt.email.address}.`
+                : ""
+            }
           </Text>
         </Stack>
       )

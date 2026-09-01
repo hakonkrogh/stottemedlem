@@ -40,6 +40,14 @@ surface the member happens to be looking at.
   its [heart](brand-mark.md). It never shows the member's email, phone, what
   they paid, or anything about the organization's other members — it is made to
   be shown to strangers.
+- **The card as a picture is drawn once per version of itself.** A card is
+  looked at, previewed by every feed it is pasted into, and attached to
+  receipts, while what it shows changes only when the member's own facts change
+  — a new period, another heart, a recruit, a new name, the organization's new
+  logo. So a drawing is kept and handed out again until the card itself
+  changes, and a changed card is simply a different picture. A member never
+  sees a stale card, and nothing has to be remembered or cleared for that to
+  hold.
 - **Every card is derived.** Hearts come from
   [membership](membership.md) periods and the validity from the current
   [annual period](annual-period.md); nothing on the card is stored as a

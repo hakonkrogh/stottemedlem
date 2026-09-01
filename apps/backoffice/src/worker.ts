@@ -215,9 +215,9 @@ async function runScheduledJobs(cron: string): Promise<void> {
         }
 
         // Every capture owes its member a receipt (specs/concepts/
-        // payment-receipt.md). The webhook and the receipt page already tried
-        // at capture time; this is the retry for anything that failed or was
-        // captured by tonight's own reconciliation.
+        // payment-receipt.md). The queue normally sends it within seconds of
+        // the capture; this is the backstop for anything that failed there, or
+        // that tonight's own reconciliation discovered.
         const receiptReport = await receipts.sendOwedReceipts(
           db,
           org,
@@ -228,6 +228,11 @@ async function runScheduledJobs(cron: string): Promise<void> {
           noticesLog.error("receipts failed to send", undefined, { ...receiptReport, ...ctx });
         } else if (receipts.isNoteworthy(receiptReport)) {
           noticesLog.info("receipts sent", { ...receiptReport, ...ctx });
+        }
+        // A run sends at most a capped number of them, so a backlog does not
+        // have to wait a night per handful: what is left is asked for again.
+        if (receipts.hasMoreToSend(receiptReport)) {
+          await receipts.requestReceiptSweep(org.slug, env.PUBLIC_ORIGIN);
         }
       }
 
@@ -307,16 +312,74 @@ const handler = {
   },
 
   /**
-   * Queue consumer stub. Nothing enqueues today: the org-messages job left
-   * with that feature (2026-08-28), and the Vipps event receiver applies
-   * events synchronously. The handler stays because wrangler.jsonc still
-   * declares the vipps-events consumer; anything that does arrive is
-   * unrecognized, and dropping it beats redelivering it forever.
+   * Queue consumer: where receipts are actually sent.
+   *
+   * A receipt carries the member's card as a picture, and drawing one costs a
+   * Worker an order of magnitude more than an ordinary request — enough that
+   * doing it on the receipt page or in the webhook receiver ended those
+   * requests outright (specs/concepts/payment-receipt.md). Those paths now
+   * only say a sweep is owed; it runs here, where nobody is waiting and the
+   * queue's own redelivery is the retry.
+   *
+   * A burst of payment events asks for the same organization many times over,
+   * so a batch is collapsed to one sweep per organization. The sweep itself is
+   * idempotent — it compares captures against receipts already recorded — so a
+   * redelivered batch sends nothing twice. Anything unrecognized is dropped:
+   * redelivering it forever helps nobody.
    */
   async queue(batch, _env) {
+    const [{ getDb }, { getOrganizationBySlug }, receipts, { getEmailSender }] = await Promise.all([
+      import("./lib/db"),
+      import("@stottemedlem/db"),
+      import("./lib/receipts"),
+      import("./lib/email"),
+    ]);
+
+    type QueuedMessage = (typeof batch.messages)[number];
+    const sweeps = new Map<string, { origin: string; messages: QueuedMessage[] }>();
     for (const message of batch.messages) {
-      console.warn(`queue ${batch.queue}: unrecognized message dropped`);
-      message.ack();
+      if (!receipts.isReceiptSweepMessage(message.body)) {
+        console.warn(`queue ${batch.queue}: unrecognized message dropped`);
+        message.ack();
+        continue;
+      }
+      const { orgSlug, origin } = message.body;
+      const sweep = sweeps.get(orgSlug) ?? { origin, messages: [] };
+      sweep.messages.push(message);
+      sweeps.set(orgSlug, sweep);
+    }
+
+    const db = getDb();
+    for (const [orgSlug, sweep] of sweeps) {
+      const ctx = { queue: batch.queue, org: orgSlug };
+      try {
+        const org = await getOrganizationBySlug(db, orgSlug);
+        // An organization that has gone away owes nobody a receipt, and
+        // retrying will not bring it back.
+        if (!org) {
+          noticesLog.warn("receipts asked for an unknown organization", ctx);
+          for (const message of sweep.messages) message.ack();
+          continue;
+        }
+        const report = await receipts.sendOwedReceipts(db, org, sweep.origin, getEmailSender());
+        if (report.failed > 0) {
+          noticesLog.error("receipts failed to send", undefined, { ...report, ...ctx });
+        } else if (receipts.isNoteworthy(report)) {
+          noticesLog.info("receipts sent", { ...report, ...ctx });
+        }
+        // One run sends at most a capped number of cards' worth of receipts;
+        // anything past that comes straight back as another message rather
+        // than waiting for the nightly run.
+        if (receipts.hasMoreToSend(report)) {
+          await receipts.requestReceiptSweep(orgSlug, sweep.origin);
+        }
+        for (const message of sweep.messages) message.ack();
+      } catch (error) {
+        // Let the queue bring it back: a receipt is owed until it is sent, and
+        // the nightly run is the backstop once the retries are spent.
+        noticesLog.error("could not send receipts", error, ctx);
+        for (const message of sweep.messages) message.retry();
+      }
     }
   },
 } satisfies ExportedHandler<Env>;

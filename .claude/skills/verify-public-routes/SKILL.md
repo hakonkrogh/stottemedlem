@@ -26,7 +26,8 @@ sliced from the first `[` — which landed inside the error's own `"notes": [`
 and crashed with a JSON syntax error naming a character offset. The real
 message (`no such column: updated_at … SQLITE_ERROR`) was nowhere. stderr is
 kept too, since `wrangler: command not found` — a worktree never
-`pnpm install`ed — appears only there. Exit code 1 on either.
+`pnpm install`ed — appears only there (fix: `pnpm install --frozen-lockfile`
+from the worktree root once, then re-run). Exit code 1 on either.
 
 Two columns that do not exist, and cost a round-trip each: `membership_agreements`
 and `member_notices` have **no `updated_at`** (agreements carry `activated_at` /
@@ -335,3 +336,28 @@ failures explicitly.
 Related: `verify-qr` (decodes the QR payload from real pixels — the printed
 address), `preview-screenshot` (how the page looks), `dev-logs` (what the
 server logged).
+
+## Prove a response is being REUSED, not recomputed (added 2026-08-31)
+
+Some of this product's responses are expensive to produce and cached with no
+header to show for it — the rendered member card, stored in R2 under a digest
+of its own drawing (`src/lib/cardImage.ts`). `--repeat` prints ms, byte count
+and a body digest per response, which is how that is proved without a header:
+
+    node .claude/skills/verify-public-routes/routes.mjs \
+      http://localhost:4322/medlemsbevis/kort-seed-1/kort.png --status 200 --repeat 3
+
+      #1  200  x-sm-cache=-  584ms  57354B  060e481cfc66     ← drawn
+      #2  200  x-sm-cache=-   46ms  57354B  060e481cfc66     ← stored
+      #3  200  x-sm-cache=-   10ms  57354B  060e481cfc66
+
+Read it as: **same digest + a collapse in ms = reused**; same digest and the
+same ms = recomputed every time (the renderer is deterministic, so identical
+bytes alone prove nothing). To prove the other half — that a CHANGED card is
+redrawn — change what it is derived from and repeat; the digest must move:
+
+    CI=1 pnpm exec wrangler d1 execute DB --local \
+      --command "UPDATE supporting_members SET name='Kari Eksempel-Hansen' WHERE id='mem-seed-1'"
+
+Change it back afterwards (see the reset note above — do not leave the seed's
+own rows edited).
