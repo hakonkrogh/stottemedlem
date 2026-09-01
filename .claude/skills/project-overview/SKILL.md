@@ -72,7 +72,16 @@ lives in `specs/`, kept in sync with code by a mandatory `Stop`-hook harness.
   Backoffice logging goes
   through `logger("<area>")` from `src/lib/log`
   (specs/concepts/operational-alerting.md): stable message, ids/counts in
-  context — that's what reaches the operator via Sentry. Since 2026-08-27
+  context — that's what reaches the operator via Sentry.
+  **The LEVEL is the alerting decision, not a mood.** `sentrySink`'s default
+  `minLevel` is `warn` (packages/log/src/sentry.ts), so `warn`/`error` become
+  Sentry ISSUES — an alarm asking a person to act — while `info`/`debug` only
+  ride along as breadcrumbs on the next issue. So: a situation the product
+  RESOLVES BY ITSELF is `log.info`; only the resolution failing is `warn`+.
+  (2026-09-01: the redundant-payment refund in `lib/membership.ts` logged at
+  `warn` and raised BACKOFFICE-SERVER-6 on staging for a supporter who
+  cancelled and re-joined — the refund working exactly as specified. Now
+  `info`; the "could not give back" catch stays `error`.) Since 2026-08-27
   BOTH deployed envs report to the ONE Sentry project (org `stottemedlem`,
   project `backoffice-server`, region de.sentry.io — the Sentry MCP's
   `find_dsns` can read the DSN, no need to ask the user), told apart by the
@@ -803,6 +812,15 @@ lives in `specs/`, kept in sync with code by a mandatory `Stop`-hook harness.
   traps there: `const [x] = FIXTURES` is `possibly undefined` (export named
   fixture consts instead of indexing an array), and a helper default
   `(warnings = [])` infers `never[]` — annotate it (`warnings: OrgWarning[] = []`).
+- **Run `typecheck`/`test` from the REPO ROOT, not from `apps/backoffice`.**
+  The app's own `pnpm typecheck` does not build the workspace packages, so in a
+  freshly-installed worktree it drowns in ~126 bogus `ts(2307) Cannot find
+  module '@stottemedlem/core' | '@stottemedlem/db' | '@stottemedlem/qr'` plus
+  the `implicitly has an 'any' type` errors that follow from them — nothing is
+  wrong with the code. Root `pnpm typecheck` runs it through turbo, which
+  builds the packages' `.d.ts` first (14 tasks, seconds when cached) and
+  reports 0 errors. Same for a single app: `pnpm --filter <pkg> typecheck` from
+  the root (2026-09-01).
 - **A fresh worktree has NO `node_modules`** (nothing is shared with the main
   checkout): `pnpm lint`/`typecheck`/`test` fail up front with `sh: biome:
   command not found` / `turbo: command not found`, which is a missing install,

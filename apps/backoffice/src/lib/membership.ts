@@ -309,7 +309,11 @@ async function settleRedundantPayment(
   if (!action) return;
 
   const capturedOre = charge.summary?.captured ?? charge.amount;
-  log.warn("a payment landed on a period already paid for, and is being given back", {
+  // Recorded, not alerted: a supporter who ended their arrangement and joined
+  // again inside a period they had already paid for is an expected way to
+  // arrive here, and the product resolves it by itself. Only the refund
+  // failing below leaves something for a person to do.
+  log.info("a payment landed on a period already paid for, and is being given back", {
     vippsAgreementId: agreement.vippsAgreementId,
     vippsChargeId: charge.id,
     periodYear: membership.periodYear,
