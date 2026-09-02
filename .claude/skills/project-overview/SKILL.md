@@ -638,12 +638,22 @@ lives in `specs/`, kept in sync with code by a mandatory `Stop`-hook harness.
   Same code path regardless: reconcile pulled CANCELLED into D1 and the
   standing grace correctly ends with any settled status (only
   OPEN_CHARGE_STATUSES grant it). Remaining before go-live (assessed
-  2026-08-28): apitest — rejoin-after-stop rehearsal, live lapse flip in the
-  member list; December-only (or faked clock) — in-window renewal
-  arrangement, double-arrange guard, turn-of-year flip; production-only —
-  real Vault key reads (local always uses the .dev.vars fallback), deployed
-  cron actually firing, webhook registration on the prod domain,
-  PUBLIC_ORIGIN set, one real-money join+stop. Also observed: unapproved drafts go EXPIRED
+  2026-08-28, revised 2026-09-02 after rebasing onto main): apitest —
+  rejoin-after-stop rehearsal, live lapse flip in the member list;
+  December-only (main's iso-week staging can now rehearse these on the
+  accelerated clock) — in-window renewal arrangement, double-arrange guard,
+  turn-of-year flip; production-only — real Vault key reads (local always
+  uses the .dev.vars fallback), deployed cron actually firing, one scheduled
+  run auto-registering the org webhook (`ensureWebhookRegistration` runs
+  every scheduled tick since main's key-store work) and a genuine delivery
+  verifying, one real-money join+stop. RESOLVED by main since 2026-08-28:
+  PUBLIC_ORIGIN is set in wrangler.jsonc for prod + staging; webhook
+  registration is automatic, not a manual go-live step. NEW GAP from the
+  rebase (2026-09-02): the member card (`findMemberCardByToken`) and the
+  per-period list (`listMembersForPeriod`) still derive status via bare
+  `membershipStatus` — a member mid-retry in January shows a lapsed card
+  while the member list correctly keeps them active (`membershipStanding`
+  grace). Not yet fixed; decide whether the card should get the grace too. Also observed: unapproved drafts go EXPIRED
   on Vipps' side once their approval token dies, and reconcile corrects them —
   the orphan-draft story resolves via EXPIRED without waiting out the 14-day
   abandonment window. Charges stay DUE through the retry window on apitest
