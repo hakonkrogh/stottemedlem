@@ -62,6 +62,11 @@ const MEMBER_CASES = {
     organizationName: "Vestbygda Skolekorps og Ungdomsorkester",
     hearts: 7,
   },
+  VeryLongOrgName: {
+    ...MEMBER_BASE,
+    organizationName: "Sør-Trøndelag Ungdomssymfoniorkester og Musikkforening",
+    hearts: 2,
+  },
 };
 
 /** The ORGANIZATION's card — a different owner, so a different fixture set. */

@@ -8,8 +8,8 @@
 //
 // One card, one image (specs/concepts/member-card.md). The card is drawn
 // upright for a phone, so there is nothing to choose between here — it simply
-// scales, running to both screen edges where the screen is narrow and capping
-// at a card-like width where there is room to spare.
+// scales inside the page's column, with air around it, and caps at a
+// card-like width where there is room to spare.
 //
 // Sharing is offered ON the card rather than as a paragraph elsewhere on the
 // page: the thing being shared is right there, so the action belongs on it.
@@ -101,28 +101,19 @@ const { width, height } = memberCardSize();
 
 <style>
   .member-card {
-    margin: 0;
     position: relative;
-    /* Full-bleed by default — on a phone the card is the page's subject, and
-     * the reading column's gutter only makes its QR code and its name smaller
-     * than they need to be. The negative margin cancels exactly that padding,
-     * which PublicShell publishes as --sm-page-gutter. */
-    margin-inline: calc(-1 * var(--sm-page-gutter, 1.25rem));
+    /* An object on the page, not the page itself: it keeps the reading
+     * column's gutter on both sides and takes a little extra air above and
+     * below, so it reads as a card lying on the page. It stops growing at a
+     * card-like width: upright, the full 38rem column would make it over
+     * 800px tall and it would read as a poster rather than as a card. */
+    margin: 0.75rem auto;
+    max-width: 24rem;
   }
   .member-card img {
     display: block;
     width: 100%;
     height: auto;
-  }
-
-  /* Where there is room to spare, the card stops growing: it is upright, so
-   * the full 38rem column would make it over 800px tall and it would read as
-   * a poster rather than as a card. */
-  @media (min-width: 34rem) {
-    .member-card {
-      margin-inline: auto;
-      max-width: 24rem;
-    }
   }
 
   .member-card__share {

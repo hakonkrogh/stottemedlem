@@ -45,7 +45,7 @@ import { create } from "qrcode";
  * member is shown must be the card they share.
  */
 export const MEMBER_CARD_WIDTH = 760;
-export const MEMBER_CARD_HEIGHT = 1040;
+export const MEMBER_CARD_HEIGHT = 960;
 
 /** The canvas — what an `<img>` needs to reserve space. */
 export function memberCardSize(): { width: number; height: number } {
@@ -136,6 +136,71 @@ function fitLine(text: string, maxWidth: number, preferred: number, min: number)
   const maxChars = Math.floor(maxWidth / (size * WIDTH_PER_POINT));
   const value = text.length > maxChars ? `${text.slice(0, Math.max(1, maxChars - 1))}…` : text;
   return { value, size };
+}
+
+/**
+ * The organization's name in the band — the answer to "supporting member of
+ * what?", so after the member's own name it is the biggest text on the card.
+ * A long name wraps onto two or three lines, broken between words and as
+ * evenly as the words allow, rather than shrinking to a whisper; only a name
+ * too long even for three lines gets smaller, and then truncated.
+ */
+function fitOrgName(name: string, maxWidth: number): { lines: string[]; size: number } {
+  const fits = (text: string, size: number) => estimateWidth(text, size) <= maxWidth;
+  for (let size = 38; size >= 30; size -= 2) if (fits(name, size)) return { lines: [name], size };
+  const words = name.split(/\s+/).filter(Boolean);
+  // Each extra line trades a little size for room; three is where the band ends.
+  const ladders: Array<[lineCount: number, from: number, to: number]> = [
+    [2, 34, 24],
+    [3, 30, 22],
+  ];
+  for (const [lineCount, from, to] of ladders) {
+    if (words.length < lineCount) continue;
+    for (let size = from; size >= to; size -= 2) {
+      const lines = wrapEvenly(words, lineCount, (line) => fits(line, size));
+      if (lines) return { lines, size };
+    }
+  }
+  const single = fitLine(name, maxWidth, 30, 18);
+  return { lines: [single.value], size: single.size };
+}
+
+/**
+ * The words on exactly `lineCount` lines, each fitting, as even as the words
+ * allow — never mid-word. A break that would start a line with a little word
+ * ("og", "i", "for") is avoided when a nearly-as-even one exists, because
+ * "Skolekorps og / Ungdomsorkester" reads better than
+ * "Skolekorps / og Ungdomsorkester". Null when no such wrap fits.
+ */
+function wrapEvenly(
+  words: string[],
+  lineCount: number,
+  fits: (line: string) => boolean,
+): string[] | null {
+  let best: string[] | null = null;
+  let bestCost = Number.POSITIVE_INFINITY;
+  // Every way to cut the word list into lineCount non-empty runs.
+  const walk = (from: number, cuts: number[]) => {
+    if (cuts.length === lineCount - 1) {
+      const bounds = [0, ...cuts, words.length];
+      const lines = bounds.slice(1).map((to, i) => words.slice(bounds[i], to).join(" "));
+      if (!lines.every(fits)) return;
+      const lengths = lines.map((line) => line.length);
+      const spread = Math.max(...lengths) - Math.min(...lengths);
+      const smallStarts = cuts.filter((cut) => (words[cut]?.length ?? 0) <= 3).length;
+      const cost = spread + smallStarts * 8;
+      if (cost < bestCost) {
+        best = lines;
+        bestCost = cost;
+      }
+      return;
+    }
+    for (let cut = from; cut <= words.length - (lineCount - 1 - cuts.length); cut++) {
+      walk(cut + 1, [...cuts, cut]);
+    }
+  };
+  walk(1, []);
+  return best;
 }
 
 interface TextOptions {
@@ -234,6 +299,13 @@ function validityCorner(rightX: number, centerY: number, periodText: string, lap
 }
 
 /**
+ * The white margin inside the QR panel. The code's own quiet zone is four
+ * modules; the cream card around the panel supplies the rest, so the panel
+ * itself stays close to the code instead of wrapping it in white.
+ */
+const QR_QUIET = 14;
+
+/**
  * The QR code in a panel of its own, with its quiet zone built in. White on
  * the cream card, so the panel is the brightest thing on it — an object a
  * scanner gets full contrast from and an eye finds first.
@@ -244,7 +316,7 @@ function qrPanel(
   qrSize: number,
   qr: { path: string; moduleCount: number },
 ): string {
-  const pad = 18;
+  const pad = QR_QUIET;
   const panel = qrSize + pad * 2;
   return `<rect x="${r(left)}" y="${r(top)}" width="${r(panel)}" height="${r(panel)}" rx="22" fill="${CARD}" stroke="${EDGE}" stroke-width="2"/>
   <g transform="translate(${r(left + pad)} ${r(top + pad)}) scale(${r(qrSize / qr.moduleCount)})"><path d="${qr.path}" fill="${INK}"/></g>`;
@@ -320,7 +392,10 @@ function drawCard(content: CardContent): string {
   const logoSize = 76;
   const corner = validityCorner(right, bandCenter, content.periodText, content.lapsed);
   const orgLeft = hasLogo ? left + logoSize + 22 : left;
-  const org = fitLine(content.orgName, right - corner.width - 28 - orgLeft, 30, 16);
+  const org = fitOrgName(content.orgName, right - corner.width - 28 - orgLeft);
+  // One line sits on the band's centre; several straddle it.
+  const orgLineGap = org.size * 1.1;
+  const orgFirstBaseline = bandCenter + org.size * 0.35 - ((org.lines.length - 1) * orgLineGap) / 2;
 
   const attributionBaseline = height - inner - 42;
   const ruleY = attributionBaseline - 42;
@@ -339,10 +414,10 @@ function drawCard(content: CardContent): string {
 
   // Big enough that a phone held up to it scans first time, and no bigger —
   // past that the code takes the card away from the member, who is its point.
-  const qrSize = 196;
-  const panel = qrSize + 36;
+  const qrSize = 176;
+  const panel = qrSize + QR_QUIET * 2;
   const qrCaptionOrg = fitLine(`i ${content.orgName}`, columnWidth, 15, 12);
-  const qrBlockHeight = panel + 60;
+  const qrBlockHeight = panel + 54;
 
   const roleAdvance = 15;
   const blockHeight = roleAdvance + 18 + nameAdvance + 30 + streakBlock + qrBlockHeight;
@@ -358,7 +433,15 @@ function drawCard(content: CardContent): string {
   return `${frame(width, height, inner, 32)}
   <g clip-path="url(#card-clip)"><rect x="${inner}" y="${inner}" width="${width - inner * 2}" height="${bandHeight}" fill="${BAND}"/></g>
   <line x1="${inner}" y1="${bandBottom}" x2="${width - inner}" y2="${bandBottom}" stroke="${EDGE}" stroke-width="2"/>
-${hasLogo ? `  ${logoCircle(left + logoSize / 2, bandCenter, logoSize, content.logoDataUri ?? "")}\n` : ""}  ${textEl(orgLeft, bandCenter + org.size * 0.35, org.value, { size: org.size, weight: 650, fill: DEEP })}
+${hasLogo ? `  ${logoCircle(left + logoSize / 2, bandCenter, logoSize, content.logoDataUri ?? "")}\n` : ""}  ${org.lines
+    .map((line, index) =>
+      textEl(orgLeft, orgFirstBaseline + index * orgLineGap, line, {
+        size: org.size,
+        weight: 650,
+        fill: DEEP,
+      }),
+    )
+    .join("\n  ")}
   ${corner.markup}
 
   ${textEl(center, roleBaseline, "STØTTEMEDLEM", { size: 15, weight: 650, fill: ACCENT, letterSpacing: 3.6, anchor: "middle" })}
@@ -371,8 +454,8 @@ ${content.recruitLine ? `  ${textEl(center, recruitBaseline, content.recruitLine
     : ""
 }
   ${qrPanel(center - panel / 2, qrTop, qrSize, content.qr)}
-  ${textEl(center, qrTop + panel + 34, "Skann og bli støttemedlem", { size: 17, weight: 650, fill: MUTED, anchor: "middle" })}
-  ${textEl(center, qrTop + panel + 58, qrCaptionOrg.value, { size: qrCaptionOrg.size, fill: FAINT, anchor: "middle" })}
+  ${textEl(center, qrTop + panel + 30, "Skann og bli støttemedlem", { size: 17, weight: 650, fill: MUTED, anchor: "middle" })}
+  ${textEl(center, qrTop + panel + 52, qrCaptionOrg.value, { size: qrCaptionOrg.size, fill: FAINT, anchor: "middle" })}
 
   <line x1="${left}" y1="${ruleY}" x2="${right}" y2="${ruleY}" stroke="${HAIRLINE}" stroke-width="2"/>
   ${attribution(center, attributionBaseline)}`;

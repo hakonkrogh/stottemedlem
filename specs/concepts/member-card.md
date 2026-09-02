@@ -48,6 +48,12 @@ surface the member happens to be looking at.
   the subject: their name large, their streak, their QR code. The card itself
   stays colour-neutral (cream and ink) so any organization's logo sits
   comfortably; the heart red is the product's one strong colour on it.
+- **The organization's name is prominent.** It answers "supporting member of
+  *what?*", so after the member's own name it is the largest text on the card.
+  A long name wraps onto two or three lines rather than shrinking to a
+  whisper: always between words, never inside one, and with the lines as
+  even in length as the words allow, so the band reads as a title and not as
+  a paragraph. Only a name too long even for three lines is set smaller.
 - **The card speaks the brand's one typeface.** It is set in the same Fraunces
   cut the website's headings use — people meet the card in feeds, emails and
   print, and it must read as the same brand on every channel. One face, one
@@ -85,15 +91,19 @@ surface the member happens to be looking at.
   same member, and the accepted cost is that a shared card is cropped in some
   feeds rather than shown whole. What the member is looking at is always
   exactly what they hand on.
-- **The card gets the room the screen has, and no more.** On a surface narrow
-  enough that the reading column's margins matter, it runs to both screen
-  edges: it is the subject of the page it appears on, and margins only make the
-  QR code and the name smaller than they need to be. Where there is room to
-  spare it stops growing rather than filling the width — an upright card poured
+- **The card sits on the page with air around it.** Wherever it is shown — the
+  thank-you page, the member's own page, its public address — it keeps the
+  page's margins on both sides and a little extra space above and below, so it
+  reads as an object lying on the page rather than as the page itself. (It ran
+  edge to edge on phones for a while, to buy the QR code a few more pixels; it
+  looked cramped, and the room was not worth it.) Where there is room to spare
+  it stops growing rather than filling the width — an upright card poured
   across a desktop column reads as a poster, not as a card.
 - **The QR code is sized to be scanned, not to dominate.** It is the smallest
   it can be and still come off a screen or a print into a camera — past that
-  it takes the card away from the member, who is what the card is about.
+  it takes the card away from the member, who is what the card is about. It
+  sits close to what is around it: a code wrapped in empty space reads as the
+  card's subject, and the subject is the member.
 - **Where the member is looking at their own card, the card carries the way to
   share it** — an action on the card itself rather than an address printed
   elsewhere on the page. What sharing means is the reader's device's business:

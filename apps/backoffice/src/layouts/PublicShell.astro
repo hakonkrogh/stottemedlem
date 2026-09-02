@@ -109,9 +109,8 @@ const { title, description, noindex, previewImage, previewImageAlt } = Astro.pro
     min-height: 100lvh;
   }
   main {
-    /* Published so content that is meant to run wider than the reading column
-     * — the member's card on a phone — can cancel exactly this much padding
-     * instead of hard-coding a number that would drift. */
+    /* The reading column's side gutter, named so anything that needs to
+     * relate to it can, instead of hard-coding a number that would drift. */
     --sm-page-gutter: 1.25rem;
     width: 100%;
     max-width: 38rem;

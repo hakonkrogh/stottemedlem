@@ -889,6 +889,13 @@ lives in `specs/`, kept in sync with code by a mandatory `Stop`-hook harness.
   command not found` / `turbo: command not found`, which is a missing install,
   not a broken tree. Run `pnpm install` once per worktree first (~seconds, the
   store is shared).
+- **A fresh worktree also has UNBUILT workspace packages** (no `packages/*/dist`),
+  and `pnpm install` does not build them. The astro dev server then dies at
+  first request with `Failed to resolve entry for package "@stottemedlem/core"`
+  (dev-logs `start` reports only "exited before becoming ready"). Run
+  `pnpm exec turbo run build --filter='./packages/*'` from the root once
+  (2026-09-02). `render-card` and root `typecheck` build what they need via
+  turbo themselves; the dev server does not.
 - **A fresh worktree also has no `apps/backoffice/.dev.vars`, and `pnpm
   typecheck` fails because of it** — with six errors in files you did not
   touch (`Property 'VIPPS_CLIENT_ID' does not exist on type 'Env'`, same for
