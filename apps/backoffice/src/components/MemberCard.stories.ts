@@ -53,7 +53,17 @@ export const Lapsed = {
 /** A supporter who shared no name; the card still stands. */
 export const WithoutName = { args: { ...base, memberName: null, logoDataUri: LOGO } };
 
-/** The stress case: both names long enough to force the card to shrink them. */
+/** A name too long for the band even at two lines wraps onto three, still between words. */
+export const VeryLongOrgName = {
+  args: {
+    ...base,
+    organizationName: "Sør-Trøndelag Ungdomssymfoniorkester og Musikkforening",
+    hearts: 2,
+    logoDataUri: LOGO,
+  },
+};
+
+/** The stress case: the organization's name breaks onto two lines, the member's shrinks. */
 export const LongNames = {
   args: {
     ...base,

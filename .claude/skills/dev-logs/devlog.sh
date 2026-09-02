@@ -73,7 +73,14 @@ case "$cmd" in
     if [ "$APP" = backoffice ]; then
       pnpm exec wrangler d1 migrations apply DB --local
     fi
-    pnpm exec astro dev --port "$PORT" --background
+    if ! pnpm exec astro dev --port "$PORT" --background; then
+      # astro only says "exited before becoming ready"; the reason is in the log.
+      echo "--- last errors from $LOG ---" >&2
+      grep -i -E 'error|failed|cannot' "$LOG" 2>/dev/null | tail -8 | cut -c1-240 >&2
+      echo "--- if it says 'Failed to resolve entry for package @stottemedlem/...' the workspace packages are unbuilt (fresh worktree): run from the repo root" >&2
+      echo "    pnpm exec turbo run build --filter='./packages/*'" >&2
+      exit 1
+    fi
     ;;
   tail)
     n="${2:-50}"; resolve_app "${3:-backoffice}"

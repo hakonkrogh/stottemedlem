@@ -141,6 +141,38 @@ describe("memberCardSvg", () => {
     expect(Math.max(...xs)).toBeLessThan(width);
   });
 
+  it("sets a long organization name on two lines rather than shrinking it", () => {
+    const svg = memberCardSvg({
+      ...base,
+      organizationName: "Vestbygda Skolekorps og Ungdomsorkester",
+    });
+    // Broken between words, and not so that the second line opens with "og".
+    expect(svg).toContain(">Vestbygda Skolekorps og</text>");
+    expect(svg).toContain(">Ungdomsorkester</text>");
+    // Still the biggest text in the band: no smaller than the year beside it.
+    const size = Number(/font-size="([\d.]+)"[^>]*>Vestbygda/.exec(svg)?.[1]);
+    expect(size).toBeGreaterThanOrEqual(27);
+  });
+
+  it("wraps a very long organization name onto three even lines, never mid-word", () => {
+    const name = "Sør-Trøndelag Ungdomssymfoniorkester og Musikkforening";
+    // With a logo the band is at its narrowest; no streak, so the band's ink
+    // colour picks out the organization's lines and nothing else.
+    const svg = memberCardSvg({
+      ...base,
+      organizationName: name,
+      hearts: 0,
+      logoDataUri: "data:image/png;base64,AAAA",
+    });
+    const lines = [...svg.matchAll(/<text [^>]*fill="#43331f"[^>]*>([^<]*)<\/text>/g)].map(
+      (match) => match[1],
+    );
+    expect(lines).toHaveLength(3);
+    // Every word, in order, each whole: the lines re-join to the name itself.
+    expect(lines.join(" ")).toBe(name);
+    expect(svg).not.toContain("…");
+  });
+
   it("encodes the referral join address in the QR code", () => {
     // The modules are one path, so the proof a URL was encoded is that a
     // different URL draws a different path.

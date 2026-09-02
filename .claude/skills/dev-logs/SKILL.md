@@ -35,6 +35,12 @@ description: Read the backend's stdout locally — console.log/error, request li
   human to watch the same shared server live.)
 - `.astro/dev.json` records `pid` and `background`; `astro dev status`/`stop`
   work on foreground servers too (that's how `start` converts one).
+- **`start` says "Dev server process exited before becoming ready"** (hit
+  2026-09-02 in a fresh worktree): astro hides the cause; `devlog.sh` now
+  prints the log's last error lines. The usual one is `Failed to resolve entry
+  for package "@stottemedlem/core"` = the workspace packages have no `dist`
+  yet. Fix from the repo root: `pnpm exec turbo run build --filter='./packages/*'`
+  (seconds), then `start` again.
 - **Don't start the server with a bare `astro dev`** (hit 2026-08-31): without
   `--port` the backoffice daemonizes on 4321 — marketing's port, not 4322 — and
   the CLI exits 0 while the daemon keeps running, so a "completed" command +
