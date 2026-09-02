@@ -9,6 +9,10 @@ description: Draw the member card and the org QR card from real `@stottemedlem/q
     # then: bash .claude/skills/preview-screenshot/shot.sh \
     #         "file://$(pwd)/.card-preview/index.html" <out.png> 900 4000
 
+In a FRESH WORKTREE run `pnpm install --frozen-lockfile` first: without
+`node_modules` the rebuild step dies with `Command "turbo" not found` and
+"@stottemedlem/qr failed to build", which looks like a card bug but is not.
+
 Rebuilds `@stottemedlem/qr` (turbo-cached, ~40ms warm), draws every fixture,
 and writes `card-<case>.svg`, `raster-*.png` and an `index.html`
 contact sheet showing browser-rendered and rasterized side by side. Screenshot
