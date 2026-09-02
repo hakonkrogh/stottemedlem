@@ -52,8 +52,6 @@ export function memberCardSize(): { width: number; height: number } {
   return { width: MEMBER_CARD_WIDTH, height: MEMBER_CARD_HEIGHT };
 }
 
-/** The canvas behind the card — a step deeper than the card so it reads as an object. */
-const GROUND = "#f2e9d8";
 const CREAM = "#fdf8f0";
 const CARD = "#ffffff";
 const BAND = "#fbf2e1";
@@ -322,7 +320,14 @@ function qrPanel(
   <g transform="translate(${r(left + pad)} ${r(top + pad)}) scale(${r(qrSize / qr.moduleCount)})"><path d="${qr.path}" fill="${INK}"/></g>`;
 }
 
-/** The card's frame: a warm ground, the cream card, a hairline edge and a soft shadow. */
+/**
+ * The card's frame: the cream card, a hairline edge and a soft shadow, on
+ * nothing at all. The canvas behind the card is transparent, so the card sits
+ * on whatever page shows it instead of bringing its own ground along: a
+ * painted backdrop looked like a darker slab around the card on the member's
+ * page, whose cream is a step lighter than any ground the card could pick.
+ * The margin the card keeps from the canvas edge is room for its shadow.
+ */
 function frame(width: number, height: number, inner: number, radius: number): string {
   const w = width - inner * 2;
   const h = height - inner * 2;
@@ -332,7 +337,6 @@ function frame(width: number, height: number, inner: number, radius: number): st
       <feDropShadow dx="0" dy="6" stdDeviation="10" flood-color="#8a7355" flood-opacity="0.16"/>
     </filter>
   </defs>
-  <rect width="${width}" height="${height}" fill="${GROUND}"/>
   <rect x="${inner}" y="${inner}" width="${w}" height="${h}" rx="${radius}" fill="${CREAM}" filter="url(#card-shadow)"/>
   <rect x="${inner}" y="${inner}" width="${w}" height="${h}" rx="${radius}" fill="none" stroke="${EDGE}" stroke-width="2"/>`;
 }
