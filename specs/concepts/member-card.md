@@ -98,7 +98,11 @@ surface the member happens to be looking at.
   edge to edge on phones for a while, to buy the QR code a few more pixels; it
   looked cramped, and the room was not worth it.) Where there is room to spare
   it stops growing rather than filling the width — an upright card poured
-  across a desktop column reads as a poster, not as a card.
+  across a desktop column reads as a poster, not as a card. The card brings
+  no ground of its own: behind its edge and shadow the picture is empty, so
+  it lies on whatever page (or feed, or email) is showing it. It used to
+  carry a warm backdrop, which on the member's own page showed up as a darker
+  slab around the card rather than as the page.
 - **The QR code is sized to be scanned, not to dominate.** It is the smallest
   it can be and still come off a screen or a print into a camera — past that
   it takes the card away from the member, who is what the card is about. It
