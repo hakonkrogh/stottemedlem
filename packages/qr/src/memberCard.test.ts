@@ -79,9 +79,38 @@ describe("memberCardSvg", () => {
     expect(memberCardSvg({ ...base, memberName: null })).toContain("Støttemedlem");
   });
 
-  it("shrinks a long name rather than cutting it straight away", () => {
+  it("steps a long name down the scale rather than cutting it straight away", () => {
     const long = memberCardSvg({ ...base, memberName: "Anne-Margrethe Wollertsen Bjørnstad" });
-    expect(long).toContain("Anne-Margrethe Wollertsen Bjørnstad");
+    expect(long).toContain(">Anne-Margrethe Wollertsen Bjørnstad</text>");
+    expect(long).toMatch(/font-size="24"[^>]*>Anne-Margrethe/);
+  });
+
+  it("sets its text at three sizes and no others, whatever the names are", () => {
+    // The number inside the heart is sized to the heart, not to the text.
+    const cases = [
+      base,
+      { ...base, hearts: 34, recruits: 12 },
+      { ...base, memberName: "Anne-Margrethe Wollertsen Bjørnstad" },
+      { ...base, organizationName: "Sør-Trøndelag Ungdomssymfoniorkester og Musikkforening" },
+      { ...base, hearts: 3, lapsed: true, periodText: "2024" },
+    ];
+    for (const options of cases) {
+      const svg = memberCardSvg(options);
+      const digit = new RegExp(`font-size="([\\d.]+)"[^>]*>${options.hearts}</text>`).exec(
+        svg,
+      )?.[1];
+      const sizes = [...svg.matchAll(/font-size="([\d.]+)"/g)]
+        .map((m) => m[1])
+        .filter((size) => size !== digit);
+      expect(new Set(sizes.map(Number))).toEqual(
+        new Set([48, 24, 16].filter((size) => sizes.includes(String(size)))),
+      );
+      expect(sizes.every((size) => ["48", "24", "16"].includes(size))).toBe(true);
+    }
+  });
+
+  it("does not label itself above the name", () => {
+    expect(memberCardSvg(base)).not.toContain(">STØTTEMEDLEM<");
   });
 
   it("escapes what people and organizations may actually be called", () => {
@@ -142,16 +171,19 @@ describe("memberCardSvg", () => {
   });
 
   it("sets a long organization name on two lines rather than shrinking it", () => {
+    // Beside a logo, where the band has the least room.
     const svg = memberCardSvg({
       ...base,
       organizationName: "Vestbygda Skolekorps og Ungdomsorkester",
+      logoDataUri: "data:image/png;base64,AAAA",
     });
     // Broken between words, and not so that the second line opens with "og".
     expect(svg).toContain(">Vestbygda Skolekorps og</text>");
     expect(svg).toContain(">Ungdomsorkester</text>");
-    // Still the biggest text in the band: no smaller than the year beside it.
+    // Still at the scale's middle step, the same size as the year beside it:
+    // wrapping bought the room, so nothing had to shrink.
     const size = Number(/font-size="([\d.]+)"[^>]*>Vestbygda/.exec(svg)?.[1]);
-    expect(size).toBeGreaterThanOrEqual(27);
+    expect(size).toBe(24);
   });
 
   it("wraps a very long organization name onto three even lines, never mid-word", () => {
@@ -164,7 +196,7 @@ describe("memberCardSvg", () => {
       hearts: 0,
       logoDataUri: "data:image/png;base64,AAAA",
     });
-    const lines = [...svg.matchAll(/<text [^>]*fill="#43331f"[^>]*>([^<]*)<\/text>/g)].map(
+    const lines = [...svg.matchAll(/<text [^>]*fill="#3b2d1c"[^>]*>([^<]*)<\/text>/g)].map(
       (match) => match[1],
     );
     expect(lines).toHaveLength(3);

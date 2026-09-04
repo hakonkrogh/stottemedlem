@@ -89,6 +89,7 @@ The one message the product itself sends a member is the necessary
 | [Vipps API keys](concepts/vipps-api-keys.md) | Draft |
 | [Brand attribution](concepts/brand-attribution.md) | Active |
 | [Brand mark (the heart)](concepts/brand-mark.md) | Active |
+| [Brand palette](concepts/brand-palette.md) | Active |
 | [Scorecard](concepts/scorecard.md) | Draft |
 
 ---

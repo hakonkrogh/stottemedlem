@@ -112,6 +112,13 @@ description: Render any local URL (marketing/backoffice dev or preview server) t
   render, so it looks story-specific). Building afterwards does NOT heal it —
   Vite keeps serving the failed resolution; kill and restart Storybook (hit
   2026-08-28, again with db 2026-08-28).
+  **A worktree copied from another worktree can carry a STALE VITE CACHE** (hit
+  2026-09-04): Storybook answers 200 on `/` but `index.json` is
+  `{"entries":{}}` and `iframe.html` is a 500 whose ENOENT names the OTHER
+  worktree's path (`…/worktrees/<gone>/node_modules/.pnpm/@storybook+builder-vite…`).
+  Neither a rebuild nor a restart heals it: `pkill -f "storybook dev -p <port>"`,
+  `rm -rf packages/ui/node_modules/.cache packages/ui/node_modules/.vite`, start
+  again, and confirm `index.json` lists story ids before shooting.
   Since 2026-08-31 the root alias `pnpm story` (= `pnpm stories`) does the
   core+db pre-build AND starts Storybook in one go; the manual form is
   `pnpm --filter @stottemedlem/ui run storybook --ci`
@@ -152,7 +159,13 @@ description: Render any local URL (marketing/backoffice dev or preview server) t
   xargs kill`. If the astro dev server is needed instead (port 4322): it's a
   persistent daemon — "already running" may be a stale one from another session
   serving old code; `pnpm --filter @stottemedlem/backoffice exec astro dev stop`
-  then restart, and stop it the same way when done. A stale daemon can also
+  then restart, and stop it the same way when done. The daemon takes its port
+  from the app's `dev` script (marketing 4321, backoffice 4322): a `--port`
+  appended to `pnpm dev` is ignored, so read the port from the "Dev server
+  running at" line, and `npx astro dev stop` from the app dir stops it. Every
+  playwright full-page shot of a dev-server page carries the Astro dev toolbar as
+  a dark pill near the bottom of the viewport; it is not the page, and a built
+  `astro preview` has none. A stale daemon can also
   belong to a DIFFERENT worktree: `astro dev stop` then says "No dev server is
   running" while 4322 still answers with the other worktree's code — just start
   yours and read the port it actually got. In a fresh worktree the daemon dies

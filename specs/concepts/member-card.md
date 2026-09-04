@@ -46,8 +46,17 @@ surface the member happens to be looking at.
   with the validity as a small label over the year in its corner, the one
   thing a checker looks for kept in one fixed place — and then the member is
   the subject: their name large, their streak, their QR code. The card itself
-  stays colour-neutral (cream and ink) so any organization's logo sits
-  comfortably; the heart red is the product's one strong colour on it.
+  stays colour-neutral (white and ink) so any organization's logo sits
+  comfortably; the heart red is the product's one strong colour on it, and
+  the [palette](brand-palette.md)'s moss green appears only as the one rule
+  under the band and the valid year. The band is a
+  line, not a filled field: a second colour field at the top competed with
+  the organization's own mark. The card is white, not the page's cream: a
+  cream card on the cream member page barely lifted off it, and a card is
+  meant to read as an object lying on the page. Being the brightest thing on
+  the page, it draws the QR code straight on itself; the code used to sit in
+  a white panel of its own, which on a white card would be a frame drawn for
+  nothing.
 - **The organization's name is prominent.** It answers "supporting member of
   *what?*", so after the member's own name it is the largest text on the card.
   A long name wraps onto two or three lines rather than shrinking to a
@@ -58,6 +67,12 @@ surface the member happens to be looking at.
   cut the website's headings use — people meet the card in feeds, emails and
   print, and it must read as the same brand on every channel. One face, one
   cut, everywhere the product writes.
+- **Three sizes, and no others.** The member's name is the one large thing;
+  the organization, the years line and the valid year share a middle size;
+  every caption shares a small one. Text that does not fit steps down to the
+  next size rather than shrinking a little at a time, so a long name lands on
+  a size the card already uses. The card does not label itself
+  "støttemedlem" above the name: the QR caption says it, and the card is one.
 - **The card as a picture is drawn once per version of itself.** A card is
   looked at, previewed by every feed it is pasted into, and attached to
   receipts, while what it shows changes only when the member's own facts change
@@ -152,6 +167,7 @@ surface the member happens to be looking at.
 - Its QR code leads into the [join page](join-page.md).
 - Carries [brand attribution](brand-attribution.md) and the
   [brand mark](brand-mark.md).
+- Drawn from the [brand palette](brand-palette.md).
 
 ## Referenced by
 - [Use case: Earn hearts and recruit new members](../use-cases/earn-hearts-and-recruit.md)

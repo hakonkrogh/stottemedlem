@@ -95,3 +95,26 @@ so every webhook retry repeated it.
 
 Rule of thumb: rasterize at most once per request, and prefer a cron/queue or a
 cached PNG for anything that could need several.
+
+## Exploring colours or a layout twist without touching the shipped code
+
+For a design pass (2026-09-04, the Fløte palette) the card was drawn in
+several palettes side by side without editing `packages/qr`: copy
+`packages/qr/src/memberCard.ts` to the scratchpad, turn the colour `const`s
+into `let`s plus an exported `setTheme({...})`, and run the copy DIRECTLY,
+no build step (Node 24 strips types from a `.ts` import). Two things bite:
+
+- `import { create } from "qrcode"` does not resolve from outside the
+  package; replace it with
+  `createRequire("<repo>/packages/qr/package.json")("qrcode")`.
+- Rasterize the copy through the same resvg + embedded Fraunces path as
+  `render.mjs` (copy its `rasterize()`; resolve `@resvg/resvg-wasm` via
+  `createRequire` from `apps/backoffice/package.json`). A theme that inverts
+  the card MUST give the QR modules their own colour: the code is drawn in
+  the card's INK, and a cream ink on the white panel renders an unscannable
+  blank (caught 2026-09-04 on the dark variant).
+
+Every colour has its own constant, so a per-role palette is a plain object;
+hex-swapping the finished SVG works for colour-only variants but not for
+removing the band fill or changing a stroke. The palette itself is
+`specs/concepts/brand-palette.md`.

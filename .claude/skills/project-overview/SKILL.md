@@ -16,7 +16,14 @@ lives in `specs/`, kept in sync with code by a mandatory `Stop`-hook harness.
   Visual identity (decided 2026-07-07): masonry photo-collage backdrop
   (`src/components/HeroBackdrop.astro` + `src/assets/backdrop/`), localized top
   scrim + frosted-glass cards, headings in Fraunces (`@fontsource-variable/fraunces`,
-  self-hosted) over system-sans body, warm cream/amber palette. Gotcha: the hero
+  self-hosted) over system-sans body, warm cream palette with ONE moss green
+  action colour (`#3d6b3f`; amber until 2026-09-04, red is the heart's alone:
+  `specs/concepts/brand-palette.md`). **Where colours live, five places:**
+  `packages/ui/src/styles/tokens.css` (every product surface), hard-coded in
+  `apps/marketing/src/pages/index.astro` (reads no tokens), the `const`s at the
+  top of `packages/qr/src/memberCard.ts` (member card) and `ACCENT` in
+  `packages/qr/src/index.ts` (org QR card), and inline styles in
+  `packages/email/src/*.ts`. A palette change touches all five. Gotcha: the hero
   wrapper sets `color:#fff` — slotted card content must re-set its own dark color.
 - `apps/backoffice/` — Astro 7 SSR on ONE Cloudflare Worker (`src/worker.ts`:
   fetch + scheduled + queue stubs); D1/KV/Queue bindings in `wrangler.jsonc` are
@@ -804,7 +811,8 @@ lives in `specs/`, kept in sync with code by a mandatory `Stop`-hook harness.
   colors/type/space — restyle here, not in components) + `base.css`. Token
   values DELIBERATELY mirror the marketing identity (decided 2026-07-28 after a
   trendy-font detour was reverted): Fraunces 650 "SOFT" 50 headings, golden
-  amber CTA `#f2b64a` with dark ink text + lighter hover, palette lifted from
+  moss CTA `#3d6b3f` with white text + darker hover (amber `#f2b64a` until
+  2026-09-04), palette lifted from
   `apps/marketing/src/pages/index.astro` — keep the two in sync if marketing
   rebrands. Display font swaps = tokens.css `--sm-font-display*` + the base.css
   @import + the @fontsource dep. Ships
