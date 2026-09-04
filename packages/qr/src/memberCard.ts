@@ -12,12 +12,16 @@
  * logo and name on the left, the validity as a label-over-year corner on the
  * right — then the member's name large, their years as a count inside one big
  * heart (the streak), a celebratory line, the QR code, and the attribution.
- * The text sits on a scale of three sizes (2026-09-04): the member's name,
- * one middle step for the organization, the headline and the year, and one
- * small step for every caption. A line that does not fit steps DOWN the
- * scale rather than shrinking point by point, so a long name lands on a size
- * the card already uses instead of a twelfth one. A "STØTTEMEDLEM" label used
- * to sit over the name; it said what the card already is, and went.
+ * The text sits on a scale of four sizes (2026-09-04): the member's name, a
+ * title step for the organization, one middle step for the headline and the
+ * year, and one small step for every caption. A line that does not fit steps
+ * DOWN the scale rather than shrinking point by point, so a long name lands
+ * on a size the card already uses instead of a twelfth one. The
+ * organization's name also BREAKS before it runs the width of the band: past
+ * about twenty characters it sets as a block of two or three lines beside the
+ * logo, which reads as a title where one long line read as a caption.
+ * A "STØTTEMEDLEM" label used to sit over the name; it said what the card
+ * already is, and went.
  * The card stays colour-neutral white and ink so any organization's logo sits
  * comfortably in the band; the heart red is the one strong colour, and the
  * brand's moss green (specs/concepts/brand-palette.md) draws only the rule
@@ -141,11 +145,13 @@ function estimateWidth(text: string, size: number): number {
 }
 
 /**
- * The card's type scale: the member's name, a middle step, a small step.
- * Three sizes and no others, so the card reads as one voice rather than a
- * ladder of near-misses (it used to set text at twelve sizes).
+ * The card's type scale: the member's name, the organization's name under it,
+ * a middle step, a small step. Four sizes and no others, so the card reads as
+ * one voice rather than a ladder of near-misses (it used to set text at twelve
+ * sizes). The `title` step exists because the band answers "member of what?"
+ * and was reading as a caption at the middle step (2026-09-04).
  */
-const TYPE = { name: 48, middle: 24, small: 16 };
+const TYPE = { name: 48, title: 32, middle: 24, small: 16 };
 
 /**
  * Fit a line by stepping down the given sizes, and only then cut it. Names are
@@ -162,24 +168,38 @@ function fitScaled(text: string, maxWidth: number, sizes: number[]) {
 }
 
 /**
+ * How long the band's name may run before it breaks. Room is not the only
+ * question: a name of twenty-odd characters still fits beside the validity
+ * corner, but it stretches the band into one thin line of text, and a block
+ * of two lines beside the logo reads as a title instead. Counted in
+ * characters, not points, so a name breaks the same way with or without a
+ * logo taking room from it.
+ */
+const ORG_MEASURE = 20;
+
+/**
  * The organization's name in the band — the answer to "supporting member of
  * what?", so after the member's own name it is the biggest text on the card.
- * A long name wraps onto two or three lines, broken between words and as
- * evenly as the words allow, rather than shrinking to a whisper; only a name
- * too long even for three lines at the middle step drops to the small step,
- * wraps again, and is truncated as a last resort.
+ * A name past the measure, or past the room beside the validity corner, wraps
+ * onto two or three lines, broken between words and as evenly as the words
+ * allow, rather than shrinking to a whisper; only a name too long even for
+ * three lines at the title step drops down the scale, wraps again, and is
+ * truncated as a last resort.
  */
 function fitOrgName(name: string, maxWidth: number): { lines: string[]; size: number } {
   const fits = (text: string, size: number) => estimateWidth(text, size) <= maxWidth;
   const words = name.split(/\s+/).filter(Boolean);
-  for (const size of [TYPE.middle, TYPE.small]) {
-    if (fits(name, size)) return { lines: [name], size };
+  for (const size of [TYPE.title, TYPE.middle, TYPE.small]) {
+    // One line only while the name is short enough to read as one.
+    if (name.length <= ORG_MEASURE && fits(name, size)) return { lines: [name], size };
     // Each extra line buys room at the same size; three is where the band ends.
     for (const lineCount of [2, 3]) {
       if (words.length < lineCount) continue;
       const lines = wrapEvenly(words, lineCount, (line) => fits(line, size));
       if (lines) return { lines, size };
     }
+    // A name with no break in it takes the whole band rather than shrink.
+    if (fits(name, size)) return { lines: [name], size };
   }
   const single = fitScaled(name, maxWidth, [TYPE.small]);
   return { lines: [single.value], size: single.size };

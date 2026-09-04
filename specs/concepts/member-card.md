@@ -58,18 +58,22 @@ surface the member happens to be looking at.
   a white panel of its own, which on a white card would be a frame drawn for
   nothing.
 - **The organization's name is prominent.** It answers "supporting member of
-  *what?*", so after the member's own name it is the largest text on the card.
+  *what?*", so after the member's own name it is the largest text on the card,
+  set a step above the years line and the valid year beside it.
   A long name wraps onto two or three lines rather than shrinking to a
   whisper: always between words, never inside one, and with the lines as
   even in length as the words allow, so the band reads as a title and not as
   a paragraph. Only a name too long even for three lines is set smaller.
+  It breaks on length, not only when it runs out of room: a name of much more
+  than twenty characters reads as a caption stretched across the band, so it
+  becomes a block of lines beside the logo instead, at the same size.
 - **The card speaks the brand's one typeface.** It is set in the same Fraunces
   cut the website's headings use — people meet the card in feeds, emails and
   print, and it must read as the same brand on every channel. One face, one
   cut, everywhere the product writes.
-- **Three sizes, and no others.** The member's name is the one large thing;
-  the organization, the years line and the valid year share a middle size;
-  every caption shares a small one. Text that does not fit steps down to the
+- **Four sizes, and no others.** The member's name is the one large thing; the
+  organization's name is a step under it; the years line and the valid year
+  share a middle size; every caption shares a small one. Text that does not fit steps down to the
   next size rather than shrinking a little at a time, so a long name lands on
   a size the card already uses. The card does not label itself
   "støttemedlem" above the name: the QR caption says it, and the card is one.

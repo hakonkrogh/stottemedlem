@@ -85,7 +85,7 @@ describe("memberCardSvg", () => {
     expect(long).toMatch(/font-size="24"[^>]*>Anne-Margrethe/);
   });
 
-  it("sets its text at three sizes and no others, whatever the names are", () => {
+  it("sets its text at four sizes and no others, whatever the names are", () => {
     // The number inside the heart is sized to the heart, not to the text.
     const cases = [
       base,
@@ -103,9 +103,9 @@ describe("memberCardSvg", () => {
         .map((m) => m[1])
         .filter((size) => size !== digit);
       expect(new Set(sizes.map(Number))).toEqual(
-        new Set([48, 24, 16].filter((size) => sizes.includes(String(size)))),
+        new Set([48, 32, 24, 16].filter((size) => sizes.includes(String(size)))),
       );
-      expect(sizes.every((size) => ["48", "24", "16"].includes(size))).toBe(true);
+      expect(sizes.every((size) => ["48", "32", "24", "16"].includes(size))).toBe(true);
     }
   });
 
@@ -170,6 +170,26 @@ describe("memberCardSvg", () => {
     expect(Math.max(...xs)).toBeLessThan(width);
   });
 
+  it("breaks a name that would run the width of the band, though it would fit", () => {
+    const svg = memberCardSvg({
+      ...base,
+      organizationName: "Store Bergan Skolekorps",
+      logoDataUri: "data:image/png;base64,AAAA",
+    });
+    // Two lines beside the logo instead of one line reaching for the year.
+    expect(svg).toContain(">Store Bergan</text>");
+    expect(svg).toContain(">Skolekorps</text>");
+    expect(svg).not.toContain(">Store Bergan Skolekorps</text>");
+    // Breaking is not shrinking: the band keeps the title step.
+    const size = Number(/font-size="([\d.]+)"[^>]*>Store Bergan</.exec(svg)?.[1]);
+    expect(size).toBe(32);
+  });
+
+  it("keeps a short organization name on one line", () => {
+    const svg = memberCardSvg({ ...base, organizationName: "Eksempel Musikkorps" });
+    expect(svg).toContain(">Eksempel Musikkorps</text>");
+  });
+
   it("sets a long organization name on two lines rather than shrinking it", () => {
     // Beside a logo, where the band has the least room.
     const svg = memberCardSvg({
@@ -180,10 +200,10 @@ describe("memberCardSvg", () => {
     // Broken between words, and not so that the second line opens with "og".
     expect(svg).toContain(">Vestbygda Skolekorps og</text>");
     expect(svg).toContain(">Ungdomsorkester</text>");
-    // Still at the scale's middle step, the same size as the year beside it:
+    // Still at the scale's title step, bigger than the year beside it:
     // wrapping bought the room, so nothing had to shrink.
     const size = Number(/font-size="([\d.]+)"[^>]*>Vestbygda/.exec(svg)?.[1]);
-    expect(size).toBe(24);
+    expect(size).toBe(32);
   });
 
   it("wraps a very long organization name onto three even lines, never mid-word", () => {
