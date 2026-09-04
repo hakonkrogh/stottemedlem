@@ -1,6 +1,6 @@
 import type { R2Bucket } from "@cloudflare/workers-types";
 import { joinPagePath } from "@stottemedlem/core";
-import type { Organization } from "@stottemedlem/db";
+import type { Organization, OrganizationImages } from "@stottemedlem/db";
 
 // Uploaded org media (logo + banner) in the MEDIA R2 bucket. Object keys are
 // content-hashed (`org/<id>/<kind>-<hash>.<ext>`) so the public image URLs can
@@ -123,4 +123,27 @@ export async function serveOrgImage(media: R2Bucket, key: string | null): Promis
       "Cache-Control": "public, max-age=31536000, immutable",
     },
   });
+}
+
+/**
+ * What the shared identity header needs, resolved from the stored keys: the
+ * name, the public image addresses, and the banner's chosen focal point. Every
+ * surface that presents an organization (join page, receipt, and the back
+ * office's own preview of them) maps through here, so they cannot drift.
+ */
+export function orgIdentity(org: OrganizationImages & { name: string; slug: string }): {
+  name: string;
+  logoUrl: string | null;
+  bannerUrl: string | null;
+  bannerFocus: { x: number; y: number } | null;
+} {
+  return {
+    name: org.name,
+    logoUrl: org.logoKey ? orgImageUrl(org.slug, "logo", org.logoKey) : null,
+    bannerUrl: org.bannerKey ? orgImageUrl(org.slug, "banner", org.bannerKey) : null,
+    bannerFocus:
+      org.bannerFocusX !== null && org.bannerFocusY !== null
+        ? { x: org.bannerFocusX, y: org.bannerFocusY }
+        : null,
+  };
 }

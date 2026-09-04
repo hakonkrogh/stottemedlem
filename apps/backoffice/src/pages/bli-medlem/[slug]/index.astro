@@ -10,13 +10,14 @@ import { getOrganizationBySlug, listMembershipTiers } from "@stottemedlem/db";
 import Alert from "@stottemedlem/ui/components/Alert.astro";
 import Button from "@stottemedlem/ui/components/Button.astro";
 import Heading from "@stottemedlem/ui/components/Heading.astro";
+import OrgIdentityHeader from "@stottemedlem/ui/components/OrgIdentityHeader.astro";
 import Stack from "@stottemedlem/ui/components/Stack.astro";
 import Text from "@stottemedlem/ui/components/Text.astro";
 import TextLink from "@stottemedlem/ui/components/TextLink.astro";
 import MembershipTierCard from "../../../components/MembershipTierCard.astro";
-import OrgIdentityHeader from "../../../components/OrgIdentityHeader.astro";
 import PublicShell from "../../../layouts/PublicShell.astro";
 import { getDb } from "../../../lib/db";
+import { orgIdentity } from "../../../lib/orgImages";
 import { periods } from "../../../lib/periods";
 
 // PUBLIC join page (specs/concepts/join-page.md): the page an
@@ -76,7 +77,7 @@ const referral = Astro.url.searchParams.get(JOIN_REFERRAL_PARAM)?.trim() || null
 <PublicShell title={title} description={description}>
   <Stack gap="xl">
     <Stack gap="md">
-      <OrgIdentityHeader org={org} />
+      <OrgIdentityHeader {...orgIdentity(org)} />
       {
         joinError && (
           <Alert variant="error">

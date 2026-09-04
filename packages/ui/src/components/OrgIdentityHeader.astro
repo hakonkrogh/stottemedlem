@@ -1,34 +1,37 @@
 ---
-import type { OrganizationImages } from "@stottemedlem/db";
-import { orgImageUrl } from "../lib/orgImages";
-
-// The org's uploaded visual identity, Facebook-style: a wide banner backdrop
+// An organization's visual identity, Facebook-style: a wide banner backdrop
 // with the circular logo overlapping its bottom edge and the org name beside
-// it (specs/concepts/join-page.md). Shared by every public page that presents
-// the organization — the join page and the receipt — so a supporter sees the
-// same identity throughout. The banner stays bounded in height so the page's
-// real content is never pushed far down. Either image is simply omitted when
-// the org has not uploaded it.
+// it (specs/concepts/join-page.md). This is THE one presentation of an
+// organization: the public join page and the receipt show it to supporters,
+// and the back office shows the very same component to the administrator as
+// the preview of how their organization is presented. Sharing it is what makes
+// that preview the truth, not an approximation.
+//
+// The banner stays bounded in height so the page's real content is never
+// pushed far down. Either image is simply omitted when the org has none: the
+// logo alone sits beside the name, and a name alone stands by itself.
 interface Props {
-  org: OrganizationImages & { name: string; slug: string };
+  name: string;
+  logoUrl?: string | null;
+  bannerUrl?: string | null;
+  /**
+   * Which part of the banner survives the crop to the wide backdrop, as
+   * percentages (0-100) chosen by the organization; centered when unset.
+   */
+  bannerFocus?: { x: number; y: number } | null;
 }
 
-const { org } = Astro.props;
-
-const logoUrl = org.logoKey ? orgImageUrl(org.slug, "logo", org.logoKey) : null;
-const bannerUrl = org.bannerKey ? orgImageUrl(org.slug, "banner", org.bannerKey) : null;
-// The admin-chosen focal point decides which part of the banner survives the
-// crop to the wide backdrop (settings page picker); center when unset.
-const bannerFocus = `${org.bannerFocusX ?? 50}% ${org.bannerFocusY ?? 50}%`;
+const { name, logoUrl = null, bannerUrl = null, bannerFocus = null } = Astro.props;
+const bannerPosition = `${bannerFocus?.x ?? 50}% ${bannerFocus?.y ?? 50}%`;
 ---
 
 <header class:list={["identity", { "has-banner": bannerUrl }]}>
   {bannerUrl && (
-    <img class="banner" src={bannerUrl} alt="" style={`object-position: ${bannerFocus}`} />
+    <img class="banner" src={bannerUrl} alt="" style={`object-position: ${bannerPosition}`} />
   )}
   <div class="head">
     {logoUrl && <img class="logo" src={logoUrl} alt="" />}
-    <p class="org-name">{org.name}</p>
+    <p class="org-name">{name}</p>
   </div>
 </header>
 
@@ -39,7 +42,7 @@ const bannerFocus = `${org.bannerFocusX ?? 50}% ${org.bannerFocusY ?? 50}%`;
   .banner {
     display: block;
     width: 100%;
-    /* A wide backdrop, not a hero — bounded so the offer stays near the top. */
+    /* A wide backdrop, not a hero: bounded so the offer stays near the top. */
     aspect-ratio: 12 / 5;
     min-height: 7.5rem;
     max-height: 15rem;
@@ -51,7 +54,7 @@ const bannerFocus = `${org.bannerFocusX ?? 50}% ${org.bannerFocusY ?? 50}%`;
     align-items: flex-end;
     gap: 1.1rem;
   }
-  /* The org name is the identity mark beside the logo, not the page headline —
+  /* The org name is the identity mark beside the logo, not the page headline:
      the h1 is the page's own invitation or confirmation below. Styled like a
      display heading so the identity header keeps its weight. */
   .org-name {

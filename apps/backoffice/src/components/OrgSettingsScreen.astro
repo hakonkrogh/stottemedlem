@@ -14,11 +14,12 @@ import Alert from "@stottemedlem/ui/components/Alert.astro";
 import Button from "@stottemedlem/ui/components/Button.astro";
 import Heading from "@stottemedlem/ui/components/Heading.astro";
 import InfoList from "@stottemedlem/ui/components/InfoList.astro";
+import OrgIdentityHeader from "@stottemedlem/ui/components/OrgIdentityHeader.astro";
 import Stack from "@stottemedlem/ui/components/Stack.astro";
 import Text from "@stottemedlem/ui/components/Text.astro";
 import TextField from "@stottemedlem/ui/components/TextField.astro";
 import TextLink from "@stottemedlem/ui/components/TextLink.astro";
-import { orgImageUrl } from "../lib/orgImages";
+import { orgIdentity } from "../lib/orgImages";
 import type { ProfileFieldErrors, ProfileFormValues } from "../lib/orgProfile";
 import { type OrgWarning, warningsForTab } from "../lib/orgWarnings";
 import type { OrgVippsKeys } from "../lib/vippsKeys";
@@ -29,6 +30,8 @@ import OrgWarnings from "./OrgWarnings.astro";
 interface Props {
   org: Organization;
   orgPath: string;
+  /** The public join page, so the preview can link to the real thing. */
+  joinUrl: string;
   /** Open the form instead of the presentation. */
   editing?: boolean;
   values: ProfileFormValues;
@@ -46,6 +49,7 @@ interface Props {
 const {
   org,
   orgPath,
+  joinUrl,
   editing = false,
   values,
   fieldErrors = {},
@@ -72,10 +76,11 @@ const dpaAccepted = hasAcceptedDpa(org, DPA_VERSION);
 const acceptedDate = org.dpaAcceptedAt
   ? new Date(org.dpaAcceptedAt).toLocaleDateString("nb-NO")
   : null;
-const bannerPosition =
-  org.bannerFocusX !== null && org.bannerFocusY !== null
-    ? `${org.bannerFocusX}% ${org.bannerFocusY}%`
-    : "50% 50%";
+// The preview is the join page's own identity header, fed exactly what the
+// join page feeds it (specs/concepts/join-page.md), so what the administrator
+// sees here IS what a supporter sees there.
+const identity = orgIdentity(org);
+const hasImages = !!(identity.logoUrl || identity.bannerUrl);
 ---
 
 <Stack gap="lg">
@@ -127,32 +132,25 @@ const bannerPosition =
         </section>
 
         <section class="section">
-          <Heading level={3}>Logo og bannerbilde</Heading>
-          {org.logoKey || org.bannerKey ? (
-            <div class="images">
-              {org.logoKey && (
-                <figure class="image">
-                  <img class="logo" src={orgImageUrl(org.slug, "logo", org.logoKey)} alt="" />
-                  <figcaption>Logo</figcaption>
-                </figure>
-              )}
-              {org.bannerKey && (
-                <figure class="image banner-figure">
-                  <img
-                    class="banner"
-                    src={orgImageUrl(org.slug, "banner", org.bannerKey)}
-                    style={`object-position: ${bannerPosition}`}
-                    alt=""
-                  />
-                  <figcaption>Bannerbilde, beskåret slik den offentlige siden viser det</figcaption>
-                </figure>
-              )}
+          <div class="section-head">
+            <Heading level={3}>Slik vises dere på den offentlige siden</Heading>
+            <Button variant="secondary" href={joinUrl}>
+              Se siden
+            </Button>
+          </div>
+          {/* The public page's reading column, on its own background, so the
+              banner crop and the logo's overlap are judged at the width a
+              supporter gets. */}
+          <div class="public-preview">
+            <div class="public-column">
+              <OrgIdentityHeader {...identity} />
             </div>
-          ) : (
-            <Text variant="small">
-              Ingen bilder ennå — den offentlige siden viser navnet alene.
-            </Text>
-          )}
+          </div>
+          <Text variant="small">
+            {hasImages
+              ? "Øverst på siden: bannerbildet er beskåret slik siden viser det, og logoen ligger alltid i en sirkel."
+              : "Uten logo og bannerbilde viser siden navnet alene. Begge er valgfrie og legges til under «Endre opplysningene»."}
+          </Text>
         </section>
 
         <section class="section">
@@ -240,39 +238,18 @@ const bannerPosition =
     justify-content: space-between;
     gap: var(--sm-space-sm);
   }
-  .images {
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--sm-space-md);
-  }
-  .image {
-    margin: 0;
-    display: grid;
-    gap: 0.35rem;
-    min-width: 0;
-  }
-  .banner-figure {
-    flex: 1 1 18rem;
-  }
-  .image figcaption {
-    font-size: 0.85rem;
-    color: var(--sm-muted);
-  }
-  .logo {
-    width: 4.5rem;
-    height: 4.5rem;
-    object-fit: contain;
-    padding: 0.35rem;
-    background: var(--sm-surface);
-    border: 1px solid var(--sm-border);
-    border-radius: 50%;
-  }
-  /* The same 12:5 crop the join page uses, so the preview is the truth. */
-  .banner {
-    width: 100%;
-    aspect-ratio: 12 / 5;
-    object-fit: cover;
+  /* The join page's frame in miniature: its warm background, its 38rem
+     column and its side gutter, inside a border that says "this is a
+     picture of another page". */
+  .public-preview {
+    padding: var(--sm-space-md) 0;
+    background: var(--sm-bg);
     border: 1px solid var(--sm-border);
     border-radius: var(--sm-radius-md);
+  }
+  .public-column {
+    max-width: 38rem;
+    margin-inline: auto;
+    padding-inline: 1.25rem;
   }
 </style>

@@ -11,6 +11,7 @@ import OrgScreen from "../../../components/OrgScreen.astro";
 import OrgSettingsScreen from "../../../components/OrgSettingsScreen.astro";
 import Shell from "../../../layouts/Shell.astro";
 import { getDb } from "../../../lib/db";
+import { shareableJoinUrl } from "../../../lib/joinLinks";
 import { applyImageField } from "../../../lib/orgImages";
 import {
   type ProfileFieldErrors,
@@ -129,6 +130,7 @@ const editing = hasErrors || (Astro.url.searchParams.has("rediger") && !saved);
     <OrgSettingsScreen
       org={org}
       orgPath={orgPath(org.slug)}
+      joinUrl={shareableJoinUrl(org.slug)}
       editing={editing}
       values={values}
       fieldErrors={fieldErrors}

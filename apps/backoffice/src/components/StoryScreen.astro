@@ -7,7 +7,14 @@
 import { type OrgTabId, orgTabs } from "../lib/orgNav";
 import type { OrgWarning } from "../lib/orgWarnings";
 import OrgScreen from "./OrgScreen.astro";
-import { ACTIVE_MEMBERS, ADMIN_NAME, ORG, ORG_PATH, storyHref } from "./storyFixtures";
+import {
+  ACTIVE_MEMBERS,
+  ADMIN_NAME,
+  ORG,
+  ORG_PATH,
+  storyHref,
+  storyImageSrc,
+} from "./storyFixtures";
 
 interface Props {
   active: OrgTabId;
@@ -22,10 +29,11 @@ const tabs = orgTabs(ORG_PATH, warnings, activeMembers).map((tab) => ({
 }));
 // The screen inside is rendered first, then every href it produced is looked up
 // the same way — so a story never has to know which links its screen renders.
-const content = (await Astro.slots.render("default")).replace(
-  /href="(\/[^"]*)"/g,
-  (_match: string, href: string) => `href="${storyHref(href)}"`,
-);
+// The organization's images get the same treatment: their public addresses
+// become the drawn fixtures.
+const content = (await Astro.slots.render("default"))
+  .replace(/href="(\/[^"]*)"/g, (_match: string, href: string) => `href="${storyHref(href)}"`)
+  .replace(/src="(\/[^"]*)"/g, (_match: string, src: string) => `src="${storyImageSrc(src)}"`);
 ---
 
 <OrgScreen
