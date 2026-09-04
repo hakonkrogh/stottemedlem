@@ -100,6 +100,16 @@ parts around a draggable visible-area frame. Both images are optional, can
 be replaced or removed at any time, and changes show on the public page
 immediately. A name change never changes the slug or the public addresses.
 
+The settings also **show the organization as the public page presents it**:
+the same identity header a supporter sees at the top of the
+[join page](../concepts/join-page.md) (banner backdrop, logo in its circle,
+name), drawn inside the public page's own column and on its own background,
+with a way straight to the live page. It is not an approximation: it is the
+very same presentation, fed the same stored images and focal point, so the
+administrator never has to open the public page to know how the organization
+looks there. With nothing uploaded it shows the name alone and says so; with
+imagery it shows the banner cropped exactly as the page crops it.
+
 ## Acceptance criteria
 - [ ] An administrator can create the organization with its public name,
       profile (organisasjonsnummer, contact information), and the first
@@ -166,6 +176,9 @@ immediately. A name change never changes the slug or the public addresses.
 - [ ] An administrator can choose the banner's focal point by dragging the
       visible-area frame in the settings preview; the join page crops the
       banner around that point.
+- [ ] The settings show the organization exactly as the join page presents it
+      (name alone, logo only, banner only, or both, cropped around the chosen
+      focal point), and link to the live page.
 
 ## Out of scope
 - Variable or pay-what-you-want pricing (every tier has one fixed annual fee).

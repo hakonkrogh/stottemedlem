@@ -71,6 +71,12 @@ lives in `specs/`, kept in sync with code by a mandatory `Stop`-hook harness.
   Screen markup lives in `src/components/*Screen.astro` with a `.stories.ts`
   beside it — pages hold only data + POST handling, so every screen is
   reviewable in Storybook (see `preview-screenshot`'s click-through note).
+  `StoryScreen.astro` post-processes the rendered screen: every `href="/…"`
+  becomes the story that shows where it leads (`storyHref`), and every
+  `src="/…"` for the org's logo/banner becomes the drawn fixture image
+  (`storyImageSrc`, 2026-09-04) — so a screen that shows the organization's
+  imagery needs no story-only props; give it `ORG_WITH_IMAGES` from
+  `storyFixtures.ts` and the pictures appear.
   **A screen UNDER a tab (a member, a tier form, the Vipps keys, a message)
   wraps its content in `components/Subpage.astro`** (`backHref` + `backLabel`)
   instead of a `<Stack gap="lg">` root: that renders `@stottemedlem/ui`'s
@@ -807,8 +813,21 @@ lives in `specs/`, kept in sync with code by a mandatory `Stop`-hook harness.
   isomorphic/node/browser (see qr-codes.md before touching QR anything).
 - `packages/ui/` — `@stottemedlem/ui` (added 2026-07-28), the shared UI
   primitives all backoffice screens compose from: `.astro` components (Button,
-  TextField, Alert, Card, Stack, Heading, Text, TextLink) + `tokens.css` (all
-  colors/type/space — restyle here, not in components) + `base.css`. Token
+  TextField, TextArea, Checkbox, Alert, Card, CardFooter, Stack, Heading, Text,
+  TextLink, BackLink, InfoList) + `tokens.css` (all
+  colors/type/space — restyle here, not in components) + `base.css`.
+  **`OrgIdentityHeader.astro` (moved here 2026-09-04) is THE one presentation
+  of an organization** (banner backdrop, circular logo, name): the public join
+  page, the receipt AND the back office's settings preview all render it, fed
+  by `apps/backoffice/src/lib/orgImages.ts`'s `orgIdentity(org)` — never
+  re-draw a logo/banner by hand elsewhere. Its `OrgIdentityHeader.fixtures.ts`
+  holds drawn SVG data-URI logo/banner for stories (no binaries, no real org).
+  **Importing a plain `.ts` module through the `./components/*` wildcard
+  export needs the `.ts` extension on the path**
+  (`@stottemedlem/ui/components/OrgIdentityHeader.fixtures.ts`): the export
+  map adds no extension, `.astro` imports carry theirs, and without it only
+  `astro check` in the backoffice fails (TS2307) — biome and Storybook stay
+  green (hit 2026-09-04). Token
   values DELIBERATELY mirror the marketing identity (decided 2026-07-28 after a
   trendy-font detour was reverted): Fraunces 650 "SOFT" 50 headings, golden
   moss CTA `#3d6b3f` with white text + darker hover (amber `#f2b64a` until

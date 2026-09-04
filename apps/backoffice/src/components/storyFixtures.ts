@@ -6,6 +6,10 @@
 // back office can be clicked through in Storybook without running the app.
 import { CANONICAL_ORIGIN, DPA_VERSION } from "@stottemedlem/core";
 import type { MembershipTier, Organization } from "@stottemedlem/db";
+import {
+  FIXTURE_BANNER_URL,
+  FIXTURE_LOGO_URL,
+} from "@stottemedlem/ui/components/OrgIdentityHeader.fixtures.ts";
 import type { OrgWarning } from "../lib/orgWarnings";
 import { orgWarnings } from "../lib/orgWarnings";
 
@@ -26,6 +30,17 @@ export const ORG: Organization = {
   dpaAcceptedAt: "2026-01-04T09:00:00.000Z",
   dpaVersion: DPA_VERSION,
   createdAt: "2026-01-04",
+};
+
+/**
+ * The same organization once it has uploaded its imagery. The keys are the
+ * shape the app stores (content-hashed object keys); the pictures they resolve
+ * to in a story come from `storyImageSrc` below.
+ */
+export const ORG_WITH_IMAGES: Organization = {
+  ...ORG,
+  logoKey: "org/org-1/logo-1a2b3c4d5e6f7a8b.png",
+  bannerKey: "org/org-1/banner-8b7a6f5e4d3c2b1a.jpg",
 };
 
 export const ORG_PATH = `/o/${ORG.slug}`;
@@ -136,6 +151,17 @@ const STORY_ROUTES: Record<string, string> = {
   [`${ORG_PATH}/medlemskap/tier-1`]: "backoffice-medlemskap-skjema--edit-tier",
   [`${ORG_PATH}/medlemskap/tier-2`]: "backoffice-medlemskap-skjema--edit-tier",
 };
+
+/**
+ * Storybook serves no org images: the public addresses a screen renders for
+ * the logo and banner are swapped for the drawn fixtures, so a screen that
+ * shows the organization's imagery shows something instead of a broken icon.
+ */
+export function storyImageSrc(src: string): string {
+  if (src.startsWith(`/bli-medlem/${ORG.slug}/logo`)) return FIXTURE_LOGO_URL;
+  if (src.startsWith(`/bli-medlem/${ORG.slug}/banner`)) return FIXTURE_BANNER_URL;
+  return src;
+}
 
 /** A story's own address inside Storybook's preview iframe. */
 export function storyHref(path: string): string {

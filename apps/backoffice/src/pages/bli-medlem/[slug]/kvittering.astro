@@ -12,16 +12,17 @@ import {
 } from "@stottemedlem/db";
 import Heading from "@stottemedlem/ui/components/Heading.astro";
 import InfoList from "@stottemedlem/ui/components/InfoList.astro";
+import OrgIdentityHeader from "@stottemedlem/ui/components/OrgIdentityHeader.astro";
 import Stack from "@stottemedlem/ui/components/Stack.astro";
 import Text from "@stottemedlem/ui/components/Text.astro";
 import TextLink from "@stottemedlem/ui/components/TextLink.astro";
 import MemberCardFigure from "../../../components/MemberCardFigure.astro";
-import OrgIdentityHeader from "../../../components/OrgIdentityHeader.astro";
 import ReceiptPaper from "../../../components/ReceiptPaper.astro";
 import PublicShell from "../../../layouts/PublicShell.astro";
 import { getDb } from "../../../lib/db";
 import { loadMemberCardForMemberId, memberCardUrl } from "../../../lib/memberCard";
 import { publicOrigin, syncAgreement, syncCharge } from "../../../lib/membership";
+import { orgIdentity } from "../../../lib/orgImages";
 import { periods } from "../../../lib/periods";
 import { requestReceiptSweep } from "../../../lib/receipts";
 import { getVippsForOrg } from "../../../lib/vipps";
@@ -207,7 +208,7 @@ const title =
     {/* The same identity the supporter just joined under on the join page
         (specs/concepts/join-page.md) — the receipt confirms WHO you now
         support, not just that a payment happened. */}
-    <OrgIdentityHeader org={org} />
+    <OrgIdentityHeader {...orgIdentity(org)} />
     {
       status === "active" && (
         <Stack gap="sm">

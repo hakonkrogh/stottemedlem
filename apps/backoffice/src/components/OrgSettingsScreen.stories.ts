@@ -1,7 +1,15 @@
 import type { OrgWarning } from "../lib/orgWarnings";
 import OrgSettingsScreen from "./OrgSettingsScreen.astro";
 import StoryScreen from "./StoryScreen.astro";
-import { ALL_WARNINGS, ORG, ORG_PATH, STORED_KEYS, WEBHOOK_URL } from "./storyFixtures";
+import {
+  ALL_WARNINGS,
+  JOIN_URL,
+  ORG,
+  ORG_PATH,
+  ORG_WITH_IMAGES,
+  STORED_KEYS,
+  WEBHOOK_URL,
+} from "./storyFixtures";
 
 export default {
   title: "Backoffice/Innstillinger",
@@ -24,8 +32,9 @@ const settings = (props: Record<string, unknown> = {}, warnings: OrgWarning[] = 
     default: {
       component: OrgSettingsScreen,
       props: {
-        org: ORG,
+        org: ORG_WITH_IMAGES,
         orgPath: ORG_PATH,
+        joinUrl: JOIN_URL,
         values: { orgnr: ORG.orgnr ?? "", contactEmail: ORG.contactEmail ?? "" },
         name: ORG.name,
         vippsKeys: storedKeys,
@@ -37,10 +46,32 @@ const settings = (props: Record<string, unknown> = {}, warnings: OrgWarning[] = 
   },
 });
 
-/** What is stored, presented — the form only opens when asked for. */
+/**
+ * What is stored, presented — the form only opens when asked for. The
+ * organization is shown as the public page shows it: the very same identity
+ * header, inside the public page's own column.
+ */
 export const Default = { args: settings() };
 
-/** The one edit action, opened. */
+/** Only a logo uploaded: it sits in its circle beside the name. */
+export const LogoOnly = {
+  args: settings({ org: { ...ORG_WITH_IMAGES, bannerKey: null } }),
+};
+
+/** Only a banner uploaded: the wide backdrop, the name below it. */
+export const BannerOnly = {
+  args: settings({ org: { ...ORG_WITH_IMAGES, logoKey: null } }),
+};
+
+/** The banner cropped around the focal point the organization chose. */
+export const BannerFocalPoint = {
+  args: settings({ org: { ...ORG_WITH_IMAGES, bannerFocusX: 50, bannerFocusY: 0 } }),
+};
+
+/** Nothing uploaded yet: the preview says so, and shows the name alone. */
+export const NoImages = { args: settings({ org: ORG }) };
+
+/** The one edit action, opened — with the banner's focal-point picker. */
 export const Editing = { args: settings({ editing: true }) };
 
 /** Saving closes the form again and says so. */
