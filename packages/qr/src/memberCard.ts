@@ -12,8 +12,22 @@
  * logo and name on the left, the validity as a label-over-year corner on the
  * right — then the member's name large, their years as a count inside one big
  * heart (the streak), a celebratory line, the QR code, and the attribution.
- * The card stays colour-neutral cream and ink so any organization's logo sits
- * comfortably in the band; the heart red is the one strong colour.
+ * The text sits on a scale of three sizes (2026-09-04): the member's name,
+ * one middle step for the organization, the headline and the year, and one
+ * small step for every caption. A line that does not fit steps DOWN the
+ * scale rather than shrinking point by point, so a long name lands on a size
+ * the card already uses instead of a twelfth one. A "STØTTEMEDLEM" label used
+ * to sit over the name; it said what the card already is, and went.
+ * The card stays colour-neutral white and ink so any organization's logo sits
+ * comfortably in the band; the heart red is the one strong colour, and the
+ * brand's moss green (specs/concepts/brand-palette.md) draws only the rule
+ * under the band and the valid year. The band used to carry a
+ * deeper cream fill and a gold label; both went 2026-09-04 with the palette
+ * refresh, so the top of the card is one line rather than a second field. The
+ * card itself was cream until the same day: on the cream page it barely
+ * lifted off the ground, so it is white now, and the QR code sits straight on
+ * it instead of on a white panel of its own (there is nothing brighter than
+ * the card left to make a panel from).
  *
  * Two constraints shape the drawing:
  *  - **No emoji.** The card is rasterized on a server with exactly one
@@ -52,20 +66,23 @@ export function memberCardSize(): { width: number; height: number } {
   return { width: MEMBER_CARD_WIDTH, height: MEMBER_CARD_HEIGHT };
 }
 
-const CREAM = "#fdf8f0";
 const CARD = "#ffffff";
-const BAND = "#fbf2e1";
-const EDGE = "#eadfce";
-const HAIRLINE = "#f1e8d9";
-const INK = "#2b2118";
-const DEEP = "#43331f";
-const MUTED = "#7a6a58";
-const FAINT = "#9c8d7b";
+const EDGE = "#e6dccb";
+const HAIRLINE = "#eee5d6";
+const INK = "#221a12";
+const DEEP = "#3b2d1c";
+const MUTED = "#6e6353";
+const FAINT = "#978a78";
 const HEART = "#e0182d";
 /** The heart of a lapsed card: still there, no longer cheering. */
 const HEART_PAST = "#c9ab9e";
-const ACCENT = "#b8860b";
-const VALID_INK = "#2f6b3a";
+/**
+ * The brand's one action colour (specs/concepts/brand-palette.md): the rule
+ * under the band and the valid year. Never the heart's red.
+ */
+const MOSS = "#3d6b3f";
+/** The ring around the organization's logo: moss, faded to sit on cream. */
+const LOGO_RING = "#c9d5c4";
 /**
  * The stack a browser resolves when it draws the SVG itself: "Fraunces" is
  * the rasterizer's embedded face; "Fraunces Variable" is the same family as
@@ -124,13 +141,21 @@ function estimateWidth(text: string, size: number): number {
 }
 
 /**
- * Shrink a line until it plausibly fits, and only then cut it. Names are the
- * one thing on this card that belongs to a person, so the card bends before it
- * truncates.
+ * The card's type scale: the member's name, a middle step, a small step.
+ * Three sizes and no others, so the card reads as one voice rather than a
+ * ladder of near-misses (it used to set text at twelve sizes).
  */
-function fitLine(text: string, maxWidth: number, preferred: number, min: number) {
-  let size = preferred;
-  while (size > min && estimateWidth(text, size) > maxWidth) size -= 2;
+const TYPE = { name: 48, middle: 24, small: 16 };
+
+/**
+ * Fit a line by stepping down the given sizes, and only then cut it. Names are
+ * the one thing on this card that belongs to a person, so the card bends
+ * before it truncates — but it bends to the next step of the scale, never to
+ * an in-between size.
+ */
+function fitScaled(text: string, maxWidth: number, sizes: number[]) {
+  for (const size of sizes) if (estimateWidth(text, size) <= maxWidth) return { value: text, size };
+  const size = sizes[sizes.length - 1] ?? TYPE.small;
   const maxChars = Math.floor(maxWidth / (size * WIDTH_PER_POINT));
   const value = text.length > maxChars ? `${text.slice(0, Math.max(1, maxChars - 1))}…` : text;
   return { value, size };
@@ -141,25 +166,22 @@ function fitLine(text: string, maxWidth: number, preferred: number, min: number)
  * what?", so after the member's own name it is the biggest text on the card.
  * A long name wraps onto two or three lines, broken between words and as
  * evenly as the words allow, rather than shrinking to a whisper; only a name
- * too long even for three lines gets smaller, and then truncated.
+ * too long even for three lines at the middle step drops to the small step,
+ * wraps again, and is truncated as a last resort.
  */
 function fitOrgName(name: string, maxWidth: number): { lines: string[]; size: number } {
   const fits = (text: string, size: number) => estimateWidth(text, size) <= maxWidth;
-  for (let size = 38; size >= 30; size -= 2) if (fits(name, size)) return { lines: [name], size };
   const words = name.split(/\s+/).filter(Boolean);
-  // Each extra line trades a little size for room; three is where the band ends.
-  const ladders: Array<[lineCount: number, from: number, to: number]> = [
-    [2, 34, 24],
-    [3, 30, 22],
-  ];
-  for (const [lineCount, from, to] of ladders) {
-    if (words.length < lineCount) continue;
-    for (let size = from; size >= to; size -= 2) {
+  for (const size of [TYPE.middle, TYPE.small]) {
+    if (fits(name, size)) return { lines: [name], size };
+    // Each extra line buys room at the same size; three is where the band ends.
+    for (const lineCount of [2, 3]) {
+      if (words.length < lineCount) continue;
       const lines = wrapEvenly(words, lineCount, (line) => fits(line, size));
       if (lines) return { lines, size };
     }
   }
-  const single = fitLine(name, maxWidth, 30, 18);
+  const single = fitScaled(name, maxWidth, [TYPE.small]);
   return { lines: [single.value], size: single.size };
 }
 
@@ -273,8 +295,8 @@ function streakHeart(
  */
 function validityCorner(rightX: number, centerY: number, periodText: string, lapsed: boolean) {
   const label = lapsed ? "STØTTET T.O.M." : "GYLDIG";
-  const labelSize = 13;
-  const valueSize = 27;
+  const labelSize = TYPE.small;
+  const valueSize = TYPE.middle;
   // letter-spacing widens the label beyond the plain estimate.
   const width = Math.max(
     estimateWidth(label, labelSize) + label.length * 2.4,
@@ -290,62 +312,61 @@ function validityCorner(rightX: number, centerY: number, periodText: string, lap
   ${textEl(rightX, centerY + 22, periodText, {
     size: valueSize,
     weight: 650,
-    fill: lapsed ? MUTED : VALID_INK,
+    fill: lapsed ? MUTED : MOSS,
     anchor: "end",
   })}`;
   return { markup, width };
 }
 
 /**
- * The white margin inside the QR panel. The code's own quiet zone is four
- * modules; the cream card around the panel supplies the rest, so the panel
- * itself stays close to the code instead of wrapping it in white.
+ * The margin the layout keeps around the QR code. The code's own quiet zone
+ * is four modules; this is the room beyond it, so the code neither touches
+ * its captions nor floats in a field of white.
  */
 const QR_QUIET = 14;
 
 /**
- * The QR code in a panel of its own, with its quiet zone built in. White on
- * the cream card, so the panel is the brightest thing on it — an object a
- * scanner gets full contrast from and an eye finds first.
+ * The QR code straight on the white card. It used to sit in a white panel of
+ * its own when the card was cream; on a white card a panel would be white on
+ * white, a frame drawn for its own sake, so the code's quiet zone does the
+ * work alone.
  */
-function qrPanel(
+function qrCode(
   left: number,
   top: number,
   qrSize: number,
   qr: { path: string; moduleCount: number },
 ): string {
   const pad = QR_QUIET;
-  const panel = qrSize + pad * 2;
-  return `<rect x="${r(left)}" y="${r(top)}" width="${r(panel)}" height="${r(panel)}" rx="22" fill="${CARD}" stroke="${EDGE}" stroke-width="2"/>
-  <g transform="translate(${r(left + pad)} ${r(top + pad)}) scale(${r(qrSize / qr.moduleCount)})"><path d="${qr.path}" fill="${INK}"/></g>`;
+  return `<g transform="translate(${r(left + pad)} ${r(top + pad)}) scale(${r(qrSize / qr.moduleCount)})"><path d="${qr.path}" fill="${INK}"/></g>`;
 }
 
 /**
- * The card's frame: the cream card, a hairline edge and a soft shadow, on
+ * The card's frame: the white card, a hairline edge and a soft shadow, on
  * nothing at all. The canvas behind the card is transparent, so the card sits
  * on whatever page shows it instead of bringing its own ground along: a
  * painted backdrop looked like a darker slab around the card on the member's
- * page, whose cream is a step lighter than any ground the card could pick.
+ * page. The card is white rather than the page's cream so it lifts off that
+ * page; the hairline edge is what keeps its shape on a white email ground.
  * The margin the card keeps from the canvas edge is room for its shadow.
  */
 function frame(width: number, height: number, inner: number, radius: number): string {
   const w = width - inner * 2;
   const h = height - inner * 2;
   return `<defs>
-    <clipPath id="card-clip"><rect x="${inner}" y="${inner}" width="${w}" height="${h}" rx="${radius}"/></clipPath>
     <filter id="card-shadow" x="-10%" y="-10%" width="120%" height="130%">
       <feDropShadow dx="0" dy="6" stdDeviation="10" flood-color="#8a7355" flood-opacity="0.16"/>
     </filter>
   </defs>
-  <rect x="${inner}" y="${inner}" width="${w}" height="${h}" rx="${radius}" fill="${CREAM}" filter="url(#card-shadow)"/>
+  <rect x="${inner}" y="${inner}" width="${w}" height="${h}" rx="${radius}" fill="${CARD}" filter="url(#card-shadow)"/>
   <rect x="${inner}" y="${inner}" width="${w}" height="${h}" rx="${radius}" fill="none" stroke="${EDGE}" stroke-width="2"/>`;
 }
 
 /** The brand attribution, with its heart drawn rather than typed. */
 function attribution(x: number, baseline: number): string {
-  const size = 15;
+  const size = TYPE.small;
   const label = "støttemedlem.no";
-  const heartSize = 17;
+  const heartSize = size + 2;
   const gap = 9;
   const total = heartSize + gap + estimateWidth(label, size);
   const left = x - total / 2;
@@ -369,7 +390,7 @@ interface CardContent {
 /** The organization's mark, always in a circle — as everywhere else it is shown. */
 function logoCircle(cx: number, cy: number, size: number, dataUri: string): string {
   return `<clipPath id="logo-circle"><circle cx="${r(cx)}" cy="${r(cy)}" r="${r(size / 2)}"/></clipPath>
-  <circle cx="${r(cx)}" cy="${r(cy)}" r="${r(size / 2 + 3)}" fill="${CARD}" stroke="${EDGE}" stroke-width="2"/>
+  <circle cx="${r(cx)}" cy="${r(cy)}" r="${r(size / 2 + 3)}" fill="${CARD}" stroke="${LOGO_RING}" stroke-width="2"/>
   <image x="${r(cx - size / 2)}" y="${r(cy - size / 2)}" width="${r(size)}" height="${r(size)}" href="${escapeXml(dataUri)}" clip-path="url(#logo-circle)" preserveAspectRatio="xMidYMid slice"/>`;
 }
 
@@ -388,7 +409,8 @@ function drawCard(content: CardContent): string {
   const center = width / 2;
   const columnWidth = right - left;
 
-  // The band: logo and organization on the left, validity in the corner.
+  // The band: logo and organization on the left, validity in the corner, and
+  // one moss rule underneath instead of a filled field.
   const bandHeight = 128;
   const bandBottom = inner + bandHeight;
   const bandCenter = inner + bandHeight / 2;
@@ -406,11 +428,12 @@ function drawCard(content: CardContent): string {
   const bodyTop = bandBottom;
   const bodyHeight = ruleY - bodyTop;
 
-  const name = fitLine(content.memberName, columnWidth, 48, 26);
+  const name = fitScaled(content.memberName, columnWidth, [TYPE.name, TYPE.middle]);
   const nameAdvance = name.size * 0.92;
 
   const heartSize = 176;
-  const headline = content.hearts > 0 ? fitLine(content.headline, columnWidth, 32, 22) : null;
+  const headline =
+    content.hearts > 0 ? fitScaled(content.headline, columnWidth, [TYPE.middle, TYPE.small]) : null;
   // Heart, headline, and the recruit line under it — absent entirely at zero.
   const streakBlock = headline
     ? heartSize + 10 + headline.size + (content.recruitLine ? 34 : 0) + 34
@@ -420,23 +443,20 @@ function drawCard(content: CardContent): string {
   // past that the code takes the card away from the member, who is its point.
   const qrSize = 176;
   const panel = qrSize + QR_QUIET * 2;
-  const qrCaptionOrg = fitLine(`i ${content.orgName}`, columnWidth, 15, 12);
+  const qrCaptionOrg = fitScaled(`i ${content.orgName}`, columnWidth, [TYPE.small]);
   const qrBlockHeight = panel + 54;
 
-  const roleAdvance = 15;
-  const blockHeight = roleAdvance + 18 + nameAdvance + 30 + streakBlock + qrBlockHeight;
+  const blockHeight = nameAdvance + 30 + streakBlock + qrBlockHeight;
   const blockTop = bodyTop + (bodyHeight - blockHeight) / 2;
 
-  const roleBaseline = blockTop + roleAdvance;
-  const nameBaseline = roleBaseline + 18 + name.size * 0.74;
-  const heartTop = roleBaseline + 18 + nameAdvance + 30;
+  const nameBaseline = blockTop + name.size * 0.74;
+  const heartTop = blockTop + nameAdvance + 30;
   const headlineBaseline = heartTop + heartSize + 10 + (headline?.size ?? 0) * 0.74;
   const recruitBaseline = headlineBaseline + 34;
-  const qrTop = blockTop + roleAdvance + 18 + nameAdvance + 30 + streakBlock;
+  const qrTop = blockTop + nameAdvance + 30 + streakBlock;
 
   return `${frame(width, height, inner, 32)}
-  <g clip-path="url(#card-clip)"><rect x="${inner}" y="${inner}" width="${width - inner * 2}" height="${bandHeight}" fill="${BAND}"/></g>
-  <line x1="${inner}" y1="${bandBottom}" x2="${width - inner}" y2="${bandBottom}" stroke="${EDGE}" stroke-width="2"/>
+  <line x1="${inner}" y1="${bandBottom}" x2="${width - inner}" y2="${bandBottom}" stroke="${MOSS}" stroke-width="2"/>
 ${hasLogo ? `  ${logoCircle(left + logoSize / 2, bandCenter, logoSize, content.logoDataUri ?? "")}\n` : ""}  ${org.lines
     .map((line, index) =>
       textEl(orgLeft, orgFirstBaseline + index * orgLineGap, line, {
@@ -448,17 +468,16 @@ ${hasLogo ? `  ${logoCircle(left + logoSize / 2, bandCenter, logoSize, content.l
     .join("\n  ")}
   ${corner.markup}
 
-  ${textEl(center, roleBaseline, "STØTTEMEDLEM", { size: 15, weight: 650, fill: ACCENT, letterSpacing: 3.6, anchor: "middle" })}
   ${textEl(center, nameBaseline, name.value, { size: name.size, weight: 650, fill: INK, anchor: "middle" })}
 ${
   headline
     ? `  ${streakHeart(center, heartTop, heartSize, content.hearts, content.lapsed)}
   ${textEl(center, headlineBaseline, headline.value, { size: headline.size, weight: 650, fill: content.lapsed ? MUTED : DEEP, anchor: "middle" })}
-${content.recruitLine ? `  ${textEl(center, recruitBaseline, content.recruitLine, { size: 20, fill: MUTED, anchor: "middle" })}\n` : ""}`
+${content.recruitLine ? `  ${textEl(center, recruitBaseline, content.recruitLine, { size: TYPE.small, fill: MUTED, anchor: "middle" })}\n` : ""}`
     : ""
 }
-  ${qrPanel(center - panel / 2, qrTop, qrSize, content.qr)}
-  ${textEl(center, qrTop + panel + 30, "Skann og bli støttemedlem", { size: 17, weight: 650, fill: MUTED, anchor: "middle" })}
+  ${qrCode(center - panel / 2, qrTop, qrSize, content.qr)}
+  ${textEl(center, qrTop + panel + 30, "Skann og bli støttemedlem", { size: TYPE.small, weight: 650, fill: MUTED, anchor: "middle" })}
   ${textEl(center, qrTop + panel + 52, qrCaptionOrg.value, { size: qrCaptionOrg.size, fill: FAINT, anchor: "middle" })}
 
   <line x1="${left}" y1="${ruleY}" x2="${right}" y2="${ruleY}" stroke="${HAIRLINE}" stroke-width="2"/>

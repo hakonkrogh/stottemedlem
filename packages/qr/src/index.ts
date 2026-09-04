@@ -55,7 +55,10 @@ export interface QrCardOptions {
 export const QR_CARD_WIDTH = 400;
 export const QR_CARD_HEIGHT = 520;
 
-const ACCENT = "#ff5b24"; // Vipps orange — the payment rail the card promises
+// The brand's one action colour (specs/concepts/brand-palette.md). It was Vipps
+// orange until 2026-09-04; a warm accent next to the red heart was the very
+// thing the palette refresh removed, and Vipps is named in the hint anyway.
+const ACCENT = "#3d6b3f";
 const INK = "#1c1917";
 const MUTED = "#57534e";
 const FAINT = "#a8a29e";

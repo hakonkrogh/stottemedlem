@@ -160,8 +160,8 @@ export function membershipReceipt(receipt: MembershipReceipt): EmailMessage {
   // mail client agrees on. The hearts are the emoji character here — an email
   // can render those, unlike the rasterized card.
   const cardHtml = `<table role="presentation" cellpadding="0" cellspacing="0" style="border-collapse:separate;width:100%;margin:1.25rem 0">
-<tr><td style="background:#fdf8f0;border:1px solid #eadfce;border-radius:14px;padding:20px 22px">
-<div style="font-size:11px;letter-spacing:2.5px;font-weight:700;color:#b8860b">STØTTEMEDLEM</div>
+<tr><td style="background:#ffffff;border:1px solid #e6dccb;border-radius:14px;padding:20px 22px">
+<div style="font-size:11px;letter-spacing:2.5px;font-weight:700;color:#3d6b3f">STØTTEMEDLEM</div>
 <div style="font-size:22px;font-weight:700;color:#2b2118;padding-top:6px">${escapeHtml(cardName)}</div>
 <div style="font-size:15px;color:#6b5d4d;padding-top:2px">Gyldig ${escapeHtml(periodText)} · ${org}</div>
 <div style="padding-top:10px">${heartsHtml}</div>

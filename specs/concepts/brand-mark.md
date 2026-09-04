@@ -36,8 +36,11 @@ and never competes with an organization's own identity.
   the wordmark that attribution requires.
 - The [scorecard](scorecard.md)'s hearts are the same glyph, earned one per
   supported year.
+- The heart is the one red in the [brand palette](brand-palette.md); no
+  button, label or highlight shares its colour.
 
 ## Referenced by
 - [Concept: Brand attribution](brand-attribution.md)
+- [Concept: Brand palette](brand-palette.md)
 - [Concept: Member card](member-card.md) — a surface with no emoji font at all,
   where the red heart shape stands in for the character throughout.
