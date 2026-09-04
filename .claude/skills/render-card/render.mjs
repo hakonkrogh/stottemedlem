@@ -69,6 +69,25 @@ const MEMBER_CASES = {
   },
 };
 
+/**
+ * Every field a --set may name, per card. An override is checked against this
+ * list because a misspelled key used to be accepted and quietly change
+ * nothing: the render then looked like the card ignoring the input, which
+ * costs a whole debugging detour (2026-09-04, `--set org=` for
+ * `organizationName`).
+ */
+const MEMBER_FIELDS = [
+  "memberName",
+  "organizationName",
+  "hearts",
+  "recruits",
+  "periodText",
+  "lapsed",
+  "joinUrl",
+  "logoDataUri",
+];
+const ORG_FIELDS = ["joinUrl", "organizationName", "title", "hint", "footer"];
+
 /** The ORGANIZATION's card — a different owner, so a different fixture set. */
 const ORG_CASES = {
   Ordinary: { joinUrl: JOIN_URL, organizationName: "Eksempel Musikkorps" },
@@ -118,7 +137,11 @@ const USAGE = `render-card — draw the project's cards without a server
   node .claude/skills/render-card/render.mjs [options]
 
   --case A,B               fixture name(s) to draw (default all); --list to see them
-  --set key=value          override one fixture field, repeatable
+  --set key=value          override one fixture field, repeatable; an unknown
+                           field is an error, not a silent no-op
+                           member: memberName, organizationName, hearts,
+                             recruits, periodText, lapsed, joinUrl, logoDataUri
+                           org: joinUrl, organizationName, title, hint, footer
                            e.g. --set hearts=17 --set memberName=null
   --org-card               draw the ORGANISATION's qrCardSvg instead
   --raster                 also rasterize via the shipped resvg + Fraunces path
@@ -172,6 +195,12 @@ async function main() {
   for (const name of names) {
     const fixture = cases[name];
     if (!fixture) throw new Error(`no such fixture: ${name} (try --list)`);
+    const fields = options.kind === "org" ? ORG_FIELDS : MEMBER_FIELDS;
+    for (const key of Object.keys(options.overrides)) {
+      if (!fields.includes(key)) {
+        throw new Error(`--set ${key}=: no such field. Fields: ${fields.join(", ")}`);
+      }
+    }
     const args = { ...fixture, ...options.overrides };
     const svg = options.kind === "org" ? qr.qrCardSvg(args) : qr.memberCardSvg(args);
     const file = `card-${name}`;
