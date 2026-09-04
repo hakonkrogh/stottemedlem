@@ -20,7 +20,15 @@ that one file and you have reviewed every case at once.
 
     --case A,B               fixture(s) to draw (default all)
     --time N                 with --raster: ms per render (the CPU budget)
-    --set key=value          override one field, repeatable
+    --set key=value          override one field, repeatable. The field is a
+                             fixture key, not a card word: `organizationName`,
+                             not `org` (member fields: memberName,
+                             organizationName, hearts, recruits, periodText,
+                             lapsed, joinUrl, logoDataUri; org card: joinUrl,
+                             organizationName, title, hint, footer). An unknown
+                             field is now an error — it used to render the
+                             untouched fixture, which reads as the card
+                             ignoring your input.
     --org-card               the ORGANISATION's qrCardSvg instead
     --raster                 also rasterize via the shipped resvg path
     --out DIR                default <repo>/.card-preview
