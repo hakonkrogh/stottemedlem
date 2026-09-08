@@ -17,8 +17,11 @@ export const GET: APIRoute = async ({ params }) => {
   return new Response(withEmbeddedCardFont(await renderMemberCardSvg(card)), {
     headers: {
       "Content-Type": "image/svg+xml; charset=utf-8",
-      // Short: a card gains a heart the moment a renewal is paid, and the
-      // member should not have to explain to anyone why theirs looks stale.
+      // The pages that show the card ask for it by version (?v=, see
+      // src/lib/memberCard.ts), so a card that just gained a heart is a new
+      // address and never the browser's kept copy. This lifetime covers the
+      // bare address, which feeds and mail clients fetch on their own; short,
+      // so a stale copy there does not outlive a renewal for long either.
       "Cache-Control": "public, max-age=300",
     },
   });

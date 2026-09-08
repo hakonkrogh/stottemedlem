@@ -20,7 +20,11 @@ import MemberCardFigure from "../../../components/MemberCardFigure.astro";
 import ReceiptPaper from "../../../components/ReceiptPaper.astro";
 import PublicShell from "../../../layouts/PublicShell.astro";
 import { getDb } from "../../../lib/db";
-import { loadMemberCardForMemberId, memberCardUrl } from "../../../lib/memberCard";
+import {
+  loadMemberCardForMemberId,
+  memberCardUrl,
+  memberCardVersion,
+} from "../../../lib/memberCard";
 import { publicOrigin, syncAgreement, syncCharge } from "../../../lib/membership";
 import { orgIdentity } from "../../../lib/orgImages";
 import { periods } from "../../../lib/periods";
@@ -248,6 +252,7 @@ const title =
         <Stack gap="sm">
           <MemberCardFigure
             cardToken={card.member.cardToken}
+            version={memberCardVersion(card)}
             alt={`Medlemsbevis for ${card.member.name?.trim() || "deg"} i ${org.name}, med ${card.hearts} hjerter.`}
           />
           <Text variant="small">

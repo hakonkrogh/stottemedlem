@@ -85,6 +85,15 @@ surface the member happens to be looking at.
   changes, and a changed card is simply a different picture. A member never
   sees a stale card, and nothing has to be remembered or cleared for that to
   hold.
+- **A renewed card shows its new heart on the very next look.** The pages that
+  show the card (the member's own page, the thank-you page, the card's public
+  address) ask for the picture of the card *as it is now*: a renewal, a
+  recruit, a new name or logo makes it a different picture at a different
+  address, so nothing a browser kept of the old one is ever shown again. A
+  member who renews and goes straight back to their page sees the new heart,
+  without a second reload and without anyone clearing anything. (It used to be
+  possible to renew and be shown last year's card for a few minutes, because
+  the browser held on to the picture while the page around it was fresh.)
 - **Every card is derived.** Hearts come from
   [membership](membership.md) periods and the validity from the current
   [annual period](annual-period.md); nothing on the card is stored as a
