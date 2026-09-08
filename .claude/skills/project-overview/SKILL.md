@@ -650,7 +650,10 @@ lives in `specs/`, kept in sync with code by a mandatory `Stop`-hook harness.
   status was never observed (would need a dedicated agreement + ~8 days).
   Same code path regardless: reconcile pulled CANCELLED into D1 and the
   standing grace correctly ends with any settled status (only
-  OPEN_CHARGE_STATUSES grant it). Remaining before go-live (assessed
+  OPEN_CHARGE_STATUSES grant it). **The list that follows is now consolidated,
+  with a re-check command per line, in `go-live-readiness.md`: read that when
+  the question is "are we ready for live testing?", and keep the two in sync.**
+  Remaining before go-live (assessed
   2026-08-28, revised 2026-09-02 after rebasing onto main): apitest —
   rejoin-after-stop rehearsal, live lapse flip in the member list;
   December-only (main's iso-week staging can now rehearse these on the
@@ -661,12 +664,16 @@ lives in `specs/`, kept in sync with code by a mandatory `Stop`-hook harness.
   every scheduled tick since main's key-store work) and a genuine delivery
   verifying, one real-money join+stop. RESOLVED by main since 2026-08-28:
   PUBLIC_ORIGIN is set in wrangler.jsonc for prod + staging; webhook
-  registration is automatic, not a manual go-live step. NEW GAP from the
-  rebase (2026-09-02): the member card (`findMemberCardByToken`) and the
-  per-period list (`listMembersForPeriod`) still derive status via bare
-  `membershipStatus` — a member mid-retry in January shows a lapsed card
-  while the member list correctly keeps them active (`membershipStanding`
-  grace). Not yet fixed; decide whether the card should get the grace too. Also observed: unapproved drafts go EXPIRED
+  registration is automatic, not a manual go-live step. **The card-grace gap
+  found on the 2026-09-02 rebase is FIXED (2026-09-08):** `findMemberCardByToken`
+  now reports `membershipStanding` like the member list, so a member mid-retry
+  in January keeps a valid card. It also names the period the renewal is being
+  taken for rather than the one that just ended, via the new `coveredPeriod` in
+  @stottemedlem/db (same two branches as `membershipStanding`, so period and
+  standing cannot disagree); `MemberCard` carries it as `coveredPeriodYear`.
+  `listMembersForPeriod` deliberately keeps the bare `membershipStatus`: it is
+  about one named period, not about a member today, and nothing calls it.
+  Also observed: unapproved drafts go EXPIRED
   on Vipps' side once their approval token dies, and reconcile corrects them —
   the orphan-draft story resolves via EXPIRED without waiting out the 14-day
   abandonment window. Charges stay DUE through the retry window on apitest
@@ -947,6 +954,16 @@ lives in `specs/`, kept in sync with code by a mandatory `Stop`-hook harness.
 
 ## Run / build / test
 - `pnpm install` · `pnpm dev` · `pnpm build` · `pnpm test` (vitest) · `pnpm typecheck` · `pnpm lint` (Biome) · `pnpm format`.
+- **What `pnpm test` proves, and what it does not.** All 182 tests live in
+  `packages/` (core 62, db 40, qr 26, email 25, vipps 16, log 13);
+  **`apps/backoffice` has NO test script and no tests at all**, and that is
+  where the Worker, middleware, routes, webhook handler, cron and queue
+  consumer live. A green `pnpm test` is a statement about the packages only:
+  no route, auth gate, webhook delivery or cron run is covered by anything
+  automated. Those are proven by hand instead, via `vipps-test-rig`,
+  `verify-public-routes`, `drive-page` and `cloud-logs`, and nothing re-runs
+  them on a change. Never report "tests pass" as evidence that a backoffice
+  behaviour works (counted 2026-09-08). See `go-live-readiness.md`.
 - **Never pipe a check into `head`/`tail` — you read the pager's exit code, not
   the check's.** `pnpm typecheck 2>&1 | tail -20` exits 0 while typecheck fails
   (cost a false "typecheck ✓" on 2026-08-27). Run
@@ -1193,9 +1210,17 @@ lives in `specs/`, kept in sync with code by a mandatory `Stop`-hook harness.
   the old auth-error-10000 failure was wrangler auto-provisioning KV with
   placeholder ids — with explicit ids the token's permissions suffice. Manual
   deploy when needed: `CLOUDFLARE_ENV=<env> turbo build` then `wrangler deploy`
-  from apps/backoffice. Account has Workers Paid (Queues work). Still unset on
-  prod: WorkOS client id var + secrets (Vipps keys are per-org via the
-  backoffice UI since 2026-08-18, not Worker secrets). Org-media R2 buckets
+  from apps/backoffice. Account has Workers Paid (Queues work). **Prod config is
+  now COMPLETE (re-verified 2026-09-08), replacing the "Still unset on prod:
+  WorkOS client id var + secrets" note that was true 2026-08-12:** both
+  `WORKOS_CLIENT_ID` vars are filled in `wrangler.jsonc`, and production holds
+  `WORKOS_API_KEY`, `WORKOS_COOKIE_PASSWORD`, `RESEND_API_KEY`, `SENTRY_DSN`,
+  `SENTRY_AUTH_TOKEN` (staging the same minus the last). Check it rather than
+  trusting this line: `cd apps/backoffice && npx wrangler secret list [--env
+  staging]` prints the deployed Worker's secret NAMES (never values), the only
+  way to tell a set secret from a missing one without a deploy. Vipps keys are
+  per-org in WorkOS Vault since 2026-08-18, not Worker secrets, so they never
+  appear in that list. Org-media R2 buckets
   (`stottemedlem-media`, `-staging`) ARE provisioned and migration 0002 applied
   remotely on both envs (2026-08-12). Two wrangler gotchas found provisioning
   them: (1) **`wrangler r2 bucket create` AUTO-EDITS wrangler.jsonc** — appends
@@ -1241,6 +1266,7 @@ away by mistake (nearly did, 2026-08-31, rebasing onto the one-card PR).
 | (canonical) `specs/process.md` | the spec-driven loop in full + enforcement |
 | (canonical) `specs/INDEX.md` | high-level product map / spec registry |
 | (canonical) `README.md` | monorepo layout, commands, toolchain |
+| go-live-readiness.md | **the one answer to "how is testing standing, are we ready for live testing?"**: the green checks and what they do NOT prove (all 182 tests are in `packages/`, `apps/backoffice` has zero), the provisioned state of both deployed envs, the rehearsed-vs-open ledger with which gaps are production-only, and a re-check command under every line so the next run re-verifies instead of trusting the date |
 | stop-hooks.md | how the two Stop hooks compose + how to test a hook locally. **Write `specs/**` with the Write/Edit tool, never a bash heredoc/python:** the spec hook only reads Edit/Write/MultiEdit/NotebookEdit calls out of the transcript, so Bash-written specs are invisible and it blocks the stop claiming you reconciled nothing — the default outcome in bypass-permissions mode, and it costs a turn every time (hit again 2026-08-27) |
 | dependencies.md | pnpm workspace policy — `catalog:` centralised versions; the 7-day `minimumReleaseAge` supply-chain quarantine (why `pnpm update --latest` silently lands below npm's latest, and why `minimumReleaseAgeExclude` is the wrong fix); `onlyBuiltDependencies`; **the filtered-update trap** — `pnpm --filter X update` strands every OTHER package's `node_modules` and surfaces as a bogus `TS2304: Cannot find name 'crypto'`; re-lock check before pushing |
 | qr-codes.md | @stottemedlem/qr package split, the /api/qr/[slug] embed contract (backoffice), the front-page card preview (marketing), qrcode-lib gotchas, open domain-routing item |
