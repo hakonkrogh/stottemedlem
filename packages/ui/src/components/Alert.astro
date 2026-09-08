@@ -23,9 +23,12 @@ const { variant = "error" } = Astro.props;
     background: var(--sm-danger-bg);
     border: 1px solid var(--sm-danger-border);
   }
+  /* A neutral notice: something to know or to put right. Ink on the cream
+     ground, so it is neither the green of "went right" nor the red of an
+     error (specs/concepts/brand-palette.md). */
   .info {
-    color: var(--sm-accent-ink);
-    background: var(--sm-accent-soft);
+    color: var(--sm-ink);
+    background: var(--sm-bg);
     border: 1px solid var(--sm-border-strong);
   }
   .success {

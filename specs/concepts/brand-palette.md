@@ -27,6 +27,11 @@ went through.
   receipt, the valid year on the card. It is the same green that says
   a payment succeeded or a membership is active, on purpose: acting and
   succeeding are the same colour.
+- **A notice is neither green nor red.** Something the organization should
+  know or put right (Vipps not yet connected, a price change some members did
+  not hear about, a member whose details were erased) is stated in ink on the
+  cream ground with a hairline edge. Green would say it went right, red would
+  say it failed; a notice says neither, it only asks for attention.
 - **Danger is not the heart's red.** Refunding and erasing use a dark brick
   red that reads as a warning, clearly darker and duller than the heart, so a
   red heart never looks like a red button and a red button never looks like a
