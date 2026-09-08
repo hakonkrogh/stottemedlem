@@ -28,10 +28,14 @@ organization's list stays accurate as periods turn over.
 3. The supporter is told what is coming before it is taken, with enough notice
    to opt out, and can end the arrangement at any time — from their own payment
    app or from the organization's own self-service page. Ending it is never
-   harder than starting it was. The payment app shows the coming payment and
-   announces it shortly before it is taken; when the **amount has changed**
-   since last year, that is not enough — the app states a number, not a change
-   — so the product sends its own
+   harder than starting it was. What the payment app actually does here is
+   narrower than it first appears, and the difference decides what the product
+   owes the member: the app **lists** the coming payment for weeks, but it does
+   not announce it. Its own payment notification fires *after* the money moves,
+   and it is off unless the member turned it on for that particular
+   arrangement. So the member's warning is a list they have to go and look at.
+   When the **amount has changed** since last year, that is doubly not enough
+   (a list states a number, not a change), so the product sends its own
    [member notice](../concepts/member-notice.md) as well
    ([changing the annual fee](change-the-annual-fee.md)).
 4. If the payment does not succeed, the product waits out the payment
@@ -48,9 +52,10 @@ organization's list stays accurate as periods turn over.
    [payment receipt](../concepts/payment-receipt.md) by email — the
    documentation of the payment just taken, one per payment, not something the
    member can decline. This does not contradict the no-reminder rule below:
-   a reminder *before* an unchanged renewal repeats what the payment app
-   already says, while the receipt documents money *after* it moved — which
-   the app's own notification does not do in a form fit for anyone's books.
+   a reminder *before* an unchanged renewal repeats what the member can already
+   see listed, while the receipt documents money *after* it moved. The app's own
+   payment notification does not do that in a form fit for anyone's books, and
+   most members never switched it on.
 7. A lapsed supporter can come back by joining again; renewal and return both
    reuse the supporter's existing identity — they do not re-register as a new
    person, and their membership history accumulates across periods.
@@ -96,9 +101,16 @@ organization's list stays accurate as periods turn over.
 
 ## Out of scope
 - Mid-period tier upgrades (changing tier takes effect at the next renewal).
-- A reminder before an *unchanged* renewal: the payment app already shows the
-  coming payment for weeks and announces it the day before, and repeating that
-  would be noise. The product speaks up when something changed.
+- A reminder before an *unchanged* renewal: the payment app lists the coming
+  payment for weeks before it is taken, so the member can always see it, and
+  repeating that would be noise. The product speaks up when something changed.
+  **This decision now rests on less than it used to.** It was originally
+  justified by the app also announcing the payment the day before; it does not
+  (verified 2026-09-08, finding 14 of the provider research). A member who
+  never opted in gets no active signal at all before an unchanged renewal, and
+  the product's own [payment receipt](../concepts/payment-receipt.md) is then
+  the first thing that reaches them, after the money moved. Whether a silent
+  list is warning enough is a live product question, not a settled one.
 - Reviving a lapsed membership retroactively — a return starts a new period.
 
 ## Related
