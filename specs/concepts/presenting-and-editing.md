@@ -29,9 +29,14 @@ them as different states.
   to, bookmarked and left.
 - **Leaving is always offered**, and leaving changes nothing.
 - **Saving returns to presentation**, with confirmation of what was saved — the
-  administrator sees the new truth, not the form that produced it.
+  administrator sees the new truth, not the form that produced it. The
+  address they land on is the presentation's own, so reloading it shows the
+  stored values again and never the finished form (see
+  [Answering an action](answering-an-action.md)).
 - **A rejected save stays in editing**, keeping what was typed and saying what
   is wrong; nothing is lost to a validation failure.
+- **The press itself is answered at once**, and the answer arrives in place;
+  how is the subject of [Answering an action](answering-an-action.md).
 - **Secrets are only ever presented masked** (see
   [Vipps API keys](vipps-api-keys.md)); editing them means entering a full new
   value, never revealing the old one.
@@ -43,6 +48,8 @@ them as different states.
   screen that shows editable information starts by presenting it.
 
 ## Relationships
+- [Answering an action](answering-an-action.md) covers the moment between the
+  press and the confirmation, and why the confirmed screen can be reloaded.
 - Applies throughout the back office an [administrator](administrator.md)
   reaches in [Access the back office](../use-cases/access-the-back-office.md).
 - Governs how [Set up a supporting membership](../use-cases/set-up-supporting-membership.md)

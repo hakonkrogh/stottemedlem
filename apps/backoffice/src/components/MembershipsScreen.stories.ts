@@ -1,7 +1,7 @@
 import type { OrgWarning } from "../lib/orgWarnings";
 import MembershipsScreen from "./MembershipsScreen.astro";
 import StoryScreen from "./StoryScreen.astro";
-import { ALL_WARNINGS, ORG_PATH, TIERS } from "./storyFixtures";
+import { ALL_WARNINGS, BASIC_TIER, ORG_PATH, TIERS } from "./storyFixtures";
 
 export default {
   title: "Backoffice/Medlemskap",
@@ -21,6 +21,12 @@ const memberships = (props: Record<string, unknown> = {}, warnings: OrgWarning[]
 
 /** The offer, as the same cards the public join page shows. */
 export const Default = { args: memberships() };
+
+/** Landing here from the form: the save is confirmed in words as well. */
+export const JustSaved = { args: memberships({ savedName: BASIC_TIER.name }) };
+
+/** After an archive: the card is gone, and the list says so. */
+export const JustArchived = { args: memberships({ archivedName: "Sølv" }) };
 
 /**
  * Before the first membership exists there is nothing to show supporters — the

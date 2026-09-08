@@ -98,7 +98,15 @@ const fields = [
   // and recentres the frame. Must match the join page banner's aspect-ratio.
   const ASPECT = 12 / 5;
 
+  // Bound on load and again whenever LiveForms swaps the page in place (a
+  // rejected save re-renders the form with a fresh picker).
+  document.addEventListener("sm:page", bindPicker);
+  bindPicker();
+
+  function bindPicker(): void {
   const picker = document.querySelector("[data-banner-picker]");
+  if (!(picker instanceof HTMLElement) || picker.dataset.bound) return;
+  picker.dataset.bound = "1";
   const fileInput = document.getElementById("banner");
   const img = picker?.querySelector("[data-picker-image]");
   const frame = picker?.querySelector("[data-picker-frame]");
@@ -169,6 +177,7 @@ const fields = [
         setFocus(50, 50);
       });
     }
+  }
   }
 </script>
 

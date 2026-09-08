@@ -8,6 +8,7 @@
 // This is also where the membership tab's badge points, so anything not in
 // order that belongs here is stated in full at the top.
 import type { MembershipTier } from "@stottemedlem/db";
+import Alert from "@stottemedlem/ui/components/Alert.astro";
 import Button from "@stottemedlem/ui/components/Button.astro";
 import Heading from "@stottemedlem/ui/components/Heading.astro";
 import Stack from "@stottemedlem/ui/components/Stack.astro";
@@ -21,8 +22,12 @@ interface Props {
   tiers: MembershipTier[];
   /** The organization's warnings; the ones this place fixes are shown here. */
   warnings?: OrgWarning[];
+  /** A membership that was saved just now, by name. */
+  savedName?: string | null;
+  /** A membership that was archived just now, by name. */
+  archivedName?: string | null;
 }
-const { orgPath, tiers, warnings = [] } = Astro.props;
+const { orgPath, tiers, warnings = [], savedName = null, archivedName = null } = Astro.props;
 ---
 
 <Stack gap="lg">
@@ -36,6 +41,9 @@ const { orgPath, tiers, warnings = [] } = Astro.props;
       }
     </Text>
   </Stack>
+
+  {savedName && <Alert variant="success">«{savedName}» er lagret.</Alert>}
+  {archivedName && <Alert variant="success">«{archivedName}» er arkivert.</Alert>}
 
   <OrgWarnings warnings={warningsForTab(warnings, "medlemskap")} />
 

@@ -21,7 +21,14 @@ CI=1 pnpm exec wrangler d1 migrations apply DB --local >/dev/null 2>&1 || {
 
 # Seed only fictitious names/orgnr — screenshots and docs must never carry real
 # org data. 923609016 is a valid MOD11 number chosen for the example org.
+# The member rows go first: agreements and memberships reference the tiers,
+# so deleting the tiers before them fails the whole batch on a second run.
 pnpm exec wrangler d1 execute DB --local --command "
+DELETE FROM member_notices WHERE org_id = 'org-seed-1';
+DELETE FROM membership_charges WHERE org_id = 'org-seed-1';
+DELETE FROM memberships WHERE org_id = 'org-seed-1';
+DELETE FROM membership_agreements WHERE org_id = 'org-seed-1';
+DELETE FROM supporting_members WHERE org_id = 'org-seed-1';
 DELETE FROM membership_tiers WHERE org_id = 'org-seed-1';
 DELETE FROM organizations WHERE id = 'org-seed-1';
 INSERT INTO organizations (id, workos_org_id, name, slug, orgnr, contact_email)

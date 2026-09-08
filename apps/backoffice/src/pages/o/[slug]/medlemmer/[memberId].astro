@@ -45,13 +45,21 @@ let entry = await getOrganizationMember(
 // Another organization's member must read as no member at all.
 if (!entry) return new Response("Fant ikke medlemmet", { status: 404 });
 
+const membersPath = `${orgPath(org.slug)}/medlemmer`;
+const memberPath = `${membersPath}/${entry.member.id}`;
+
 let values = memberContactFormValues(entry.member);
 let fieldErrors: MemberContactFieldErrors = {};
-let saved = false;
 let refunded: RefundResult | null = null;
 let refundError: string | null = null;
-let erased = false;
 let eraseError: string | null = null;
+
+// Every action that worked answers with a redirect to this page, saying what
+// was done in the address: the page then reads the member back as a plain
+// GET, and a reload shows the member as they now are rather than doing the
+// same thing again (specs/concepts/presenting-and-editing.md).
+const done = (flags: Record<string, string>) =>
+  Astro.redirect(`${memberPath}?${new URLSearchParams(flags).toString()}`, 303);
 
 if (Astro.request.method === "POST") {
   const form = await Astro.request.formData();
@@ -59,23 +67,41 @@ if (Astro.request.method === "POST") {
 
   if (refundChargeId) {
     refundError = await refundPayment(refundChargeId);
+    if (!refundError && refunded) {
+      return done({
+        refundert: String(refunded.refundedNok),
+        avtale: refunded.arrangementEnded ? "avsluttet" : "var-avsluttet",
+      });
+    }
   } else if (form.get("slett")) {
     eraseError = await erasePersonalData();
+    if (!eraseError) return done({ slettet: "1" });
   } else {
     const parsed = parseMemberContactForm(form);
     values = parsed.values;
     fieldErrors = parsed.fieldErrors;
     if (parsed.details) {
       await updateMemberContactDetails(db, org.id, entry.member.id, parsed.details);
-      saved = true;
+      return done({ lagret: "1" });
     }
   }
 
-  // Both actions change what the page shows, and a refund changes the history
-  // itself — read the member back rather than patching the copy in hand.
+  // A failed action still changes nothing, but the page is re-read all the
+  // same so that it never shows a state older than the attempt.
   entry =
     (await getOrganizationMember(db, org.id, entry.member.id, periods.periodFor().year)) ?? entry;
-  values = memberContactFormValues(entry.member);
+  // A rejected save keeps what was typed; the other actions show what is stored.
+  if (refundChargeId || form.get("slett")) values = memberContactFormValues(entry.member);
+}
+
+const flags = Astro.url.searchParams;
+const saved = flags.has("lagret");
+const erased = flags.has("slettet");
+if (flags.has("refundert")) {
+  refunded = {
+    refundedNok: Number(flags.get("refundert")) || 0,
+    arrangementEnded: flags.get("avtale") === "avsluttet",
+  };
 }
 
 /**
@@ -99,7 +125,6 @@ async function erasePersonalData(): Promise<string | null> {
   if (!outcome.erased && !outcome.member.anonymizedAt) {
     return "Vi fikk ikke slettet opplysningene nå. Prøv igjen om litt.";
   }
-  erased = outcome.erased;
   return null;
 }
 
@@ -131,11 +156,8 @@ async function refundPayment(vippsChargeId: string): Promise<string | null> {
 
 const payments = paymentViews(await listChargesForMember(db, entry.member.id));
 const displayName = entry.member.name || entry.member.email || entry.member.phone || "Uten navn";
-const membersPath = `${orgPath(org.slug)}/medlemmer`;
-const memberPath = `${membersPath}/${entry.member.id}`;
 // A save closes the form again; anything still wrong keeps it open.
-const editing =
-  Object.keys(fieldErrors).length > 0 || (Astro.url.searchParams.has("rediger") && !saved);
+const editing = Object.keys(fieldErrors).length > 0 || flags.has("rediger");
 // Money leaving is deliberate: the button asks, and only this confirmation
 // screen can send the refund.
 const confirming = refunded

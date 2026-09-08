@@ -47,6 +47,11 @@ day, 72 minutes apart, both pointing at one membership — was invisible in
 Storybook and obvious in one staging query (2026-08-27). Non-local targets
 refuse anything but SELECT/WITH; they read, never write.
 
+`seed.sh` is re-runnable (fixed 2026-09-08: it used to delete the tiers
+before the agreements that reference them, so a SECOND run failed the whole
+batch with `FOREIGN KEY constraint failed`; it now clears member_notices,
+charges, memberships, agreements and members first). After an erase test
+(min-side `handling=slett`) it is the way to get `tok-seed-1` back.
 `seed.sh` also writes TWO supporting members (extended 2026-08-31), so
 member-list queries and the member's card have a baseline: **Kari Eksempel**
 (`mem-seed-1`, card token `kort-seed-1`) with an ACTIVE agreement, a captured

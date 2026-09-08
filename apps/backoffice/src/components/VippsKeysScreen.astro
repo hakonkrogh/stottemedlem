@@ -112,7 +112,7 @@ const vippsPath = `${orgPath}/vipps`;
           ]}
         />
         <form method="post" class="retest">
-          <Button variant="secondary" name="intent" value="test" block>
+          <Button variant="secondary" name="intent" value="test" busy="Tester nøklene …" block>
             Test nøklene på nytt
           </Button>
         </form>
@@ -147,7 +147,7 @@ const vippsPath = `${orgPath}/vipps`;
           ]}
         />
         <form method="post" class="retest">
-          <Button name="intent" value="webhook" block>
+          <Button name="intent" value="webhook" busy="Kobler til …" block>
             Koble til betalingsvarsler nå
           </Button>
         </form>
@@ -193,7 +193,9 @@ const vippsPath = `${orgPath}/vipps`;
               error={fieldErrors.merchantSerialNumber}
               required
             />
-            <Button block>Test og lagre</Button>
+            <Button busy="Tester nøklene mot Vipps …" block>
+              Test og lagre
+            </Button>
             {stored && (
               <Text variant="small">
                 <TextLink href={vippsPath}>Avbryt</TextLink>

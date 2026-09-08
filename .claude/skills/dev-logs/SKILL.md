@@ -35,6 +35,10 @@ description: Read the backend's stdout locally — console.log/error, request li
   human to watch the same shared server live.)
 - `.astro/dev.json` records `pid` and `background`; `astro dev status`/`stop`
   work on foreground servers too (that's how `start` converts one).
+- **Every page 500s with "The file does not exist at …/.vite/deps_ssr/… which
+  is in the optimize deps directory"** (hit 2026-09-08): a `turbo build` of
+  the same app ran while the dev server was up and rewrote Vite's dep cache.
+  `stop` + `start`; not a code problem.
 - **`start` says "Dev server process exited before becoming ready"** (hit
   2026-09-02 in a fresh worktree): astro hides the cause; `devlog.sh` now
   prints the log's last error lines. The usual one is `Failed to resolve entry

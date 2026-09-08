@@ -41,7 +41,7 @@ if (memberships.length === 1) {
         memberships.map((m) => (
           <form method="post" action="/orgs/select">
             <input type="hidden" name="organizationId" value={m.organizationId} />
-            <Button variant="secondary" block>
+            <Button variant="secondary" busy="Åpner …" block>
               {m.organizationName}
             </Button>
           </form>

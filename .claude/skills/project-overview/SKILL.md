@@ -949,6 +949,31 @@ lives in `specs/`, kept in sync with code by a mandatory `Stop`-hook harness.
   own chrome means shooting the MANAGER url, not a story iframe:
   `npx playwright screenshot --channel=chrome --viewport-size=1440,900
   --wait-for-timeout=7000 "http://localhost:6006/?path=/story/primitives-button--primary" out.png`.
+  **Every form answers in place since 2026-09-08** (branch
+  form-submission-feedback, spec `specs/concepts/answering-an-action.md`):
+  `packages/ui/src/components/LiveForms.astro` is a script-only component
+  included by BOTH backoffice layouts (`Shell.astro`, `PublicShell.astro`).
+  On submit it marks the form `aria-busy`, swaps the button's text for its
+  `busy` prop (`<Button busy="Lagrer …">`, fallback "Vent litt …", spinner
+  from Button's `[aria-busy]` CSS), POSTs with fetch, follows the redirect,
+  replaces `<main>` with the answer, `history.replaceState`s to the answer's
+  URL, adopts any `<style>`/`<link rel=stylesheet>` the answer's head has
+  that the page lacks (dev inlines `<style data-vite-dev-id>`, build inlines
+  ONE `<style>` per page), and focuses the first `[role=alert]` /
+  `[aria-invalid]` / hash target. It never re-sends on failure (a second
+  refund or tier is worse than a missing confirmation); it shows
+  `[data-form-failure]` (styled in base.css). Rules for NEW forms: (1) a
+  successful action must 303 to the presentation with a flag the page reads
+  (`?lagret=1`, `?testet=1`, `?refundert=<nok>&avtale=…`,
+  `?arkivert=<name>`, `?godtatt=1`) so a reload is a plain GET; a rejected
+  save answers 200 with the form open; (2) a form whose redirect leaves the
+  origin (join `start`, min-side `fortsett` → Vipps) MUST carry
+  `data-submit="native"` or fetch dies on CORS; (3) `data-confirm="…"` asks
+  first (min-side's own confirm script is gone); (4) a page `<script>` that
+  binds inside `<main>` must rebind on `document`'s `sm:page` event
+  (OrgImageFields) or delegate to `document` (MemberCardFigure's share).
+  Proved with drive-page's scratch-route + slow-fetch recipes (see that
+  skill); backoffice pages themselves can't be driven (no login).
   Screenshot loop: see `preview-screenshot` skill. Gotcha that
   motivated the package: Astro `<style>` in a layout is scoped, so styling
   slotted page content from `Shell.astro` silently does nothing — never style
@@ -1058,6 +1083,11 @@ lives in `specs/`, kept in sync with code by a mandatory `Stop`-hook harness.
   MERGED, the push needs a NEW PR (same branch works — it diffs against
   main), and audit `git log origin/main..HEAD` for what's stranded.
 - Single package: `pnpm turbo run <task> --filter=@stottemedlem/<name>`.
+- **Running `turbo build` for the backoffice while its dev server is up
+  breaks the dev server** (hit 2026-09-08): every page then 500s with
+  `The file does not exist at ".../node_modules/.vite/deps_ssr/…" which is in
+  the optimize deps directory` because the build rewrote Vite's dep cache.
+  Nothing is wrong with the code: `devlog.sh stop` + `start` fixes it.
 - **A green `pnpm test` does NOT prove the tests ran here** (hit 2026-08-27).
   The first `pnpm test` in a freshly-installed worktree reported `12 cached,
   12 total >>> FULL TURBO` in ~100ms and replayed cached stdout captured in

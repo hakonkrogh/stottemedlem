@@ -190,7 +190,9 @@ const periodSurvives =
         <form method="post">
           <input type="hidden" name="slett" value="1" />
           <Stack gap="sm">
-            <Button variant="danger">Slett opplysningene</Button>
+            <Button variant="danger" busy="Sletter …">
+              Slett opplysningene
+            </Button>
             <Text variant="small">
               <TextLink href={memberPath}>Avbryt</TextLink>
             </Text>
@@ -237,7 +239,9 @@ const periodSurvives =
         <form method="post">
           <input type="hidden" name="refunder" value={confirming.chargeId} />
           <Stack gap="sm">
-            <Button variant="danger">Refunder {confirming.amountNok} kr</Button>
+            <Button variant="danger" busy="Refunderer …">
+              Refunder {confirming.amountNok} kr
+            </Button>
             <Text variant="small">
               <TextLink href={memberPath}>Avbryt</TextLink>
             </Text>
@@ -283,7 +287,9 @@ const periodSurvives =
                 value={values.phone}
                 error={fieldErrors.phone}
               />
-              <Button block>Lagre</Button>
+              <Button busy="Lagrer …" block>
+                Lagre
+              </Button>
               <Text variant="small">
                 <TextLink href={memberPath}>Avbryt</TextLink>
               </Text>

@@ -81,7 +81,7 @@ if (Astro.request.method === "POST") {
       // The public pages serve a cached copy; clear this datacenter's copy so
       // the admin sees the change straight away (visitors self-heal on traffic).
       await purgeOrgPublicPages(org.slug, Astro.url.origin);
-      return Astro.redirect(tiersPath);
+      return Astro.redirect(`${tiersPath}?arkivert=${encodeURIComponent(tier.name)}`, 303);
     }
     archiveError =
       "Kunne ikke arkivere medlemskapet — organisasjonen må alltid tilby minst ett medlemskap.";
@@ -137,7 +137,8 @@ if (Astro.request.method === "POST") {
         return Astro.redirect(
           notice
             ? `${orgPath(org.slug)}?varslet=${notice.told}.${notice.unreachable + notice.failed}`
-            : tiersPath,
+            : `${tiersPath}?lagret=${encodeURIComponent(parsed.input.name)}`,
+          303,
         );
       }
     }
