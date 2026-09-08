@@ -107,6 +107,9 @@ the organization and without the organization having to answer.
   [supporting member](supporting-member.md).
 - Is the counterpart of the [join page](join-page.md): one starts the
   relationship, the other ends it.
+- Every action on it, stopping, resuming, changing tier, erasing, follows
+  [Answering an action](answering-an-action.md): the press is answered at
+  once, the outcome is said in place, and the page can be reloaded afterwards.
 - Shows, and hands over the address of, the member's [card](member-card.md).
 
 ## Referenced by

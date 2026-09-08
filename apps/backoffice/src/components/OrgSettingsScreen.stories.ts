@@ -77,6 +77,9 @@ export const Editing = { args: settings({ editing: true }) };
 /** Saving closes the form again and says so. */
 export const Saved = { args: settings({ saved: true }) };
 
+/** The acceptance of the data processing agreement is confirmed in words too. */
+export const DpaJustAccepted = { args: settings({ dpaJustAccepted: true }) };
+
 /**
  * Anything the organization has not given yet reads as missing, not blank —
  * and the tab's badge is spelled out here, each with the action that fixes it.

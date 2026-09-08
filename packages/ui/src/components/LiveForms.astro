@@ -1,0 +1,193 @@
+---
+// Forms that answer where they were submitted.
+//
+// Include once per layout. Every form on the page then behaves like this:
+//
+// 1. The press is answered at once. The submit button turns busy (spinner and
+//    its `busy` text), the whole form is marked in flight, and a second press
+//    does nothing until the first has an answer. A server action is assumed
+//    to take seconds, so this is what the person looks at meanwhile.
+// 2. A POST form is sent from here, without leaving the page. The answer, the
+//    same HTML the server would have shown after a full submit, replaces the
+//    page's <main>, and the address bar is set to the answer's address. So a
+//    reload afterwards is a plain GET of what the person is looking at, never
+//    a second submit and never the form they already finished.
+// 3. Whatever the answer says first (a confirmation, an error) is brought into
+//    view and given focus, so it is seen and read out.
+//
+// Without JavaScript every form still works: the server does the same thing
+// for a plain submit. Forms that leave for another site, such as the one that
+// opens the payment app, carry `data-submit="native"` and keep the browser's
+// own navigation; they still get the busy state.
+//
+// A form with `data-confirm="…"` asks that question before anything is sent.
+//
+// After a swap the document announces `sm:page`; a page script that binds to
+// elements inside <main> listens for it and binds again.
+---
+
+<script>
+  const BUSY_FALLBACK = "Vent litt …";
+  const FAILURE_TEXT =
+    "Vi fikk ikke svar fra tjeneren. Last siden på nytt for å se om endringen ble lagret, og prøv igjen om den ikke ble det.";
+
+  /** The label a busy button covered up, so it can be put back. */
+  const idleLabels = new WeakMap<HTMLButtonElement, string>();
+
+  function submitterOf(event: SubmitEvent, form: HTMLFormElement): HTMLButtonElement | null {
+    if (event.submitter instanceof HTMLButtonElement) return event.submitter;
+    return form.querySelector<HTMLButtonElement>('button[type="submit"], button:not([type])');
+  }
+
+  function markBusy(form: HTMLFormElement, button: HTMLButtonElement | null): void {
+    form.setAttribute("aria-busy", "true");
+    if (!button) return;
+    idleLabels.set(button, button.innerHTML);
+    button.textContent = button.dataset.busy || BUSY_FALLBACK;
+    button.setAttribute("aria-busy", "true");
+  }
+
+  function clearBusy(form: HTMLFormElement): void {
+    form.removeAttribute("aria-busy");
+    form.querySelectorAll<HTMLButtonElement>('button[aria-busy="true"]').forEach((button) => {
+      const label = idleLabels.get(button);
+      if (label !== undefined) button.innerHTML = label;
+      button.removeAttribute("aria-busy");
+    });
+  }
+
+  function clearAllBusy(): void {
+    document.querySelectorAll<HTMLFormElement>('form[aria-busy="true"]').forEach(clearBusy);
+  }
+
+  function onSubmit(event: SubmitEvent): void {
+    const form = event.target;
+    if (!(form instanceof HTMLFormElement)) return;
+    if (form.dataset.confirm && !window.confirm(form.dataset.confirm)) {
+      event.preventDefault();
+      return;
+    }
+    if (form.getAttribute("aria-busy") === "true") {
+      event.preventDefault();
+      return;
+    }
+    const button = submitterOf(event, form);
+    markBusy(form, button);
+    const native = form.method.toLowerCase() !== "post" || form.dataset.submit === "native";
+    if (native) return;
+    event.preventDefault();
+    void submitInPlace(form, button);
+  }
+
+  async function submitInPlace(form: HTMLFormElement, button: HTMLButtonElement | null) {
+    const body = new FormData(form);
+    if (button?.name) body.append(button.name, button.value);
+    const action = button?.hasAttribute("formaction") ? button.formAction : form.action;
+    try {
+      const response = await fetch(action, {
+        method: "POST",
+        body,
+        credentials: "same-origin",
+        redirect: "follow",
+        headers: { Accept: "text/html" },
+      });
+      const type = response.headers.get("content-type") ?? "";
+      if (!type.includes("text/html")) {
+        // Not a page: let the browser show whatever it is.
+        window.location.assign(response.url);
+        return;
+      }
+      await render(await response.text(), response.url);
+    } catch (error) {
+      console.error("form submission failed", error);
+      // Never re-send on our own: the server may have done the work already
+      // and a second copy of it is worse than a missing confirmation.
+      clearBusy(form);
+      showFailure(form);
+    }
+  }
+
+  function showFailure(form: HTMLFormElement): void {
+    form.querySelector("[data-form-failure]")?.remove();
+    const notice = document.createElement("p");
+    notice.setAttribute("role", "alert");
+    notice.setAttribute("data-form-failure", "");
+    notice.textContent = FAILURE_TEXT;
+    form.prepend(notice);
+  }
+
+  const styleKey = (el: Element) =>
+    el instanceof HTMLLinkElement
+      ? `link:${el.href}`
+      : `style:${el.getAttribute("data-vite-dev-id") ?? el.textContent}`;
+
+  /** Bring in any stylesheet the answer needs that this page did not have. */
+  async function adoptStyles(doc: Document): Promise<void> {
+    const known = new Set<string>();
+    document.head
+      .querySelectorAll('link[rel="stylesheet"], style')
+      .forEach((el) => known.add(styleKey(el)));
+    const loading: Promise<void>[] = [];
+    doc.head.querySelectorAll('link[rel="stylesheet"], style').forEach((el) => {
+      if (known.has(styleKey(el))) return;
+      const adopted = document.adoptNode(el);
+      if (adopted instanceof HTMLLinkElement) {
+        loading.push(
+          new Promise((resolve) => {
+            adopted.addEventListener("load", () => resolve());
+            adopted.addEventListener("error", () => resolve());
+          }),
+        );
+      }
+      document.head.append(adopted);
+    });
+    await Promise.all(loading);
+  }
+
+  async function render(html: string, url: string): Promise<void> {
+    const doc = new DOMParser().parseFromString(html, "text/html");
+    const next = doc.querySelector("main");
+    const main = document.querySelector("main");
+    if (!next || !main) {
+      window.location.assign(url);
+      return;
+    }
+    await adoptStyles(doc);
+    document.title = doc.title;
+    for (const attr of Array.from(document.body.attributes)) {
+      document.body.removeAttribute(attr.name);
+    }
+    for (const attr of Array.from(doc.body.attributes)) {
+      document.body.setAttribute(attr.name, attr.value);
+    }
+    const movedElsewhere = new URL(url).pathname !== window.location.pathname;
+    main.replaceChildren(...Array.from(next.childNodes).map((node) => document.adoptNode(node)));
+    window.history.replaceState(window.history.state, "", url);
+    settle(main, movedElsewhere, new URL(url).hash);
+    document.dispatchEvent(new CustomEvent("sm:page"));
+  }
+
+  /** Put the answer's first word in front of the person, and under focus. */
+  function settle(main: HTMLElement, movedElsewhere: boolean, hash: string): void {
+    const alert = main.querySelector<HTMLElement>('[role="alert"]');
+    const invalid = main.querySelector<HTMLElement>('[aria-invalid="true"]');
+    const anchor = hash ? document.getElementById(hash.slice(1)) : null;
+    const target = alert ?? anchor ?? invalid;
+    if (target) {
+      target.scrollIntoView({ block: "center" });
+      if (!target.hasAttribute("tabindex") && target !== invalid) {
+        target.setAttribute("tabindex", "-1");
+      }
+      target.focus({ preventScroll: true });
+      return;
+    }
+    if (movedElsewhere) window.scrollTo(0, 0);
+  }
+
+  document.addEventListener("submit", onSubmit);
+  // A page brought back from the back-forward cache arrives as it was left,
+  // busy buttons included.
+  window.addEventListener("pageshow", (event) => {
+    if (event.persisted) clearAllBusy();
+  });
+</script>

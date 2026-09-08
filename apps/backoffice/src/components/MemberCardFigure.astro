@@ -79,9 +79,13 @@ const { width, height } = memberCardSize();
   // share sheet when it has one, the clipboard otherwise. With no script at
   // all the link still works — it opens the card, which is the address the
   // member wanted in the first place.
-  const links = document.querySelectorAll<HTMLAnchorElement>("a[data-share]");
-  links.forEach((anchor) => {
-    anchor.addEventListener("click", (event: MouseEvent) => {
+  // Bound on the document rather than on the link, so a card that LiveForms
+  // swaps in after a form answer shares just the same.
+  document.addEventListener("click", (event: MouseEvent) => {
+    const anchor =
+      event.target instanceof Element ? event.target.closest<HTMLAnchorElement>("a[data-share]") : null;
+    if (!anchor) return;
+    {
       const url = anchor.href;
       const title = anchor.dataset.shareTitle;
       const label = anchor.querySelector("[data-share-label]");
@@ -107,7 +111,7 @@ const { width, height } = memberCardSize();
           window.location.href = url;
         },
       );
-    });
+    }
   });
 </script>
 

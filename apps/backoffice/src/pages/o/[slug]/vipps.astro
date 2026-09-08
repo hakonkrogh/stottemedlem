@@ -2,7 +2,7 @@
 import OrgScreen from "../../../components/OrgScreen.astro";
 import VippsKeysScreen from "../../../components/VippsKeysScreen.astro";
 import Shell from "../../../layouts/Shell.astro";
-import { orgView, requireOrgView } from "../../../lib/orgView";
+import { requireOrgView } from "../../../lib/orgView";
 import { getVippsForOrg } from "../../../lib/vipps";
 import {
   ensureWebhookRegistration,
@@ -23,11 +23,12 @@ import { getWorkOS, orgPath } from "../../../lib/workos";
 // read-only call to Vipps before storing them encrypted per org in WorkOS
 // Vault. One set of keys per org — which Vipps environment they must belong
 // to follows from where this app runs (test everywhere except production).
-let view = await requireOrgView(Astro.locals.session, Astro.params.slug, Astro.request);
+const view = await requireOrgView(Astro.locals.session, Astro.params.slug, Astro.request);
 if (!view) return Astro.redirect("/orgs");
 const org = view.org;
 const workosOrgId = org.workosOrgId;
 const workos = getWorkOS();
+const vippsPath = `${orgPath(org.slug)}/vipps`;
 
 let stored: OrgVippsKeys | null = view.vippsKeys;
 let values: VippsKeysFormValues = {
@@ -37,11 +38,7 @@ let values: VippsKeysFormValues = {
   merchantSerialNumber: "",
 };
 let fieldErrors: VippsKeysFieldErrors = {};
-let saved = false;
-let retested = false;
 let validationError: string | null = null;
-let webhookConnected = false;
-let webhookError: string | null = null;
 // Only a rejected submission keeps the key form open; a failed re-test does not.
 let formRejected = false;
 
@@ -50,44 +47,55 @@ let formRejected = false;
 // receiver against the same sales unit rather than stealing each other's.
 const webhookUrl = view.webhookUrl;
 
+const WEBHOOK_ERROR =
+  "Vipps ville ikke registrere varslingsadressen nå. Vi prøver igjen automatisk. " +
+  "Du kan også prøve på nytt om litt.";
+
 // Connecting payment events is not the administrator's job: whenever keys are
 // stored or re-proven, the registration is brought up to date on its own, and
 // the scheduled runs keep doing so afterwards (specs/concepts/vipps-api-keys.md).
 // An administrator who is looking at a broken connection can also ask for it
 // now rather than waiting for the next run.
-async function connectPaymentEvents(): Promise<void> {
-  const vipps = await getVippsForOrg(workos, workosOrgId);
+async function connectPaymentEvents(): Promise<"connected" | "current" | "failed"> {
   try {
+    const vipps = await getVippsForOrg(workos, workosOrgId);
     if (!vipps) throw new Error("missing Vipps client");
     const ensured = await ensureWebhookRegistration(workos, workosOrgId, vipps, webhookUrl);
-    if (ensured.outcome === "connected" && stored) {
-      stored = { ...stored, webhook: ensured.webhook };
-      webhookConnected = true;
-    }
+    return ensured.outcome === "connected" ? "connected" : "current";
   } catch (error) {
     console.error("could not register webhooks", error);
-    webhookError =
-      "Vipps ville ikke registrere varslingsadressen nå — vi prøver igjen automatisk. " +
-      "Du kan også prøve på nytt om litt.";
+    return "failed";
   }
+}
+
+// What was just done is said on the page the redirect lands on, so that
+// the address after a save is one that can be reloaded and shows the stored
+// keys, never the form again (specs/concepts/presenting-and-editing.md).
+function done(flags: Record<string, "1">): Response {
+  const query = new URLSearchParams(flags).toString();
+  return Astro.redirect(query ? `${vippsPath}?${query}` : vippsPath, 303);
+}
+function eventFlags(outcome: "connected" | "current" | "failed"): Record<string, "1"> {
+  if (outcome === "connected") return { koblet: "1" };
+  if (outcome === "failed") return { varselfeil: "1" };
+  return {};
 }
 
 if (Astro.request.method === "POST") {
   const form = await Astro.request.formData();
   const intent = form.get("intent");
   if (intent === "webhook" && stored) {
-    await connectPaymentEvents();
-  } else if (intent === "test" && stored) {
+    return done(eventFlags(await connectPaymentEvents()));
+  }
+  if (intent === "test" && stored) {
     // Re-run the live check against the keys already in Vault.
     const result = await validateVippsKeys(stored);
     if (result.ok) {
       stored = { ...stored, validatedAt: new Date().toISOString() };
       await saveOrgVippsKeys(workos, workosOrgId, stored);
-      retested = true;
-      await connectPaymentEvents();
-    } else {
-      validationError = result.message;
+      return done({ testet: "1", ...eventFlags(await connectPaymentEvents()) });
     }
+    validationError = result.message;
   } else {
     const parsed = parseVippsKeysForm(form);
     values = parsed.values;
@@ -98,18 +106,18 @@ if (Astro.request.method === "POST") {
       if (result.ok) {
         stored = { ...parsed.keys, validatedAt: new Date().toISOString() };
         await saveOrgVippsKeys(workos, workosOrgId, stored);
-        saved = true;
-        values = { clientId: "", clientSecret: "", subscriptionKey: "", merchantSerialNumber: "" };
-        formRejected = false;
-        await connectPaymentEvents();
-      } else {
-        validationError = result.message;
+        return done({ lagret: "1", ...eventFlags(await connectPaymentEvents()) });
       }
+      validationError = result.message;
     }
   }
-  // Keys or their event delivery may have changed — the chrome's badges say so.
-  view = await orgView(org, Astro.request);
 }
+
+const flags = Astro.url.searchParams;
+const saved = flags.has("lagret");
+const retested = flags.has("testet");
+const webhookConnected = flags.has("koblet");
+const webhookError = flags.has("varselfeil") ? WEBHOOK_ERROR : null;
 
 const date = (iso: string) => new Date(iso).toLocaleDateString("nb-NO");
 const storedView = stored
@@ -125,7 +133,7 @@ const storedView = stored
   : null;
 // A successful save closes the form; a rejected one keeps it open with what
 // was typed.
-const editing = formRejected || (Astro.url.searchParams.has("rediger") && !saved);
+const editing = formRejected || flags.has("rediger");
 ---
 
 <Shell title={`Vipps-nøkler — ${org.name}`} frame={false}>

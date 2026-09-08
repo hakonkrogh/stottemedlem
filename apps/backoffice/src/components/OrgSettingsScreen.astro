@@ -40,6 +40,8 @@ interface Props {
   nameError?: string;
   imageErrors?: { logo?: string; banner?: string };
   saved?: boolean;
+  /** The data processing agreement was accepted just now. */
+  dpaJustAccepted?: boolean;
   vippsKeys: OrgVippsKeys | null;
   /** False when the org's payment events are not reaching this deployment. */
   paymentEventsConnected: boolean;
@@ -57,6 +59,7 @@ const {
   nameError,
   imageErrors = {},
   saved = false,
+  dpaJustAccepted = false,
   vippsKeys,
   paymentEventsConnected,
   warnings = [],
@@ -93,6 +96,7 @@ const hasImages = !!(identity.logoUrl || identity.bannerUrl);
   </Stack>
 
   {saved && <Alert variant="success">Lagret. Den offentlige siden oppdateres ved neste besøk.</Alert>}
+  {dpaJustAccepted && <Alert variant="success">Databehandleravtalen er godtatt.</Alert>}
 
   <OrgWarnings warnings={openWarnings} />
 
@@ -103,7 +107,9 @@ const hasImages = !!(identity.logoUrl || identity.bannerUrl);
           <TextField label="Navn" name="name" value={name} required error={nameError} />
           <OrgProfileFields values={values} fieldErrors={fieldErrors} />
           <OrgImageFields org={org} errors={imageErrors} />
-          <Button block>Lagre</Button>
+          <Button busy="Lagrer …" block>
+            Lagre
+          </Button>
           <Text variant="small">
             <TextLink href={settingsPath}>Avbryt</TextLink>
           </Text>
@@ -205,7 +211,7 @@ const hasImages = !!(identity.logoUrl || identity.bannerUrl);
                 </Text>
                 <form method="post">
                   <input type="hidden" name="godta" value="databehandleravtale" />
-                  <Button>Godta databehandleravtalen</Button>
+                  <Button busy="Godtar …">Godta databehandleravtalen</Button>
                 </form>
               </>
             )

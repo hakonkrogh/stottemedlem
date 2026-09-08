@@ -10,6 +10,11 @@ import { orgPath } from "../../../../lib/workos";
 const view = await requireOrgView(Astro.locals.session, Astro.params.slug, Astro.request);
 if (!view) return Astro.redirect("/orgs");
 const { org, tiers, warnings } = view;
+// The membership form lands here after a save or an archive, and names what it
+// did in the address, so the list can say so: the change is visible in the
+// cards, but a change is confirmed in words as well.
+const savedName = Astro.url.searchParams.get("lagret");
+const archivedName = Astro.url.searchParams.get("arkivert");
 ---
 
 <Shell title={`Medlemskap — ${org.name}`} frame={false}>
@@ -20,6 +25,12 @@ const { org, tiers, warnings } = view;
     warnings={warnings}
     activeMembers={view.activeMembers}
   >
-    <MembershipsScreen orgPath={orgPath(org.slug)} tiers={tiers} warnings={warnings} />
+    <MembershipsScreen
+      orgPath={orgPath(org.slug)}
+      tiers={tiers}
+      warnings={warnings}
+      savedName={savedName}
+      archivedName={archivedName}
+    />
   </OrgScreen>
 </Shell>

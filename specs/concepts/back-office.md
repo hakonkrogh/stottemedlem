@@ -92,6 +92,9 @@ one visit and never has to be re-learned.
   organization's own name, which is what the page is actually about.
 - Editable information follows [Presenting and editing](presenting-and-editing.md):
   presented by default, changed only when asked.
+- Every button that does something is answered the moment it is pressed and
+  again when the work is done, in place, on an address that can be reloaded:
+  [Answering an action](answering-an-action.md).
 - The back office is **not public** — it is exempt from
   [brand attribution](brand-attribution.md).
 

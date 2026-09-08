@@ -18,3 +18,24 @@ body {
   background: var(--sm-bg);
   -webkit-font-smoothing: antialiased;
 }
+
+/* A form in flight (set by LiveForms): nothing in it takes a second press
+ * until the first has an answer. */
+form[aria-busy="true"] {
+  cursor: progress;
+}
+form[aria-busy="true"] :is(button, input, select, textarea, a) {
+  pointer-events: none;
+}
+
+/* The one message LiveForms writes itself, when no answer came back at all.
+ * Same shape as the error Alert, which it cannot import. */
+[data-form-failure] {
+  margin: 0 0 var(--sm-space-md);
+  padding: 0.65rem 0.85rem;
+  font-size: 0.9rem;
+  color: var(--sm-danger);
+  background: var(--sm-danger-bg);
+  border: 1px solid var(--sm-danger-border);
+  border-radius: var(--sm-radius-md);
+}

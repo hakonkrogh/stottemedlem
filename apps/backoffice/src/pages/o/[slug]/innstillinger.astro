@@ -18,7 +18,7 @@ import {
   parseProfileForm,
   profileFormValues,
 } from "../../../lib/orgProfile";
-import { orgView, requireOrgView } from "../../../lib/orgView";
+import { requireOrgView } from "../../../lib/orgView";
 import { purgeOrgPublicPages } from "../../../lib/publicPageCache";
 import { getWorkOS, orgPath } from "../../../lib/workos";
 
@@ -34,17 +34,17 @@ function parseFocusPercent(value: FormDataEntryValue | null): number | null {
   return Math.min(100, Math.max(0, Math.round(n)));
 }
 
-let view = await requireOrgView(Astro.locals.session, Astro.params.slug, Astro.request);
+const view = await requireOrgView(Astro.locals.session, Astro.params.slug, Astro.request);
 if (!view) return Astro.redirect("/orgs");
 let org = view.org;
 const workosOrgId = org.workosOrgId;
+const settingsPath = `${orgPath(org.slug)}/innstillinger`;
 
 let values = profileFormValues(org);
 let fieldErrors: ProfileFieldErrors = {};
 let name = org.name;
 let nameError: string | undefined;
 let imageErrors: { logo?: string; banner?: string } = {};
-let saved = false;
 
 if (Astro.request.method === "POST") {
   const form = await Astro.request.formData();
@@ -54,13 +54,10 @@ if (Astro.request.method === "POST") {
   // letting a one-field post fall through would blank the public profile
   // (specs/concepts/data-processing-agreement.md).
   if (form.get("godta") === "databehandleravtale") {
-    org = (await acceptDataProcessingAgreement(getDb(), org.id, DPA_VERSION)) ?? org;
+    await acceptDataProcessingAgreement(getDb(), org.id, DPA_VERSION);
     // Redirect rather than re-render: the acceptance settles a warning in the
     // chrome, and a plain GET recomputes all of it without this page having to.
-    return new Response(null, {
-      status: 303,
-      headers: { location: `${orgPath(org.slug)}/innstillinger#databehandleravtale` },
-    });
+    return Astro.redirect(`${settingsPath}?godtatt=1#databehandleravtale`, 303);
   }
 
   const parsed = parseProfileForm(form);
@@ -101,22 +98,25 @@ if (Astro.request.method === "POST") {
   if (Object.keys(patch).length > 0) {
     org = (await updateOrganizationProfile(getDb(), workosOrgId, patch)) ?? org;
   }
-  saved = Object.keys(fieldErrors).length === 0 && !nameError && !logo.error && !banner.error;
-  if (saved) {
+  const ok = Object.keys(fieldErrors).length === 0 && !nameError && !logo.error && !banner.error;
+  if (ok) {
     // The public pages serve a cached copy; clear this datacenter's copy so the
     // admin sees the change on their next look (visitors self-heal on traffic).
     await purgeOrgPublicPages(org.slug, Astro.url.origin);
-    // The saved details may have settled a warning — recompute the chrome.
-    view = await orgView(org, Astro.request);
-    values = profileFormValues(org);
-    name = org.name;
+    // A save lands on the presentation, as a plain GET: the saved details may
+    // have settled a warning, the chrome is recomputed on the way, and a
+    // reload shows the stored details rather than submitting the form again
+    // (specs/concepts/presenting-and-editing.md).
+    return Astro.redirect(`${settingsPath}?lagret=1`, 303);
   }
 }
 
+const saved = Astro.url.searchParams.has("lagret");
+const dpaAccepted = Astro.url.searchParams.has("godtatt");
 // A save closes the form again; anything still wrong keeps it open.
 const hasErrors =
   Object.keys(fieldErrors).length > 0 || !!nameError || !!imageErrors.logo || !!imageErrors.banner;
-const editing = hasErrors || (Astro.url.searchParams.has("rediger") && !saved);
+const editing = hasErrors || Astro.url.searchParams.has("rediger");
 ---
 
 <Shell title={`Innstillinger — ${org.name}`} frame={false}>
@@ -138,6 +138,7 @@ const editing = hasErrors || (Astro.url.searchParams.has("rediger") && !saved);
       nameError={nameError}
       imageErrors={imageErrors}
       saved={saved}
+      dpaJustAccepted={dpaAccepted}
       vippsKeys={view.vippsKeys}
       paymentEventsConnected={view.vippsKeys?.webhook?.url === view.webhookUrl}
       warnings={view.warnings}

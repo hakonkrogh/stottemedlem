@@ -2,6 +2,11 @@
 // Action primitive. Renders a <button> normally, or an <a> styled identically
 // when `href` is given. `block` stretches it to the container width — the
 // default in the narrow card layouts.
+//
+// A submit button answers the press at once: while its form is in flight it
+// shows a spinner and says what it is doing (`busy`), so a request that takes
+// seconds never looks like a press that did nothing. The busy state is set by
+// LiveForms; a button with no `busy` text of its own gets a generic one.
 interface Props {
   /** `danger` is for confirming something irreversible, e.g. moving money back. */
   variant?: "primary" | "secondary" | "danger";
@@ -10,8 +15,18 @@ interface Props {
   block?: boolean;
   name?: string;
   value?: string;
+  /** What the button says while the action it started is still running. */
+  busy?: string;
 }
-const { variant = "primary", href, type = "submit", block = false, name, value } = Astro.props;
+const {
+  variant = "primary",
+  href,
+  type = "submit",
+  block = false,
+  name,
+  value,
+  busy,
+} = Astro.props;
 const Tag = href ? "a" : "button";
 ---
 
@@ -21,6 +36,7 @@ const Tag = href ? "a" : "button";
   type={href ? undefined : type}
   name={name}
   value={value}
+  data-busy={busy}
 >
   <slot />
 </Tag>
@@ -52,6 +68,34 @@ const Tag = href ? "a" : "button";
   .btn:focus-visible {
     outline: none;
     box-shadow: 0 0 0 3px var(--sm-focus-ring);
+  }
+
+  /* In flight: a second press must not start a second action, and the
+     spinner says the first one is still running. */
+  .btn[aria-busy="true"] {
+    pointer-events: none;
+    cursor: progress;
+    opacity: 0.85;
+  }
+  .btn[aria-busy="true"]::before {
+    content: "";
+    flex: none;
+    width: 0.9em;
+    height: 0.9em;
+    border: 2px solid currentColor;
+    border-right-color: transparent;
+    border-radius: 50%;
+    animation: sm-btn-spin 700ms linear infinite;
+  }
+  @keyframes sm-btn-spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .btn[aria-busy="true"]::before {
+      animation-duration: 1.6s;
+    }
   }
 
   .primary {

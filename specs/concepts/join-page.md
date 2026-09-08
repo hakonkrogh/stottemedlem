@@ -141,6 +141,8 @@ resolve to.
   Nothing an administrator must do — the page heals itself on traffic.
 
 ## Relationships
+- The join button hands the supporter over to the payment app; until the app
+  has them, the button says so ([Answering an action](answering-an-action.md)).
 - Belongs to one [organization](organization.md); shows its
   [membership tiers](membership-tier.md) and their
   [annual fees](annual-fee.md).

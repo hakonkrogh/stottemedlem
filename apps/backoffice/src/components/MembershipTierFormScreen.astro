@@ -107,7 +107,9 @@ const confirmLines = confirmFeeChange
           <input type="hidden" name="annualFee" value={values.annualFee} />
           <input type="hidden" name="bekreft" value="1" />
           <Stack gap="sm">
-            <Button name="action" value="save">Bekreft og lagre</Button>
+            <Button name="action" value="save" busy="Lagrer …">
+              Bekreft og lagre
+            </Button>
             <Text variant="small">
               <TextLink href={tiersPath}>Avbryt — ingenting endres</TextLink>
             </Text>
@@ -175,7 +177,7 @@ const confirmLines = confirmFeeChange
             required
             error={fieldErrors.annualFee}
           />
-          <Button name="action" value="save" block>
+          <Button name="action" value="save" busy={isNew ? "Legger til …" : "Lagrer …"} block>
             {isNew ? "Legg til" : "Lagre"}
           </Button>
         </Stack>
@@ -186,7 +188,7 @@ const confirmLines = confirmFeeChange
     !confirmFeeChange && canArchive && (
       <form method="post" class="form-column">
         <Stack gap="sm">
-          <Button variant="secondary" name="action" value="archive" block>
+          <Button variant="secondary" name="action" value="archive" busy="Arkiverer …" block>
             Arkiver medlemskapet
           </Button>
           <Text variant="small">

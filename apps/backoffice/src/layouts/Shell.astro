@@ -6,6 +6,7 @@
 // `frame={false}` and lay themselves out from the top.
 import "@stottemedlem/ui/tokens.css";
 import "@stottemedlem/ui/base.css";
+import LiveForms from "@stottemedlem/ui/components/LiveForms.astro";
 import ScreenFrame from "../components/ScreenFrame.astro";
 
 interface Props {
@@ -22,6 +23,7 @@ const { title, frame = true } = Astro.props;
     <meta name="robots" content="noindex" />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <title>{title} — støttemedlem backoffice</title>
+    <LiveForms />
   </head>
   <body class:list={[{ centered: frame }]}>
     <main>

@@ -114,10 +114,12 @@ const referral = Astro.url.searchParams.get(JOIN_REFERRAL_PARAM)?.trim() || null
           {/* A POST, because choosing a membership creates an agreement with
               Vipps — and because this page is cached, so it can hold no state
               of its own. */}
-          <form method="post" action={`/bli-medlem/${org.slug}/start`}>
+          <form method="post" action={`/bli-medlem/${org.slug}/start`} data-submit="native">
             <input type="hidden" name="medlemskap" value={tier.key} />
             {referral && <input type="hidden" name={JOIN_REFERRAL_PARAM} value={referral} />}
-            <Button type="submit" block>Bli støttemedlem med Vipps</Button>
+            <Button type="submit" busy="Åpner Vipps …" block>
+              Bli støttemedlem med Vipps
+            </Button>
           </form>
         </MembershipTierCard>
       ))

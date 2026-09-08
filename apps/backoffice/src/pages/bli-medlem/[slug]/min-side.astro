@@ -72,6 +72,17 @@ let eraseFailed = false;
 const form = Astro.request.method === "POST" ? await Astro.request.formData() : null;
 const action = form?.get("handling") ?? null;
 
+// This page's own address, with what was just done added to it: the token
+// stays, so the redirect after an action lands back here.
+function ownPageQuery(flags: Record<string, string>): string {
+  const query = new URLSearchParams({ n: Astro.url.searchParams.get("n") ?? "" });
+  for (const [key, value] of Object.entries(flags)) query.set(key, value);
+  return query.toString();
+}
+if (Astro.request.method !== "POST" && Astro.url.searchParams.has("byttet")) {
+  changedToTierName = (await getMembershipTier(db, org.id, tierId))?.name ?? null;
+}
+
 // Giving more (or less) without leaving and coming back
 // (specs/use-cases/change-membership-tier.md). The arrangement the member
 // already approved is kept and re-pointed at the other tier — no new
@@ -86,9 +97,9 @@ if (action === "bytt" && !stopped && agreement.memberId) {
   if (tier && !tier.archivedAt && tier.id !== tierId && vipps) {
     try {
       await changeTier(db, vipps, org, agreement, tier);
-      tierId = tier.id;
-      annualFeeNok = tier.annualFeeNok;
-      changedToTierName = tier.name;
+      // Answered with a redirect, so a reload shows the page as it now is
+      // rather than asking Vipps for the same change again.
+      return Astro.redirect(`${Astro.url.pathname}?${ownPageQuery({ byttet: "1" })}`, 303);
     } catch (error) {
       console.error("could not change tier", error);
       tierChangeFailed = true;
@@ -154,6 +165,9 @@ if (action === "stopp" || action === "slett") {
       );
       await closeAgreement(db, agreement.vippsAgreementId, "STOPPED");
       stopped = true;
+      if (action === "stopp") {
+        return Astro.redirect(`${Astro.url.pathname}?${ownPageQuery({})}`, 303);
+      }
     } catch (error) {
       console.error("could not stop agreement", error);
       stopFailed = true;
@@ -317,9 +331,11 @@ const title = `Ditt støttemedlemskap — ${org.name}`;
               agreement (specs/concepts/member-self-service.md). */}
           {canResume && (
             <Stack gap="sm">
-              <form method="post">
+              <form method="post" data-submit="native">
                 <input type="hidden" name="handling" value="fortsett" />
-                <Button type="submit">Fortsett medlemskapet</Button>
+                <Button type="submit" busy="Åpner Vipps …">
+                  Fortsett medlemskapet
+                </Button>
               </form>
               <Text variant="small">
                 {resumeNok === null
@@ -334,7 +350,9 @@ const title = `Ditt støttemedlemskap — ${org.name}`;
           <Text>Du får varsel i Vipps-appen før hver fornyelse.</Text>
           <form method="post">
             <input type="hidden" name="handling" value="stopp" />
-            <Button type="submit" variant="secondary">Si opp medlemskapet</Button>
+            <Button type="submit" variant="secondary" busy="Sier opp …">
+              Si opp medlemskapet
+            </Button>
           </form>
           <Text variant="small">
             Sier du opp, står du som støttemedlem ut året du har betalt for — du blir bare ikke
@@ -360,7 +378,7 @@ const title = `Ditt støttemedlemskap — ${org.name}`;
             <form method="post">
               <input type="hidden" name="handling" value="bytt" />
               <input type="hidden" name="medlemskap" value={tier.id} />
-              <Button type="submit" variant="secondary">
+              <Button type="submit" variant="secondary" busy="Bytter …">
                 Bytt til {tier.name} — {tier.annualFeeNok} kr i året
               </Button>
             </form>
@@ -384,7 +402,9 @@ const title = `Ditt støttemedlemskap — ${org.name}`;
           </Text>
           <form method="post" data-confirm="Slette opplysningene dine? Denne siden slutter å virke, og hjertene dine forsvinner.">
             <input type="hidden" name="handling" value="slett" />
-            <Button type="submit" variant="secondary">Slett opplysningene mine</Button>
+            <Button type="submit" variant="secondary" busy="Sletter …">
+              Slett opplysningene mine
+            </Button>
           </form>
           <Text variant="small">
             Sletting kan ikke angres. Denne siden slutter å virke, og hjertene dine nullstilles —
@@ -403,13 +423,3 @@ const title = `Ditt støttemedlemskap — ${org.name}`;
   }
 </PublicShell>
 
-<script>
-  // A deletion that cannot be undone gets one question first. The form still
-  // posts without JavaScript — the confirmation is a courtesy, never the thing
-  // that protects the member (the server refuses while an arrangement runs).
-  document.querySelectorAll<HTMLFormElement>("form[data-confirm]").forEach((form) => {
-    form.addEventListener("submit", (event: Event) => {
-      if (!window.confirm(form.dataset.confirm)) event.preventDefault();
-    });
-  });
-</script>
