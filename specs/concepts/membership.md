@@ -25,7 +25,11 @@ over year as a history of memberships.
   once it has definitively failed or no renewal was arranged at all
   ([renewal](../use-cases/renew-annual-membership.md)). This grace belongs to
   renewals only — a first payment that never completed has never made anyone
-  current.
+  current. The standing is the membership's own, so every surface reporting it
+  answers alike: the [member list](../use-cases/curate-member-list.md), the
+  member's [own page](member-self-service.md), and their
+  [card](member-card.md). A membership that reads active on one screen and
+  lapsed on another is a fault, whichever screen is the kinder one.
 - Being active and continuing are two questions, not one. An active membership
   is either **renewing** — the yearly arrangement still runs, so the next
   period is already covered — or **ending**: the arrangement has been ended, so
