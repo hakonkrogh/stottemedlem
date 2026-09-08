@@ -161,6 +161,18 @@ WHERE member_id=…` collapses a multi-year supporter onto one year and fails.
 Shift instead: `SET period_year = period_year - 7`. This is the setup for
 anything retention- or history-shaped (specs/concepts/member-data.md).
 
+**But a shift SMALLER than the history's span fails the same way** (cost a
+round-trip 2026-09-08). `- 7` works only because seven clears Kari's four
+periods; `- 1`, the shift you want whenever the question is "what does this
+member look like one period on", walks each row onto the row below it and is
+rejected with the identical `SQLITE_CONSTRAINT_UNIQUE`. Park the history where
+none of its own rows can collide, then come back:
+
+    d1.sh-write "UPDATE memberships SET period_year = period_year - 10 WHERE member_id='mem-seed-1'"
+    d1.sh-write "UPDATE memberships SET period_year = period_year + 9  WHERE member_id='mem-seed-1'"
+
+`renew.sh` (below) does this for you, both ways, and is the better entry point.
+
 **Gotcha when INSERTing your own rows against the seed:** the tier ids are
 `tier-1` / `tier-2`, NOT `tier-seed-1` — only the org, member and agreement ids
 carry the `-seed-` convention. Guessing wrong gets you
@@ -168,18 +180,35 @@ carry the `-seed-` convention. Guessing wrong gets you
 read the ids back (`d1.sh "SELECT id, key FROM membership_tiers WHERE
 org_id='org-seed-1'"`) rather than assuming.
 
-## Pretend the seeded member just renewed (added 2026-09-08)
+## Put the seeded member's renewal in any state (added 2026-09-08)
 
-    bash .claude/skills/verify-public-routes/renew.sh        # one more paid period for Kari
-    bash .claude/skills/verify-public-routes/renew.sh undo   # take it back
+    bash .claude/skills/verify-public-routes/renew.sh done       # renewed and paid (default)
+    bash .claude/skills/verify-public-routes/renew.sh retrying   # renewal charge still open
+    bash .claude/skills/verify-public-routes/renew.sh failed      # it definitively failed
+    bash .claude/skills/verify-public-routes/renew.sh undo        # back to the seed
 
-A renewal in the product is a new `memberships` row for the next period; this
-writes that one row (`msh-seed-renewal`) for Kari without Vipps, so a page can
-be loaded before and after. What to assert: the card picture is embedded as
-`kort.svg?v=<tag>` on min-side, kvittering and `/medlemsbevis/<token>`, and the
-tag CHANGES after `renew.sh` (5 hearts, next year) and comes back after `undo`.
-The tag is what stops a browser serving its 5-minute-old copy of the card after
-a renewal (specs/concepts/member-card.md); the page HTML itself is never cached.
+Every state is idempotent and reachable from any other, so a page can be loaded
+in each and compared. It writes Kari's rows directly, no Vipps involved.
+
+`retrying` is the one worth knowing about: it leaves the CURRENT period unpaid
+and an open `RECURRING` charge standing, which is the retry grace
+(specs/concepts/membership.md). That state is invisible to unit tests and is
+where the card and the member list disagreed until 2026-09-08. Verified end to
+end when the card was fixed:
+
+| state | card's validity corner |
+|-------|------------------------|
+| `retrying` | `GYLDIG 2026` (active: lapse waits for a definitive failure) |
+| `failed` | `STØTTET T.O.M. 2025` |
+| `done` | `GYLDIG 2027` |
+
+What else to assert: the card picture is embedded as `kort.svg?v=<tag>` on
+min-side, kvittering and `/medlemsbevis/<token>`, and the tag MOVES on every
+transition that changes the drawing. The tag is what stops a browser serving its
+5-minute-old copy of the card after a renewal (specs/concepts/member-card.md);
+the page HTML itself is never cached. Two states that draw the same card share a
+tag on purpose (`retrying` and `undo` both show four hearts over `GYLDIG 2026`):
+the tag names the picture, not the database.
 
     curl -s localhost:4322/bli-medlem/eksempel-musikkorps/min-side?n=tok-seed-1 | grep -oE 'kort\.svg\?v=[a-z0-9]+'
 

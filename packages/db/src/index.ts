@@ -366,6 +366,54 @@ export function membershipStanding(
   return "lapsed";
 }
 
+/**
+ * The period a membership is good for, which is what the member card states
+ * (specs/concepts/member-card.md).
+ *
+ * Normally the latest period paid for. During the renewal grace nothing is
+ * paid for the current period yet, and the card must not go on claiming
+ * validity for a period that has ended, so it speaks for the period the
+ * renewal is being taken for. Once lapsed it names the last period actually
+ * supported, which is what "Støttet t.o.m." reports.
+ *
+ * The two branches are membershipStanding's two grounds for being active, in
+ * the same order, so the period and the standing can never disagree.
+ */
+export function coveredPeriod(
+  latestPaidYear: number | null,
+  pendingRenewalYear: number | null,
+  currentPeriodKey: number,
+): number | null {
+  if (latestPaidYear !== null && latestPaidYear >= currentPeriodKey) return latestPaidYear;
+  if (pendingRenewalYear !== null && pendingRenewalYear >= currentPeriodKey) {
+    return pendingRenewalYear;
+  }
+  return latestPaidYear;
+}
+
+/**
+ * The newest period a renewal payment is still underway for, if any: the fact
+ * that grants the retry grace (membershipStanding). An open RECURRING charge
+ * is a renewal Vipps has not settled either way yet; a first payment is never
+ * one, which is why only RECURRING counts.
+ */
+async function pendingRenewalPeriod(db: Db, memberId: string): Promise<number | null> {
+  const [pending] = await db
+    .select({ periodYear: membershipCharges.periodYear })
+    .from(membershipCharges)
+    .innerJoin(membershipAgreements, eq(membershipCharges.agreementId, membershipAgreements.id))
+    .where(
+      and(
+        eq(membershipAgreements.memberId, memberId),
+        eq(membershipCharges.type, "RECURRING"),
+        inArray(membershipCharges.status, OPEN_CHARGE_STATUSES),
+      ),
+    )
+    .orderBy(desc(membershipCharges.periodYear))
+    .limit(1);
+  return pending?.periodYear ?? null;
+}
+
 /** What a supporter agreed to, before Vipps has confirmed anything. */
 export interface DraftedAgreement {
   orgId: string;
@@ -912,6 +960,16 @@ export interface MemberListEntry {
  * The organization's supporting members for one annual period — the list the
  * product exists to curate. Defaults to the current calendar year.
  */
+/**
+ * Members of ONE named period. Every row shares that period, so the status
+ * here answers only "is this period the current one", deliberately without the
+ * renewal grace: the grace is about a member's standing today, and this list
+ * is about a period that may be long past.
+ *
+ * Reaches no surface at present: nothing outside this package calls it. Do
+ * not read a member's standing off it; `listOrganizationMembers` and
+ * `findMemberCardByToken` are the two that answer that.
+ */
 export async function listMembersForPeriod(
   db: Db,
   orgId: string,
@@ -1421,28 +1479,12 @@ export async function getOrganizationMember(
     .where(
       and(eq(membershipAgreements.memberId, member.id), eq(membershipAgreements.status, "ACTIVE")),
     );
-  const [pending] = await db
-    .select({ periodYear: membershipCharges.periodYear })
-    .from(membershipCharges)
-    .innerJoin(membershipAgreements, eq(membershipCharges.agreementId, membershipAgreements.id))
-    .where(
-      and(
-        eq(membershipAgreements.memberId, member.id),
-        eq(membershipCharges.type, "RECURRING"),
-        inArray(membershipCharges.status, OPEN_CHARGE_STATUSES),
-      ),
-    )
-    .orderBy(desc(membershipCharges.periodYear))
-    .limit(1);
+  const pendingRenewalYear = await pendingRenewalPeriod(db, member.id);
 
   return {
     member,
     latest,
-    status: membershipStanding(
-      latest?.periodYear ?? null,
-      pending?.periodYear ?? null,
-      currentPeriodKey,
-    ),
+    status: membershipStanding(latest?.periodYear ?? null, pendingRenewalYear, currentPeriodKey),
     renewing: Boolean(live),
     hearts: history.length,
     recruits: await countRecruits(db, member.id),
@@ -1647,6 +1689,12 @@ export interface MemberCard {
   /** The most recent period paid for; null when none ever completed. */
   latest: Membership | null;
   status: "active" | "lapsed";
+  /**
+   * The period the card speaks for in its validity corner: the newest period
+   * the member is covered for, which during a renewal grace is the period
+   * being paid for rather than the last one completed (`coveredPeriod`).
+   */
+  coveredPeriodYear: number | null;
 }
 
 /**
@@ -1673,13 +1721,20 @@ export async function findMemberCardByToken(
   if (history.length === 0) return null;
   const latest = history[0] ?? null;
 
+  // The card reports the same standing as every other surface, grace included:
+  // a member whose renewal Vipps is still retrying must not be handed a lapsed
+  // card while the member list has them active (specs/concepts/membership.md).
+  const pendingRenewalYear = await pendingRenewalPeriod(db, row.member.id);
+  const latestPaidYear = latest?.periodYear ?? null;
+
   return {
     ...row,
     history,
     hearts: history.length,
     recruits: await countRecruits(db, row.member.id),
     latest,
-    status: latest ? membershipStatus(latest.periodYear, currentPeriodKey) : "lapsed",
+    status: membershipStanding(latestPaidYear, pendingRenewalYear, currentPeriodKey),
+    coveredPeriodYear: coveredPeriod(latestPaidYear, pendingRenewalYear, currentPeriodKey),
   };
 }
 

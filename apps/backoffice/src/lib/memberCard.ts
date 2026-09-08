@@ -90,11 +90,13 @@ export function memberCardPicturePath(card: MemberCard, format: "png" | "svg" = 
 
 /**
  * The period the card speaks for: the one it is good for while it is current,
- * and the last one supported once it is not.
+ * and the last one supported once it is not. While a renewal is still being
+ * retried that is the period being paid for, not the one that just ended, so
+ * the card never says "gyldig" over a year that is over.
  */
 function cardPeriod(card: MemberCard): { periodText: string; lapsed: boolean } {
   return {
-    periodText: periodLabel(card.latest?.periodYear ?? periods.periodFor().year),
+    periodText: periodLabel(card.coveredPeriodYear ?? periods.periodFor().year),
     lapsed: card.status === "lapsed",
   };
 }

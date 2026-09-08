@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   countMemberStandings,
+  coveredPeriod,
   feeMayBeChargedNow,
   hasAcceptedDpa,
   isCurrentMember,
@@ -96,6 +97,49 @@ describe("membershipStanding", () => {
 
   it("never paid and nothing pending is lapsed", () => {
     expect(membershipStanding(null, null, 2027)).toBe("lapsed");
+  });
+});
+
+describe("coveredPeriod", () => {
+  it("is the paid period while that period is current", () => {
+    expect(coveredPeriod(2027, null, 2027)).toBe(2027);
+  });
+
+  it("is the period being renewed while the payment is still being retried", () => {
+    // The card would otherwise say "gyldig 2026" all through January 2027.
+    expect(coveredPeriod(2026, 2027, 2027)).toBe(2027);
+  });
+
+  it("falls back to the last period supported once the renewal has failed", () => {
+    expect(coveredPeriod(2026, null, 2027)).toBe(2026);
+  });
+
+  it("a stale open charge for a past period covers nothing new", () => {
+    expect(coveredPeriod(2025, 2026, 2027)).toBe(2025);
+  });
+
+  it("keeps a period paid ahead of the current one", () => {
+    expect(coveredPeriod(2028, null, 2027)).toBe(2028);
+  });
+
+  it("is nothing at all when nothing was ever paid", () => {
+    expect(coveredPeriod(null, null, 2027)).toBeNull();
+  });
+
+  it("never disagrees with the standing: a covered period means active", () => {
+    const cases: [number | null, number | null, number][] = [
+      [2027, null, 2027],
+      [2026, 2027, 2027],
+      [2026, null, 2027],
+      [2025, 2026, 2027],
+      [2028, null, 2027],
+      [null, null, 2027],
+    ];
+    for (const [paid, pending, current] of cases) {
+      const covered = coveredPeriod(paid, pending, current);
+      const active = membershipStanding(paid, pending, current) === "active";
+      expect(covered !== null && covered >= current).toBe(active);
+    }
   });
 });
 

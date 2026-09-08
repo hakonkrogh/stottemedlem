@@ -157,6 +157,19 @@ surface the member happens to be looking at.
   streak heart goes muted, and the exclamation mark goes — the years were real
   and stay counted, but the card stops celebrating. It never pretends the
   membership is current.
+- **The card says what every other surface says, a renewal still being retried
+  included.** A standing belongs to the [membership](membership.md), not to the
+  screen showing it: when the [member list](../use-cases/curate-member-list.md)
+  has a member as active, their card does too. So a renewal the payment
+  provider has not settled either way keeps the card valid, and the card then
+  names the period the renewal is being taken for, not the one that has just
+  ended: a card left saying "Gyldig" over last year would be claiming a
+  validity that has expired. The new heart is not on it yet, because a heart is
+  a period paid for and that period is not paid yet; it arrives the moment the
+  payment does. (For a while the card flipped to lapsed the day the period
+  turned, while the member list correctly kept the same member active. One
+  membership, two answers, and the member got the harsher one on the surface
+  built for showing to other people.)
 - A card that no longer matches a membership reveals nothing — not the
   organization, not that some other card exists.
 - The card is a **member's** object. The organization's own unattributed QR
