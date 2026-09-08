@@ -5,8 +5,7 @@ import { getDb } from "../../../lib/db";
 import { logger } from "../../../lib/log";
 import { applyVippsEvent, publicOrigin, type VippsEvent } from "../../../lib/membership";
 import { requestReceiptSweep } from "../../../lib/receipts";
-import { getVippsForOrg, testEnvironmentWebhookSecret } from "../../../lib/vipps";
-import { readOrgVippsKeys } from "../../../lib/vippsKeys";
+import { getVippsForOrg, readStoredKeys, testEnvironmentWebhookSecret } from "../../../lib/vipps";
 import { getWorkOS } from "../../../lib/workos";
 
 const log = logger("webhooks");
@@ -29,7 +28,9 @@ export const POST: APIRoute = async ({ params, request }) => {
 
   const body = await request.text();
   const workos = getWorkOS();
-  const keys = await readOrgVippsKeys(workos, org.workosOrgId);
+  // The tolerant read: against the test environment a Vault failure falls back
+  // to the shared test secret below, so the loop stays rehearsable locally.
+  const keys = await readStoredKeys(workos, org.workosOrgId);
   const secret = keys?.webhook?.secret ?? testEnvironmentWebhookSecret();
   if (!secret) {
     log.error("webhook received but no registration secret stored", undefined, {

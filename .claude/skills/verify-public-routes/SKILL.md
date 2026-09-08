@@ -62,6 +62,41 @@ WorkOS organization, so **no real login can open its back-office pages** — to
 click through an auth-gated screen with data, seed rows against your own org's
 id instead.
 
+## Trace ONE member: did they pay, and were they told? (added 2026-09-08)
+
+    bash .claude/skills/verify-public-routes/trace-member.sh <selector> [local|staging|production]
+
+"My weekly test renewed but I got nothing" is the shape every payment question
+arrives in, and answering it by hand is four joins, one of which fails. This
+merges agreements, charges and notices into one chronological timeline, then
+asserts the invariant the question is really about:
+
+    !! captured with NO receipt notice: chr-CcNysRK, chr-u3z3p3S
+
+The selector is whatever you are holding: the id, a card token, an agreement
+manage token, a pasted backoffice or min-side URL, a `agr_`/`chr-` Vipps id, a
+phone (matched on the last 8 digits, so `+47…` and bare both land) or an email.
+
+**Reading the receipt gap.** A missing receipt is usually benign, and the
+timeline says which: `listCapturesOwedReceipt` selects only charges still
+`status = 'CHARGED'` (`packages/db/src/index.ts:1930`), so a charge REFUNDED
+before the next `:30`/nightly sweep drops out of the owed list forever and
+never gets one. Three of this member's staging charges are exactly that
+(refunded 10–70 min after capture, i.e. inside the sweep interval). A gap on a
+charge that is still CHARGED is the real bug.
+
+**A notice row is proof of delivery, not of intent.** `recordMemberNotice` runs
+only after the provider confirms the send (`apps/backoffice/src/lib/receipts.ts:151`),
+so a row means the email really left. It does NOT mean a human can read it.
+See `vipps-test-rig` on the test user's black-hole address.
+
+Two columns that cost this script a round-trip each when it was written:
+`memberships` has **no `valid_until`** (it is derived from `period_year`;
+`period_start`/`period_end` are the stored truth), and `membership_charges` has
+**no `member_id`** (it hangs off `agreement_id`). D1 also caps compound
+SELECTs (7 `UNION ALL` arms returns *"too many terms in compound SELECT"*),
+which is why the timeline is merged in node rather than in SQL.
+
 ## Seed first (pages read D1)
 
     bash .claude/skills/verify-public-routes/seed.sh [slug]     # default: eksempel-musikkorps

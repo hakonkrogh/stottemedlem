@@ -634,6 +634,62 @@ lives in `specs/`, kept in sync with code by a mandatory `Stop`-hook harness.
   only, and now sits on `MemberOverview` — so any new `MemberOverview` fixture
   needs it. Migration `0011_member_card.sql` backfills a card token for every
   existing member. Rendering/route details: `qr-codes.md` in this skill.
+  **Renewal-loop verification state (updated 2026-08-26, branch
+  recurring-payments-mgmt):** rehearsed against real apitest — join/activation/
+  pro-rated initial charge, a real renewal charge captured on its due date,
+  webhook signature + tamper + unknown-org contracts (200/401/404), a
+  charge-failed event NOT trusted (product asked Vipps, recorded DUE),
+  reconcile via `cron.sh "0 2 * * *"` finding 4 provider-known/product-unknown
+  charges on a real agreement and settling every captured one into the single
+  2026 membership (idempotent), 04:00 job twice = no reprice (fees aligned),
+  no renewal arranged (out of Dec-window), no double-arrange. Vipps special
+  test amounts are øre passed as decimal NOK (`vt charge --amount 1.51` = 151
+  øre = insufficient funds). The failing-renewal charge chr-TCYB7Em SETTLED
+  2026-08-27 as CANCELLED, not FAILED — a concurrent session cancelled every
+  open charge on the shared agreement agr_Mt2LutK, so the literal FAILED
+  status was never observed (would need a dedicated agreement + ~8 days).
+  Same code path regardless: reconcile pulled CANCELLED into D1 and the
+  standing grace correctly ends with any settled status (only
+  OPEN_CHARGE_STATUSES grant it). Remaining before go-live (assessed
+  2026-08-28, revised 2026-09-02 after rebasing onto main): apitest —
+  rejoin-after-stop rehearsal, live lapse flip in the member list;
+  December-only (main's iso-week staging can now rehearse these on the
+  accelerated clock) — in-window renewal arrangement, double-arrange guard,
+  turn-of-year flip; production-only — real Vault key reads (local always
+  uses the .dev.vars fallback), deployed cron actually firing, one scheduled
+  run auto-registering the org webhook (`ensureWebhookRegistration` runs
+  every scheduled tick since main's key-store work) and a genuine delivery
+  verifying, one real-money join+stop. RESOLVED by main since 2026-08-28:
+  PUBLIC_ORIGIN is set in wrangler.jsonc for prod + staging; webhook
+  registration is automatic, not a manual go-live step. NEW GAP from the
+  rebase (2026-09-02): the member card (`findMemberCardByToken`) and the
+  per-period list (`listMembersForPeriod`) still derive status via bare
+  `membershipStatus` — a member mid-retry in January shows a lapsed card
+  while the member list correctly keeps them active (`membershipStanding`
+  grace). Not yet fixed; decide whether the card should get the grace too. Also observed: unapproved drafts go EXPIRED
+  on Vipps' side once their approval token dies, and reconcile corrects them —
+  the orphan-draft story resolves via EXPIRED without waiting out the 14-day
+  abandonment window. Charges stay DUE through the retry window on apitest
+  (observed 7h past due before the cancellation). The
+  lapsed-while-retrying bug this rehearsal confirmed is FIXED (2026-08-26,
+  commit "Lapse waits for the payment to definitively fail"):
+  `membershipStanding` in @stottemedlem/db keeps a member active while an
+  OPEN_CHARGE_STATUSES renewal charge exists for the current period; both
+  member queries feed it; specs membership.md + curate-member-list.md state
+  the retry grace.
+  Mid-period stop REHEARSED 2026-08-26 end-to-end with a real agreement
+  (agr_gTdL3vU) drafted by the product's own join flow: approval in the MT app
+  captured the pro-rated INITIAL instantly; with NO webhook registered,
+  reconcile alone settled the whole join (agreement ACTIVE, member created
+  from userinfo, 2026 membership granted); min-side rendered by manage token
+  (bogus token → 404), POST stop → Vipps STOPPED + D1 stopped_at + page shows
+  "ut 2026"; renewal job reads only status='ACTIVE' agreements
+  (listActiveAgreementsWithTier) so a stopped agreement can never be
+  re-arranged — 0 RECURRING rows after a job run. Still not rehearsable until
+  December: the in-window double-arrange guard. Fixed 2026-08-26: webhook route now uses the tolerant
+  Vault read (`readStoredKeys`) so a key-store outage in the test env falls
+  back to `.dev.vars` instead of 500ing every delivery (spec
+  `concepts/vipps-api-keys.md` updated to match).
   **Member list** (added 2026-08-24, spec `use-cases/curate-member-list.md`):
   `/o/[slug]/medlemmer` (list, `?sok=` search) + `/o/[slug]/medlemmer/[memberId]`
   (history + the one editable thing, contact details). Queries live in
@@ -1192,13 +1248,14 @@ away by mistake (nearly did, 2026-08-31, rebasing onto the one-card PR).
 | phone-number-privacy.md | verified legal ground truth on masking/displaying member phone numbers: NO law requires masking (PCI DSS masks card PANs, nothing similar for phone); GDPR art. 5(1)(c)/25(2) analysis, why full display to org admins is within purpose, + the 2026-08-28 audit of every phone surface and the real gaps (search-in-URL, phone-as-title) |
 | norwegian-receipt-law.md | verified legal ground truth for payment receipts: bokføringsforskriften § 5-1-6b (membership fees need only betalingsdokumentasjon with § 5-1-1 nr. 2–5 — no numbering, no PDF), mval § 3-13 VAT exemption, the rules that do NOT apply (kassasystem, § 5-2-9 file format, tax deduction), + how to curl Lovdata (WebFetch drops legal text) |
 | member-data-legal.md | verified ground truth (2026-08-31) on **pulling more member data from Vipps than name/email/phone**: the two DIFFERENT scope lists (Userinfo API = our Recurring flow: name/email/phoneNumber/address/birthDate/nin; Login API adds gender/delegatedConsents) — there is NO `accountNumbers` scope and `nin` is "not available in Norway"; consent is ALL-OR-NOTHING (a denial fails the agreement, so extra scopes are a conversion risk, and granularity is only achievable by not asking); scopes outside the org's Vipps product plan are silently OMITTED, not an error; verbatim `personopplysningsloven` § 12 (fødselsnummer) + § 5 (age 13); org-as-controller/us-as-processor, art. 9 membership sensitivity, art. 13 join-page duty; + how to curl Lovdata law text and the Vipps docs' `.md` mirrors via llms.txt + **the 2026-08-31 audit, RAISED AND CLOSED the same day** (privacy notice, retention sweep, erasure path and the named collected set all shipped — product behaviour now in `specs/concepts/member-data.md` + `specs/use-cases/erase-member-data.md`; the databehandleravtale followed: a public `/databehandleravtale`, accepted via a REQUIRED never-pre-ticked checkbox on the create-org form (enforced server-side too), versioned by date, with the one pre-existing org BACKFILLED by migration `0014` at migration time rather than backdated — spec in `specs/concepts/data-processing-agreement.md`); + why an org-level `address` opt-in is a conversion switch, not a small flag (all-or-nothing consent makes address MANDATORY to join that org) |
-| (skill) `vipps-test-rig` | drive a REAL recurring subscription on apitest from the CLI (agreement → MT-app approval → charges → webhooks → stop) + the local receiver and tunnel; the sandbox-DNS gotcha when verifying a tunnel |
+| (skill) `vipps-test-rig` | drive a REAL recurring subscription on apitest from the CLI (agreement → MT-app approval → charges → webhooks → stop) + the local receiver and tunnel; the sandbox-DNS gotcha when verifying a tunnel; **the rig cannot validate anything MEMBER-facing**: portal test users carry `test.generated@vippsmobilepay.com`, so receipts send successfully and reach nobody, and staging's Saturday renewal window gives a ~2-day (not ~30-day) in-app visibility lead; also: we send NO push, and Vipps announces NOTHING before a charge (settled 2026-09-08, research finding 14: its only charge notification is post-payment, opt-in per agreement, off by default; the 35-day Payments-tab listing is passive) |
 | (skill) `verify-workflow` | `node .claude/skills/verify-workflow/run-steps.mjs <workflow.yml> [job] --force-turbo` — run a GitHub Actions job's `run:` steps locally in a scrubbed, runner-like env; proves a CI change before pushing. Skips `uses:` steps and any step with a `${{ }}` expression (that guard is what stops it firing a real deploy / `--remote` D1 migration) |
 | (skill) `verify-qr` | decode a generated QR PNG (file or URL) + assert payload — real scan-level proof |
 | (skill) `render-card` | `node .claude/skills/render-card/render.mjs --raster` — draw the member card + the org QR card from real `@stottemedlem/qr` with NO server/D1/auth, rasterize through the SHIPPED resvg + embedded-Fraunces path, and emit a browser-vs-resvg contact sheet. The only way to see what a shared PNG / og:image / receipt attachment really looks like: resvg applies no variable font axes, so its text is bolder AND WIDER than any browser preview |
-| (skill) `verify-public-routes` | + `d1.sh "<SQL>" [local\|staging\|production]` — read D1 rows as JSON, now including the DEPLOYED databases (SELECT-only off local; ask staging what shapes it really holds before trusting a fixture) (the member-registry tables incl.); assert the public join pages over real HTTP (status, `/org/*` 301s, `x-sm-cache` miss→hit, brand attribution) + `seed.sh`, the tier-aware local D1 seed; **+ the erasure/retention recipe** (POST `handling=slett` to min-side with an Origin header, read the row back to prove name/email/phone/`vipps_sub`/`card_token` are NULL while the payment rows survive, and drive the nightly sweep via the cron endpoint) — plus the two D1-write traps: NEVER `2>/dev/null` a wrangler write (a rejected batch reads as a failing feature) and shift `period_year` rather than assigning one (UNIQUE on member_id+period_year) |
+| (skill) `verify-public-routes` | + `d1.sh "<SQL>" [local\|staging\|production]` — read D1 rows as JSON, now including the DEPLOYED databases (SELECT-only off local; ask staging what shapes it really holds before trusting a fixture) (the member-registry tables incl.); assert the public join pages over real HTTP (status, `/org/*` 301s, `x-sm-cache` miss→hit, brand attribution) + `seed.sh`, the tier-aware local D1 seed; **+ the erasure/retention recipe** (POST `handling=slett` to min-side with an Origin header, read the row back to prove name/email/phone/`vipps_sub`/`card_token` are NULL while the payment rows survive, and drive the nightly sweep via the cron endpoint) — plus the two D1-write traps: NEVER `2>/dev/null` a wrangler write (a rejected batch reads as a failing feature) and shift `period_year` rather than assigning one (UNIQUE on member_id+period_year); **+ `trace-member.sh <id\|card token\|manage token\|URL\|agr_…\|chr-…\|phone\|email> [target]`**: one member's agreements + charges + notices as a single timeline, and the "captured with NO receipt notice" check that answers *did they pay, and were they told?* (a charge REFUNDED before the sweep is the benign cause: the owed-receipt query takes only `status='CHARGED'`) |
 | (canonical) `docs/architecture/overview.md` | proposed architecture: 2 deployables (Astro static marketing + one Astro-SSR Worker for backoffice/API/webhooks/cron/queues), D1 as system of record, WorkOS org-gated admin, Vipps Login for members, 11-step scaffolding plan |
 | (skill) `stack-docs` | verified platform gotchas: Astro CF adapter custom worker entry, WorkOS SDK on Workers |
+| (skill) `writing-rules` | `bash .claude/skills/writing-rules/check-diff.sh [--staged|<ref>]` asserts the hard authoring rules over the lines THIS session added (never an em-dash), across specs, docs, skills and code comments. Diff-scoped because the repo's existing prose is full of em-dashes; **includes untracked files** (a new file is invisible to `git diff` and is the writing most likely to break the rule), and downgrades a modified line whose old version already had one. `pnpm lint` never looks at prose, and biome already covers the no-`any` rule |
 | (skill) `spec-lint` | `node .claude/skills/spec-lint/check.mjs` — validates spec links + INDEX registration after any specs/ edit |
 | (skill) `preview-screenshot` | headless-Chrome screenshot of any local URL → Read the PNG; the visual validation loop for UI work |
 | (skill) `drive-page` | `node .claude/skills/drive-page/drive.mjs <url> click=… assert=…` — CLICK a real page and assert what happens, incl. `--stub` for browser APIs a headless run lacks (`navigator.share`, clipboard). The only loop that executes an `.astro` client `<script>`; the screenshot loop's behavioural twin |

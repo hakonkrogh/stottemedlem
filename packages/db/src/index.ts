@@ -346,6 +346,26 @@ export function membershipStatus(
   return periodYear >= currentPeriodKey ? "active" : "lapsed";
 }
 
+/**
+ * A member's standing, from the latest period they have paid for and the
+ * newest period a renewal payment is still underway for. A renewal Vipps is
+ * still processing keeps the member active: lapse is earned by a definitive
+ * failure or by no renewal being arranged at all, never by the calendar
+ * outrunning the provider's retry window
+ * (specs/use-cases/renew-annual-membership.md). Only renewals get this grace —
+ * a first payment that never completed has never made anyone current. As with
+ * membershipStatus, the caller supplies the current period key.
+ */
+export function membershipStanding(
+  latestPaidYear: number | null,
+  pendingRenewalYear: number | null,
+  currentPeriodKey: number,
+): "active" | "lapsed" {
+  if (latestPaidYear !== null && latestPaidYear >= currentPeriodKey) return "active";
+  if (pendingRenewalYear !== null && pendingRenewalYear >= currentPeriodKey) return "active";
+  return "lapsed";
+}
+
 /** What a supporter agreed to, before Vipps has confirmed anything. */
 export interface DraftedAgreement {
   orgId: string;
@@ -1239,6 +1259,27 @@ export async function listOrganizationMembers(
 
   const recruits = await recruitCountsByReferrer(db, orgId);
 
+  // Renewals still on their way with Vipps, newest period per member: a member
+  // whose renewal is mid-retry must not read as lapsed while it is.
+  const pendingRenewalYear = new Map<string, number>();
+  for (const row of await db
+    .select({ memberId: membershipAgreements.memberId, periodYear: membershipCharges.periodYear })
+    .from(membershipCharges)
+    .innerJoin(membershipAgreements, eq(membershipCharges.agreementId, membershipAgreements.id))
+    .where(
+      and(
+        eq(membershipCharges.orgId, orgId),
+        eq(membershipCharges.type, "RECURRING"),
+        inArray(membershipCharges.status, OPEN_CHARGE_STATUSES),
+      ),
+    )) {
+    if (!row.memberId) continue;
+    const seen = pendingRenewalYear.get(row.memberId);
+    if (seen === undefined || row.periodYear > seen) {
+      pendingRenewalYear.set(row.memberId, row.periodYear);
+    }
+  }
+
   const byMember = new Map<string, MemberOverview>();
   for (const { member, membership } of rows) {
     const seen = byMember.get(member.id);
@@ -1252,7 +1293,11 @@ export async function listOrganizationMembers(
       // No completed period at all reads as lapsed: nothing has been paid, so
       // nothing is current. It is a brief state — a supporter is recorded on
       // approval, seconds before the first payment lands.
-      status: latest ? membershipStatus(latest.periodYear, currentPeriodKey) : "lapsed",
+      status: membershipStanding(
+        latest?.periodYear ?? null,
+        pendingRenewalYear.get(member.id) ?? null,
+        currentPeriodKey,
+      ),
       renewing: live.has(member.id),
       // Periods are unique per member and year, so each joined row is a heart.
       hearts: (seen?.hearts ?? 0) + (membership ? 1 : 0),
@@ -1376,11 +1421,28 @@ export async function getOrganizationMember(
     .where(
       and(eq(membershipAgreements.memberId, member.id), eq(membershipAgreements.status, "ACTIVE")),
     );
+  const [pending] = await db
+    .select({ periodYear: membershipCharges.periodYear })
+    .from(membershipCharges)
+    .innerJoin(membershipAgreements, eq(membershipCharges.agreementId, membershipAgreements.id))
+    .where(
+      and(
+        eq(membershipAgreements.memberId, member.id),
+        eq(membershipCharges.type, "RECURRING"),
+        inArray(membershipCharges.status, OPEN_CHARGE_STATUSES),
+      ),
+    )
+    .orderBy(desc(membershipCharges.periodYear))
+    .limit(1);
 
   return {
     member,
     latest,
-    status: latest ? membershipStatus(latest.periodYear, currentPeriodKey) : "lapsed",
+    status: membershipStanding(
+      latest?.periodYear ?? null,
+      pending?.periodYear ?? null,
+      currentPeriodKey,
+    ),
     renewing: Boolean(live),
     hearts: history.length,
     recruits: await countRecruits(db, member.id),

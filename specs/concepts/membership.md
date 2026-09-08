@@ -20,7 +20,12 @@ over year as a history of memberships.
   year — and is valid until 31 December of it.
 - A membership is **active** while its annual period is current and the fee for
   that period is paid; it becomes **lapsed** once the period ends without a paid
-  renewal.
+  renewal. A renewal payment the provider is still processing keeps it active:
+  the member is not shown as lapsed while the payment is being retried, only
+  once it has definitively failed or no renewal was arranged at all
+  ([renewal](../use-cases/renew-annual-membership.md)). This grace belongs to
+  renewals only — a first payment that never completed has never made anyone
+  current.
 - Being active and continuing are two questions, not one. An active membership
   is either **renewing** — the yearly arrangement still runs, so the next
   period is already covered — or **ending**: the arrangement has been ended, so

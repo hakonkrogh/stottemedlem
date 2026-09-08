@@ -89,6 +89,48 @@ drafts fine with nothing running locally. Start the tunnel only when something
 must actually call BACK into this machine: webhooks, or approving and landing
 on `/retur`.
 
+## Forcing a failed charge
+
+Vipps' special test amounts are **øre**, and `--amount` is NOK — pass decimals:
+`vt charge --days 1 --amount 1.51` = 151 øre = "insufficient funds" (182
+refused by issuer, 184 withdrawal limit, 186 expired card; full list:
+developer.vippsmobilepay.com/docs/knowledge-base/test-environment/). The charge
+fails only on its due date, then Vipps retries for `--retry-days` (default 7)
+— a definitive FAILED takes due date + retry window to observe. Verified on
+apitest 2026-08-27: the charge stays `DUE` well past its due date while
+retrying (no early FAILED), so the retry window is real in the test env too.
+
+## Sharing agreements between sessions
+
+An agreement found in another worktree's state file may be in live use by that
+session, and its cleanup can `cancel-charge` every open charge — including
+yours (observed 2026-08-27: a multi-day failing-charge observation was wiped
+mid-flight). For any observation that must survive days, draft a dedicated
+agreement; share one only for quick reads, and never `stop` a shared one.
+
+## Driving the PRODUCT's join flow from the CLI (learned 2026-08-26)
+
+To rehearse product-side flows (min-side stop, kvittering) you need an
+agreement drafted by the product, not the rig. Tunnel the dev server
+(`cloudflared tunnel --url http://localhost:4322`) so the drafted callback
+URLs are https, then:
+
+```sh
+curl -D - -X POST -H "Origin: https://<tunnel>" \
+  "https://<tunnel>/bli-medlem/<slug>/start" -d "medlemskap=<tier key>"
+```
+
+The `Origin` header is required — Astro's CSRF check 403s a POST without it.
+The 303 `location:` is the approval URL (JWT carries the `agreementId`;
+expires in ~10 min); the drafted row + `manage_token` land in D1 at once.
+Show the user a scannable QR: a terminal QR printed from an agent's tool call
+never reaches the user's screen — write a PNG instead and open it
+(`qrcode.toFile(path, url, {width: 600})` with the `qrcode` dep in
+packages/vipps, then `open <path>` so Preview shows it for the phone to scan). If the fresh
+trycloudflare hostname won't resolve locally (negative DNS cache), get the IP
+with `dig @1.1.1.1 <host> +short` and pin it via `curl --resolve <host>:443:<ip>`
+— Vipps and the phone are unaffected.
+
 ## The two background processes
 
 ```sh
@@ -228,6 +270,50 @@ carry the placeholder copy of `.dev.vars.example`, whose `VIPPS_*` values are al
   uses the **single settlement** setup — refunds are impossible there at all.
 - MT app approval needs a test user from portal → *For utviklere* → *Testbrukere*;
   the PIN in the MT app is **`1236`**.
+
+## What the MEMBER actually receives, and why the rig cannot show you (2026-09-08)
+
+A live weekly staging renewal (`agr_zZgKa6c` / `chr-39Pr3JA`, captured
+2026-09-07) worked end to end and the tester still received nothing. Nothing
+was broken. Four separate reasons, all worth knowing before debugging this
+again:
+
+- **The product sends no push and has no in-app feed.** Email is the only
+  member channel (`specs/concepts/member-notice.md`). Any push a tester expects
+  is Vipps' own, not ours. Check the Vipps side before ours.
+- **The test user's email is a black hole.** Portal test users come with
+  `test.generated@vippsmobilepay.com`. The receipt really sends (Resend accepts
+  it, `member_notices` records it) and no human ever reads it. **The rig
+  therefore cannot validate the member-facing half of any flow**: receipt,
+  fee-change notice, card image. To actually see one, point the member row's
+  email at a real address first; the notice row alone only proves the send
+  left the building.
+- **Staging's lead time is ~2 real days, not ~30.** `isoWeekScheme` opens the
+  renewal window on SATURDAY (`isRenewalWindow: isoWeekday(today) >= 6`,
+  `packages/core/src/index.ts`), so a Monday-due charge is created Saturday
+  00:00. Production's calendar year gives the ~30-day window the docs call best
+  practice. Any conclusion about in-app visibility drawn on staging is drawn on
+  a 2-day window.
+- **SETTLED 2026-09-08: there is no pre-charge push, and the post-charge one is
+  off by default.** Chased through Vipps' own docs; written up as finding 14 of
+  `docs/research/vipps-recurring-payments.md`, and the spec that leaned on the
+  false half is corrected. Short version, from the FAQ entry *"Are users
+  notified of every charge?"*: notifications for **successful payment** are
+  "not enabled by default, but users can choose to get notified **when they
+  enter an agreement**, and when they manage the agreement". So the only charge
+  notification fires AFTER capture, is opt-in, and is bound to an agreement.
+  Nothing announces a charge beforehand; the 35-day Payments-tab listing is
+  passive visibility the user must go and look at. Failed charges are the
+  exception and do get push + in-app messages during the retry window.
+  **Undocumented, and the thing to probe on a live run:** whether that opt-in
+  survives a stop + re-create. It almost certainly does not (a re-created
+  agreement is a new agreement), which is the first thing to suspect when a
+  tester who "turned notifications on" stops getting them. This test user has
+  stopped and re-created 8 agreements.
+
+Trace any of this per member with
+`verify-public-routes` → `trace-member.sh <id|url|agr_…|chr-…> staging`, which
+prints agreements, charges and notices as one timeline.
 
 ## Grow it, don't one-off it
 

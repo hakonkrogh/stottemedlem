@@ -31,6 +31,10 @@ From the organization's point of view:
      never been current, and calling them lapsed would read as someone who
      left. They are not counted as active either.
 
+   A member whose renewal payment is still with the provider — due, or being
+   retried — remains **active**: lapse waits for a definitive failure
+   ([renewal](renew-annual-membership.md)).
+
    The standing is stated in the same words wherever a member appears — in the
    list, on their own page, and in the [export](export-member-list.md) — so the
    product never describes one member two ways.

@@ -454,6 +454,61 @@ Sources:
 - https://developer.vippsmobilepay.com/docs/APIs/recurring-api/recurring-api-faq/ ("Why do I get the error 'Refund is not possible'?")
 - https://developer.vippsmobilepay.com/docs/APIs/recurring-api/recurring-api-checklist/
 
+### 14. Vipps does NOT announce a charge before it happens; the only user charge notification is post-payment and is OFF by default (HIGH confidence)
+
+Chased 2026-09-08 after a live staging renewal captured correctly and the tester received
+nothing. The product had assumed the app announces a coming payment the day before. **It
+does not.** Two distinct things get conflated and only one exists:
+
+- **Passive visibility (real).** "Users will see upcoming charges up to 35 days before the
+  due date under the Payments tab." The 1-day minimum lead time exists precisely so
+  "the user is able to see the upcoming charge in the Vipps or MobilePay app … enabling
+  the user to make sure funds are available". A charge is `PENDING` until visible to the
+  user, then `DUE`. This is something the user must go and look at: a list, not a signal.
+- **An active pre-charge announcement does not exist.** No push, SMS or in-app alert
+  before the due date is documented anywhere in the Recurring API docs.
+
+What the user *can* opt into, verbatim from the FAQ entry **"Are users notified of every
+charge?"**:
+
+> "Notifications for successful payment of charges are not enabled by default, but users
+> can choose to get notified when they enter an agreement, and when they manage the
+> agreement.
+>
+> This is similar to how eFaktura works in Norway, Betalingsservice in Denmark and
+> Finvoice in Finland.
+>
+> We want users to be in control of their agreements, and notifications help users trust
+> both Vipps MobilePay and the merchant, and not be "tricked" to pay without knowing."
+
+Three consequences worth spelling out:
+
+1. The notification is for **successful payment**: it fires at/after capture, not before.
+   Even a user who opts in gets no warning, only a confirmation.
+2. It is **off by default**, so the default experience of an unchanged renewal is: money
+   moves, and Vipps says nothing at all.
+3. The opt-in is offered **"when they enter an agreement"** and when managing it, i.e. it
+   is bound to an agreement rather than to the account. **Not documented:** whether the
+   preference survives a stop + re-create. Since a re-created agreement is a new
+   agreement, the safe assumption is that it does not and the user must opt in again.
+   This is the likely explanation whenever a tester who "turned notifications on" stops
+   receiving them (the staging test user has stopped and re-created 8 agreements).
+
+Failed charges are the exception and *do* get pushed: during the retry period Vipps will
+"inform the user with push notification and in-app messages how to complete the payment".
+
+**Why this matters to us:** `specs/use-cases/renew-annual-membership.md` justified sending
+no reminder before an unchanged renewal on the premise that "the payment app … announces
+it the day before". Half that premise is false. The passive 35-day list is real; the
+announcement is not. Our own payment receipt is therefore the *only* active signal a
+default-configured member gets about an unchanged renewal, and it arrives after the money
+moved.
+
+Sources:
+- https://developer.vippsmobilepay.com/docs/APIs/recurring-api/recurring-api-faq/ ("Are users notified of every charge?")
+- https://developer.vippsmobilepay.com/docs/APIs/recurring-api/recurring-api-guide/ (upcoming charges visible up to 35 days before due; PENDING → DUE)
+- https://developer.vippsmobilepay.com/docs/APIs/recurring-api/how-it-works/charges/recurring-charges-howitworks/ (1-day lead time, processed on due date)
+
 ---
 
 ## Implementation sketch for the yearly støttemedlem product

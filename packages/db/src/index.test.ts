@@ -9,6 +9,7 @@ import {
   type MemberOverview,
   matchesMemberSearch,
   memberStanding,
+  membershipStanding,
   membershipStatus,
   owesFeeChangeNotice,
   renewalFeeNok,
@@ -74,6 +75,28 @@ const period = (memberId: string, year: number): MemberOverview["latest"] => ({
   annualFeeNok: 300,
   paidNok: 300,
   createdAt: `${year}-01-01 00:00:00`,
+});
+
+describe("membershipStanding", () => {
+  it("stays active while the renewal payment is still being retried", () => {
+    expect(membershipStanding(2026, 2027, 2027)).toBe("active");
+  });
+
+  it("lapses once the renewal has definitively failed (no open charge left)", () => {
+    expect(membershipStanding(2026, null, 2027)).toBe("lapsed");
+  });
+
+  it("a stale open charge for a past period grants nothing", () => {
+    expect(membershipStanding(2025, 2026, 2027)).toBe("lapsed");
+  });
+
+  it("a paid current period needs no pending renewal", () => {
+    expect(membershipStanding(2027, null, 2027)).toBe("active");
+  });
+
+  it("never paid and nothing pending is lapsed", () => {
+    expect(membershipStanding(null, null, 2027)).toBe("lapsed");
+  });
 });
 
 const overview = (
