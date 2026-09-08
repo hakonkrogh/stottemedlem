@@ -38,6 +38,8 @@ export const GET: APIRoute = async ({ params, url }) => {
   );
   const headers = new Headers({
     "Content-Type": "image/png",
+    // Same lifetime as the SVG, for the same reason: the product's own pages
+    // ask for the picture by version (?v=), and this covers the bare address.
     "Cache-Control": "public, max-age=300",
   });
   if (url.searchParams.get("last") === "1") {

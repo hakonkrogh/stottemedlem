@@ -34,9 +34,69 @@ export function memberCardUrl(cardToken: string): string {
   return `${shareableOrigin()}${memberCardPath(cardToken)}`;
 }
 
-/** The card as a picture: what a social feed previews and an email carries. */
-export function memberCardImageUrl(cardToken: string, format: "png" | "svg" = "png"): string {
-  return `${shareableOrigin()}${memberCardImagePath(cardToken, format)}`;
+/**
+ * The card as a picture: what a social feed previews and an email carries.
+ * The address names this version of the card (see `memberCardVersion`), so a
+ * feed that has already previewed the old card fetches the new one.
+ */
+export function memberCardImageUrl(card: MemberCard, format: "png" | "svg" = "png"): string {
+  return `${shareableOrigin()}${memberCardPicturePath(card, format)}`;
+}
+
+/**
+ * A short tag naming the card as it is right now.
+ *
+ * A browser keeps a picture it has fetched for a while, and a card gains a
+ * heart the moment a renewal is paid: a member who renews and looks straight
+ * back at their page must see the new heart, not the copy their browser kept
+ * (specs/concepts/member-card.md). Nothing can reach into a browser to clear
+ * that, so instead the page asks for the picture BY VERSION: the tag folds in
+ * everything the drawing depends on, and a card that has changed is asked for
+ * at an address the browser has never seen. A card that has not changed keeps
+ * its address, and its cached picture.
+ *
+ * Only what the drawing reads goes in. The logo enters as its object key,
+ * which already changes when the picture is replaced.
+ */
+export function memberCardVersion(card: MemberCard): string {
+  const { periodText, lapsed } = cardPeriod(card);
+  const facts = JSON.stringify([
+    card.member.name,
+    card.organization.name,
+    card.organization.slug,
+    card.organization.logoKey ?? null,
+    card.hearts,
+    card.recruits,
+    periodText,
+    lapsed,
+  ]);
+  // FNV-1a, 32-bit: cheap, synchronous, and plenty to tell one version of a
+  // card from the next. This is a cache key, not a secret.
+  let hash = 0x811c9dc5;
+  for (const byte of new TextEncoder().encode(facts)) {
+    hash = Math.imul(hash ^ byte, 0x01000193) >>> 0;
+  }
+  return hash.toString(36);
+}
+
+/**
+ * The card's picture, at the address that names its current version. What
+ * every page that shows the card should embed.
+ */
+export function memberCardPicturePath(card: MemberCard, format: "png" | "svg" = "png"): string {
+  const token = card.member.cardToken ?? "";
+  return `${memberCardImagePath(token, format)}?v=${memberCardVersion(card)}`;
+}
+
+/**
+ * The period the card speaks for: the one it is good for while it is current,
+ * and the last one supported once it is not.
+ */
+function cardPeriod(card: MemberCard): { periodText: string; lapsed: boolean } {
+  return {
+    periodText: periodLabel(card.latest?.periodYear ?? periods.periodFor().year),
+    lapsed: card.status === "lapsed",
+  };
 }
 
 /**
@@ -56,10 +116,7 @@ export async function memberCardOptions(card: MemberCard): Promise<MemberCardOpt
     organizationName: card.organization.name,
     hearts: card.hearts,
     recruits: card.recruits,
-    // The period the card speaks for: the one it is good for while it is
-    // current, and the last one supported once it is not.
-    periodText: periodLabel(card.latest?.periodYear ?? periods.periodFor().year),
-    lapsed: card.status === "lapsed",
+    ...cardPeriod(card),
     joinUrl: cardToken
       ? referredJoinUrl(card.organization.slug, cardToken)
       : `${shareableOrigin()}/bli-medlem/${card.organization.slug}`,

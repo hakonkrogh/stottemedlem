@@ -1,5 +1,5 @@
 ---
-import { memberCardImagePath, periodLabel, referredJoinPath } from "@stottemedlem/core";
+import { periodLabel, referredJoinPath } from "@stottemedlem/core";
 import Heading from "@stottemedlem/ui/components/Heading.astro";
 import Stack from "@stottemedlem/ui/components/Stack.astro";
 import Text from "@stottemedlem/ui/components/Text.astro";
@@ -7,7 +7,12 @@ import TextLink from "@stottemedlem/ui/components/TextLink.astro";
 import MemberCardFigure from "../../../components/MemberCardFigure.astro";
 import PublicShell from "../../../layouts/PublicShell.astro";
 import { getDb } from "../../../lib/db";
-import { loadMemberCard, memberCardImageUrl } from "../../../lib/memberCard";
+import {
+  loadMemberCard,
+  memberCardImageUrl,
+  memberCardPicturePath,
+  memberCardVersion,
+} from "../../../lib/memberCard";
 
 // The member's card at its own public address (specs/concepts/member-card.md):
 // the one page a supporting member can hand to anybody. It offers nothing but
@@ -38,12 +43,12 @@ const alt = `Medlemsbevis for ${memberName} i ${org.name}, med ${card.hearts} hj
 <PublicShell
   title={title}
   description={description}
-  previewImage={memberCardImageUrl(cardToken)}
+  previewImage={memberCardImageUrl(card)}
   previewImageAlt={alt}
   noindex
 >
   <Stack gap="lg">
-    <MemberCardFigure cardToken={cardToken} alt={alt} />
+    <MemberCardFigure cardToken={cardToken} version={memberCardVersion(card)} alt={alt} />
 
     <Stack gap="sm">
       <Heading>
@@ -69,7 +74,7 @@ const alt = `Medlemsbevis for ${memberName} i ${org.name}, med ${card.hearts} hj
         — det samme som QR-koden på beviset fører til.
       </Text>
       <Text variant="small">
-        <TextLink href={`${memberCardImagePath(cardToken, "png")}?bredde=2400&last=1`}>
+        <TextLink href={`${memberCardPicturePath(card, "png")}&bredde=2400&last=1`}>
           Last ned beviset som bilde
         </TextLink>
       </Text>

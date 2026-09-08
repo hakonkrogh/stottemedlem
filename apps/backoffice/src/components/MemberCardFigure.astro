@@ -18,6 +18,13 @@ import { memberCardSize } from "@stottemedlem/qr";
 
 interface Props {
   cardToken: string;
+  /**
+   * Which version of the card to show (memberCardVersion). The picture is
+   * embedded at an address that names its version, so a card that just gained
+   * a heart is fetched afresh rather than served from the browser's copy of
+   * the old one (specs/concepts/member-card.md).
+   */
+  version: string;
   alt: string;
   /**
    * The card's own public address. Passing it puts a share action on the card;
@@ -29,13 +36,18 @@ interface Props {
   /** What the share sheet calls it. */
   shareTitle?: string;
 }
-const { cardToken, alt, shareUrl, shareTitle } = Astro.props;
+const { cardToken, version, alt, shareUrl, shareTitle } = Astro.props;
 
 const { width, height } = memberCardSize();
 ---
 
 <figure class="member-card">
-  <img src={memberCardImagePath(cardToken, "svg")} alt={alt} width={width} height={height} />
+  <img
+    src={`${memberCardImagePath(cardToken, "svg")}?v=${version}`}
+    alt={alt}
+    width={width}
+    height={height}
+  />
 
   {
     shareUrl && (

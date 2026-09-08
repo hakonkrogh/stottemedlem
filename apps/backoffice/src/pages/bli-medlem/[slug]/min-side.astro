@@ -20,7 +20,11 @@ import TextLink from "@stottemedlem/ui/components/TextLink.astro";
 import MemberCardFigure from "../../../components/MemberCardFigure.astro";
 import PublicShell from "../../../layouts/PublicShell.astro";
 import { getDb } from "../../../lib/db";
-import { loadMemberCardForMemberId, memberCardUrl } from "../../../lib/memberCard";
+import {
+  loadMemberCardForMemberId,
+  memberCardUrl,
+  memberCardVersion,
+} from "../../../lib/memberCard";
 import { changeTier, publicOrigin, startJoin } from "../../../lib/membership";
 import { periods } from "../../../lib/periods";
 import { getVippsForOrg } from "../../../lib/vipps";
@@ -279,6 +283,7 @@ const title = `Ditt støttemedlemskap — ${org.name}`;
       card && cardToken && (
         <MemberCardFigure
           cardToken={cardToken}
+          version={memberCardVersion(card)}
           alt={cardAlt}
           shareUrl={memberCardUrl(cardToken)}
           shareTitle={`Medlemsbeviset mitt i ${org.name}`}

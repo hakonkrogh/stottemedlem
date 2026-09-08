@@ -168,6 +168,21 @@ carry the `-seed-` convention. Guessing wrong gets you
 read the ids back (`d1.sh "SELECT id, key FROM membership_tiers WHERE
 org_id='org-seed-1'"`) rather than assuming.
 
+## Pretend the seeded member just renewed (added 2026-09-08)
+
+    bash .claude/skills/verify-public-routes/renew.sh        # one more paid period for Kari
+    bash .claude/skills/verify-public-routes/renew.sh undo   # take it back
+
+A renewal in the product is a new `memberships` row for the next period; this
+writes that one row (`msh-seed-renewal`) for Kari without Vipps, so a page can
+be loaded before and after. What to assert: the card picture is embedded as
+`kort.svg?v=<tag>` on min-side, kvittering and `/medlemsbevis/<token>`, and the
+tag CHANGES after `renew.sh` (5 hearts, next year) and comes back after `undo`.
+The tag is what stops a browser serving its 5-minute-old copy of the card after
+a renewal (specs/concepts/member-card.md); the page HTML itself is never cached.
+
+    curl -s localhost:4322/bli-medlem/eksempel-musikkorps/min-side?n=tok-seed-1 | grep -oE 'kort\.svg\?v=[a-z0-9]+'
+
 ## Drive the member's own page (min-side)
 
 The other public surface, and the one no login can reach: `min-side` is opened
