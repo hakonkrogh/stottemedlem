@@ -7,9 +7,17 @@ description: Assert the user's hard authoring rules over the lines THIS session 
 
     bash .claude/skills/writing-rules/check-diff.sh            # unstaged + staged vs HEAD, plus untracked files
     bash .claude/skills/writing-rules/check-diff.sh --staged   # staged only (pre-commit)
-    bash .claude/skills/writing-rules/check-diff.sh main       # everything on this branch
+    bash .claude/skills/writing-rules/check-diff.sh HEAD~3     # the commits YOU made this session
 
 Exit 1 with `file:line` per violation, so fixing is mechanical.
+
+**Scope it to your own work, not to the branch.** The no-argument form is the
+one to reach for. Passing a ref judges every added line since that ref, which on
+a long-lived branch means judging other people's writing: pointing it at
+`origin/main` before opening PR #86 produced 32 hits, none of them from this
+session, because the branch carried 9 older commits that predate the rule.
+`HEAD~<n>` over your own commits is the useful ref form (that same check passed
+clean). Do not "fix" inherited violations you did not write.
 
 ## The rule it enforces
 
