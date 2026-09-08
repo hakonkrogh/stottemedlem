@@ -25,6 +25,11 @@ lives in `specs/`, kept in sync with code by a mandatory `Stop`-hook harness.
   `packages/qr/src/index.ts` (org QR card), and inline styles in
   `packages/email/src/*.ts`. A palette change touches all five. Gotcha: the hero
   wrapper sets `color:#fff` — slotted card content must re-set its own dark color.
+  Token-name gotcha (hit 2026-09-08): `--sm-accent-ink` is WHITE, the text
+  colour ON the green button, not an "ink of the accent" (that is
+  `--sm-accent-deep`). Reading it as a dark green made Alert's info variant
+  white-on-pale-green and unreadable. Every Alert variant now has a story
+  (`primitives-alert--*`); shoot a primitive's stories after touching it.
 - `apps/backoffice/` — Astro 7 SSR on ONE Cloudflare Worker (`src/worker.ts`:
   fetch + scheduled + queue stubs); D1/KV/Queue bindings in `wrangler.jsonc` are
   placeholders until first deploy. **WorkOS AuthKit login exists (step 3, done
