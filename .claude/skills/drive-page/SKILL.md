@@ -64,6 +64,18 @@ Both branches of `MemberCardFigure.astro`, proven end to end (2026-08-31):
 - An auth-gated `/o/<slug>/…` page will just redirect to `/login`; drive the
   PUBLIC surfaces (`/bli-medlem/*`, `/medlemsbevis/*`), or review an admin
   screen in Storybook instead.
+- **A form MECHANISM that only admin pages exercise (a POST that 303s to
+  another page, a rejected save that re-renders) can be proved with a scratch
+  route** (done 2026-09-08 for `LiveForms`): two throwaway pages under
+  `apps/backoffice/src/pages/bli-medlem/<name>/` (the public prefix, so no
+  login), one posting and redirecting to the other. Three traps: a directory
+  starting with `_` is NOT a route (Astro ignores it, 404), the dev server
+  needs a `devlog.sh stop` + `start` to see new route files, and a bare curl
+  POST answers 403 (Astro's origin check), so drive it from the browser.
+  Delete the pages afterwards, and rebuild if a build ran while they existed.
+- **A slow server is the case that matters for busy states.** Stub fetch to
+  add a delay, then `shot=` mid-flight:
+  `--stub 'const f=window.fetch; window.fetch=(...a)=>new Promise(r=>setTimeout(()=>r(f(...a)),1500))'`.
 
 ## Where this fits among the other loops
 
