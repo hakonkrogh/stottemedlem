@@ -1012,6 +1012,28 @@ lives in `specs/`, kept in sync with code by a mandatory `Stop`-hook harness.
   scripts) and one trap that reads as an unrelated types error: a filtered
   `pnpm --filter X update` leaves every OTHER package without `node_modules`.
   Read `dependencies.md` before any `pnpm add` / `pnpm update`.
+- **Commit subjects are sentences about the product, not conventional-commit
+  prefixes.** Read `git log --format=%s -20` before writing one. A product
+  change states what is now true, in the present tense, from the reader's side:
+  "A renewed card shows its new heart on the next look", "The organization's
+  name breaks before it stretches the band", "The payment app never announced
+  the renewal". Not `fix(db): ...`, not "Fix the card grace bug". A change to
+  the agent tooling is prefixed with the skill it touches instead
+  (`render-card: an unknown --set field is an error, not a silent no-op`), or
+  `Skills:` when it is several. Split a product change and its tooling into two
+  commits: that is why the log reads the way it does. The body says why the
+  change was made and what it cost to find out. Standing intent still belongs
+  in `specs/`, not here (see CLAUDE.md): the message explains one change, the
+  spec holds what the product does.
+- **The pre-push sequence, in order** (each of these has bitten someone):
+  1. `bash .claude/skills/writing-rules/check-diff.sh HEAD~<n>` over YOUR
+     commits, never against `origin/main` on a long-lived branch.
+  2. `node .claude/skills/spec-lint/check.mjs` if any spec moved.
+  3. `node .claude/skills/verify-workflow/run-steps.mjs .github/workflows/ci.yml
+     --force-turbo` before ANY push. It replays `pnpm install --frozen-lockfile`
+     and `pnpm lint` over the WHOLE repo, which is what catches formatting in
+     files no app typecheck covers. Verified 2026-09-08 to predict the runner
+     exactly on a mixed skills + app + specs change (local green, CI green 42s).
 - **The local `main` ref in a worktree is stale**, so `git log main..HEAD` lists
   commits that are already merged and makes a one-commit branch look like ten.
   Scope a branch/PR against `origin/main` (`git log --oneline origin/main..HEAD`)
