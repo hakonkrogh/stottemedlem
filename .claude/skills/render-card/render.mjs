@@ -33,12 +33,21 @@ const LOGO =
 
 const JOIN_URL = "https://xn--stttemedlem-hgb.no/bli-medlem/eksempel-musikkorps?verva=kort-1";
 
+/**
+ * What a MEMBER card's code carries: the short scan address, in capitals
+ * (memberScanUrl in @stottemedlem/core). Fixed length whatever the
+ * organization is called, and half the modules of the join address above,
+ * which is why the code fits in the card's footer. Draw the card with a
+ * realistic one or the reviewed artwork shows a code the product never makes.
+ */
+const SCAN_URL = "HTTPS://XN--STTTEMEDLEM-HGB.NO/V/8P2K4RTZQ9VWXB6MN3HJD5CFG7";
+
 const MEMBER_BASE = {
   memberName: "Kari Eksempel",
   organizationName: "Eksempel Musikkorps",
   hearts: 4,
   periodText: "2026",
-  joinUrl: JOIN_URL,
+  joinUrl: SCAN_URL,
   logoDataUri: LOGO,
 };
 
