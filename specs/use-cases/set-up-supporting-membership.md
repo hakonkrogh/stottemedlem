@@ -77,7 +77,28 @@ From the organization's point of view:
    the delivery is *not* connected, the back office says so and lets the
    administrator have the repair made now instead of waiting for the next
    scheduled run.
-7. Once configured, the organization is ready to receive supporting members; no
+7. **Connecting Vipps is explained, step by step, where the keys are asked
+   for.** Before an administrator has any keys to paste, there is an errand to
+   run in Vipps' own portal, and they are doing it for the first time. The back
+   office therefore carries a **guide** beside the key form: what to order
+   (recurring payments), what to call the sales unit, which two addresses the
+   order form asks for, where the keys are found afterwards, and what the
+   product does by itself once they are stored. Two things make it a page in
+   the product rather than a link to documentation:
+   - It is **filled in with this organization's own values**: the name to give
+     the sales unit is the organization's name, and the website and sales-terms
+     addresses are its own [join page](../concepts/join-page.md) addresses,
+     ready to be copied straight into the order form.
+   - It states **what the sales unit must be called, and why**: that name is
+     the only one members ever see in Vipps, on the payment and in the
+     provider's own messages about their money, so it has to be the
+     organization's ([Vipps API keys](../concepts/vipps-api-keys.md)). An
+     organization that names its sales unit after the tool leaves its members
+     unable to place the payment.
+
+   The guide is reading, not work: it changes nothing, and the one action it
+   offers is the way to the key form.
+8. Once configured, the organization is ready to receive supporting members; no
    further setup is required to take the first payment.
 
 An organization created before a profile field was required (or before this
@@ -164,6 +185,14 @@ imagery it shows the banner cropped exactly as the page crops it.
 - [ ] When payment events are not connected — missing, or pointing elsewhere —
       the back office says so and offers to have it connected now, without
       that ever becoming a setup step the administrator must understand.
+- [ ] The back office holds a guide to connecting Vipps, reachable from the
+      screen that asks for the keys, and pointed to plainly for an organization
+      that has none yet.
+- [ ] The guide tells the administrator to name the sales unit after the
+      organization, shows the organization's own name as the name to use, and
+      says what a member sees if it is named after anything else.
+- [ ] The guide shows the organization's own join-page and sales-terms
+      addresses as the two the Vipps order form asks for.
 - [ ] A supporter using that address can complete
       [joining](join-as-supporting-member.md) without further admin action.
 - [ ] A tier's annual fee can be changed later; the change applies to future

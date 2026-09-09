@@ -46,7 +46,10 @@ that year.
 7. The money moves at the payment provider first. Only what the provider
    confirms is written down — the product never records a refund it merely
    attempted ([membership](../concepts/membership.md): the provider is
-   authoritative for money).
+   authoritative for money). The provider also tells the member itself, in its
+   own words, and names only the sales unit ("… har refundert 95,00 kr"),
+   which is one more reason the sales unit carries the organization's name and
+   not the tool's ([Vipps API keys](../concepts/vipps-api-keys.md)).
 8. Afterwards the register agrees with the money: the refunded period is no
    longer a supported period, so the member is no longer counted as active for
    it, and their [scorecard](../concepts/scorecard.md) loses the heart that

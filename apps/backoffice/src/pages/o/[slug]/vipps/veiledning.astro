@@ -1,0 +1,34 @@
+---
+import OrgScreen from "../../../../components/OrgScreen.astro";
+import VippsGuideScreen from "../../../../components/VippsGuideScreen.astro";
+import Shell from "../../../../layouts/Shell.astro";
+import { shareableJoinTermsUrl, shareableJoinUrl } from "../../../../lib/joinLinks";
+import { requireOrgView } from "../../../../lib/orgView";
+import { orgPath } from "../../../../lib/workos";
+
+// The Vipps setup guide (specs/use-cases/set-up-supporting-membership.md).
+// A read-only screen under Innstillinger, beside the keys it leads up to: what
+// to order in the Vipps portal, what to call the sales unit, and which of this
+// organization's own addresses the order form asks for.
+const view = await requireOrgView(Astro.locals.session, Astro.params.slug, Astro.request);
+if (!view) return Astro.redirect("/orgs");
+const org = view.org;
+---
+
+<Shell title={`Slik kobler dere Vipps til støttemedlem (${org.name})`} frame={false}>
+  <OrgScreen
+    orgName={org.name}
+    orgPath={orgPath(org.slug)}
+    active="innstillinger"
+    warnings={view.warnings}
+    activeMembers={view.activeMembers}
+  >
+    <VippsGuideScreen
+      orgName={org.name}
+      orgPath={orgPath(org.slug)}
+      joinUrl={shareableJoinUrl(org.slug)}
+      termsUrl={shareableJoinTermsUrl(org.slug)}
+      keysStored={view.vippsKeys !== null}
+    />
+  </OrgScreen>
+</Shell>

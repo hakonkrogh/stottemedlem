@@ -52,7 +52,18 @@ charges.
          - Org only takes Vipps in person (Vippsnummer): order **Faste
            betalinger** as a new product on the agreement — this creates a new
            sales unit for it.
-3. - [ ] Provide the **website and sales-terms links** the order form requires
+3. - [ ] **Name the sales unit after the organization** ("Salgsstedets navn" in
+         the order form, verified 2026-08-12 in the
+         [portal walkthrough, step 5](vipps-portal-walkthrough/README.md)).
+         This is the *only* name a member ever sees from Vipps: on the payment
+         screen, on the yearly charge, and in Vipps' own messages afterwards.
+         A refund notification reads "**&lt;sales unit&gt;** har refundert 95,00 kr"
+         and nothing else, so a unit called "Støttemedlem" leaves the member
+         with no idea which organization it concerns. Use the recognizable
+         public name of the org; the form prefills a variant of the legal name,
+         which should be corrected here. (Observed on a live payment,
+         2026-09-09.)
+4. - [ ] Provide the **website and sales-terms links** the order form requires
          (verified 2026-07-28 in the
          [portal walkthrough, step 4](vipps-portal-walkthrough/README.md)). The
          form asks for (a) a live web page with company name, org.nr, contact
@@ -63,7 +74,7 @@ charges.
          salgsvilkår URL (shown in the org's back office; see
          [`specs/concepts/join-page.md`](../specs/concepts/join-page.md)).
          Answer "Ja, den er live".
-4. - [ ] Answer the extra compliance questions the recurring product requires
+5. - [ ] Answer the extra compliance questions the recurring product requires
          (mandated by financial regulators, on top of the checks the org
          already passed). Suggested answers for a supporting membership:
          - *expected turnover*: estimated yearly membership income
@@ -71,15 +82,19 @@ charges.
          - *share of recurring payments*: 100 % on this sales unit;
          - *agreement length*: ongoing until cancelled;
          - *billing interval*: yearly.
-5. - [ ] Sign with BankID if prompted (the registered signer from step A).
-6. - [ ] Wait for Vipps' approval of the product. Since the org already passed
+6. - [ ] Sign with BankID if prompted (the registered signer from step A).
+7. - [ ] Wait for Vipps' approval of the product. Since the org already passed
          KYC, this is usually quick; Vipps follows up by email if anything is
          missing.
 
-> For the in-product guide: verify the exact portal click-path and wording
-> with a real test org and capture screenshots before writing the final copy —
-> the navigation above is from Vipps docs, not a walked-through session (see
-> open question 6).
+> **This checklist is the source for the in-product guide**, which now lives
+> in the back office beside the Vipps key form (`Innstillinger` → Vipps →
+> «Slik kobler dere Vipps til støttemedlem»). The guide fills the org's own
+> name and its two public addresses into the steps that ask for them. Keep the
+> two in step: a correction here belongs in the guide as well.
+>
+> Steps 3 and 4 are walked through; the rest of the click-path comes from Vipps
+> docs and still wants screenshots from a real test org (see open question 6).
 
 ### C. When approved
 
