@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { membershipReceipt } from "./membershipReceipt.js";
 
+/** Written as an escape so the rule against it can be asserted here. */
+const EM_DASH = "\u2014";
+
 const base = {
   orgName: "Eksempel Musikkorps",
   orgNumber: "918 654 062",
@@ -15,8 +18,6 @@ const base = {
   paidDate: "2026-03-14T09:30:00.000Z",
   kind: "join" as const,
   manageUrl: "https://app.example/bli-medlem/eksempel/min-side?n=tok",
-  hearts: 3,
-  recruits: 0,
   cardUrl: "https://xn--stttemedlem-hgb.no/medlemsbevis/kort-tok",
 };
 
@@ -27,7 +28,7 @@ describe("membershipReceipt", () => {
     expect(message.text).toContain("Eksempel Musikkorps (org.nr. 918 654 062)");
     expect(message.text).toContain("Medlem: Kari Nordmann");
     // nr. 3 — what the payment was for.
-    expect(message.text).toContain("Medlemskontingent — «Støttemedlem»");
+    expect(message.text).toContain("Medlemskontingent («Støttemedlem»)");
     // nr. 4 — the period delivered.
     expect(message.text).toContain("14. mars 2026 – 31. desember 2026 (2026)");
     // nr. 5 — amount and payment date.
@@ -58,11 +59,19 @@ describe("membershipReceipt", () => {
 
   it("reads as a renewal when the payment was one", () => {
     const message = membershipReceipt({ ...base, kind: "renewal", paidNok: 1200 });
-    // The thousands separator is the locale's no-break space, not an ASCII one.
-    expect(message.subject).toBe(
-      "Kvittering: fornyet støttemedlemskap i Eksempel Musikkorps — 1 200 kr",
-    );
+    expect(message.subject).toBe("Kvittering: fornyet støttemedlemskap i Eksempel Musikkorps");
     expect(message.text).toContain("er fornyet");
+    // The thousands separator is the locale's no-break space, not an ASCII one.
+    expect(message.text).toContain("1 200 kr");
+  });
+
+  it("keeps the amount out of the subject, and every em dash out of the message", () => {
+    const message = membershipReceipt(base);
+    expect(message.subject).toBe("Kvittering: støttemedlemskap i Eksempel Musikkorps");
+    expect(message.subject).not.toContain("kr");
+    expect(message.subject).not.toContain(EM_DASH);
+    expect(message.text).not.toContain(EM_DASH);
+    expect(message.html).not.toContain(EM_DASH);
   });
 
   it("stands without the fields an organization may lack", () => {
@@ -82,37 +91,34 @@ describe("membershipReceipt", () => {
 });
 
 describe("membershipReceipt — the member's card", () => {
-  it("leads with the card, and puts the bookkeeping after it", () => {
+  it("offers the card before it says anything about the receipt", () => {
     const message = membershipReceipt(base);
-    // The card comes first: the receipt is what the law wants, the card is
-    // what the member wants (specs/concepts/member-card.md).
-    const cardAt = message.text.indexOf("DITT MEDLEMSBEVIS");
-    const receiptAt = message.text.indexOf("Medlemskontingent");
+    const cardAt = message.text.indexOf(base.cardUrl);
+    const receiptAt = message.text.indexOf("Dette er kvitteringen din");
     expect(cardAt).toBeGreaterThan(-1);
     expect(cardAt).toBeLessThan(receiptAt);
-    expect(message.html.indexOf("STØTTEMEDLEM")).toBeLessThan(
-      message.html.indexOf("Medlemskontingent"),
+    expect(message.html.indexOf(base.cardUrl)).toBeLessThan(
+      message.html.indexOf("Dette er kvitteringen din"),
     );
   });
 
-  it("draws one heart per supported year and links the shareable address", () => {
+  it("links the card without drawing anything that looks like one", () => {
     const message = membershipReceipt(base);
-    expect(message.text).toContain("❤️❤️❤️");
-    expect(message.text).toContain("3 år som støttemedlem");
-    expect(message.text).toContain(base.cardUrl);
-    expect(message.html).toContain(base.cardUrl);
+    expect(message.text).toContain("Se og del medlemsbeviset ditt");
+    expect(message.html).toContain(`href="${base.cardUrl}"`);
+    // No card facsimile: no hearts, no name plate, no valid-year line.
+    expect(message.text).not.toContain("❤️❤️");
+    expect(message.text).not.toContain("som støttemedlem");
+    expect(message.text).not.toContain("Gyldig");
+    expect(message.html).not.toContain("STØTTEMEDLEM");
+    expect(message.html).not.toContain("Gyldig");
   });
 
-  it("breaks the hearts into rows of ten, like every other surface", () => {
-    const message = membershipReceipt({ ...base, hearts: 12 });
-    expect(message.text).toContain(`${"❤️".repeat(10)}\n${"❤️".repeat(2)}`);
-  });
-
-  it("mentions recruits only once there are any", () => {
-    expect(membershipReceipt(base).text).not.toContain("vervet");
-    const recruited = membershipReceipt({ ...base, recruits: 1 });
-    expect(recruited.text).toContain("vervet 1 medlem");
-    expect(membershipReceipt({ ...base, recruits: 2 }).text).toContain("vervet 2 medlemmer");
+  it("says the card is attached only when it really is", () => {
+    expect(membershipReceipt(base).text).not.toContain("ligger vedlagt");
+    const withCard = membershipReceipt({ ...base, cardPngBase64: "aGVsbG8=" });
+    expect(withCard.text).toContain("Medlemsbeviset ditt ligger vedlagt");
+    expect(withCard.text).toContain(base.cardUrl);
   });
 
   it("attaches the card as a picture when one could be drawn, and not otherwise", () => {

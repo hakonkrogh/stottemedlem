@@ -186,7 +186,7 @@ if (vipps) {
               ? `${org.name} (org.nr. ${formatOrganisasjonsnummer(org.orgnr)})`
               : org.name,
             memberLabel: member?.name ?? member?.email ?? null,
-            what: `Medlemskontingent — «${membership.tierName}»`,
+            what: `Medlemskontingent («${membership.tierName}»)`,
             period: `${dato(membership.periodStart)} – ${dato(membership.periodEnd)} (${periodLabel(membership.periodYear)})`,
             paid: `${kr(captured.amountNok)} den ${dato(captured.capturedAt ?? captured.updatedAt)}, via Vipps`,
             email: member?.email ? { address: member.email, sent: Boolean(emailed) } : null,

@@ -9,7 +9,7 @@ import ReceiptPaperStory from "./ReceiptPaperStory.astro";
 const base = {
   seller: "Eksempel Musikkorps (org.nr. 123 456 789)",
   memberLabel: "Kari Eksempel",
-  what: "Medlemskontingent — «Støttemedlem»",
+  what: "Medlemskontingent («Støttemedlem»)",
   period: "14. mars 2026 – 31. desember 2026 (2026)",
   paid: "250 kr den 14. mars 2026, via Vipps",
 };
@@ -31,6 +31,6 @@ export const LongValues = {
     ...base,
     seller: "Vestbygda Skolekorps og Ungdomsorkester (org.nr. 987 654 321)",
     memberLabel: "anne-margrethe.wollertsen.bjornstad@eksempel-epostadresse.no",
-    what: "Medlemskontingent — «Gull-støttemedlem med ekstra lang tittel»",
+    what: "Medlemskontingent («Gull-støttemedlem med ekstra lang tittel»)",
   },
 };
