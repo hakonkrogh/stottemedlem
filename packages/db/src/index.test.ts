@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  chargeIdMatching,
   countMemberStandings,
   coveredPeriod,
   feeMayBeChargedNow,
@@ -171,6 +172,9 @@ const overview = (
     renewing,
     hearts: paid ? 1 : 0,
     recruits: 0,
+    // Shaped like Vipps' ids, and sharing no letters with the name so a search
+    // for one cannot accidentally hit the other.
+    chargeIds: paid ? [`chr-${id.length}k9Q`] : [],
   };
 };
 
@@ -249,6 +253,26 @@ describe("matchesMemberSearch", () => {
 
   it("does not crash on a supporter who consented to no name", () => {
     expect(matchesMemberSearch(overview(null, "active"), "ingrid")).toBe(false);
+  });
+
+  it("finds a member by the payment reference the provider's portal shows", () => {
+    expect(matchesMemberSearch(ingrid, "chr-14k9Q")).toBe(true);
+    expect(matchesMemberSearch(ingrid, "CHR-14K9Q")).toBe(true);
+    expect(matchesMemberSearch(ingrid, "chr-99k9Q")).toBe(false);
+  });
+});
+
+describe("chargeIdMatching", () => {
+  const ingrid = overview("Ingrid Solheim", "active");
+
+  it("names the payment a reference found, so the member can be opened on it", () => {
+    expect(chargeIdMatching(ingrid, " chr-14k9q ")).toBe("chr-14k9Q");
+  });
+
+  it("is null when the member was found by who they are, or not at all", () => {
+    expect(chargeIdMatching(ingrid, "solheim")).toBeNull();
+    expect(chargeIdMatching(ingrid, "")).toBeNull();
+    expect(chargeIdMatching(overview("Ny", "lapsed", {}, { paid: false }), "chr")).toBeNull();
   });
 });
 

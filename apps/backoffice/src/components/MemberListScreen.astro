@@ -7,7 +7,12 @@
 // The list PRESENTS members; correcting one is an action on that member's own
 // page, never a field in the list.
 import { periodLabel } from "@stottemedlem/core";
-import { countMemberStandings, type MemberOverview, matchesMemberSearch } from "@stottemedlem/db";
+import {
+  chargeIdMatching,
+  countMemberStandings,
+  type MemberOverview,
+  matchesMemberSearch,
+} from "@stottemedlem/db";
 import Button from "@stottemedlem/ui/components/Button.astro";
 import Heading from "@stottemedlem/ui/components/Heading.astro";
 import Stack from "@stottemedlem/ui/components/Stack.astro";
@@ -15,6 +20,7 @@ import Text from "@stottemedlem/ui/components/Text.astro";
 import TextField from "@stottemedlem/ui/components/TextField.astro";
 import TextLink from "@stottemedlem/ui/components/TextLink.astro";
 import { MEMBER_FILTERS, memberFilterFor } from "../lib/memberStanding";
+import { memberPaymentHref } from "../lib/refunds";
 import MemberRow from "./MemberRow.astro";
 
 interface Props {
@@ -77,6 +83,14 @@ const summary =
 // Nothing matched: say which of the two narrowings is responsible, because the
 // way out differs — clear the search, or step back to the whole list.
 const emptyReason = shown.length > 0 ? null : search.trim() ? "search" : "filter";
+// A member found by a payment reference opens on that payment: the provider's
+// portal showed the reference and no name, so what the administrator wants is
+// the payment, and the page should not make them look for it a second time.
+const memberHref = (entry: MemberOverview) => {
+  const memberPath = `${membersPath}/${entry.member.id}`;
+  const chargeId = chargeIdMatching(entry, search);
+  return chargeId ? memberPaymentHref(memberPath, chargeId) : memberPath;
+};
 ---
 
 <Stack gap="lg">
@@ -121,7 +135,7 @@ const emptyReason = shown.length > 0 ? null : search.trim() ? "search" : "filter
           name="sok"
           type="search"
           value={search}
-          placeholder="Navn, e-post eller telefon"
+          placeholder="Navn, e-post, telefon eller ordre-ID fra Vipps"
         >
           <Button slot="action" variant="secondary">
             Søk
@@ -154,7 +168,7 @@ const emptyReason = shown.length > 0 ? null : search.trim() ? "search" : "filter
     shown.length > 0 && (
       <div class="rows">
         {shown.map((entry) => (
-          <MemberRow entry={entry} href={`${membersPath}/${entry.member.id}`} />
+          <MemberRow entry={entry} href={memberHref(entry)} />
         ))}
       </div>
     )

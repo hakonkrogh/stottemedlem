@@ -50,6 +50,16 @@ From the organization's point of view:
 4. The administrator can find a specific member — by name, or by whichever
    contact detail they happen to remember — and see their membership history
    (which annual periods they have supported, and what was paid each time).
+   They can also find a member by a **payment reference**: the payment
+   provider's own portal lists the organization's transactions with no payer
+   name or number at all (only a transaction id, verified 2026-09-09), so the
+   reference is the one thing an administrator can carry from there into the
+   list. A member found that way opens **on that payment**, pointed out among
+   their other payments, so the administrator is not made to look for it a
+   second time; and if the reference in the address matches none of the
+   member's payments, the page says so instead of silently showing nothing.
+   Every payment shows its reference, so the way back to the provider's
+   portal is just as short.
 5. Whether a member's support **continues** is shown alongside whether it is
    current, because they are different questions: someone who has ended the
    arrangement stays a member until their paid period runs out
@@ -98,6 +108,9 @@ From the organization's point of view:
 - [ ] A supporter who consented to no name is still findable and recognizable in
       the list.
 - [ ] Searching the list never changes the counts it reports.
+- [ ] A payment reference copied from the payment provider's portal finds the
+      member who made that payment, and opening them from the result lands on
+      that very payment.
 
 ## Out of scope
 - Manually marking someone as paid/active without an actual payment (kept out to

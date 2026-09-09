@@ -21,7 +21,7 @@ import TextLink from "@stottemedlem/ui/components/TextLink.astro";
 import type { MemberContactFieldErrors, MemberContactFormValues } from "../lib/memberContact";
 import { standingLabel } from "../lib/memberStanding";
 import type { RefundResult } from "../lib/membership";
-import type { PaymentView, RefundRefusal } from "../lib/refunds";
+import { type PaymentView, paymentAnchor, type RefundRefusal } from "../lib/refunds";
 import HeartRows from "./HeartRows.astro";
 import Subpage from "./Subpage.astro";
 
@@ -40,6 +40,13 @@ interface Props {
   refunded?: RefundResult | null;
   /** Why a refund did not happen, in words the administrator can act on. */
   refundError?: string | null;
+  /**
+   * The payment the administrator came looking for, by the provider's
+   * reference, the one its portal shows as "Ordre-ID" and no name
+   * (specs/use-cases/curate-member-list.md). Pointed out below, or reported
+   * missing when none of this member's payments carries it.
+   */
+  sought?: string | null;
   /** The erasure is waiting to be confirmed (specs/use-cases/erase-member-data.md). */
   erasing?: boolean;
   /** The member's personal data was just erased. */
@@ -58,6 +65,7 @@ const {
   editing = false,
   payments = [],
   confirming = null,
+  sought = null,
   refunded = null,
   refundError = null,
   erasing = false,
@@ -102,6 +110,13 @@ const totalPaid = history.reduce((sum, period) => sum + period.paidNok, 0);
 // What became of each payment, and — where it cannot be given back — why not.
 // Both are stated, because a missing button with no explanation reads as a
 // product that forgot rather than one that knows.
+// A reference is matched the way the search matched it, so the row the list
+// promised is the row that lights up.
+const isSought = (payment: PaymentView) =>
+  sought !== null &&
+  sought.trim() !== "" &&
+  payment.chargeId.toLowerCase() === sought.trim().toLowerCase();
+const soughtPayment = payments.find(isSought) ?? null;
 const paymentWord: Record<PaymentView["state"], string> = {
   paid: "Betalt",
   refunded: "Refundert",
@@ -364,12 +379,20 @@ const periodSurvives =
               Pengene bak historikken. Refunderer dere en betaling, går hele beløpet tilbake,
               perioden slutter å telle, og den årlige avtalen avsluttes.
             </Text>
+            {sought && !soughtPayment && (
+              <Text variant="muted">
+                Ingen av betalingene til dette medlemmet har ordre-ID {sought}.
+              </Text>
+            )}
             <ul class="payments">
               {payments.map((payment) => (
-                <li>
+                <li id={paymentAnchor(payment.chargeId)} class:list={{ sought: isSought(payment) }}>
                   <span class="year">{periodLabel(payment.periodYear)}</span>
                   <span class="tier">
                     {typeWord[payment.type]} {whenLabel(payment.on)}
+                  </span>
+                  <span class="ref" title="Ordre-ID i Vipps-portalen">
+                    {payment.chargeId}
                   </span>
                   <span class="state">{paymentWord[payment.state]}</span>
                   <span class="paid">{payment.amountNok} kr</span>
@@ -479,6 +502,26 @@ const periodSurvives =
   .act {
     display: flex;
     justify-content: flex-end;
+  }
+  /* The provider's reference, as its portal prints it: what an administrator
+     reads off a transaction there and looks for here. */
+  .ref {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 0.85em;
+    color: var(--sm-muted);
+  }
+  /* The payment the search was for. Lit rather than moved: the list keeps its
+     order, and the eye is led to the row instead. */
+  .payments li.sought {
+    margin: 0 -0.6rem;
+    padding: 0.35rem 0.6rem;
+    border-radius: var(--sm-radius-md);
+    background: var(--sm-accent-soft);
+    outline: 2px solid var(--sm-accent);
+  }
+  .payments li.sought .ref {
+    color: var(--sm-accent-deep);
+    font-weight: 600;
   }
   /* Confirming a refund is a step of its own, not a line in a list. */
   .confirm {

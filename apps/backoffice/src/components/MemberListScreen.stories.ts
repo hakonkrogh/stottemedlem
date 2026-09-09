@@ -46,6 +46,9 @@ export const NoMembersYet = { args: inFrame({ members: [] }) };
 /** Searching narrows the list; the counts above it deliberately do not move. */
 export const Searching = { args: inFrame({ search: "solheim" }) };
 
+/** The reference Vipps' portal shows as Ordre-ID finds the member who paid. */
+export const SearchingByPaymentReference = { args: inFrame({ search: "chr-p36cU6a" }) };
+
 /** A search nobody matches still offers the way back. */
 export const SearchWithNoMatch = { args: inFrame({ search: "kvitfjell" }) };
 

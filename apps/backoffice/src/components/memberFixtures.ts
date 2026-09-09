@@ -56,6 +56,7 @@ export const continuing: MemberOverview = {
   renewing: true,
   hearts: 3,
   recruits: 2,
+  chargeIds: ["chr-p36cU6a", "chr-k2Qw9Lm", "chr-Zt81vRq"],
 };
 
 /** Paid for this year, then ended the arrangement — still a member until 31 Dec. */
@@ -66,6 +67,7 @@ export const endingAfterThisYear: MemberOverview = {
   renewing: false,
   hearts: 1,
   recruits: 0,
+  chargeIds: ["chr-Bj0rn26"],
 };
 
 /** Supported for two years and stopped — the one to invite back. */
@@ -76,6 +78,7 @@ export const lapsed: MemberOverview = {
   renewing: false,
   hearts: 2,
   recruits: 0,
+  chargeIds: ["chr-Mar1t24", "chr-Mar1t23"],
 };
 
 /** Consented to a contact address but no name. */
@@ -86,6 +89,7 @@ export const withoutName: MemberOverview = {
   renewing: true,
   hearts: 1,
   recruits: 0,
+  chargeIds: ["chr-Ukj3nt26"],
 };
 
 /** Approved seconds ago; the first payment has not landed yet. */
@@ -96,6 +100,7 @@ export const nothingPaidYet: MemberOverview = {
   renewing: true,
   hearts: 0,
   recruits: 0,
+  chargeIds: ["chr-Ny1nn26"],
 };
 
 /** Paying, but joined without sharing an address — nobody can be told anything. */
@@ -106,6 +111,7 @@ export const noWayToReach: MemberOverview = {
   renewing: true,
   hearts: 12,
   recruits: 0,
+  chargeIds: ["chr-S1grun26"],
 };
 
 /** One payment as the member's page presents it (specs/use-cases/refund-a-payment.md). */

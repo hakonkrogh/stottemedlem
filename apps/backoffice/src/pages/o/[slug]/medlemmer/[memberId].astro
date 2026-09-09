@@ -20,7 +20,7 @@ import {
 import { type RefundResult, refundMembershipPayment } from "../../../../lib/membership";
 import { requireOrgView } from "../../../../lib/orgView";
 import { periods } from "../../../../lib/periods";
-import { paymentViews } from "../../../../lib/refunds";
+import { PAYMENT_PARAM, paymentViews } from "../../../../lib/refunds";
 import { getVippsForOrg } from "../../../../lib/vipps";
 import { getWorkOS, orgPath } from "../../../../lib/workos";
 
@@ -168,6 +168,8 @@ const confirming = refunded
 // Erasing is irreversible in the same way, and asks in the same place: the
 // link opens this confirmation, and only the confirmation can erase.
 const erasing = !erased && !entry.member.anonymizedAt && Astro.url.searchParams.has("slett");
+// Arrived from a search for a payment reference: the page points that payment out.
+const sought = flags.get(PAYMENT_PARAM);
 ---
 
 <Shell title={`${displayName} — ${org.name}`} frame={false}>
@@ -182,6 +184,7 @@ const erasing = !erased && !entry.member.anonymizedAt && Astro.url.searchParams.
       confirming={confirming}
       refunded={refunded}
       refundError={refundError}
+      sought={sought}
       erasing={erasing}
       erased={erased}
       eraseError={eraseError}
