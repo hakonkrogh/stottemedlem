@@ -114,6 +114,44 @@ export const RefundingOneOfTwo = {
 };
 
 /** Asking before the money moves: the refund's own step, and its way out. */
+/**
+ * Reached from a search for the reference Vipps' portal shows as Ordre-ID: the
+ * portal names no payer, so the payment is what the administrator has, and the
+ * page lights it up (specs/use-cases/curate-member-list.md).
+ */
+export const FoundByPaymentReference = {
+  args: inFrame("m-1", {
+    entry: {
+      ...continuing,
+      history: [
+        fixturePeriod("m-1", 2026, 300),
+        fixturePeriod("m-1", 2025, 300),
+        fixturePeriod("m-1", 2024, 300),
+      ],
+    },
+    values: { name: "Ingrid Solheim", email: "ingrid@eksempel.example", phone: "4711111111" },
+    // The same references the list fixture carries, so the list story's
+    // search leads here and the row it promised is the one lit.
+    payments: continuing.chargeIds.map((chargeId, index) =>
+      fixturePayment(2026 - index, 300, "paid", null, { chargeId }),
+    ),
+    sought: continuing.chargeIds[0],
+  }),
+};
+
+/** The reference in the address matches none of this member's payments. */
+export const PaymentReferenceNotHere = {
+  args: inFrame("m-2", {
+    entry: {
+      ...endingAfterThisYear,
+      history: [fixturePeriod("m-2", 2026, 240), fixturePeriod("m-2", 2025, 300)],
+    },
+    values: { name: "Bjørn Aas", email: "bjorn@eksempel.example", phone: "4722222222" },
+    payments: [fixturePayment(2026, 240), fixturePayment(2025, 300)],
+    sought: "chr-p36cU6a",
+  }),
+};
+
 export const ConfirmingRefund = {
   args: inFrame("m-1", {
     entry: { ...continuing, history: [fixturePeriod("m-1", 2026, 300)] },

@@ -368,6 +368,9 @@ real account. Source: developer.vippsmobilepay.com/docs/knowledge-base/test-envi
   Source: developer.vippsmobilepay.com/docs/APIs/userinfo-api/userinfo-api-quick-start/
   (has a verbatim example body). Doc-URL gotcha: `/docs/developer-resources/…`
   paths 404 — the test-environment page lives under `/docs/knowledge-base/`.
+  Likewise `/docs/knowledge-base/merchant-questions/` (linked from search
+  results) 404s; the merchant FAQ content, including "User anonymity in
+  transactions", lives at `/docs/knowledge-base/merchant-info/`.
 - **Local key fallback (test env only):** `getVippsForOrg` falls back to
   `VIPPS_CLIENT_ID/_SECRET/_SUBSCRIPTION_KEY/VIPPS_MSN` from `.dev.vars` when
   an org has no Vault keys AND `VIPPS_API_BASE_URL` is apitest — so the join
@@ -411,8 +414,22 @@ real account. Source: developer.vippsmobilepay.com/docs/knowledge-base/test-envi
   of the values — identity exists only behind `userinfoUrl`, for 168 hours.
   Combined with "no all-statuses listing" and no documented retention, this is
   the concrete proof that **Vipps cannot serve as the member registry**; our D1
-  is (specs/concepts/membership.md). Open question needing portal access: does
-  the portal UI list payer names for Faste betalinger? The API does not.
+  is (specs/concepts/membership.md). **The portal does not list payer identity
+  either** (answered 2026-09-09 from a real production screenshot: the "Fra"
+  column on Transaksjoner is empty for a Faste betalinger charge). Vipps
+  documents this as policy, not a setting: "The transaction overview on the
+  business portal shows customer names for some Vippsnummer and
+  MobilePay-nummer payments. For online payments, the payment's ID is shown
+  instead of the customer name" (docs/knowledge-base/merchant-info, "User
+  anonymity in transactions"). Nothing in the agreement or charge body
+  (`phoneNumber`, `productName`, `productDescription`, `externalId`) changes
+  that; the only merchant-side identity is the userinfo we persist at signup.
+  Orgs that need "who paid" look in our member list, not the portal. The
+  portal's transaction detail ("Sammendrag av transaksjonen") shows the
+  Vipps CHARGE id as "Ordre-ID" (`chr-…`) plus the sales unit; it shows NO
+  agreement id and no externalId (production screenshot, 2026-09-09). The
+  charge id is the only key an admin can carry from the portal into our
+  data, and we store it on every charge row (refunds run on it).
 - **`Idempotency-Key` must be a UUID** (found the hard way 2026-08-20, in the
   join route): passing our own business key — `externalId`, i.e.
   `<tierKey>:<uuid>` — gets `400 … "Invalid value for Idempotency-Key"`. The
@@ -482,7 +499,15 @@ Asked every time someone proposes "just send it through Vipps". Vipps pushes
   in-app"* (`recurring-swagger-id.yaml`). Title above it is
   `agreement.productName` (≤45). We currently spend ~20 of the 100 chars
   (`"${tier.name} ${periodYear}"`). This is the only text the product can put
-  in front of a member today, and it rides on a payment.
+  in front of a member today, and it rides on a payment. The SAME text is
+  what the merchant sees as the "Melding" column on the portal's
+  Transaksjoner list (confirmed by a production screenshot, 2026-09-09), so
+  it is also the only merchant-facing free text per charge. Two limits when
+  using it to identify the payer: the INITIAL charge's description is fixed
+  in the agreement draft, before approval and before userinfo reveals who
+  the member is, and Recurring v3 has no way to edit a charge afterwards. So
+  anything meant to identify the member in "Melding" must exist before the
+  draft (our own ids do; the member's name does not).
 - **What it CANNOT do — don't design around it:** (1) no messaging API at all
   (Recurring v3 = agreements + charges, same reason there's no product
   catalogue); (2) **a price change is silent** — `PATCH pricing.amount`

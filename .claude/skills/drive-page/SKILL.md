@@ -73,6 +73,26 @@ Both branches of `MemberCardFigure.astro`, proven end to end (2026-08-31):
   needs a `devlog.sh stop` + `start` to see new route files, and a bare curl
   POST answers 403 (Astro's origin check), so drive it from the browser.
   Delete the pages afterwards, and rebuild if a build ran while they existed.
+- **Driving an admin screen in Storybook (done 2026-09-09 for the member
+  list's payment-reference search):** start it with
+  `cd packages/ui && pnpm exec storybook dev -p 6006 --ci --no-open` in the
+  background and READ THE LOG for the port: when another checkout already
+  holds 6006, Storybook silently moves to 6007 while 6006 keeps answering
+  200 with the OTHER worktree's code. Story URLs are
+  `http://localhost:<port>/iframe.html?id=<title-slug>--<story-slug>&viewMode=story`
+  (`Backoffice/Medlem` + `FoundByPaymentReference` =
+  `backoffice-medlem--found-by-payment-reference`). Every `href` a screen
+  renders is rewritten by `StoryScreen` through `STORY_ROUTES` in
+  `storyFixtures.ts`, unknown ones to `#`, so `attr=a::href` never shows
+  the real address. To prove a link is composed right, add its exact
+  path+query+hash to `STORY_ROUTES` and assert the href is that story's
+  iframe URL: `#` means the composed address did not match.
+- **A public scratch ENDPOINT proves a db query against seeded D1** (same
+  day): a `.ts` route under `apps/backoffice/src/pages/bli-medlem/<name>/`
+  exporting `GET` that calls the real `@stottemedlem/db` function for
+  `org-seed-1` and returns JSON, curl-able with no login. Same three traps as
+  the scratch pages above, and the dev server may come up on 4323 when 4322
+  is taken; `devlog.sh start` prints the port.
 - **A slow server is the case that matters for busy states.** Stub fetch to
   add a delay, then `shot=` mid-flight:
   `--stub 'const f=window.fetch; window.fetch=(...a)=>new Promise(r=>setTimeout(()=>r(f(...a)),1500))'`.

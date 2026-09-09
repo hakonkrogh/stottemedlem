@@ -10,6 +10,27 @@ import type { MembershipCharge } from "@stottemedlem/db";
 
 export type { PaymentState, RefundRefusal } from "@stottemedlem/core";
 
+/**
+ * The query parameter that names a payment on a member's page, by the
+ * provider's reference: the one the provider's portal shows as "Ordre-ID"
+ * and the one a search for it carries across
+ * (specs/use-cases/curate-member-list.md).
+ */
+export const PAYMENT_PARAM = "betaling";
+
+/** The anchor a payment's row answers to, so the page can land on it. */
+export function paymentAnchor(chargeId: string): string {
+  return `betaling-${chargeId}`;
+}
+
+/**
+ * A member's page opened on one payment: the address says which, so the page
+ * points it out and scrolls to it.
+ */
+export function memberPaymentHref(memberPath: string, chargeId: string): string {
+  return `${memberPath}?${PAYMENT_PARAM}=${encodeURIComponent(chargeId)}#${paymentAnchor(chargeId)}`;
+}
+
 export class RefundNotPossible extends Error {
   constructor(readonly refusal: RefundRefusal) {
     super(`refund not possible: ${refusal}`);

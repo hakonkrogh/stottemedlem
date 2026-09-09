@@ -1259,6 +1259,13 @@ export interface MemberOverview {
    * best recruiters.
    */
   recruits: number;
+  /**
+   * The payment provider's id for every payment ever attempted for this
+   * member. The provider's own portal names no payer, only this id (its
+   * "Ordre-ID"), so it is the one thing an administrator can carry from
+   * there into the list (specs/use-cases/curate-member-list.md).
+   */
+  chargeIds: string[];
 }
 
 /**
@@ -1338,6 +1345,19 @@ export async function listOrganizationMembers(
     }
   }
 
+  const chargeIdsByMember = new Map<string, string[]>();
+  for (const row of await db
+    .select({ memberId: membershipAgreements.memberId, chargeId: membershipCharges.vippsChargeId })
+    .from(membershipCharges)
+    .innerJoin(membershipAgreements, eq(membershipCharges.agreementId, membershipAgreements.id))
+    .where(eq(membershipCharges.orgId, orgId))) {
+    if (!row.memberId) continue;
+    chargeIdsByMember.set(row.memberId, [
+      ...(chargeIdsByMember.get(row.memberId) ?? []),
+      row.chargeId,
+    ]);
+  }
+
   const byMember = new Map<string, MemberOverview>();
   for (const { member, membership } of rows) {
     const seen = byMember.get(member.id);
@@ -1360,6 +1380,7 @@ export async function listOrganizationMembers(
       // Periods are unique per member and year, so each joined row is a heart.
       hearts: (seen?.hearts ?? 0) + (membership ? 1 : 0),
       recruits: recruits.get(member.id) ?? 0,
+      chargeIds: chargeIdsByMember.get(member.id) ?? [],
     });
   }
   return [...byMember.values()];
@@ -1453,9 +1474,25 @@ export function countMemberStandings(
 export function matchesMemberSearch(entry: MemberOverview, term: string): boolean {
   const needle = term.trim().toLowerCase();
   if (!needle) return true;
-  return [entry.member.name, entry.member.email, entry.member.phone].some((field) =>
-    field?.toLowerCase().includes(needle),
+  return (
+    [entry.member.name, entry.member.email, entry.member.phone].some((field) =>
+      field?.toLowerCase().includes(needle),
+    ) || chargeIdMatching(entry, term) !== null
   );
+}
+
+/**
+ * The payment the administrator was looking for, when the search term is a
+ * payment reference rather than a person: the provider's portal shows an
+ * "Ordre-ID" and no name, so the reference is what gets copied across
+ * (specs/use-cases/curate-member-list.md). Null when the term names nobody's
+ * payment, so the caller can tell a member found by name from one found by
+ * what they paid.
+ */
+export function chargeIdMatching(entry: MemberOverview, term: string): string | null {
+  const needle = term.trim().toLowerCase();
+  if (!needle) return null;
+  return entry.chargeIds.find((chargeId) => chargeId.toLowerCase().includes(needle)) ?? null;
 }
 
 /** One member, with every period they have ever supported — newest first. */
@@ -1488,6 +1525,7 @@ export async function getOrganizationMember(
     renewing: Boolean(live),
     hearts: history.length,
     recruits: await countRecruits(db, member.id),
+    chargeIds: (await listChargesForMember(db, member.id)).map((charge) => charge.vippsChargeId),
     history,
   };
 }
