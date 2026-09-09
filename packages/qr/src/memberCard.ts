@@ -31,9 +31,11 @@
  * A "STØTTEMEDLEM" label used to sit over the name; it said what the card
  * already is, and went.
  * The card stays colour-neutral white and ink so any organization's logo sits
- * comfortably in the band; the heart red is the one strong colour, and the
- * brand's moss green (specs/concepts/brand-palette.md) draws only the rule
- * under the band and the valid year. The band used to carry a
+ * comfortably in the band, and the heart red is the ONLY colour on it. The
+ * brand's moss green drew the rule under the band and the valid year until
+ * 2026-09-09; it went because a card presents a member and their
+ * organization, and the product's own colour was a third voice in that
+ * (specs/concepts/brand-palette.md). The band used to carry a
  * deeper cream fill and a gold label; both went 2026-09-04 with the palette
  * refresh, so the top of the card is one line rather than a second field. The
  * card itself was cream until the same day: on the cream page it barely
@@ -89,12 +91,15 @@ const HEART = "#e0182d";
 /** The heart of a lapsed card: still there, no longer cheering. */
 const HEART_PAST = "#c9ab9e";
 /**
- * The brand's one action colour (specs/concepts/brand-palette.md): the rule
- * under the band and the valid year. Never the heart's red.
+ * The rule that closes the identity band. It is the card's own ink, not a
+ * colour: the card carries NO green (specs/concepts/brand-palette.md). The
+ * rule and the valid year were moss until 2026-09-09, which made the product
+ * the third party competing for attention on an object whose whole job is to
+ * present the member and their organization.
  */
-const MOSS = "#3d6b3f";
-/** The ring around the organization's logo: moss, faded to sit on cream. */
-const LOGO_RING = "#c9d5c4";
+const BAND_RULE = DEEP;
+/** The ring around the organization's logo: the card's own edge, drawn round. */
+const LOGO_RING = EDGE;
 /**
  * The stack a browser resolves when it draws the SVG itself: "Fraunces" is
  * the rasterizer's embedded face; "Fraunces Variable" is the same family as
@@ -340,7 +345,7 @@ function validityCorner(rightX: number, centerY: number, periodText: string, lap
   ${textEl(rightX, centerY + 22, periodText, {
     size: valueSize,
     weight: 650,
-    fill: lapsed ? MUTED : MOSS,
+    fill: lapsed ? MUTED : INK,
     anchor: "end",
   })}`;
   return { markup, width };
@@ -482,7 +487,7 @@ function drawCard(content: CardContent): string {
   const columnWidth = right - left;
 
   // The band: logo and organization on the left, validity in the corner, and
-  // one moss rule underneath instead of a filled field.
+  // one hairline rule underneath instead of a filled field.
   const bandHeight = 128;
   const bandBottom = inner + bandHeight;
   const bandCenter = inner + bandHeight / 2;
@@ -525,7 +530,7 @@ function drawCard(content: CardContent): string {
   const recruitBaseline = headlineBaseline + 34;
 
   return `${frame(width, height, inner, 32)}
-  <line x1="${inner}" y1="${bandBottom}" x2="${width - inner}" y2="${bandBottom}" stroke="${MOSS}" stroke-width="2"/>
+  <line x1="${inner}" y1="${bandBottom}" x2="${width - inner}" y2="${bandBottom}" stroke="${BAND_RULE}" stroke-width="1.5"/>
 ${hasLogo ? `  ${logoCircle(left + logoSize / 2, bandCenter, logoSize, content.logoDataUri ?? "")}\n` : ""}  ${org.lines
     .map((line, index) =>
       textEl(orgLeft, orgFirstBaseline + index * orgLineGap, line, {

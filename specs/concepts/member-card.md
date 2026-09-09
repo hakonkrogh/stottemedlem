@@ -54,9 +54,12 @@ surface the member happens to be looking at.
   much it had to carry (below); as a footer it signs the card instead of
   interrupting it. The card itself
   stays colour-neutral (white and ink) so any organization's logo sits
-  comfortably; the heart red is the product's one strong colour on it, and
-  the [palette](brand-palette.md)'s moss green appears only as the one rule
-  under the band and the valid year. The band is a
+  comfortably, and the heart red is the only colour on it: **no green,
+  anywhere**. The [palette](brand-palette.md)'s moss green drew the rule under
+  the band and the valid year until it went, because a card presents two
+  parties, the member and the organization they back, and the product's own
+  colour was a third voice in that. What was green is the card's own ink now:
+  the rule, and the year while it is current. The band is a
   line, not a filled field: a second colour field at the top competed with
   the organization's own mark. The card is white, not the page's cream: a
   cream card on the cream member page barely lifted off it, and a card is

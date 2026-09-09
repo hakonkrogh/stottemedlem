@@ -23,7 +23,12 @@ lives in `specs/`, kept in sync with code by a mandatory `Stop`-hook harness.
   `apps/marketing/src/pages/index.astro` (reads no tokens), the `const`s at the
   top of `packages/qr/src/memberCard.ts` (member card) and `ACCENT` in
   `packages/qr/src/index.ts` (org QR card), and inline styles in
-  `packages/email/src/*.ts`. A palette change touches all five. Gotcha: the hero
+  `packages/email/src/*.ts`. A palette change touches all five. **The MEMBER
+  card is the one surface with NO green** (2026-09-09): it is white, ink and
+  the heart's red only, because a card presents the member and their
+  organization and the product's colour was a third voice on it. The two green
+  things it had, the rule under the band and the valid year, are ink now. The
+  ORG QR card's `ACCENT` is still moss, and so is everything else. Gotcha: the hero
   wrapper sets `color:#fff` — slotted card content must re-set its own dark color.
   Token-name gotcha (hit 2026-09-08): `--sm-accent-ink` is WHITE, the text
   colour ON the green button, not an "ink of the accent" (that is
