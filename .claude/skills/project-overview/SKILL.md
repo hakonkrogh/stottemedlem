@@ -28,7 +28,14 @@ lives in `specs/`, kept in sync with code by a mandatory `Stop`-hook harness.
   the heart's red only, because a card presents the member and their
   organization and the product's colour was a third voice on it. The two green
   things it had, the rule under the band and the valid year, are ink now. The
-  ORG QR card's `ACCENT` is still moss, and so is everything else. Gotcha: the hero
+  ORG QR card's `ACCENT` is still moss, and so is everything else.
+  **A colour change is a SPEC change too, and the spec is easy to miss:**
+  `specs/concepts/brand-palette.md` enumerates green's jobs SURFACE BY SURFACE
+  ("the selected tier", "the small role label on the receipt", and until
+  2026-09-09 "the valid year on the card"), so recolouring any one surface
+  leaves that list stating something untrue, in a file the change does not
+  otherwise touch. Read it before editing colours, and prove the removal by
+  grepping the emitted SVG for the hex (see `render-card`). Gotcha: the hero
   wrapper sets `color:#fff` — slotted card content must re-set its own dark color.
   Token-name gotcha (hit 2026-09-08): `--sm-accent-ink` is WHITE, the text
   colour ON the green button, not an "ink of the accent" (that is
