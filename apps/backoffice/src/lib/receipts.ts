@@ -107,11 +107,11 @@ export async function sendOwedReceipts(
       report.unreachable++;
       continue;
     }
-    // The card leads the receipt (specs/concepts/member-card.md). It is
-    // assembled from the member's history, so it is always current — and it
-    // rides along as a picture too, for the mail clients that will not load
-    // one. A card that cannot be drawn must never cost the member their
-    // receipt: the message goes out without it.
+    // The receipt carries the card as an attachment and links its public
+    // address (specs/concepts/member-card.md); it never redraws it. The card
+    // is assembled from the member's history, so the attached picture is
+    // always current. A card that cannot be drawn must never cost the member
+    // their receipt: the message goes out without it.
     const card = await loadMemberCardForMemberId(db, member.id);
     const cardToken = card?.member.cardToken ?? null;
     let cardPngBase64: string | null = null;
@@ -138,8 +138,6 @@ export async function sendOwedReceipts(
         paidDate: charge.capturedAt ?? charge.updatedAt,
         kind: charge.type === "RECURRING" ? "renewal" : "join",
         manageUrl: `${origin}${memberSelfServicePath(org.slug, agreement.manageToken)}`,
-        hearts: card?.hearts ?? 0,
-        recruits: card?.recruits ?? 0,
         cardUrl: cardToken ? memberCardUrl(cardToken) : `${origin}/bli-medlem/${org.slug}`,
         cardPngBase64,
       }),

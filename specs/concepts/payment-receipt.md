@@ -26,12 +26,21 @@ reconstruct one.
 
 ## Rules & invariants
 - **The [member card](member-card.md) comes first, the paperwork after it.**
-  Both forms lead with the card — the member's name, their organization, their
-  hearts, the address they can share — and only then give the payment
-  documentation below it. A receipt is a thank-you before it is a document, and
-  the card is the thank-you. The email additionally carries the card as an
-  attached picture where one can be made, so the member keeps it even if their
-  mail client will not load images.
+  A receipt is a thank-you before it is a document, and the card is the
+  thank-you, so the card is offered before the receipt says anything about
+  itself.
+- **The email offers the card; it does not draw one.** The email carries the
+  card as an attached picture where one can be made, and links its public
+  address so the member can look at it and share it. Both come before the
+  payment documentation. The email never redraws the card in text or HTML: a
+  second, plainer likeness of the card would only compete with the picture the
+  member actually keeps, and the member notices the difference between them
+  before they notice either. The confirmation page, which has no attachment to
+  offer, still shows the card itself.
+- **The subject line names the organization, not the amount.** A receipt is
+  found later by who it is from and what it was for. What was paid belongs in
+  the documentation, where the rest of the payment's facts are, and a sum in
+  the subject only puts the member's money in every list their inbox shows.
 - A receipt carries the § 5-1-1 nr. 2–5 information:
   - **nr. 2, the parties** — the organization by name and
     organisasjonsnummer; the member by name (or, failing a name, the address
@@ -94,7 +103,8 @@ reconstruct one.
 - Delivered to one [supporting member](supporting-member.md), on behalf of one
   [organization](organization.md).
 - The email form is a kind of [member notice](member-notice.md).
-- Leads with, and carries, the member's [card](member-card.md).
+- Offers the member's [card](member-card.md) before the paperwork: the page
+  shows it, the email attaches it and links it.
 - The page form is the confirmation step of
   [joining](../use-cases/join-as-supporting-member.md).
 

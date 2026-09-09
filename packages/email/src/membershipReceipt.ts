@@ -33,26 +33,13 @@ export interface MembershipReceipt {
   /** The member's own page — where the automatic renewal can be stopped. */
   manageUrl: string;
   /**
-   * The member's card (specs/concepts/member-card.md) — the part of this
-   * message the member actually wants. One heart per supported year, the
-   * address they may share, and optionally the card as a picture to keep.
+   * The public address of the member's card
+   * (specs/concepts/member-card.md), offered before the paperwork so the
+   * member can look at the card and share it.
    */
-  hearts: number;
-  recruits?: number;
   cardUrl: string;
   /** The card rendered as a PNG, base64-encoded, when one could be made. */
   cardPngBase64?: string | null;
-}
-
-/** Ten to a row, like everywhere else the hearts are drawn. */
-const HEARTS_PER_ROW = 10;
-
-function heartRows(count: number): string[] {
-  const rows: string[] = [];
-  for (let left = count; left > 0; left -= HEARTS_PER_ROW) {
-    rows.push("❤️".repeat(Math.min(left, HEARTS_PER_ROW)));
-  }
-  return rows;
 }
 
 const escapeHtml = (value: string) =>
@@ -92,36 +79,24 @@ export function membershipReceipt(receipt: MembershipReceipt): EmailMessage {
     : `E-posten er sendt fra en adresse som ikke leses. Har du spørsmål, ta kontakt med ${orgName} direkte.`;
   const lead =
     receipt.kind === "join"
-      ? `Takk for støtten! Du er nå støttemedlem i ${orgName}. Dette er kvitteringen din — ta vare på den.`
-      : `Støttemedlemskapet ditt i ${orgName} er fornyet. Dette er kvitteringen din — ta vare på den.`;
+      ? `Takk for støtten! Du er nå støttemedlem i ${orgName}.`
+      : `Støttemedlemskapet ditt i ${orgName} er fornyet.`;
+  // The card comes before the paperwork (specs/concepts/member-card.md), but
+  // as an offer to go and look at it: the card itself is the attachment, and
+  // an email that redraws it competes with the picture the member keeps.
+  const cardLead = receipt.cardPngBase64 ? "Medlemsbeviset ditt ligger vedlagt. " : "";
+  const cardInvite = receipt.cardPngBase64
+    ? "Du kan også se og dele det"
+    : "Se og del medlemsbeviset ditt";
+  const receiptLead = "Dette er kvitteringen din. Ta vare på den.";
 
   const rows: Array<[string, string]> = [
     ["Organisasjon", orgNumber ? `${orgName} (org.nr. ${orgNumber})` : orgName],
     ["Medlem", memberName?.trim() || receipt.memberEmail],
-    ["Gjelder", `Medlemskontingent — «${tierName}»`],
+    ["Gjelder", `Medlemskontingent («${tierName}»)`],
     ["Periode", `${dato(receipt.periodStart)} – ${dato(receipt.periodEnd)} (${periodText})`],
     ["Betalt", `${kr(paidNok)} den ${dato(receipt.paidDate)}, via Vipps`],
-    ["Merverdiavgift", "0 kr — medlemskontingent er unntatt mva"],
-  ];
-
-  // The card leads (specs/concepts/member-card.md): the receipt's bookkeeping
-  // detail is what the law wants, but the card is what the member wants, so it
-  // comes first and the paperwork follows it.
-  const heartLine =
-    receipt.hearts === 1 ? "1 år som støttemedlem" : `${receipt.hearts} år som støttemedlem`;
-  const recruits = receipt.recruits ?? 0;
-  const cardName = memberName?.trim() || receipt.memberEmail;
-  const cardLines = [
-    "— DITT MEDLEMSBEVIS —",
-    `${cardName} — støttemedlem i ${orgName}`,
-    `Gyldig ${periodText}`,
-    ...heartRows(receipt.hearts),
-    recruits > 0
-      ? `${heartLine} · vervet ${recruits} ${recruits === 1 ? "medlem" : "medlemmer"}`
-      : heartLine,
-    "",
-    "Se og del beviset:",
-    receipt.cardUrl,
+    ["Merverdiavgift", "0 kr (medlemskontingent er unntatt mva)"],
   ];
 
   const lines = [
@@ -129,9 +104,11 @@ export function membershipReceipt(receipt: MembershipReceipt): EmailMessage {
     "",
     lead,
     "",
-    ...cardLines,
+    `${cardLead}${cardInvite}:`,
+    receipt.cardUrl,
     "",
-    "Kvittering:",
+    receiptLead,
+    "",
     ...rows.map(([label, value]) => `${label}: ${value}`),
     "",
     "Medlemskapet fornyes automatisk. Vil du ikke fortsette, kan du stoppe det her:",
@@ -139,9 +116,9 @@ export function membershipReceipt(receipt: MembershipReceipt): EmailMessage {
     "",
     `Hilsen ${orgName}`,
     "",
-    "—",
+    "---",
     `Sendt via ❤️ ${BRAND_NAME} på vegne av ${orgName}. Dette er kvitteringen for en`,
-    "gjennomført betaling og sendes ved hver betaling — den kan ikke avmeldes.",
+    "gjennomført betaling og sendes ved hver betaling. Den kan ikke avmeldes.",
     contactNote,
   ];
 
@@ -153,31 +130,11 @@ export function membershipReceipt(receipt: MembershipReceipt): EmailMessage {
         `<td style="padding:0.2rem 0">${escapeHtml(value)}</td></tr>`,
     )
     .join("\n");
-  const heartsHtml = heartRows(receipt.hearts)
-    .map((row) => `<div style="font-size:19px;line-height:1.45;letter-spacing:2px">${row}</div>`)
-    .join("");
-  // Table-wrapped and inline-styled, because that is the only layout every
-  // mail client agrees on. The hearts are the emoji character here — an email
-  // can render those, unlike the rasterized card.
-  const cardHtml = `<table role="presentation" cellpadding="0" cellspacing="0" style="border-collapse:separate;width:100%;margin:1.25rem 0">
-<tr><td style="background:#ffffff;border:1px solid #e6dccb;border-radius:14px;padding:20px 22px">
-<div style="font-size:11px;letter-spacing:2.5px;font-weight:700;color:#3d6b3f">STØTTEMEDLEM</div>
-<div style="font-size:22px;font-weight:700;color:#2b2118;padding-top:6px">${escapeHtml(cardName)}</div>
-<div style="font-size:15px;color:#6b5d4d;padding-top:2px">Gyldig ${escapeHtml(periodText)} · ${org}</div>
-<div style="padding-top:10px">${heartsHtml}</div>
-<div style="font-size:13px;color:#6b5d4d;padding-top:4px">${escapeHtml(
-    recruits > 0
-      ? `${heartLine} · vervet ${recruits} ${recruits === 1 ? "medlem" : "medlemmer"}`
-      : heartLine,
-  )}</div>
-<div style="font-size:14px;padding-top:12px"><a href="${escapeHtml(receipt.cardUrl)}">Se og del medlemsbeviset ditt</a></div>
-</td></tr></table>`;
-
   const html = `<div style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif;font-size:16px;line-height:1.6;color:#2b2118;max-width:34rem">
 <p>${escapeHtml(greeting)}</p>
 <p>${escapeHtml(lead)}</p>
-${cardHtml}
-<p style="font-size:13px;color:#6b5d4d;margin-bottom:0.3rem">Kvittering</p>
+<p>${escapeHtml(cardLead)}<a href="${escapeHtml(receipt.cardUrl)}">${escapeHtml(cardInvite)}</a>.</p>
+<p style="margin-bottom:0.3rem">${escapeHtml(receiptLead)}</p>
 <table style="border-collapse:collapse;font-size:15px">
 ${htmlRows}
 </table>
@@ -186,8 +143,8 @@ ${htmlRows}
 <p>Hilsen ${org}</p>
 <hr style="border:0;border-top:1px solid #e6ddd1;margin:2rem 0 1rem">
 <p style="font-size:13px;color:#6b5d4d">Sendt via <a href="${BRAND_URL}" style="color:#6b5d4d">❤️ ${BRAND_NAME}</a>
-på vegne av ${org}. Dette er kvitteringen for en gjennomført betaling og sendes ved hver betaling
-— den kan ikke avmeldes. ${escapeHtml(contactNote)}</p>
+på vegne av ${org}. Dette er kvitteringen for en gjennomført betaling og sendes ved hver betaling.
+Den kan ikke avmeldes. ${escapeHtml(contactNote)}</p>
 </div>`;
 
   // The card as a file, so the member keeps it even if their mail client
@@ -209,8 +166,8 @@ på vegne av ${org}. Dette er kvitteringen for en gjennomført betaling og sende
     ...(attachments.length > 0 ? { attachments } : {}),
     subject:
       receipt.kind === "join"
-        ? `Kvittering: støttemedlemskap i ${orgName} — ${kr(paidNok)}`
-        : `Kvittering: fornyet støttemedlemskap i ${orgName} — ${kr(paidNok)}`,
+        ? `Kvittering: støttemedlemskap i ${orgName}`
+        : `Kvittering: fornyet støttemedlemskap i ${orgName}`,
     text: lines.join("\n"),
     html,
   };

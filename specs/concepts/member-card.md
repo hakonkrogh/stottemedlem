@@ -13,9 +13,9 @@ the join back to the member who showed the card.
 
 It is one card per member per organization, and it **follows the member across
 every surface**: it is the first thing on their
-[self-service page](member-self-service.md), it rides along in every
-[receipt](payment-receipt.md) they are sent, and it has a public address of its
-own they can share with anyone.
+[self-service page](member-self-service.md), it rides along as an attachment on
+every [receipt](payment-receipt.md) they are sent, and it has a public address
+of its own they can share with anyone.
 
 ## Why it exists
 A supporting membership is otherwise a line in someone else's database. Nothing
@@ -30,10 +30,15 @@ surface the member happens to be looking at.
 
 ## Rules & invariants
 - **The card leads; the paperwork follows.** Wherever the card appears
-  alongside other content — the receipt email, the self-service page — the card
+  alongside other content (the self-service page, the thank-you page) the card
   comes first and is the thing highlighted. The
   [receipt](payment-receipt.md)'s bookkeeping detail is secondary to it, and
-  belongs below it or in an attachment.
+  belongs below it.
+- **A surface that can hand over the card does not also imitate it.** The
+  [receipt](payment-receipt.md) email attaches the card as a picture and links
+  its public address, both above the paperwork, and draws nothing that looks
+  like a card: the attachment is the card, and a text likeness beside it is
+  only a worse one.
 - **What the card shows**, and nothing more: the member's name, the
   organization's name and logo, the years supported — as a count inside one
   big heart, the streak ([scorecard](scorecard.md)) — the recruit count once
