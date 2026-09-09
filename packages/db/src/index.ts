@@ -1735,6 +1735,35 @@ export interface MemberCard {
   coveredPeriodYear: number | null;
 }
 
+/** Where a scanned card leads: whose referral it carries, and to which org. */
+export interface ScannedCardReferral {
+  cardToken: string;
+  orgSlug: string;
+}
+
+/**
+ * The referral behind a scanned card (specs/concepts/member-card.md): the
+ * organization to send the scanner to, and the token that credits the join
+ * back to the member whose card it was.
+ *
+ * Several candidate tokens are taken because a scan code carries only the
+ * card's bits, and the product has written those down in two shapes over the
+ * years. A code matching nothing yields nothing at all, never a hint that
+ * some other card exists.
+ */
+export async function findScannedCardReferral(
+  db: Db,
+  cardTokens: readonly string[],
+): Promise<ScannedCardReferral | null> {
+  if (cardTokens.length === 0) return null;
+  const [row] = await db
+    .select({ cardToken: supportingMembers.cardToken, orgSlug: organizations.slug })
+    .from(supportingMembers)
+    .innerJoin(organizations, eq(supportingMembers.orgId, organizations.id))
+    .where(inArray(supportingMembers.cardToken, [...cardTokens]));
+  return row?.cardToken ? { cardToken: row.cardToken, orgSlug: row.orgSlug } : null;
+}
+
 /**
  * The card behind a card address (specs/concepts/member-card.md). An address
  * that matches nothing yields nothing at all — never a hint of which

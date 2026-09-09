@@ -1,7 +1,7 @@
 import { env } from "cloudflare:workers";
 import { handle } from "@astrojs/cloudflare/handler";
 import * as Sentry from "@sentry/cloudflare";
-import { JOIN_PAGE_PATH_SEGMENT } from "@stottemedlem/core";
+import { JOIN_PAGE_PATH_SEGMENT, MEMBER_SCAN_PATH_SEGMENT } from "@stottemedlem/core";
 import { logger } from "./lib/log";
 
 // Public org pages (specs/concepts/join-page.md): the join page, its
@@ -20,6 +20,15 @@ const PUBLIC_ORG_PAGE = new RegExp(
 // and /org/<slug> was live and registrable, so every path beneath it — pages
 // and image endpoints alike — is redirected permanently rather than dropped.
 const FORMER_ORG_PAGE_PREFIX = "/org/";
+
+/**
+ * A scanned member card's address (specs/concepts/member-card.md). It is
+ * written in capitals, because that is what halves the size of the QR code
+ * carrying it, and a camera opens exactly what the code says, so the path
+ * arrives shouting while the route that answers it is spelt in lower case.
+ * A URL's path is ours to read how we like, and we read this one either way.
+ */
+const MEMBER_SCAN_PREFIX = new RegExp(`^/${MEMBER_SCAN_PATH_SEGMENT}/`, "i");
 const PUBLIC_ORG_PAGE_CACHE = "public-org-pages";
 /**
  * The run that also arranges the coming period's payments (wrangler.jsonc):
@@ -270,6 +279,14 @@ const handler = {
       const moved = new URL(url);
       moved.pathname = `/${JOIN_PAGE_PATH_SEGMENT}/${url.pathname.slice(FORMER_ORG_PAGE_PREFIX.length)}`;
       return Response.redirect(moved.toString(), 301);
+    }
+    // The code on a card is scanned, not typed, so what arrives is whatever
+    // the camera read, capitals and all. Route matching is case-sensitive;
+    // the address is not.
+    if (MEMBER_SCAN_PREFIX.test(url.pathname)) {
+      const normalized = new URL(url);
+      normalized.pathname = `/${MEMBER_SCAN_PATH_SEGMENT}/${url.pathname.slice(MEMBER_SCAN_PATH_SEGMENT.length + 2)}`;
+      return handle(new Request(normalized, request), env, ctx);
     }
     // A query string means the page is answering something about THIS visitor
     // — a failed join attempt, a chosen membership — so it is rendered fresh

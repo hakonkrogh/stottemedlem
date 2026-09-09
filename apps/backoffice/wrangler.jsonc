@@ -34,6 +34,18 @@
     {
       "pattern": "xn--stttemedlem-hgb.no/medlemsbevis/*",
       "zone_name": "xn--stttemedlem-hgb.no"
+    },
+    // Where a scanned member card hands over (specs/concepts/member-card.md).
+    // Both spellings are routed because the QR code carries the address in
+    // capitals (that is what halves the code's size) and route patterns
+    // match case-sensitively; src/worker.ts reads either.
+    {
+      "pattern": "xn--stttemedlem-hgb.no/v/*",
+      "zone_name": "xn--stttemedlem-hgb.no"
+    },
+    {
+      "pattern": "xn--stttemedlem-hgb.no/V/*",
+      "zone_name": "xn--stttemedlem-hgb.no"
     }
   ],
   "assets": {

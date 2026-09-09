@@ -225,6 +225,30 @@ describe("memberCardSvg", () => {
     expect(svg).not.toContain("…");
   });
 
+  it("keeps the code in the footer, beside the product's name", () => {
+    // The code used to be a block in the middle of the card; it is small
+    // enough now to sign the bottom corner instead, which leaves the middle to
+    // the member (specs/concepts/member-card.md).
+    const svg = memberCardSvg(base);
+    const { width, height } = memberCardSize();
+    const placed = /<g transform="translate\(([\d.]+) ([\d.]+)\)/.exec(svg);
+    expect(placed).not.toBeNull();
+    const [x, y] = [Number(placed?.[1]), Number(placed?.[2])];
+    expect(x).toBeGreaterThan(width / 2);
+    expect(y).toBeGreaterThan(height * 0.7);
+    // The attribution shares the band, on the other side of it.
+    const brand = /<text x="([\d.]+)" y="([\d.]+)"[^>]*>støttemedlem.no</.exec(svg);
+    expect(Number(brand?.[1])).toBeLessThan(x);
+    expect(Number(brand?.[2])).toBeGreaterThan(height * 0.7);
+  });
+
+  it("sets the product's name at the middle step, not the caption step", () => {
+    // In the footer it is the product signing the card, not a footnote under
+    // it (specs/concepts/brand-attribution.md).
+    const size = /font-size="([\d.]+)"[^>]*>støttemedlem.no</.exec(memberCardSvg(base))?.[1];
+    expect(Number(size)).toBe(24);
+  });
+
   it("encodes the referral join address in the QR code", () => {
     // The modules are one path, so the proof a URL was encoded is that a
     // different URL draws a different path.

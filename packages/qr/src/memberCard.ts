@@ -11,7 +11,15 @@
  * and streak cards): an identity band across the top — the organization's
  * logo and name on the left, the validity as a label-over-year corner on the
  * right — then the member's name large, their years as a count inside one big
- * heart (the streak), a celebratory line, the QR code, and the attribution.
+ * heart (the streak) and a celebratory line, and last a footer carrying the
+ * product's name on the left and the QR code on the right.
+ * The footer is where the code went once it became small enough to sit in one
+ * (2026-09-09): it used to be a block in the middle of the card, because the
+ * address it carried was long enough to need forty-odd modules a side. It now
+ * carries a short scan address instead, which halves the modules, so the code
+ * takes a corner and the member has the whole middle. The attribution came
+ * down into the footer with it and stepped up a size, because beside the code
+ * it is the product signing the card rather than a footnote under it.
  * The text sits on a scale of four sizes (2026-09-04): the member's name, a
  * title step for the organization, one middle step for the headline and the
  * year, and one small step for every caption. A line that does not fit steps
@@ -63,7 +71,7 @@ import { create } from "qrcode";
  * member is shown must be the card they share.
  */
 export const MEMBER_CARD_WIDTH = 760;
-export const MEMBER_CARD_HEIGHT = 960;
+export const MEMBER_CARD_HEIGHT = 860;
 
 /** The canvas — what an `<img>` needs to reserve space. */
 export function memberCardSize(): { width: number; height: number } {
@@ -346,6 +354,22 @@ function validityCorner(rightX: number, centerY: number, periodText: string, lap
 const QR_QUIET = 14;
 
 /**
+ * The room the code takes in the footer, quiet zone included, and the drawn
+ * code inside it.
+ *
+ * The code used to be the second-biggest thing on the card, and it was that
+ * big because of what it carried: the join address grew with the
+ * organization's slug, which took the code past forty modules a side. It now
+ * carries a short scan address of a fixed length (`memberScanUrl` in
+ * @stottemedlem/core), which is roughly half as many modules, so the same
+ * ink per module fits in a code a third narrower, and the code moved out of
+ * the member's half of the card and into the footer
+ * (specs/concepts/member-card.md).
+ */
+const FOOTER_QR_PANEL = 160;
+const FOOTER_QR_SIZE = FOOTER_QR_PANEL - QR_QUIET * 2;
+
+/**
  * The QR code straight on the white card. It used to sit in a white panel of
  * its own when the card was cream; on a white card a panel would be white on
  * white, a frame drawn for its own sake, so the code's quiet zone does the
@@ -382,16 +406,44 @@ function frame(width: number, height: number, inner: number, radius: number): st
   <rect x="${inner}" y="${inner}" width="${w}" height="${h}" rx="${radius}" fill="none" stroke="${EDGE}" stroke-width="2"/>`;
 }
 
-/** The brand attribution, with its heart drawn rather than typed. */
-function attribution(x: number, baseline: number): string {
-  const size = TYPE.small;
+/**
+ * The brand attribution, with its heart drawn rather than typed
+ * (specs/concepts/brand-attribution.md, specs/concepts/brand-mark.md).
+ *
+ * It sets at the scale's middle step rather than its small one: in the footer
+ * it is a name beside the code, not a caption under the card, and at the small
+ * step it read as a disclaimer. It stays in the muted ink, though: the size is
+ * what gives it presence, and the darker ink belongs to the two names the card
+ * is actually about.
+ */
+function attribution(left: number, baseline: number): string {
+  const size = TYPE.middle;
   const label = "støttemedlem.no";
   const heartSize = size + 2;
-  const gap = 9;
-  const total = heartSize + gap + estimateWidth(label, size);
-  const left = x - total / 2;
-  return `${heartPath(left, baseline - heartSize + 2, heartSize, HEART)}
-  ${textEl(left + heartSize + gap, baseline, label, { size, fill: FAINT })}`;
+  const gap = 10;
+  return `${heartPath(left, baseline - heartSize + 3, heartSize, HEART)}
+  ${textEl(left + heartSize + gap, baseline, label, { size, weight: 650, fill: MUTED })}`;
+}
+
+/**
+ * The footer: the product's name on the left, the code that leads into the
+ * organization's join page on the right.
+ *
+ * The two belong together (the name says whose card this is, the code is
+ * what makes it recruit) and side by side they take a band of the card
+ * instead of a column of it, which is what left the middle to the member
+ * (specs/concepts/member-card.md).
+ */
+function cardFooter(
+  left: number,
+  right: number,
+  top: number,
+  qr: { path: string; moduleCount: number },
+): string {
+  const middle = top + FOOTER_QR_PANEL / 2;
+  return `${attribution(left, middle - 6)}
+  ${textEl(left, middle + 28, "Skann og bli støttemedlem", { size: TYPE.small, fill: FAINT })}
+  ${qrCode(right - FOOTER_QR_PANEL, top, FOOTER_QR_SIZE, qr)}`;
 }
 
 interface CardContent {
@@ -443,37 +495,34 @@ function drawCard(content: CardContent): string {
   const orgLineGap = org.size * 1.1;
   const orgFirstBaseline = bandCenter + org.size * 0.35 - ((org.lines.length - 1) * orgLineGap) / 2;
 
-  const attributionBaseline = height - inner - 42;
-  const ruleY = attributionBaseline - 42;
+  // The footer sits against the bottom of the card, and the rule above it
+  // closes the member's half.
+  const footerTop = height - inner - 30 - FOOTER_QR_PANEL;
+  const ruleY = footerTop - 26;
   const bodyTop = bandBottom;
   const bodyHeight = ruleY - bodyTop;
 
   const name = fitScaled(content.memberName, columnWidth, [TYPE.name, TYPE.middle]);
   const nameAdvance = name.size * 0.92;
 
-  const heartSize = 176;
+  // The streak grew when the QR code left the middle of the card: the member's
+  // half is the member's, and the heart is what says how long they have been
+  // one (specs/concepts/scorecard.md).
+  const heartSize = 200;
   const headline =
     content.hearts > 0 ? fitScaled(content.headline, columnWidth, [TYPE.middle, TYPE.small]) : null;
   // Heart, headline, and the recruit line under it — absent entirely at zero.
   const streakBlock = headline
-    ? heartSize + 10 + headline.size + (content.recruitLine ? 34 : 0) + 34
+    ? heartSize + 10 + headline.size + (content.recruitLine ? 34 : 0)
     : 0;
 
-  // Big enough that a phone held up to it scans first time, and no bigger —
-  // past that the code takes the card away from the member, who is its point.
-  const qrSize = 176;
-  const panel = qrSize + QR_QUIET * 2;
-  const qrCaptionOrg = fitScaled(`i ${content.orgName}`, columnWidth, [TYPE.small]);
-  const qrBlockHeight = panel + 54;
-
-  const blockHeight = nameAdvance + 30 + streakBlock + qrBlockHeight;
+  const blockHeight = nameAdvance + 30 + streakBlock;
   const blockTop = bodyTop + (bodyHeight - blockHeight) / 2;
 
   const nameBaseline = blockTop + name.size * 0.74;
   const heartTop = blockTop + nameAdvance + 30;
   const headlineBaseline = heartTop + heartSize + 10 + (headline?.size ?? 0) * 0.74;
   const recruitBaseline = headlineBaseline + 34;
-  const qrTop = blockTop + nameAdvance + 30 + streakBlock;
 
   return `${frame(width, height, inner, 32)}
   <line x1="${inner}" y1="${bandBottom}" x2="${width - inner}" y2="${bandBottom}" stroke="${MOSS}" stroke-width="2"/>
@@ -496,12 +545,8 @@ ${
 ${content.recruitLine ? `  ${textEl(center, recruitBaseline, content.recruitLine, { size: TYPE.small, fill: MUTED, anchor: "middle" })}\n` : ""}`
     : ""
 }
-  ${qrCode(center - panel / 2, qrTop, qrSize, content.qr)}
-  ${textEl(center, qrTop + panel + 30, "Skann og bli støttemedlem", { size: TYPE.small, weight: 650, fill: MUTED, anchor: "middle" })}
-  ${textEl(center, qrTop + panel + 52, qrCaptionOrg.value, { size: qrCaptionOrg.size, fill: FAINT, anchor: "middle" })}
-
   <line x1="${left}" y1="${ruleY}" x2="${right}" y2="${ruleY}" stroke="${HAIRLINE}" stroke-width="2"/>
-  ${attribution(center, attributionBaseline)}`;
+  ${cardFooter(left, right, footerTop, content.qr)}`;
 }
 
 export function memberCardSvg(options: MemberCardOptions): string {
