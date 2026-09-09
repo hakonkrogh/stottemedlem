@@ -69,6 +69,7 @@ const {
 const showForm = editing || !stored;
 const paymentEventsOk = stored !== null && stored.webhookUrl === expectedWebhookUrl;
 const vippsPath = `${orgPath}/vipps`;
+const guidePath = `${vippsPath}/veiledning`;
 ---
 
 <Subpage backHref={`${orgPath}/innstillinger`} backLabel="Tilbake til innstillinger">
@@ -79,6 +80,22 @@ const vippsPath = `${orgPath}/vipps`;
       Vipps-portalen under «For utviklere». Nøklene må høre til {envLabel}.
     </Text>
   </Stack>
+
+  {
+    /* Getting the keys at all is a job in the Vipps portal, and the sales unit
+       must be named after the organization before any member sees it. That
+       whole errand has its own page; an org with keys only needs the door. */
+    stored ? (
+      <Text variant="small">
+        <TextLink href={guidePath}>Slik kobler dere Vipps til støttemedlem</TextLink>
+      </Text>
+    ) : (
+      <Alert variant="info">
+        Første gang? Veiledningen tar dere gjennom bestillingen i Vipps, hva salgsstedet må hete,
+        og hvor nøklene ligger. <TextLink href={guidePath}>Les veiledningen</TextLink>
+      </Alert>
+    )
+  }
 
   {saved && <Alert variant="success">Nøklene virker og er lagret. Vipps er koblet til.</Alert>}
   {

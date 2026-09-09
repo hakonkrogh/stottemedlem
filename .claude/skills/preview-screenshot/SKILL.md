@@ -155,7 +155,23 @@ description: Render any local URL (marketing/backoffice dev or preview server) t
   shoots at `load`, but a first-visit story still compiles/fetches its module
   after that. Add `--wait-for-timeout=4000` (and re-shoot if still blank —
   a warm story then renders instantly); shot.sh's Chrome path avoids this via
-  `--virtual-time-budget` but can hang instead (see above). Stop with `lsof -ti:6006 |
+  `--virtual-time-budget` but can hang instead (see above).
+  **`--full-page` does NOT work inside Storybook** (hit 2026-09-09 on a long
+  guide screen): the story is rendered in the iframe's own scroll container, so
+  a mobile shot comes back exactly viewport-sized (390×844) and silently cuts
+  the rest of the page. To see a long story on a phone width, ask for a tall
+  viewport instead and crop what you need:
+  `npx playwright screenshot --channel=chrome --viewport-size=390,3400 <iframe url> out.png`,
+  then `sips -c <h> <w> --cropOffset <top> 0 out.png --out crop.png`. A PNG
+  whose pixelWidth equals the requested width still proves no horizontal
+  overflow, tall viewport or not.
+  **`run_in_background` DID hold Storybook up this time** (2026-09-09,
+  `pnpm --filter @stottemedlem/ui exec storybook dev -p 6010 --ci --quiet` with
+  stdout redirected to a file): it served shots for the whole session and only
+  reported a non-zero exit when pkill'ed at the end. The 2026-08-31 failure was
+  not reproduced, but nohup + disown is still the safer default; whichever you
+  use, prove it with `until curl -sf localhost:<port>/index.json; do sleep 2;
+  done` in a background task rather than trusting the task status. Stop with `lsof -ti:6006 |
   xargs kill`. If the astro dev server is needed instead (port 4322): it's a
   persistent daemon — "already running" may be a stale one from another session
   serving old code; `pnpm --filter @stottemedlem/backoffice exec astro dev stop`

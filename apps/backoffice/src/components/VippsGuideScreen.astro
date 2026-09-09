@@ -1,0 +1,229 @@
+---
+// How an organization gets from "we have Vipps" to "the annual fee reaches our
+// account through støttemedlem" (specs/use-cases/set-up-supporting-membership.md).
+//
+// Written for a volunteer who does this once: numbered steps in the order the
+// Vipps portal asks for things, with the organization's OWN values filled in
+// wherever a step asks for one, so nothing has to be looked up in another tab.
+//
+// The naming step is the one nobody thinks of by themselves: the sales unit's
+// name is the only name a member sees in Vipps, so it has to be the
+// organization's (specs/concepts/vipps-api-keys.md).
+import Alert from "@stottemedlem/ui/components/Alert.astro";
+import Button from "@stottemedlem/ui/components/Button.astro";
+import Heading from "@stottemedlem/ui/components/Heading.astro";
+import InfoList from "@stottemedlem/ui/components/InfoList.astro";
+import Stack from "@stottemedlem/ui/components/Stack.astro";
+import Text from "@stottemedlem/ui/components/Text.astro";
+import TextLink from "@stottemedlem/ui/components/TextLink.astro";
+import Subpage from "./Subpage.astro";
+
+interface Props {
+  orgName: string;
+  orgPath: string;
+  /** The org's own two public addresses, which the Vipps order form asks for. */
+  joinUrl: string;
+  termsUrl: string;
+  /** Keys already stored: then the last step is behind them. */
+  keysStored: boolean;
+}
+const { orgName, orgPath, joinUrl, termsUrl, keysStored } = Astro.props;
+
+const vippsPath = `${orgPath}/vipps`;
+---
+
+<Subpage backHref={vippsPath} backLabel="Tilbake til Vipps-nøkler">
+  <Stack gap="sm">
+    <Heading level={2}>Slik kobler dere Vipps til støttemedlem</Heading>
+    <Text variant="lead">
+      Åtte steg fra Vipps-avtalen dere har i dag til første medlem som betaler. Det meste gjøres én
+      gang, i Vipps-portalen.
+    </Text>
+  </Stack>
+
+  {
+    keysStored && (
+      <Alert variant="success">
+        Vipps er allerede koblet til. Veiledningen står igjen for oppslag, for eksempel hvis dere
+        skal bytte salgssted eller rette navnet medlemmene ser.
+      </Alert>
+    )
+  }
+
+  <ol class="steps">
+    <li>
+      <div class="step">
+        <Heading level={3}>Sjekk at organisasjonen kan ta imot Vipps</Heading>
+        <Text>
+          Dere trenger en bedriftsavtale med Vipps MobilePay på organisasjonsnummeret, tilgang til
+          portal.vippsmobilepay.com, og noen med signaturrett som kan signere med BankID. Har dere
+          ingen avtale ennå, opprett den hos Vipps først. Det tar noen dager.
+        </Text>
+      </div>
+    </li>
+
+    <li>
+      <div class="step">
+        <Heading level={3}>Bestill «Faste betalinger»</Heading>
+        <Text>
+          Logg inn i Vipps-portalen og velg «Bestill løsninger». Faste betalinger er produktet som
+          lar dere trekke kontingenten én gang i året. Har dere allerede et salgssted for betaling på
+          nett, kan Faste betalinger legges til der. Ellers oppretter bestillingen et nytt salgssted.
+        </Text>
+      </div>
+    </li>
+
+    <li>
+      <div class="step">
+        <Heading level={3}>Gi salgsstedet navnet deres</Heading>
+        <Text>
+          Bestillingen spør om «Salgsstedets navn». Dette er det eneste navnet medlemmene ser: i
+          Vipps når de betaler, og i varslene Vipps sender dem etterpå, som «… har refundert 95,00
+          kr». Står det bare «Støttemedlem», vet ikke medlemmet hvem det gjelder.
+        </Text>
+        <InfoList
+          items={[
+            {
+              label: "Skriv dette",
+              value: orgName,
+              hint: "Navnet folk kjenner dere som, ikke navnet på verktøyet",
+            },
+          ]}
+        />
+        <Text variant="small">
+          Vipps fyller ofte inn et navn hentet fra Enhetsregisteret. Rett det her. Har salgsstedet
+          allerede et navn som ikke sier hvem dere er, kan dere endre navnet i Vipps-portalen.
+        </Text>
+      </div>
+    </li>
+
+    <li>
+      <div class="step">
+        <Heading level={3}>Lim inn de to adressene Vipps ber om</Heading>
+        <Text>
+          Vipps krever en nettside som viser hvem dere er og hva dere tilbyr, og en side med
+          salgsvilkår. Begge finnes allerede her. Lim inn disse og svar «Ja, den er live»:
+        </Text>
+        <InfoList
+          items={[
+            { label: "Nettsted", value: joinUrl },
+            { label: "Salgsvilkår", value: termsUrl },
+          ]}
+        />
+      </div>
+    </li>
+
+    <li>
+      <div class="step">
+        <Heading level={3}>Svar på spørsmålene om omsetning</Heading>
+        <Text>
+          Anslag holder: hva organisasjonen omsetter for i året, og hvor stor del som kommer via
+          dette salgsstedet (for de fleste er kontingenten en liten del). Velg en kategori for
+          foreninger og organisasjoner, ikke detaljhandel. Signer med BankID hvis dere blir bedt om
+          det.
+        </Text>
+      </div>
+    </li>
+
+    <li>
+      <div class="step">
+        <Heading level={3}>Vent på godkjenning</Heading>
+        <Text>
+          Vipps går gjennom bestillingen. Har organisasjonen en godkjent avtale fra før, går det som
+          regel raskt. Vipps tar kontakt på e-post hvis noe mangler.
+        </Text>
+      </div>
+    </li>
+
+    <li>
+      <div class="step">
+        <Heading level={3}>Hent nøklene og lim dem inn her</Heading>
+        <Text>
+          Åpne «For utviklere» i portalen, velg salgsstedet som har Faste betalinger, og kopier
+          client_id, client_secret, subscription key og MSN. Vi tester nøklene mot Vipps før de
+          lagres, og kobler til betalingsvarslene selv. Det er ingenting mer å sette opp.
+        </Text>
+        <div class="action">
+          <Button variant="secondary" href={vippsPath}>
+            {keysStored ? "Se Vipps-nøklene" : "Legg inn Vipps-nøkler"}
+          </Button>
+        </div>
+      </div>
+    </li>
+
+    <li>
+      <div class="step">
+        <Heading level={3}>Del innmeldingslenken</Heading>
+        <Text>
+          Nå kan dere ta imot støttemedlemmer. Del <TextLink href={joinUrl}>{joinUrl}</TextLink>, eller
+          heng opp QR-kortet dere finner under Oversikt.
+        </Text>
+      </div>
+    </li>
+  </ol>
+
+  <section class="good-to-know">
+    <Heading level={3}>Godt å vite</Heading>
+    <ul>
+      <li>
+        <Text variant="small">
+          Vipps tar 2,99 % + 1 kr per betaling (listepris 2026). Pengene går rett til
+          organisasjonens egen konto, vanligvis to virkedager etter trekket.
+        </Text>
+      </li>
+      <li>
+        <Text variant="small">
+          Meld dere inn selv først, og refunder betalingen fra medlemssiden etterpå. Da har dere
+          sett hele veien, fra betaling i Vipps til kvitteringen medlemmet får, før dere deler
+          lenken med andre.
+        </Text>
+      </li>
+      <li>
+        <Text variant="small">
+          Nøklene lagres kryptert og er bare synlige for administratorer i {orgName}. De to
+          hemmelige verdiene vises maskert etter lagring.
+        </Text>
+      </li>
+    </ul>
+  </section>
+</Subpage>
+
+<style>
+  .steps {
+    margin: 0;
+    padding-left: 1.4rem;
+    max-width: 40rem;
+  }
+  .steps > li {
+    padding-left: 0.35rem;
+  }
+  .steps > li + li {
+    margin-top: var(--sm-space-lg);
+  }
+  .steps > li::marker {
+    color: var(--sm-muted);
+    font-weight: 600;
+  }
+  /* The li stays an ordinary list item so its number is drawn; the grid that
+     spaces a step's parts apart lives one level in. */
+  .step {
+    display: grid;
+    gap: var(--sm-space-sm);
+  }
+  .action {
+    margin-top: var(--sm-space-xs);
+  }
+  .good-to-know {
+    display: grid;
+    gap: var(--sm-space-sm);
+    padding-top: var(--sm-space-md);
+    border-top: 1px solid var(--sm-border);
+    max-width: 40rem;
+  }
+  .good-to-know ul {
+    display: grid;
+    gap: var(--sm-space-sm);
+    margin: 0;
+    padding-left: 1.1rem;
+  }
+</style>
