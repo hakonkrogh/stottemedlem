@@ -126,3 +126,14 @@ Every colour has its own constant, so a per-role palette is a plain object;
 hex-swapping the finished SVG works for colour-only variants but not for
 removing the band fill or changing a stroke. The palette itself is
 `specs/concepts/brand-palette.md`.
+
+**Proving a colour is GONE: grep the emitted SVG for its hex, not the raster.**
+Eyes miss a 2 px rule or a logo ring, and a raster cannot be searched:
+
+    node .claude/skills/render-card/render.mjs --out $SCRATCH/x
+    grep -l '#3d6b3f\|#c9d5c4' $SCRATCH/x/card-*.svg || echo none
+
+Run it over EVERY fixture (no `--case`), because a colour can survive on the
+one state you did not draw: the moss `LOGO_RING` only appears with a logo, and
+the moss valid year only when the card is current (2026-09-09, taking the
+green off the member card).

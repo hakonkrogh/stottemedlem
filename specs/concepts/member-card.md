@@ -37,19 +37,29 @@ surface the member happens to be looking at.
 - **What the card shows**, and nothing more: the member's name, the
   organization's name and logo, the years supported — as a count inside one
   big heart, the streak ([scorecard](scorecard.md)) — the recruit count once
-  above zero, the period the membership is good for, the QR code, and the
-  [brand attribution](brand-attribution.md) with its [heart](brand-mark.md).
+  above zero, the period the membership is good for, and, in the footer, the
+  QR code beside the [brand attribution](brand-attribution.md) with its
+  [heart](brand-mark.md).
   It never shows the member's email, phone, what they paid, or anything about
   the organization's other members — it is made to be shown to strangers.
-- **The organization owns the top of the card; the member owns the middle.**
+- **The organization owns the top of the card, the member the middle, and the
+  product signs the bottom.**
   The card opens with an identity band — the organization's logo and name,
   with the validity as a small label over the year in its corner, the one
-  thing a checker looks for kept in one fixed place — and then the member is
-  the subject: their name large, their streak, their QR code. The card itself
+  thing a checker looks for kept in one fixed place. Then the member is the
+  subject: their name large and their streak, with nothing else in that half
+  of the card. A footer under a rule closes it: the product's name on the
+  left, the QR code on the right, and the invitation to scan between them.
+  The code used to be a block in the middle, under the member, because of how
+  much it had to carry (below); as a footer it signs the card instead of
+  interrupting it. The card itself
   stays colour-neutral (white and ink) so any organization's logo sits
-  comfortably; the heart red is the product's one strong colour on it, and
-  the [palette](brand-palette.md)'s moss green appears only as the one rule
-  under the band and the valid year. The band is a
+  comfortably, and the heart red is the only colour on it: **no green,
+  anywhere**. The [palette](brand-palette.md)'s moss green drew the rule under
+  the band and the valid year until it went, because a card presents two
+  parties, the member and the organization they back, and the product's own
+  colour was a third voice in that. What was green is the card's own ink now:
+  the rule, and the year while it is current. The band is a
   line, not a filled field: a second colour field at the top competed with
   the organization's own mark. The card is white, not the page's cream: a
   cream card on the cream member page barely lifted off it, and a card is
@@ -136,6 +146,29 @@ surface the member happens to be looking at.
   it takes the card away from the member, who is what the card is about. It
   sits close to what is around it: a code wrapped in empty space reads as the
   card's subject, and the subject is the member.
+- **The code is kept simple so that it can be small.** How big a QR code has to
+  be drawn is decided by how much it carries, so the code carries as little as
+  it can: a short address of its own, the same length on every card of every
+  organization, which leads on to the join page. It used to carry that join
+  page's own address, which grew with the organization's name, so the code
+  grew too, was different on every organization's cards, and needed the middle
+  of the card to stay scannable. Now it needs a corner. Shortening what the
+  code says is the way to make the code smaller; drawing the same code
+  smaller only makes it harder to scan.
+- **The scan address is not the card's address.** A member card has three
+  addresses and they do different things, in order of what holding one grants:
+  the [self-service page](member-self-service.md) can end the membership and
+  must never be shared; the card's own address shows the card and is made for
+  sharing; the scan address, which is the one the code carries, does nothing
+  but hand a scanner on to the organization's join page with the referral
+  attached. A scan address that matches nothing reveals nothing, like every
+  other address made from a member's card.
+- **The product's name is the other half of the footer**: the
+  [attribution](brand-attribution.md) every public surface owes, set large
+  enough to be read at arm's length now that the code gave the room back. It
+  is still outranked by the organization's name, as the attribution always is,
+  and it stays in a quiet ink: the size is what gives it presence, and the
+  strong ink belongs to the two names the card is about.
 - **Where the member is looking at their own card, the card carries the way to
   share it** — an action on the card itself rather than an address printed
   elsewhere on the page. What sharing means is the reader's device's business:
@@ -144,9 +177,10 @@ surface the member happens to be looking at.
 - **Anyone may look; only the member can change it.** The card page offers no
   actions on the membership. A visitor who is not the member sees exactly what
   the member sees.
-- **The QR code carries the member's referral.** Scanning it opens the
-  organization's join page, and a join completed from that scan counts as a
-  recruit for the member whose card it was
+- **The QR code carries the member's referral.** Scanning it goes by way of the
+  card's scan address (above) and opens the organization's join page, and a
+  join completed from that scan counts as a recruit for the member whose card
+  it was
   ([earn hearts and recruit](../use-cases/earn-hearts-and-recruit.md)). The
   member's own recruit count appears on the card only once they have recruited
   someone — a zero is not worth showing.

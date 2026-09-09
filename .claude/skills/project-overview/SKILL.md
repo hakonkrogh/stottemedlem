@@ -23,7 +23,19 @@ lives in `specs/`, kept in sync with code by a mandatory `Stop`-hook harness.
   `apps/marketing/src/pages/index.astro` (reads no tokens), the `const`s at the
   top of `packages/qr/src/memberCard.ts` (member card) and `ACCENT` in
   `packages/qr/src/index.ts` (org QR card), and inline styles in
-  `packages/email/src/*.ts`. A palette change touches all five. Gotcha: the hero
+  `packages/email/src/*.ts`. A palette change touches all five. **The MEMBER
+  card is the one surface with NO green** (2026-09-09): it is white, ink and
+  the heart's red only, because a card presents the member and their
+  organization and the product's colour was a third voice on it. The two green
+  things it had, the rule under the band and the valid year, are ink now. The
+  ORG QR card's `ACCENT` is still moss, and so is everything else.
+  **A colour change is a SPEC change too, and the spec is easy to miss:**
+  `specs/concepts/brand-palette.md` enumerates green's jobs SURFACE BY SURFACE
+  ("the selected tier", "the small role label on the receipt", and until
+  2026-09-09 "the valid year on the card"), so recolouring any one surface
+  leaves that list stating something untrue, in a file the change does not
+  otherwise touch. Read it before editing colours, and prove the removal by
+  grepping the emitted SVG for the hex (see `render-card`). Gotcha: the hero
   wrapper sets `color:#fff` — slotted card content must re-set its own dark color.
   Token-name gotcha (hit 2026-09-08): `--sm-accent-ink` is WHITE, the text
   colour ON the green button, not an "ink of the accent" (that is
@@ -599,12 +611,23 @@ lives in `specs/`, kept in sync with code by a mandatory `Stop`-hook harness.
   hearts, top of QR). That was the trade the user made.
   **The card is a self-contained block, and every layout number in it is
   coupled**: `drawCard` centres one stacked block between the header band and
-  the attribution rule, so shrinking the QR (210→172, then the single card's
-  240→196) does not tighten the card, it opens a hole in the middle — the
-  canvas dropped 1120→1040 to compensate. Before changing any of them, compute
-  the WORST case (`LongLoyalty`, 34 hearts → 4 shrunken rows) against the body
-  height, confirm with `render-card --raster`, and re-decode with `verify-qr` —
-  a smaller QR is only smaller until it stops scanning.
+  the footer rule, so shrinking a piece does not tighten the card, it opens a
+  hole in the middle — each shrink has been paid for by dropping the canvas
+  (1120→1040→960→860). Before changing any of them, confirm with
+  `render-card --raster` and re-decode with `verify-qr` — a smaller QR is only
+  smaller until it stops scanning.
+  **A QR gets smaller by SAYING LESS, not by being drawn smaller** (2026-09-09,
+  branch membership-qr-footer): the code used to carry the join address with
+  the referral on it, which took 41 modules and grew with the org's slug (45
+  for a long one), so it needed the middle of the card. It now carries a short
+  fixed-length scan address in CAPITALS (`memberScanUrl` in core → `/v/<26
+  base32 chars>`, an Astro route that 302s to the same `?verva=` join page),
+  which is 29 modules, and the code moved into a footer beside the brand
+  attribution — the attribution stepped up to the 24pt middle size there, and
+  the streak heart grew 176→200. Full reasoning, the alphanumeric-mode fact and
+  the routing gotchas: `qr-codes.md`. Prove a resize with
+  `verify-qr --shrink`, which reports the narrowest the whole drawing may be
+  and still decode (this change: 328 px → 239 px).
   Review card artwork with the `render-card` skill, not in Storybook alone.
   `MemberCardFigure.astro` is now a bare `<img>` (no `<picture>`) and owns two
   page-level behaviours: FULL-BLEED by default, cancelling `PublicShell`'s
@@ -1333,7 +1356,7 @@ away by mistake (nearly did, 2026-08-31, rebasing onto the one-card PR).
 | member-data-legal.md | verified ground truth (2026-08-31) on **pulling more member data from Vipps than name/email/phone**: the two DIFFERENT scope lists (Userinfo API = our Recurring flow: name/email/phoneNumber/address/birthDate/nin; Login API adds gender/delegatedConsents) — there is NO `accountNumbers` scope and `nin` is "not available in Norway"; consent is ALL-OR-NOTHING (a denial fails the agreement, so extra scopes are a conversion risk, and granularity is only achievable by not asking); scopes outside the org's Vipps product plan are silently OMITTED, not an error; verbatim `personopplysningsloven` § 12 (fødselsnummer) + § 5 (age 13); org-as-controller/us-as-processor, art. 9 membership sensitivity, art. 13 join-page duty; + how to curl Lovdata law text and the Vipps docs' `.md` mirrors via llms.txt + **the 2026-08-31 audit, RAISED AND CLOSED the same day** (privacy notice, retention sweep, erasure path and the named collected set all shipped — product behaviour now in `specs/concepts/member-data.md` + `specs/use-cases/erase-member-data.md`; the databehandleravtale followed: a public `/databehandleravtale`, accepted via a REQUIRED never-pre-ticked checkbox on the create-org form (enforced server-side too), versioned by date, with the one pre-existing org BACKFILLED by migration `0014` at migration time rather than backdated — spec in `specs/concepts/data-processing-agreement.md`); + why an org-level `address` opt-in is a conversion switch, not a small flag (all-or-nothing consent makes address MANDATORY to join that org) |
 | (skill) `vipps-test-rig` | drive a REAL recurring subscription on apitest from the CLI (agreement → MT-app approval → charges → webhooks → stop) + the local receiver and tunnel; the sandbox-DNS gotcha when verifying a tunnel; **the rig cannot validate anything MEMBER-facing**: portal test users carry `test.generated@vippsmobilepay.com`, so receipts send successfully and reach nobody, and staging's Saturday renewal window gives a ~2-day (not ~30-day) in-app visibility lead; also: we send NO push, and Vipps announces NOTHING before a charge (settled 2026-09-08, research finding 14: its only charge notification is post-payment, opt-in per agreement, off by default; the 35-day Payments-tab listing is passive) |
 | (skill) `verify-workflow` | `node .claude/skills/verify-workflow/run-steps.mjs <workflow.yml> [job] --force-turbo` — run a GitHub Actions job's `run:` steps locally in a scrubbed, runner-like env; proves a CI change before pushing. Skips `uses:` steps and any step with a `${{ }}` expression (that guard is what stops it firing a real deploy / `--remote` D1 migration) |
-| (skill) `verify-qr` | decode a generated QR PNG (file or URL) + assert payload — real scan-level proof |
+| (skill) `verify-qr` | decode a generated QR PNG (file or URL) + assert payload — real scan-level proof; `--shrink` additionally measures how SMALL the whole drawing may be and still decode, which is the before/after number for any change to a QR's payload or the artwork round it |
 | (skill) `render-card` | `node .claude/skills/render-card/render.mjs --raster` — draw the member card + the org QR card from real `@stottemedlem/qr` with NO server/D1/auth, rasterize through the SHIPPED resvg + embedded-Fraunces path, and emit a browser-vs-resvg contact sheet. The only way to see what a shared PNG / og:image / receipt attachment really looks like: resvg applies no variable font axes, so its text is bolder AND WIDER than any browser preview |
 | (skill) `verify-public-routes` | + `d1.sh "<SQL>" [local\|staging\|production]` — read D1 rows as JSON, now including the DEPLOYED databases (SELECT-only off local; ask staging what shapes it really holds before trusting a fixture) (the member-registry tables incl.); assert the public join pages over real HTTP (status, `/org/*` 301s, `x-sm-cache` miss→hit, brand attribution) + `seed.sh`, the tier-aware local D1 seed; **+ the erasure/retention recipe** (POST `handling=slett` to min-side with an Origin header, read the row back to prove name/email/phone/`vipps_sub`/`card_token` are NULL while the payment rows survive, and drive the nightly sweep via the cron endpoint) — plus the two D1-write traps: NEVER `2>/dev/null` a wrangler write (a rejected batch reads as a failing feature) and shift `period_year` rather than assigning one (UNIQUE on member_id+period_year); **+ `trace-member.sh <id\|card token\|manage token\|URL\|agr_…\|chr-…\|phone\|email> [target]`**: one member's agreements + charges + notices as a single timeline, and the "captured with NO receipt notice" check that answers *did they pay, and were they told?* (a charge REFUNDED before the sweep is the benign cause: the owed-receipt query takes only `status='CHARGED'`) |
 | (canonical) `docs/architecture/overview.md` | proposed architecture: 2 deployables (Astro static marketing + one Astro-SSR Worker for backoffice/API/webhooks/cron/queues), D1 as system of record, WorkOS org-gated admin, Vipps Login for members, 11-step scaffolding plan |

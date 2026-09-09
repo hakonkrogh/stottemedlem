@@ -9,14 +9,19 @@ Distinct from the *member's personal referral* QR (`specs/use-cases/earn-stars-a
   XML-escaped name, auto-shrinking font) and `qrSvg(url)` (async).
 - `@stottemedlem/qr` also carries `memberCardSvg({...})` (`src/memberCard.ts`) —
   the MEMBER's card (specs/concepts/member-card.md), a different owner from
-  `qrCardSvg`'s organization card. **ONE shape, 760×1040 UPRIGHT**
-  (`memberCardSize()`, no argument). It had two for a few hours on 2026-08-31
-  — a wide 1200×628 for link previews — and the user removed the wide one the
+  `qrCardSvg`'s organization card. **ONE shape, 760×860 UPRIGHT**
+  (`memberCardSize()`, no argument; read the constants, they have moved twice:
+  1040, then 960, then 860 when the QR left the middle on 2026-09-09).
+  It had two shapes for a few hours on 2026-08-31
+  (a wide 1200×628 for link previews) and the user removed the wide one the
   same day; an image cannot reflow and the surface that matters is a phone, so
   the card is drawn for a phone and every surface embeds that. The layout is
-  STACKED, not hand-placed at fixed `y`s, so a
-  long name plus four rows of hearts still fits (a unit test asserts every
-  placed x/y stays inside the canvas). Text width is estimated at 0.57 em per
+  STACKED, not hand-placed at fixed `y`s: the band and the footer are pinned to
+  the card's edges and the member's block is centred in what is left, so a name
+  that steps down a size does not move anything else (a unit test asserts every
+  placed x/y stays inside the canvas). Years are ONE big heart carrying the
+  count, never a heart per year, so the block's height barely varies with the
+  member. Text width is estimated at 0.57 em per
   character DELIBERATELY wide (calibrated against Fraunces' Black cut and kept
   after the embedded face became the narrower brand 650 cut — see below). It **contains
   no emoji at all**: hearts, including the
@@ -57,8 +62,10 @@ Distinct from the *member's personal referral* QR (`specs/use-cases/earn-stars-a
   (`xn--stttemedlem-hgb.no/medlemsbevis/*`) — a share link has to be short and
   on the canonical domain. Token = `supporting_members.card_token`, NOT the
   agreement's manage token (that one can stop the membership). QR payload is
-  `referredJoinPath(slug, cardToken)` on `shareableOrigin()`, so a scan credits
-  the referral (`?verva=`). Assembly lives in
+  the short SCAN address (`memberScanUrl`, its own section below), which hands
+  over to `referredJoinPath(slug, cardToken)` so a scan still credits the
+  referral (`?verva=`). It carried that join address directly until
+  2026-09-09. Assembly lives in
   `apps/backoffice/src/lib/memberCard.ts`; the same card is embedded on
   min-side and kvittering via `components/MemberCardFigure.astro`.
 - **PNG rasterization** — `apps/backoffice/src/lib/cardImage.ts`, the only place
@@ -105,6 +112,59 @@ a real page that shows the offer and carries the picked tier onward
 2026-07-08 "scanning opens Vipps directly, no landing page" decision is dead).
 A static `vipps://` link still can't work: each payment is its own transaction
 and the fee can change.
+
+## How BIG a QR gets is decided by what it SAYS (settled 2026-09-09)
+
+The lever on a QR's size is its payload, not its drawn width. Two facts, both
+measured with `node -e` against the `qrcode` lib in `packages/qr`, and worth
+re-measuring the same way rather than guessing:
+
+- **Length.** Member card payloads at error-correction M:
+  `…/bli-medlem/<slug>?verva=<uuid>` = 104 chars → **41 modules**, and 122
+  chars with a long slug → **45** (so the code's density used to depend on the
+  organization's NAME). The short scan address = 59 chars → **29 modules**.
+- **Mode.** A QR encodes `[0-9 A-Z space $%*+-./:]` in *alphanumeric* mode at
+  11 bits per PAIR, everything else in *byte* mode at 8 bits each, and the
+  mode is chosen per segment over the WHOLE string, so ONE lowercase letter
+  anywhere costs the whole saving. Measured: the same 59-char address is 33
+  modules in lower case and **29 in capitals**. That is why
+  `memberScanUrl` upper-cases from the scheme onwards, and why the path is
+  routed twice (below). A URL's scheme and host are case-insensitive by RFC
+  3986; the path is ours to read either way.
+- Don't trust a remembered capacity table: version 3-M holds **67** alphanumeric
+  characters, not 47 (47 is the Q column). Ask the library
+  (`create(url,{errorCorrectionLevel}).version`) instead of reasoning about it.
+- Prove the size claim with `verify-qr --shrink`, which reports the narrowest
+  the drawing may be and still decode (328 px → 239 px on this change).
+
+## The member card's scan address (added 2026-09-09)
+
+`GET /v/<code>` (`apps/backoffice/src/pages/v/[code].ts`) is what the member
+card's QR encodes. It is a pure handover: decode → find the member → 302 to
+`referredJoinPath(slug, cardToken)`, i.e. the SAME join page with `?verva=` as
+before, so referral crediting is untouched and printed cards carrying the old
+long address keep working. Unknown or malformed code → 404, revealing nothing.
+
+- `memberScanCode` / `cardTokensFromScanCode` / `memberScanUrl` /
+  `MEMBER_SCAN_PATH_SEGMENT` live in `@stottemedlem/core`; the lookup is
+  `findScannedCardReferral` in `@stottemedlem/db`.
+- The code is the existing `supporting_members.card_token`, 128 bits rewritten
+  as 26 Crockford base32 capitals. **No new column, no migration**, and
+  decoding returns TWO candidate tokens (dashed UUID and bare hex) because
+  migration 0011 backfilled bare `hex(randomblob(16))` while
+  `crypto.randomUUID()` writes dashes; both are looked up on the unique index.
+- **A card token that is not 32 hex characters cannot be encoded**, and
+  `cardScanUrl` (apps/backoffice/src/lib/memberCard.ts) then falls back to the
+  long join address. Silent by design, but it means a fixture or seed with a
+  readable token like `kort-seed-1` renders a card the product never makes,
+  which is why `verify-public-routes/seed.sh` now seeds real UUIDs.
+- **Case-sensitivity is the deployment gotcha.** A camera opens exactly what
+  the code says, in capitals; Cloudflare route patterns match case-sensitively
+  and so does Astro's file routing. So `wrangler.jsonc` declares BOTH
+  `xn--stttemedlem-hgb.no/v/*` and `/V/*`, and `src/worker.ts` lower-cases the
+  prefix before handing to Astro. Verified locally through `astro dev` (which
+  runs worker.ts); the ROUTE half needs a staging deploy to confirm.
+- `/v/` is public in `src/middleware.ts` alongside `/medlemsbevis/`.
 
 ## `qrcode` library gotchas (v1.5.x)
 - Named CJS imports work, **but** Biome rejects importing `toString` (restricted

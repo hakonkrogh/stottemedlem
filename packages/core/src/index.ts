@@ -275,6 +275,119 @@ export function referredJoinPath(slug: string, cardToken: string): string {
 }
 
 /**
+ * The scan address (specs/concepts/member-card.md): the short address a member
+ * card's QR code carries, which leads to the same referred join page as
+ * `referredJoinPath` and exists only to keep the code small enough to scan.
+ */
+export const MEMBER_SCAN_PATH_SEGMENT = "v";
+
+/**
+ * The alphabet a scan code is written in: Crockford's base32, which leaves out
+ * the letters that are read as digits (I, L, O, U). Every character in it is
+ * one a QR code can pack two-to-eleven-bits, which is what makes the code
+ * small; the omissions matter only if someone ever has to read one aloud.
+ */
+const SCAN_ALPHABET = "0123456789ABCDEFGHJKMNPQRSTVWXYZ";
+
+/** The 128 bits behind a card token, whichever way it was written down. */
+function cardTokenBytes(cardToken: string): Uint8Array | null {
+  const hex = cardToken.replaceAll("-", "");
+  if (!/^[0-9a-fA-F]{32}$/.test(hex)) return null;
+  const bytes = new Uint8Array(16);
+  for (let index = 0; index < 16; index++) {
+    bytes[index] = Number.parseInt(hex.slice(index * 2, index * 2 + 2), 16);
+  }
+  return bytes;
+}
+
+/**
+ * A card token as a scan code: the same 128 bits, written in 26 uppercase
+ * base32 characters instead of 36 lowercase hexadecimal ones.
+ *
+ * Why the shape matters, and why it is uppercase: a QR code packs digits and
+ * capitals far tighter than mixed-case text, so a scan address written
+ * entirely in capitals fits in a code with barely half the modules of the same
+ * address in lower case, and half the modules is what lets the card carry the
+ * code in its footer rather than in the middle of the card
+ * (specs/concepts/member-card.md). Null when the token is not a token this
+ * product issued.
+ */
+export function memberScanCode(cardToken: string): string | null {
+  const bytes = cardTokenBytes(cardToken);
+  if (!bytes) return null;
+  let code = "";
+  let bits = 0;
+  let buffer = 0;
+  for (const byte of bytes) {
+    buffer = (buffer << 8) | byte;
+    bits += 8;
+    while (bits >= 5) {
+      bits -= 5;
+      code += SCAN_ALPHABET[(buffer >> bits) & 31];
+    }
+  }
+  // 128 bits is not a whole number of characters; the last two bits are zero.
+  if (bits > 0) code += SCAN_ALPHABET[(buffer << (5 - bits)) & 31];
+  return code;
+}
+
+/**
+ * The card tokens a scan code could have been written from: the same bits as
+ * bare hexadecimal and as a dashed UUID, because the product has issued both
+ * shapes (a UUID since the card existed, bare hexadecimal to the members who
+ * predated it). Empty when the code is not a scan code at all.
+ *
+ * Reading is deliberately forgiving where writing is strict: case is ignored,
+ * and the characters Crockford's alphabet leaves out are read as the digits
+ * they look like, so a code copied by hand still lands on the right card.
+ */
+export function cardTokensFromScanCode(code: string): string[] {
+  const normalized = code
+    .trim()
+    .toUpperCase()
+    .replaceAll("-", "")
+    .replaceAll("O", "0")
+    .replaceAll("I", "1")
+    .replaceAll("L", "1");
+  if (normalized.length !== 26) return [];
+  let hex = "";
+  let bits = 0;
+  let buffer = 0;
+  for (const character of normalized) {
+    const value = SCAN_ALPHABET.indexOf(character);
+    if (value < 0) return [];
+    buffer = (buffer << 5) | value;
+    bits += 5;
+    if (bits >= 8) {
+      bits -= 8;
+      hex += ((buffer >> bits) & 255).toString(16).padStart(2, "0");
+    }
+  }
+  const uuid = [
+    hex.slice(0, 8),
+    hex.slice(8, 12),
+    hex.slice(12, 16),
+    hex.slice(16, 20),
+    hex.slice(20, 32),
+  ].join("-");
+  return [uuid, hex];
+}
+
+/**
+ * The scan address of a member's card: where its QR code actually points.
+ * Written in capitals from the scheme onwards, because that is what keeps the
+ * code small (see `memberScanCode`). A URL's scheme and host are the same
+ * address either way, and the path is read case-insensitively.
+ *
+ * Null when the card token is not one this product issued; the caller then has
+ * the ordinary referred join address to fall back on.
+ */
+export function memberScanUrl(origin: string, cardToken: string): string | null {
+  const code = memberScanCode(cardToken);
+  return code ? `${origin}/${MEMBER_SCAN_PATH_SEGMENT}/${code}`.toUpperCase() : null;
+}
+
+/**
  * A CSV document the way desktop spreadsheet tools actually open it
  * (specs/use-cases/export-member-list.md): semicolon-delimited (what Excel
  * expects under a Norwegian locale), CRLF line ends, and a UTF-8 BOM so æøå

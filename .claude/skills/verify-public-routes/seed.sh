@@ -52,7 +52,7 @@ DELETE FROM memberships WHERE org_id = 'org-seed-1';
 DELETE FROM membership_agreements WHERE org_id = 'org-seed-1';
 DELETE FROM supporting_members WHERE org_id = 'org-seed-1';
 INSERT INTO supporting_members (id, org_id, name, email, phone, vipps_sub, card_token)
-VALUES ('mem-seed-1','org-seed-1','Kari Eksempel','kari@eksempel.example','4700000000','sub-seed-1','kort-seed-1');
+VALUES ('mem-seed-1','org-seed-1','Kari Eksempel','kari@eksempel.example','4700000000','sub-seed-1','5eed0001-0000-4000-8000-000000000001');
 INSERT INTO membership_agreements (id, org_id, member_id, tier_id, vipps_agreement_id, external_id,
                                    status, annual_fee_nok, vipps_sub, manage_token, activated_at)
 VALUES ('agr-seed-1','org-seed-1','mem-seed-1','tier-1','agr_seed_1','stottemedlem:seed-1',
@@ -70,8 +70,12 @@ VALUES ('chg-seed-1','org-seed-1','agr-seed-1','msh-seed-1','chr_seed_1',
 # Years of loyalty and one recruit, so the member's card
 # (specs/concepts/member-card.md) has hearts to draw and a recruit count to
 # show — a card with a single heart proves the layout but not the buildup.
-# Kari's card address is fixed (kort-seed-1), so /medlemsbevis/kort-seed-1 is
-# a stable local URL to look at.
+# Kari's card address is fixed, so it is a stable local URL to look at. It is a
+# UUID like every token the product issues, not a readable label: the card's QR
+# code encodes the token as a short scan code (memberScanUrl in
+# @stottemedlem/core), and a token that is not a real one falls back to the long
+# join address, which would quietly hide the very thing the card is drawn to
+# prove (specs/concepts/member-card.md).
 pnpm exec wrangler d1 execute DB --local --command "
 INSERT INTO memberships (id, org_id, member_id, agreement_id, tier_id, tier_name, period_year,
                          period_start, period_end, annual_fee_nok, paid_nok)
@@ -83,7 +87,7 @@ VALUES
  ('msh-seed-h3','org-seed-1','mem-seed-1','agr-seed-1','tier-1','Støttemedlem',
   CAST(strftime('%Y','now') AS INTEGER) - 3, '2000-01-01','2000-12-31',300,300);
 INSERT INTO supporting_members (id, org_id, name, email, vipps_sub, card_token, referred_by_member_id)
-VALUES ('mem-seed-2','org-seed-1','Ola Eksempel','ola@eksempel.example','sub-seed-2','kort-seed-2','mem-seed-1');
+VALUES ('mem-seed-2','org-seed-1','Ola Eksempel','ola@eksempel.example','sub-seed-2','5eed0002-0000-4000-8000-000000000002','mem-seed-1');
 INSERT INTO membership_agreements (id, org_id, member_id, tier_id, vipps_agreement_id, external_id,
                                    status, annual_fee_nok, vipps_sub, manage_token, activated_at)
 VALUES ('agr-seed-2','org-seed-1','mem-seed-2','tier-2','agr_seed_2','gullmedlem:seed-2',
@@ -95,6 +99,14 @@ VALUES ('msh-seed-2','org-seed-1','mem-seed-2','agr-seed-2','tier-2','Gullmedlem
 " >/dev/null 2>&1
 
 echo "seeded 2 supporting members (Kari Eksempel, 4 hjerter, 1 verving; Ola Eksempel, vervet av Kari)"
-echo "  Karis medlemsbevis: /medlemsbevis/kort-seed-1"
+CARD_TOKEN="5eed0001-0000-4000-8000-000000000001"
+echo "  Karis medlemsbevis: /medlemsbevis/${CARD_TOKEN}"
+# The address her card's QR code actually carries. Needs packages/core built;
+# it is only a convenience line, so a fresh worktree simply does without it.
+SCAN_PATH="$(node -e "
+  const { memberScanUrl } = require('${ROOT}/packages/core/dist/index.js');
+  process.stdout.write(memberScanUrl('', '${CARD_TOKEN}') ?? '');
+" 2>/dev/null || true)"
+if [ -n "$SCAN_PATH" ]; then echo "  QR-kodens skann-adresse: ${SCAN_PATH}"; fi
 
 echo "seeded /bli-medlem/${SLUG} (2 tiers)"

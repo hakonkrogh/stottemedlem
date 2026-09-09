@@ -19,7 +19,10 @@ const base = {
   organizationName: "Eksempel Musikkorps",
   hearts: 4,
   periodText: "2026",
-  joinUrl: "https://xn--stttemedlem-hgb.no/bli-medlem/eksempel-musikkorps?verva=kort-1",
+  // The short scan address the card's code really carries (memberScanUrl in
+  // @stottemedlem/core): fixed length, capitals, half the modules of the join
+  // address it hands over to, which is what lets it sit in the footer.
+  joinUrl: "HTTPS://XN--STTTEMEDLEM-HGB.NO/V/8P2K4RTZQ9VWXB6MN3HJD5CFG7",
 };
 
 export default {

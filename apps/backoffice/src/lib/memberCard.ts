@@ -1,6 +1,7 @@
 import {
   memberCardImagePath,
   memberCardPath,
+  memberScanUrl,
   periodLabel,
   referredJoinPath,
 } from "@stottemedlem/core";
@@ -110,6 +111,19 @@ export function referredJoinUrl(slug: string, cardToken: string): string {
   return `${shareableOrigin()}${referredJoinPath(slug, cardToken)}`;
 }
 
+/**
+ * What the card's QR code actually encodes: the short scan address, which
+ * hands straight over to the join address above.
+ *
+ * The code has to be scannable from a corner of the card, and a QR code's size
+ * is decided by what it carries: the join address grew with the
+ * organization's slug and needed half the card. This one is the same length
+ * for every member of every organization (specs/concepts/member-card.md).
+ */
+export function cardScanUrl(slug: string, cardToken: string): string {
+  return memberScanUrl(shareableOrigin(), cardToken) ?? referredJoinUrl(slug, cardToken);
+}
+
 /** What the drawing needs, gathered from the card. */
 export async function memberCardOptions(card: MemberCard): Promise<MemberCardOptions> {
   const cardToken = card.member.cardToken;
@@ -120,7 +134,7 @@ export async function memberCardOptions(card: MemberCard): Promise<MemberCardOpt
     recruits: card.recruits,
     ...cardPeriod(card),
     joinUrl: cardToken
-      ? referredJoinUrl(card.organization.slug, cardToken)
+      ? cardScanUrl(card.organization.slug, cardToken)
       : `${shareableOrigin()}/bli-medlem/${card.organization.slug}`,
     logoDataUri: await orgLogoDataUri(card.organization.logoKey ?? null),
   };

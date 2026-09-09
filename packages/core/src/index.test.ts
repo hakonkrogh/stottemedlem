@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   annualPeriodFor,
   calendarYearScheme,
+  cardTokensFromScanCode,
   csvDocument,
   daysInYear,
   daysRemainingInYear,
@@ -19,6 +20,8 @@ import {
   MEMBERSHIP_TIER_KEY_MAX_LENGTH,
   memberCardImagePath,
   memberCardPath,
+  memberScanCode,
+  memberScanUrl,
   memberSelfServicePath,
   membershipTierKey,
   nextAnnualPeriod,
@@ -207,6 +210,56 @@ describe("the member's card address", () => {
     // (specs/concepts/member-card.md).
     expect(memberCardPath("tok")).not.toBe(memberSelfServicePath("nordnes-skolekorps", "tok"));
     expect(memberCardPath("tok")).not.toContain("min-side");
+  });
+});
+
+describe("the member card's scan address", () => {
+  const token = "550e8400-e29b-41d4-a716-446655440000";
+
+  it("writes the same card token in capitals, twenty-six characters long", () => {
+    // Half the modules of the address it replaces, which is what lets the code
+    // sit in the card's footer (specs/concepts/member-card.md).
+    const code = memberScanCode(token);
+    expect(code).toMatch(/^[0-9A-Z]{26}$/);
+    expect(memberScanUrl("https://xn--stttemedlem-hgb.no", token)).toBe(
+      `HTTPS://XN--STTTEMEDLEM-HGB.NO/V/${code}`,
+    );
+  });
+
+  it("is shorter than the join address it stands in for", () => {
+    const scan = memberScanUrl("https://xn--stttemedlem-hgb.no", token) ?? "";
+    const referred = `https://xn--stttemedlem-hgb.no${referredJoinPath("nordnes-skolekorps", token)}`;
+    expect(scan.length).toBeLessThan(referred.length);
+  });
+
+  it("is the same length whatever the organization is called", () => {
+    // The old address carried the org's slug, so a long name made a denser
+    // code; this one carries only the member.
+    expect(memberScanUrl("https://xn--stttemedlem-hgb.no", token)?.length).toBe(
+      memberScanUrl("https://xn--stttemedlem-hgb.no", crypto.randomUUID())?.length,
+    );
+  });
+
+  it("reads back as the card token, dashed or bare", () => {
+    const code = memberScanCode(token) ?? "";
+    expect(cardTokensFromScanCode(code)).toContain(token);
+    // Members who predate the card were given a bare hexadecimal token.
+    expect(cardTokensFromScanCode(code)).toContain(token.replaceAll("-", ""));
+  });
+
+  it("reads forgivingly: any case, and letters that look like digits", () => {
+    const bare = "0011223344556677889900aabbccddee";
+    const code = memberScanCode(bare) ?? "";
+    expect(cardTokensFromScanCode(code.toLowerCase())).toContain(bare);
+    expect(cardTokensFromScanCode(code.replaceAll("0", "O"))).toContain(bare);
+    expect(cardTokensFromScanCode(code.replaceAll("1", "I"))).toContain(bare);
+  });
+
+  it("yields nothing for what it did not write", () => {
+    expect(cardTokensFromScanCode("ikke-en-kode")).toEqual([]);
+    expect(cardTokensFromScanCode("")).toEqual([]);
+    expect(memberScanCode("kort-1")).toBeNull();
+    expect(memberScanUrl("https://xn--stttemedlem-hgb.no", "kort-1")).toBeNull();
   });
 });
 

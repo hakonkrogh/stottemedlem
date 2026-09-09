@@ -16,17 +16,23 @@ amber call to action, a gold label on the card and a green validity year, so
 three warm colours competed with the heart, and the green belonged nowhere.
 Giving each colour exactly one job makes the heart the only red thing a person
 ever sees, and makes "the green thing" always mean *go* or *good*: the button
-that joins, the year the card is valid for, the confirmation that a payment
-went through.
+that joins, the confirmation that a payment went through. The card kept a
+green validity year a little longer than the rest of that clean-up, and lost
+it too, for the reason below.
 
 ## Rules & invariants
 - **Red belongs to the heart.** The brand mark, the streak on the card, the
   hearts in a member list. No button, label, link or highlight is red.
 - **One action colour, and it is moss green.** Primary buttons, links that do
   something, the focused field, the selected tier, the small role label on the
-  receipt, the valid year on the card. It is the same green that says
-  a payment succeeded or a membership is active, on purpose: acting and
-  succeeding are the same colour.
+  receipt. It is the same green that says a payment succeeded or a membership
+  is active, on purpose: acting and succeeding are the same colour.
+- **The green stops at the [member card](member-card.md).** The card is white,
+  ink and the heart's red, and nothing else. Everywhere else the product is
+  talking to someone, so its own colour belongs there; the card is the one
+  surface that presents two other parties, the member and the organization
+  they back, and a third voice on it is one too many. The card carried a moss
+  rule and a moss valid year for a while, and both are ink now.
 - **A notice is neither green nor red.** Something the organization should
   know or put right (Vipps not yet connected, a price change some members did
   not hear about, a member whose details were erased) is stated in ink on the
@@ -55,8 +61,8 @@ went through.
 - The [brand mark](brand-mark.md) is the one red in the palette.
 - [Brand attribution](brand-attribution.md) uses the ink and muted text of this
   palette, and the heart's red.
-- The [member card](member-card.md) is drawn from this palette: white on the
-  cream page, ink, one moss rule and label, the red heart.
+- The [member card](member-card.md) is drawn from this palette, minus the
+  green: white on the cream page, ink, and the red heart.
 - The [payment receipt](payment-receipt.md) and the [join page](join-page.md)
   are the two places a member meets the palette first.
 
