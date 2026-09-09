@@ -146,6 +146,13 @@ lives in `specs/`, kept in sync with code by a mandatory `Stop`-hook harness.
   write-only on Cloudflare, and the user REJECTED a readable Cloudflare-side
   copy (2026-08-25) — don't build one (see stack-docs). (Public
   `/bli-medlem/*` pages need no auth.)
+  **A fresh worktree also fails `astro check` with ~18 TS2307 "Cannot find
+  module '@stottemedlem/vipps' / '@stottemedlem/email' / '@stottemedlem/log'"**
+  (hit 2026-09-09). Those are environmental, not your change: unlike `ui`
+  (source-only) these packages ship `dist/`, and `pnpm story` pre-builds only
+  core+db+qr. Build every workspace package once after `pnpm install`:
+  `pnpm --filter "@stottemedlem/*" run build`, then re-run the check and
+  expect 0 errors before reading a single diagnostic as real.
   See `docs/architecture/overview.md` + `stack-docs` (env access + per-env build gotchas).
 - `packages/core/` — `@stottemedlem/core`, shared domain types/logic (incl. org
   slugs, canonical join/landing/salgsvilkår URLs, orgnr MOD11 validation).
