@@ -75,8 +75,8 @@ export function membershipReceipt(receipt: MembershipReceipt): EmailMessage {
 
   const greeting = memberName?.trim() ? `Hei ${memberName.trim()},` : "Hei,";
   const contactNote = receipt.orgContactEmail
-    ? `E-posten er sendt fra en adresse som ikke leses. Har du spørsmål, kontakt ${orgName} på ${receipt.orgContactEmail}.`
-    : `E-posten er sendt fra en adresse som ikke leses. Har du spørsmål, ta kontakt med ${orgName} direkte.`;
+    ? `E-posten er sendt fra en adresse som ikke kan besvares. Har du spørsmål, kontakt ${orgName} på ${receipt.orgContactEmail}.`
+    : `E-posten er sendt fra en adresse som ikke kan besvares. Har du spørsmål, ta kontakt med ${orgName} direkte.`;
   const lead =
     receipt.kind === "join"
       ? `Takk for støtten! Du er nå støttemedlem i ${orgName}.`

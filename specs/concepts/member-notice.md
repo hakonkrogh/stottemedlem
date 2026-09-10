@@ -38,7 +38,7 @@ decides what they may be charged.
 - A notice is **attributable to the organization** the member supports: it
   carries that organization's name. The member decided to support *them*, not
   us.
-- A notice is **sent from an unread noreply address** — the product carries the
+- A notice is **sent from a noreply address**: the product carries the
   message, it does not converse. Every notice therefore tells the member where
   questions belong: the organization's own contact address, named in the
   notice itself (or, for an organization without one, the organization

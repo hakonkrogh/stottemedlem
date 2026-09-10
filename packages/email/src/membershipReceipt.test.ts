@@ -52,7 +52,7 @@ describe("membershipReceipt", () => {
     expect(message.text).toContain("kan ikke avmeldes");
     expect(message.text).toContain(base.manageUrl);
     // Questions go to the organization, not the unread noreply sender.
-    expect(message.text).toContain("adresse som ikke leses");
+    expect(message.text).toContain("adresse som ikke kan besvares");
     expect(message.text).toContain("kontakt Bakvendtland Skolekorps på post@bakvendtland.example");
     expect(message.html).toContain("post@bakvendtland.example");
   });
