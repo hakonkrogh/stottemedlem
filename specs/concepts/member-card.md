@@ -233,6 +233,8 @@ surface the member happens to be looking at.
 - Carries [brand attribution](brand-attribution.md) and the
   [brand mark](brand-mark.md).
 - Drawn from the [brand palette](brand-palette.md).
+- Wherever it is shown, its space is reserved before the picture arrives, so
+  the page around it never shifts ([Opening a page](opening-a-page.md)).
 
 ## Referenced by
 - [Use case: Earn hearts and recruit new members](../use-cases/earn-hearts-and-recruit.md)

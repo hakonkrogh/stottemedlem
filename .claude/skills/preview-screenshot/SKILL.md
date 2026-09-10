@@ -29,7 +29,10 @@ description: Render any local URL (marketing/backoffice dev or preview server) t
   matches the requested width before judging the layout.
 - **Mobile-Safari-SPECIFIC behaviour cannot be verified on this machine**
   (found 2026-08-28 fixing the "page opens scrolled down under the status bar
-  when arriving from Vipps/an email app" bug): Chrome emulation only fakes the
+  when arriving from Vipps/an email app" bug). **READ THE OUTCOME AT THE END OF
+  THIS BULLET FIRST: on 2026-09-10 the whole compensation was DELETED and the
+  product now leaves scrolling entirely to the browser.** The history below is
+  kept only as the diagnostic record, not as a description of shipped code: Chrome emulation only fakes the
   viewport size, not WebKit's toolbar-collapse/visual-viewport quirks, and
   `xcrun simctl` HANGS INDEFINITELY here (no usable CoreSimulator; kill it,
   don't wait). For such fixes, validate the layout/script landed via shot.sh +
@@ -88,6 +91,20 @@ description: Render any local URL (marketing/backoffice dev or preview server) t
   numbers off user screen-recording frames. To READ such a
   phone video: no ffmpeg here — dump frames with a Swift
   AVAssetImageGenerator script (see scratchpad pattern), then Read the PNGs.
+  **OUTCOME 2026-09-10 (the current state of the code): all of it is GONE.**
+  The user's call: the compensation was still weird in use, so the product now
+  does nothing special about scrolling at all. `PublicShell.astro` has no
+  arrival script, no `--sm-arrival-inset`, and no `min-height: 100lvh` body
+  hack; marketing dropped `scroll-behavior: smooth`. What replaces it is plain
+  spacing: generous top padding and a big bottom padding on every page, public
+  and back office, so a clipped top or bottom still reads. The rule is now a
+  spec, `specs/concepts/opening-a-page.md` (Active), which also covers
+  reserving space for late-loading pictures (the member card carries an
+  explicit `aspect-ratio`). **Do not reinstate any of the removed levers**
+  without the user asking: four on-device videos and two reverts say the cost
+  is real and the browser's own behaviour is the baseline. The only deliberate
+  scroll left in the product is `LiveForms.astro` bringing a form's answer into
+  view after a submit, which `specs/concepts/answering-an-action.md` requires.
 - **Don't crop tall shots with `sips`** (hit 2026-09-01): `--cropOffset` silently
   does nothing in every flag order tried — the output keeps the full height while
   sips exits 0. For a page taller than one shot, just Read the full playwright

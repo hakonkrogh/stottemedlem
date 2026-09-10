@@ -53,39 +53,6 @@ const { title, description, noindex, previewImage, previewImageAlt } = Astro.pro
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <title>{title}</title>
     <LiveForms />
-    <script is:inline>
-      // The arrival bug, fully diagnosed on-device (overlay videos,
-      // 2026-08-28): ~150ms after load WebKit grows the LAYOUT viewport
-      // upward under the status bar (innerHeight 683→757) while scrollY,
-      // every visualViewport offset, and — even under viewport-fit=cover —
-      // env(safe-area-inset-top) all read 0, and a programmatic scroll
-      // change does not re-seat the chrome (only a real finger drag does).
-      // So no browser API will name or undo the covered area — but its size
-      // is measurable: the growth delta IS the covered status bar. Apply
-      // that delta as top padding while the page sits untouched at scroll 0,
-      // and withdraw it only when the viewport actually shrinks back
-      // (the chrome re-seated), so the layout never shifts under a reader.
-      (function () {
-        var h0 = window.innerHeight;
-        var touched = false;
-        addEventListener("touchstart", function () { touched = true; }, { once: true, passive: true });
-        addEventListener("DOMContentLoaded", function () {
-          h0 = Math.min(h0, window.innerHeight);
-        });
-        var apply = function () {
-          var delta = window.innerHeight - h0;
-          var root = document.documentElement.style;
-          if (!touched && window.scrollY === 0 && delta >= 20 && delta <= 120) {
-            root.setProperty("--sm-arrival-inset", delta + "px");
-          } else if (window.innerHeight <= h0 + 2) {
-            root.setProperty("--sm-arrival-inset", "0px");
-          }
-        };
-        [200, 400, 800, 1600, 3200].forEach(function (ms) { setTimeout(apply, ms); });
-        addEventListener("resize", apply);
-        if (window.visualViewport) window.visualViewport.addEventListener("resize", apply);
-      })();
-    </script>
   </head>
   <body>
     <main>
@@ -98,18 +65,6 @@ const { title, description, noindex, previewImage, previewImageAlt } = Astro.pro
 </html>
 
 <style>
-  body {
-    /* WebKit (every iPhone browser) can lay out a page arriving from another
-     * app — an email link, the Vipps redirect — against the collapsed browser
-     * chrome, hiding the page top under the status bar. The document is not
-     * scrolled (scrollY is 0; scripts cannot fix it, and a pageshow scrollTo
-     * once shipped here yanked real readers instead — see PR #55's revert).
-     * The one lever that helps is height: filling the largest-viewport size
-     * guarantees a sliver of scroll range on even the shortest page, and that
-     * first scroll snaps the chrome back and reveals the top. */
-    min-height: 100vh;
-    min-height: 100lvh;
-  }
   main {
     /* The reading column's side gutter, named so anything that needs to
      * relate to it can, instead of hard-coding a number that would drift. */
@@ -117,16 +72,14 @@ const { title, description, noindex, previewImage, previewImageAlt } = Astro.pro
     width: 100%;
     max-width: 38rem;
     margin-inline: auto;
-    padding: 3rem var(--sm-page-gutter) 2rem;
-    /* The measured status-bar compensation from the arrival script in <head>:
-     * 0 in the normal state, the viewport-growth delta when the arrival bug
-     * lays the page out under the status bar. */
-    padding-top: calc(3rem + var(--sm-arrival-inset, 0px));
+    /* Generous air above and below the reading column. Nothing here moves the
+     * page for the reader: where a page opens is the browser's business. */
+    padding: 3.5rem var(--sm-page-gutter) 2rem;
   }
   footer {
     max-width: 38rem;
     margin-inline: auto;
-    padding: 1rem 1.25rem 2.5rem;
+    padding: 1rem 1.25rem 6rem;
     font-size: 0.85rem;
     color: var(--sm-muted);
   }
