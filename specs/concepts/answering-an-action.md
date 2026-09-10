@@ -37,6 +37,12 @@ at the moment they act, and a plain answer when the work is done.
   away and load it again: what the person was reading stays where it is, and
   the answer appears in it. A rejected form keeps what was typed
   (see [Presenting and editing](presenting-and-editing.md)).
+- **An action goes where the press said it would.** The immediate, in-place
+  answer is a convenience laid over a plain form; it never sends the action to
+  another address than the one the same press would reach with scripting off.
+  A press that quietly arrives nowhere is the worst answer of all: the screen
+  comes back looking like the page it came from, and the person believes a
+  change was saved that never was.
 - **The screen after an action can be reloaded.** What the address bar shows
   once an action is answered is the plain address of what is on screen: a
   reload shows the same thing again. It never repeats the action, and never

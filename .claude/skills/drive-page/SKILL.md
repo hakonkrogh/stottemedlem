@@ -73,6 +73,20 @@ Both branches of `MemberCardFigure.astro`, proven end to end (2026-08-31):
   needs a `devlog.sh stop` + `start` to see new route files, and a bare curl
   POST answers 403 (Astro's origin check), so drive it from the browser.
   Delete the pages afterwards, and rebuild if a build ran while they existed.
+- **Editing the script under test needs a dev-server restart, not just a
+  save** (2026-09-10): a `<script>` inside an `.astro` component is bundled,
+  and after `git checkout` put the old version back the driver still ran the
+  new one, so a repro that must FAIL first passed and nearly hid the bug.
+  `devlog.sh stop` + `start` between the two runs, every time.
+- **A one-page scratch route reproduces a CLOBBERING bug** (2026-09-10, the
+  membership tier price that would not save): a form exposes its own controls
+  as properties by name, and those beat the built-ins, so
+  `<button name="action">` makes `form.action` be that button. `LiveForms`
+  read it and posted to `/bli-medlem/[object%20HTMLButtonElement]`, which the
+  dynamic route happily answered with a redirect, so the save looked like it
+  worked. Proof shape: a scratch page whose POST prints what it received, then
+  `click=#save url= assert=#landed::…`, run once on the old code (URL goes to
+  `[object%20HTMLButtonElement]`, no `#landed`) and once on the new.
 - **Driving an admin screen in Storybook (done 2026-09-09 for the member
   list's payment-reference search):** start it with
   `.claude/skills/preview-screenshot/story.sh start`, which prints the port.
