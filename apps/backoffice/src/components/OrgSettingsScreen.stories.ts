@@ -1,8 +1,10 @@
+import type { Organization } from "@stottemedlem/db";
 import type { OrgWarning } from "../lib/orgWarnings";
 import OrgSettingsScreen from "./OrgSettingsScreen.astro";
 import StoryScreen from "./StoryScreen.astro";
 import {
   ALL_WARNINGS,
+  FIXTURE_LOGO_URL,
   JOIN_URL,
   ORG,
   ORG_PATH,
@@ -25,26 +27,33 @@ const storedKeys = {
   webhook: { id: "wh-1", secret: "s", url: WEBHOOK_URL, registeredAt: "2026-08-27T09:00:00.000Z" },
 };
 
-const settings = (props: Record<string, unknown> = {}, warnings: OrgWarning[] = []) => ({
-  active: "innstillinger",
-  warnings,
-  slots: {
-    default: {
-      component: OrgSettingsScreen,
-      props: {
-        org: ORG_WITH_IMAGES,
-        orgPath: ORG_PATH,
-        joinUrl: JOIN_URL,
-        values: { orgnr: ORG.orgnr ?? "", contactEmail: ORG.contactEmail ?? "" },
-        name: ORG.name,
-        vippsKeys: storedKeys,
-        paymentEventsConnected: true,
-        warnings,
-        ...props,
+// The chrome's own logo is read off the organization the story renders, so the
+// mark above the screen and the preview inside it can never contradict each
+// other: a story about an org with no logo shows none in either place.
+const settings = (props: Record<string, unknown> = {}, warnings: OrgWarning[] = []) => {
+  const org = (props.org as Organization | undefined) ?? ORG_WITH_IMAGES;
+  return {
+    active: "innstillinger",
+    warnings,
+    logoUrl: org.logoKey ? FIXTURE_LOGO_URL : null,
+    slots: {
+      default: {
+        component: OrgSettingsScreen,
+        props: {
+          org,
+          orgPath: ORG_PATH,
+          joinUrl: JOIN_URL,
+          values: { orgnr: ORG.orgnr ?? "", contactEmail: ORG.contactEmail ?? "" },
+          name: ORG.name,
+          vippsKeys: storedKeys,
+          paymentEventsConnected: true,
+          warnings,
+          ...props,
+        },
       },
     },
-  },
-});
+  };
+};
 
 /**
  * What is stored, presented — the form only opens when asked for. The

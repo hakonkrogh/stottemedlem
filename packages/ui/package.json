@@ -9,7 +9,7 @@
     "./components/*": "./src/components/*"
   },
   "scripts": {
-    "storybook": "storybook dev -p 6007 --exact-port --ci --no-open",
+    "storybook": "storybook dev",
     "build-storybook": "storybook build"
   },
   "dependencies": {

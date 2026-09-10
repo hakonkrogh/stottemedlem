@@ -10,6 +10,7 @@ import OrgScreen from "./OrgScreen.astro";
 import {
   ACTIVE_MEMBERS,
   ADMIN_NAME,
+  FIXTURE_LOGO_URL,
   ORG,
   ORG_PATH,
   storyHref,
@@ -20,10 +21,19 @@ interface Props {
   active: OrgTabId;
   warnings?: OrgWarning[];
   activeMembers?: number;
-  /** The organization's logo, for the stories that show one. */
+  /**
+   * The organization's logo, shown by default: an organization that has been
+   * set up has one, and the chrome is reviewed as such an organization sees
+   * it. Pass null for the stories about one that has not uploaded a logo.
+   */
   logoUrl?: string | null;
 }
-const { active, warnings = [], activeMembers = ACTIVE_MEMBERS, logoUrl = null } = Astro.props;
+const {
+  active,
+  warnings = [],
+  activeMembers = ACTIVE_MEMBERS,
+  logoUrl = FIXTURE_LOGO_URL,
+} = Astro.props;
 
 const tabs = orgTabs(ORG_PATH, warnings, activeMembers).map((tab) => ({
   ...tab,

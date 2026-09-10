@@ -50,7 +50,10 @@ pnpm dev             # run the stack: marketing :4321, backoffice :4322 (real
                      #   `pnpm --filter <app> exec astro dev stop`, not kill
 pnpm build           # build all packages + the app
 pnpm test            # run tests (vitest)
-pnpm story           # run Storybook (packages/ui, always port 6007; alias: pnpm stories)
+pnpm story           # run Storybook (packages/ui; alias: pnpm stories). No fixed
+                     #   port: Storybook takes a free one, prints it as
+                     #   "- Local: http://localhost:<port>/" and opens it in
+                     #   the browser
 pnpm typecheck       # type-check all packages
 pnpm lint            # biome check
 pnpm format          # biome format --write

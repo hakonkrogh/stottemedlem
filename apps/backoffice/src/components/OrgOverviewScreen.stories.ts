@@ -7,7 +7,6 @@ import StoryScreen from "./StoryScreen.astro";
 import {
   ACTIVE_MEMBERS,
   ALL_WARNINGS,
-  FIXTURE_LOGO_URL,
   JOIN_URL,
   NO_STATS,
   ORG,
@@ -28,12 +27,10 @@ const overview = (
   props: Record<string, unknown> = {},
   warnings: OrgWarning[] = [],
   activeMembers = ACTIVE_MEMBERS,
-  logoUrl: string | null = null,
 ) => ({
   active: "oversikt",
   warnings,
   activeMembers,
-  logoUrl,
   slots: {
     default: {
       component: OrgOverviewScreen,
@@ -56,21 +53,19 @@ const overview = (
 export const Default = { args: overview() };
 
 /** Everything a half-finished organization still owes, each with its way in.
- *  Nobody has joined it, so it carries no figures at all. */
+ *  Nobody has joined it, so it carries no figures at all, and it has uploaded
+ *  no logo either: the chrome then shows its name alone. */
 export const NeedsSetup = {
-  args: overview({ warnings: ALL_WARNINGS, stats: NO_STATS }, ALL_WARNINGS, 0),
+  args: {
+    ...overview({ warnings: ALL_WARNINGS, stats: NO_STATS }, ALL_WARNINGS, 0),
+    logoUrl: null,
+  },
 };
 
 /** Set up and waiting for its first supporter: every figure is a nothing, and
  *  the front page is the same front page it will be once they arrive. */
 export const NobodyHasJoinedYet = {
   args: overview({ stats: NO_STATS }, [], 0),
-};
-
-/** An organization that has uploaded a logo: it stands before the name in the
- *  chrome, on this and every other screen. */
-export const WithALogo = {
-  args: overview({}, [], ACTIVE_MEMBERS, FIXTURE_LOGO_URL),
 };
 
 /** Straight after a price change: who was told, and who the org must tell. */

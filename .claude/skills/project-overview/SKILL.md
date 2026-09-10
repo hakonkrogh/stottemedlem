@@ -1044,13 +1044,15 @@ also documents the variants and why the rule exists.
   import `@stottemedlem/qr`, so without its `dist/` the build dies with
   "Failed to resolve entry for package") or
   `pnpm --filter @stottemedlem/ui run storybook`
-  (always port 6007; the script carries `--exact-port --ci --no-open`, so a
-  port another worktree holds is an early exit and never a silent move to a
-  neighbouring port serving someone else's stories. **When 6007 IS held, do not
-  kill it** (it is another session's): run your own on a free port from
-  `packages/ui` with `npx storybook dev -p 6017 --exact-port --ci --no-open`,
-  confirm it is YOURS with
-  `curl -s localhost:6017/index.json | python3 -c "import sys,json;
+  (**no fixed port** since 2026-09-10: the script is a bare `storybook dev`, so
+  Storybook takes a free port itself, opens it in the user's browser, and two
+  worktrees never fight over one. For your OWN headless start use
+  `.claude/skills/preview-screenshot/story.sh start`, which pre-builds
+  core+db+qr, passes `--no-open` and prints the port (`story.sh port` /
+  `url <id>` / `stop` afterwards). Do not pass your own `-p` (it re-arms an
+  interactive "port not available" prompt that hangs a background start), and
+  do not assume 6006/6007. Confirm the instance is YOURS with
+  `curl -s localhost:$PORT/index.json | python3 -c "import sys,json;
   print([k for k in json.load(sys.stdin)['entries'] if '<your story>' in k])"`,
   and shoot `iframe.html?viewMode=story&id=…` on that port. Verified
   2026-09-10) via the community
@@ -1092,7 +1094,7 @@ also documents the variants and why the rule exists.
   a UI string finds the component that reads it. Verifying a change to Storybook's
   own chrome means shooting the MANAGER url, not a story iframe:
   `npx playwright screenshot --channel=chrome --viewport-size=1440,900
-  --wait-for-timeout=7000 "http://localhost:6007/?path=/story/primitives-button--primary" out.png`.
+  --wait-for-timeout=7000 "http://localhost:$PORT/?path=/story/primitives-button--primary" out.png`.
   **Every form answers in place since 2026-09-08** (branch
   form-submission-feedback, spec `specs/concepts/answering-an-action.md`):
   `packages/ui/src/components/LiveForms.astro` is a script-only component
