@@ -1178,6 +1178,14 @@ also documents the variants and why the rule exists.
   pushing more work to the same branch, check `gh pr view --json state`; if
   MERGED, the push needs a NEW PR (same branch works — it diffs against
   main), and audit `git log origin/main..HEAD` for what's stranded.
+- **Waiting for a PR's CI: `gh pr checks <n>` EXITS NON-ZERO while a check is
+  still pending** (exit 8, 2026-09-10), so the obvious
+  `until [ "$(gh pr checks <n> --json state --jq '.[0].state')" != "PENDING" ]`
+  aborts on its first iteration and looks like the loop condition is wrong.
+  Read the plain-text output instead, which prints `pending` / `pass` / `fail`
+  in column 2: `until [ "$(gh pr checks <n> 2>/dev/null | awk '{print $2}')" \
+  != "pending" ]; do sleep 15; done`. The repo's CI job is one check named
+  `check` and takes about 50s.
 - Single package: `pnpm turbo run <task> --filter=@stottemedlem/<name>`.
 - **Running `turbo build` for the backoffice while its dev server is up
   breaks the dev server** (hit 2026-09-08): every page then 500s with
