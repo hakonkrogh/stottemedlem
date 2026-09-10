@@ -1,6 +1,6 @@
 ---
 name: verify-public-routes
-description: Query the LOCAL, STAGING or PRODUCTION D1 as data (d1.sh), and assert the HTTP contract of the public join pages (status, redirects, x-sm-cache, body text) the way a browser, a QR scanner, or Vipps' website verification sees it — plus a tier-aware local D1 seed. Use after touching routes, middleware, worker.ts caching/redirects, or anything under src/pages/bli-medlem/.
+description: Query the LOCAL, STAGING or PRODUCTION D1 as data (d1.sh), and assert the HTTP contract of the public join pages (status, redirects, x-sm-cache, body text) the way a browser, a QR scanner, or Vipps' website verification sees it — plus a tier-aware local D1 seed, and apex-routes.mjs, which proves the DEPLOYED canonical apex actually routes each public address to this worker instead of falling through to the marketing 404. Use after touching routes, middleware, worker.ts caching/redirects, wrangler.jsonc routes, or anything under src/pages/bli-medlem/.
 ---
 
 # Verify public routes
@@ -348,6 +348,33 @@ The full sweep after a routing change (dev server on 4322):
     node $R localhost:4322/org/<slug> --redirect localhost:4322/bli-medlem/<slug>
     node $R "localhost:4322/org/<slug>/logo?v=abc" --redirect "localhost:4322/bli-medlem/<slug>/logo?v=abc"
 
+Plus the organization's QR code card, which the back office SHOWS on its front
+page and external websites embed (specs/use-cases/promote-with-qr-card.md). It
+reads D1 for the organization's name since 2026-09-10, so it belongs in the
+sweep after `seed.sh`, not before:
+
+    node $R localhost:4322/bli-medlem/<slug>/qr --status 200 \
+      --header "content-type=image/svg+xml; charset=utf-8" \
+      --contains "<the org's name>" --contains "støttemedlem.no"
+    node $R "localhost:4322/bli-medlem/<slug>/qr?download=1" --status 200 \
+      --header 'content-disposition=attachment; filename="stottemedlem-kort-<slug>.svg"'
+    node $R "localhost:4322/bli-medlem/<slug>/qr?variant=qr&format=png" --status 200 --header content-type=image/png
+    node $R localhost:4322/bli-medlem/finnes-ikke/qr --status 404
+    node $R localhost:4322/bli-medlem/UGYLDIG/qr --status 400
+    # the former address, which an external website may still be embedding,
+    # with its query string intact:
+    node $R "localhost:4322/api/qr/<slug>?variant=qr&format=png&download=1" \
+      --redirect "http://localhost:4322/bli-medlem/<slug>/qr?variant=qr&format=png&download=1"
+
+The card MOVED here from `/api/qr/<slug>` on 2026-09-10, which is why the last
+one matters: the old address is a 301 now, and `/org/<slug>/qr` reaches it too
+through worker.ts, for free. The name assertion is the point of the first one: it used to come from the URL
+(a Title-Cased slug, or anything a stranger typed into `?name=`), and it is now
+read from the org row, because the card gets printed and hung on a wall. The
+bad-slug 400 and the unknown-org 404 are different answers on purpose. What
+none of this proves is the PAYLOAD inside the picture: that is `verify-qr`,
+and it is a separate run.
+
 Plus the member's card (specs/concepts/member-card.md), which lives at the top
 level rather than under `/bli-medlem/` and is served from a DIFFERENT apex zone
 route — so a routing change can break it while every join-page check above
@@ -361,6 +388,11 @@ still passes:
 
 (`kort-seed-1` is seeded by `seed.sh`. A card address that matches nothing must
 be a bare 404 — it may not hint at which organization it belonged to.)
+
+**Every check above drives ONE origin, so none of them can tell you the
+deployed apex routes the path to this worker at all.** That is
+`apex-routes.mjs` below, and it is the check to run after touching
+`wrangler.jsonc` routes or adding a public address.
 
 A scheme-less `host:port/path` is fine — the runner adds `http://`. The
 `--contains "støttemedlem.no"` is the
@@ -416,6 +448,45 @@ failures explicitly.
 - A request that fails outright is usually the dev server being gone, not a
   routing bug — see `dev-logs` (`devlog.sh status`) and the `git stash` gotcha
   in `project-overview`.
+
+## Is the apex actually SERVING it? (added 2026-09-10)
+
+    node .claude/skills/verify-public-routes/apex-routes.mjs                     # config only
+    node .claude/skills/verify-public-routes/apex-routes.mjs --live              # + probe production
+    node .claude/skills/verify-public-routes/apex-routes.mjs --live --env staging
+
+**The canonical apex is the MARKETING worker's custom domain.** The backoffice
+reaches it only through the zone routes listed in `apps/backoffice/wrangler.jsonc`,
+and a path that is not listed there falls through to marketing's static assets
+and 404s. Nothing else catches this: `astro dev` serves the whole app on one
+origin, so every localhost sweep above passes while the address an
+administrator is told to share is dead.
+
+That is exactly how the org QR card shipped broken (fixed 2026-09-10). The back
+office showed `https://støttemedlem.no/api/qr/<slug>`, `/api/qr/*` had no zone
+route, and every local check was green. (The card then moved under the join
+page, where the page's own route covers it. Hanging a new public address
+beneath an already-routed page is the fix that cannot be forgotten; adding a
+route is the one that can.) Staging hid it too: staging hands out
+`staging.app.…`, a custom domain, where the whole host is the backoffice, so
+the only environment that could fail was production.
+
+This script holds the list of public apex addresses and checks each one two
+ways: covered by a route pattern in the config, and (with `--live`) answered by
+the backoffice rather than by marketing's 404 page. The live probes are
+deliberately paths that answer with NO database row (an unknown org, an unknown
+token), so pointing it at production reads nobody's data. What is asserted is
+which worker replied, never the status: a 404 from the backoffice is a pass.
+
+**A green config and a red `--live` is the normal state after fixing a route.**
+The route exists in the file and does not exist in Cloudflare until the worker
+is deployed, so re-run `--live` after the deploy.
+
+**Add a row to `PUBLIC_APEX_ADDRESSES` whenever a new public address is handed
+out on the apex.** The rule the list encodes: any address the product prints,
+embeds, or shows as a public link needs BOTH a route in `wrangler.jsonc` and a
+`isPublic()` prefix in `src/middleware.ts`. Miss the route and it 404s for
+everyone; miss the middleware and it bounces strangers into the login flow.
 
 Related: `verify-qr` (decodes the QR payload from real pixels — the printed
 address), `preview-screenshot` (how the page looks), `dev-logs` (what the

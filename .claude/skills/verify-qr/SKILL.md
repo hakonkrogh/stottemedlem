@@ -58,7 +58,7 @@ would.
    request's origin:
 
        node .claude/skills/verify-qr/decode.mjs \
-         "http://localhost:4322/api/qr/<slug>?variant=qr&format=png" \
+         "http://localhost:4322/bli-medlem/<slug>/qr?variant=qr&format=png" \
          --expect "https://xn--stttemedlem-hgb.no/bli-medlem/<slug>"
 
 The card (`variant=card`) is SVG and shares the same encoder + payload as the plain
