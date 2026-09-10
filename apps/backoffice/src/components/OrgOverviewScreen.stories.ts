@@ -53,9 +53,13 @@ const overview = (
 export const Default = { args: overview() };
 
 /** Everything a half-finished organization still owes, each with its way in.
- *  Nobody has joined it, so it carries no figures at all. */
+ *  Nobody has joined it, so it carries no figures at all, and it has uploaded
+ *  no logo either: the chrome then shows its name alone. */
 export const NeedsSetup = {
-  args: overview({ warnings: ALL_WARNINGS, stats: NO_STATS }, ALL_WARNINGS, 0),
+  args: {
+    ...overview({ warnings: ALL_WARNINGS, stats: NO_STATS }, ALL_WARNINGS, 0),
+    logoUrl: null,
+  },
 };
 
 /** Set up and waiting for its first supporter: every figure is a nothing, and

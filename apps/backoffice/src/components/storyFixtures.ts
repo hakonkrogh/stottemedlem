@@ -46,6 +46,10 @@ export const ORG_WITH_IMAGES: Organization = {
   bannerKey: "org/org-1/banner-8b7a6f5e4d3c2b1a.jpg",
 };
 
+// The drawn logo an organization that has uploaded one is shown with, in the
+// public identity header and in the back office's own chrome alike.
+export { FIXTURE_LOGO_URL };
+
 export const ORG_PATH = `/o/${ORG.slug}`;
 export const JOIN_URL = `${CANONICAL_ORIGIN}/bli-medlem/${ORG.slug}`;
 export const TERMS_URL = `${JOIN_URL}/vilkar`;

@@ -106,6 +106,13 @@ one visit and never has to be re-learned.
   account — the person, switching organization, signing out — is a quiet line
   at the very top of every screen; below it, with room to breathe, comes the
   organization's own name, which is what the page is actually about.
+- **An organization that has a logo is shown it, before its name.** The logo is
+  the mark its own people recognise, and an administrator who acts for more
+  than one organization should never have to read a name to know which back
+  office they are in. It is the same mark supporters meet on the
+  [join page](join-page.md), framed in the same circle, and small: the name
+  remains what the row says. An organization that has uploaded no logo simply
+  shows its name, and nothing stands in the empty place.
 - Editable information follows [Presenting and editing](presenting-and-editing.md):
   presented by default, changed only when asked.
 - Every button that does something is answered the moment it is pressed and
@@ -130,3 +137,4 @@ one visit and never has to be re-learned.
 - [Use case: Access the back office](../use-cases/access-the-back-office.md)
 - [Concept: Presenting and editing](presenting-and-editing.md)
 - [Concept: Organization figures](organization-figures.md)
+- [Concept: Organization](organization.md)

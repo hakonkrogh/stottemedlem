@@ -6,6 +6,11 @@ description: Render any local URL (marketing/backoffice dev or preview server) t
 
 `bash .claude/skills/preview-screenshot/shot.sh <url> <out.png> [width] [height]`
 
+For Storybook, whose port is no longer fixed, start and address it with the
+companion script instead of hand-rolling the plumbing:
+`bash .claude/skills/preview-screenshot/story.sh start|port|ids [match]|url <story-id>|log|stop`
+(see the Storybook section below).
+
 - Writes the PNG (default 1440×1200) and prints its path; Read the PNG to view it.
 - Save output PNGs to the session scratchpad, not the repo.
 - Widths ≥ 500: uses `/Applications/Google Chrome.app` with `--headless=new` —
@@ -133,29 +138,57 @@ description: Render any local URL (marketing/backoffice dev or preview server) t
   2026-09-04): Storybook answers 200 on `/` but `index.json` is
   `{"entries":{}}` and `iframe.html` is a 500 whose ENOENT names the OTHER
   worktree's path (`…/worktrees/<gone>/node_modules/.pnpm/@storybook+builder-vite…`).
-  Neither a rebuild nor a restart heals it: `pkill -f "storybook dev -p <port>"`,
+  Neither a rebuild nor a restart heals it: `lsof -ti:$PORT | xargs kill`,
   `rm -rf packages/ui/node_modules/.cache packages/ui/node_modules/.vite`, start
   again, and confirm `index.json` lists story ids before shooting.
   Since 2026-08-31 the root alias `pnpm story` (= `pnpm stories`) does the
   core+db pre-build AND starts Storybook in one go; the manual form is
   `pnpm --filter @stottemedlem/ui run storybook`.
-  **The port is ALWAYS 6007** (fixed 2026-09-10): the package script is
-  `storybook dev -p 6007 --exact-port --ci --no-open`, so a taken port is a
-  loud early exit instead of a silent move to a neighbouring one. Never pass
-  your own `-p`. That silent move is what used to cost the session: another
-  worktree's Storybook held the port, answered your curl with 200, and served
-  ITS stories (or zero) while yours ran somewhere you never looked. With
-  `--exact-port` the failure now says so, and the fix is to kill the other one
-  (`lsof -ti:6007 | xargs kill`), not to pick a different port.
+  **There is NO fixed port** (2026-09-10, replacing the earlier 6007 +
+  `--exact-port` rule): the package script is now a bare `storybook dev`, so
+  Storybook takes a free port of its own (a random high one, e.g. 61736,
+  verified 2026-09-10) and never collides with another worktree's. Do not pass
+  your own `-p`, and never assume 6006/6007. **Passing `-p` is actively
+  harmful now:** the interactive "Port N is not available. Would you like to
+  run Storybook on port M instead?" prompt is guarded by `options.port != null`
+  (`storybook/dist/core-server/index.js`), so it only appears when you supply a
+  port, and it hangs a background start forever. With no `-p`, `detect-port`
+  picks a free one silently and no prompt exists.
+  **Use `story.sh` in this skill folder rather than hand-rolling any of this:**
+  `story.sh start` (prints the port), `port`, `ids [match]`, `url <story-id>`,
+  `log`, `stop`. It pre-builds core+db+qr, starts the server with `--no-open`,
+  waits until `index.json` answers, and keeps its port/log state per worktree,
+  so parallel sessions do not collide. Everything below that says `$PORT` is
+  `$(story.sh port)`.
+  Doing it by hand instead: read the port from the log you redirected stdout
+  to, off the "Storybook ready!" box, with
+  `PORT=$(grep -oE 'localhost:[0-9]+' /tmp/sb.log | tail -1 | cut -d: -f2)`
+  (the line is `- Local: http://localhost:<port>/`, wrapped in box-drawing
+  characters and ANSI colour, so match the URL, not the whole line).
+  **`pnpm story` opens a browser tab for the USER but never for you** (the
+  `--ci --no-open` flags came off 2026-09-10 so the user gets the tab).
+  Storybook 10 suppresses the open itself in an agent session: `detectAgent()`
+  in `storybook/dist/_node-chunks/chunk-WZ4KXKZB.js` reads `AI_AGENT` first,
+  then `CLAUDECODE` / `CLAUDE_CODE` (plus cursor/gemini/codex/… vars), and
+  `dist/bin/core.js` forces `open: false` when any is set. Claude Code sets all
+  three, so a bare `storybook dev` started from a Bash call stays headless. Do
+  not read "no tab appeared" as "auto-open is broken" (cost a confused detour
+  2026-09-10): to see the user's behaviour you must clear all three
+  (`env -u AI_AGENT -u CLAUDECODE -u CLAUDE_CODE npx storybook dev` DID open
+  the tab, verified 2026-09-10). `story.sh` still passes `--no-open`
+  explicitly rather than relying on that detection. The old hazard is gone with
+  the fixed port: you can no longer curl 200 off another checkout's Storybook
+  and shoot ITS stories.
   **Start it with `nohup … & disown`, NOT with the Bash tool's
   `run_in_background`** (hit 2026-08-31): backgrounded that way the task
   reports "completed, exit 0" while the server is dead and every later curl
   returns `000`, which reads as "Storybook is broken" rather than "nothing is
   running". From `packages/ui`:
-  `nohup pnpm run storybook --quiet > /tmp/sb.log 2>&1 & disown`, then poll
-  `curl -sf localhost:6007/index.json` until it answers, and confirm it lists
-  YOUR story ids before shooting. Then shoot a story's iframe URL
-  directly: `http://localhost:6007/iframe.html?id=<story-id>&viewMode=story`.
+  `nohup npx storybook dev --no-open --quiet > /tmp/sb.log 2>&1 & disown`, then
+  wait for the "Storybook ready!" box, read `$PORT` out of that log (above),
+  poll `curl -sf localhost:$PORT/index.json` until it answers, and confirm it
+  lists YOUR story ids before shooting. (`story.sh start` does all of this.) Then shoot a story's iframe URL
+  directly: `http://localhost:$PORT/iframe.html?id=<story-id>&viewMode=story`.
   **A story iframe can shoot BLANK** (hit 2026-09-10): `shot.sh` on that URL
   captured an empty cream page while the story was fine, because the story
   renders after the shot is taken. `drive-page` with a wait gets the real
@@ -167,7 +200,7 @@ description: Render any local URL (marketing/backoffice dev or preview server) t
   (hash-checked before and after, 2026-08-31) — but `verify-workflow` warns it
   can, so hash them yourself rather than trusting either claim before a push.
   **List the ids before shooting — do not derive them from the component
-  name:** `curl -s localhost:6007/index.json | python3 -c "import json,sys;
+  name:** `curl -s localhost:$PORT/index.json | python3 -c "import json,sys;
   print('\n'.join(sorted(json.load(sys.stdin)['entries'])))"`. Story TITLES in
   this repo are Norwegian while the components are English, so the obvious
   guess is wrong: `MemberListScreen.stories.ts` is
@@ -195,9 +228,18 @@ description: Render any local URL (marketing/backoffice dev or preview server) t
   stdout redirected to a file): it served shots for the whole session and only
   reported a non-zero exit when pkill'ed at the end. The 2026-08-31 failure was
   not reproduced, but nohup + disown is still the safer default; whichever you
-  use, prove it with `until curl -sf localhost:<port>/index.json; do sleep 2;
-  done` in a background task rather than trusting the task status. Stop with `lsof -ti:6007 |
-  xargs kill`. If the astro dev server is needed instead (port 4322): it's a
+  use, prove it with `until curl -sf localhost:$PORT/index.json; do sleep 2;
+  done` in a background task rather than trusting the task status.
+  **What is definitely broken is COMBINING the two** (2026-09-10): passing
+  `nohup npx storybook dev … & echo started` as the Bash tool's
+  `run_in_background` command backgrounds a command that returns instantly, the
+  task reports "completed, exit 0" within a second, and the storybook child
+  dies with it: its log stops at "Starting…" and every curl returns `000`,
+  which reads as "Storybook crashed on startup". In `run_in_background`, run
+  the server as the FOREGROUND command of that task (`npx storybook dev
+  --no-open`, no trailing `&`); keep the `&`/`disown` form for an ordinary
+  blocking Bash call. Stop with `lsof -ti:$PORT | xargs kill` (`pkill -f
+  "storybook dev -p"` no longer matches anything, the script carries no `-p`). If the astro dev server is needed instead (port 4322): it's a
   persistent daemon — "already running" may be a stale one from another session
   serving old code; `pnpm --filter @stottemedlem/backoffice exec astro dev stop`
   then restart, and stop it the same way when done. The daemon takes its port

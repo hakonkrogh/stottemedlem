@@ -18,6 +18,7 @@ import {
   parseMemberContactForm,
 } from "../../../../lib/memberContact";
 import { type RefundResult, refundMembershipPayment } from "../../../../lib/membership";
+import { orgIdentity } from "../../../../lib/orgImages";
 import { requireOrgView } from "../../../../lib/orgView";
 import { periods } from "../../../../lib/periods";
 import { PAYMENT_PARAM, paymentViews } from "../../../../lib/refunds";
@@ -173,7 +174,7 @@ const sought = flags.get(PAYMENT_PARAM);
 ---
 
 <Shell title={`${displayName} — ${org.name}`} frame={false}>
-  <OrgScreen orgName={org.name} orgPath={orgPath(org.slug)} active="medlemmer" warnings={warnings} activeMembers={view.stats.activeMembers}>
+  <OrgScreen orgName={org.name} logoUrl={orgIdentity(org).logoUrl} orgPath={orgPath(org.slug)} active="medlemmer" warnings={warnings} activeMembers={view.stats.activeMembers}>
     <MemberDetailScreen
       entry={entry}
       values={values}

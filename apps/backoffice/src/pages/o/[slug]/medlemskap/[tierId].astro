@@ -23,6 +23,7 @@ import {
   type NoticeReport,
   sendOwedFeeChangeNotices,
 } from "../../../../lib/notices";
+import { orgIdentity } from "../../../../lib/orgImages";
 import { requireOrgView } from "../../../../lib/orgView";
 import { purgeOrgPublicPages } from "../../../../lib/publicPageCache";
 import { repriceAgreements } from "../../../../lib/renewals";
@@ -156,6 +157,7 @@ const title = isNew ? "Legg til medlemskap" : `Endre ${tier?.name}`;
 <Shell title={`${title} — ${org.name}`} frame={false}>
   <OrgScreen
     orgName={org.name}
+    logoUrl={orgIdentity(org).logoUrl}
     orgPath={orgPath(org.slug)}
     active="medlemskap"
     warnings={warnings}

@@ -8,6 +8,7 @@ import {
   removeAdministrator,
   withdrawInvitation,
 } from "../../../lib/administrators";
+import { orgIdentity } from "../../../lib/orgImages";
 import { requireOrgView } from "../../../lib/orgView";
 import { getWorkOS, orgPath } from "../../../lib/workos";
 
@@ -107,6 +108,7 @@ if (flags.get("feil") === "fjern") failure = removeFailure(flags.get("grunn"));
 <Shell title={`Administratorer · ${org.name}`} frame={false}>
   <OrgScreen
     orgName={org.name}
+    logoUrl={orgIdentity(org).logoUrl}
     orgPath={orgPath(org.slug)}
     active="innstillinger"
     warnings={view.warnings}

@@ -4,6 +4,7 @@ import MemberListScreen from "../../../../components/MemberListScreen.astro";
 import OrgScreen from "../../../../components/OrgScreen.astro";
 import Shell from "../../../../layouts/Shell.astro";
 import { getDb } from "../../../../lib/db";
+import { orgIdentity } from "../../../../lib/orgImages";
 import { requireOrgView } from "../../../../lib/orgView";
 import { periods } from "../../../../lib/periods";
 import { orgPath } from "../../../../lib/workos";
@@ -18,7 +19,7 @@ const members = await listOrganizationMembers(getDb(), org.id, currentPeriod);
 ---
 
 <Shell title={`Medlemmer — ${org.name}`} frame={false}>
-  <OrgScreen orgName={org.name} orgPath={orgPath(org.slug)} active="medlemmer" warnings={warnings} activeMembers={view.stats.activeMembers}>
+  <OrgScreen orgName={org.name} logoUrl={orgIdentity(org).logoUrl} orgPath={orgPath(org.slug)} active="medlemmer" warnings={warnings} activeMembers={view.stats.activeMembers}>
     <MemberListScreen
       members={members}
       search={Astro.url.searchParams.get("sok") ?? ""}

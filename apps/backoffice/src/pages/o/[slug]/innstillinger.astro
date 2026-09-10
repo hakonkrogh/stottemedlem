@@ -12,7 +12,7 @@ import OrgSettingsScreen from "../../../components/OrgSettingsScreen.astro";
 import Shell from "../../../layouts/Shell.astro";
 import { getDb } from "../../../lib/db";
 import { shareableJoinUrl } from "../../../lib/joinLinks";
-import { applyImageField } from "../../../lib/orgImages";
+import { applyImageField, orgIdentity } from "../../../lib/orgImages";
 import {
   type ProfileFieldErrors,
   parseProfileForm,
@@ -122,6 +122,7 @@ const editing = hasErrors || Astro.url.searchParams.has("rediger");
 <Shell title={`Innstillinger — ${org.name}`} frame={false}>
   <OrgScreen
     orgName={org.name}
+    logoUrl={orgIdentity(org).logoUrl}
     orgPath={orgPath(org.slug)}
     active="innstillinger"
     warnings={view.warnings}
