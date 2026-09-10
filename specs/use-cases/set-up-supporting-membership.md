@@ -37,9 +37,9 @@ From the organization's point of view:
    organization's behalf only. Leaving it unticked stops the creation and says
    why. When a new version of the agreement is written, the organization is
    asked to accept it in its back office.
-4. The administrator refines the membership offer in the back office. The
-   **front page previews the whole offer** — the memberships as the supporter
-   sees them — with one way on to the **membership place** of the
+4. The administrator refines the membership offer in the back office. From
+   every screen there is one way on to the
+   **membership place** of the
    [back office](../concepts/back-office.md), which **lists all its
    memberships**, presented as
    the very same membership cards the public join page shows (see the

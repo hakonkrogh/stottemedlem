@@ -70,6 +70,7 @@ The one message the product itself sends a member is the necessary
 | [Organization](concepts/organization.md) | Draft |
 | [Administrator](concepts/administrator.md) | Draft |
 | [Back office](concepts/back-office.md) | Draft |
+| [Organization figures](concepts/organization-figures.md) | Draft |
 | [Presenting and editing](concepts/presenting-and-editing.md) | Draft |
 | [Answering an action](concepts/answering-an-action.md) | Active |
 | [Supporting member](concepts/supporting-member.md) | Draft |

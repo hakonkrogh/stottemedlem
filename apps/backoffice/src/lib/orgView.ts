@@ -1,10 +1,12 @@
 import { DPA_VERSION } from "@stottemedlem/core";
 import {
-  countActiveMembers,
   hasAcceptedDpa,
   listMembershipTiers,
   type MembershipTier,
   type Organization,
+  type OrganizationStats,
+  organizationStats,
+  type StatsPeriodBounds,
 } from "@stottemedlem/db";
 import { getDb } from "./db";
 import { publicOrigin } from "./membership";
@@ -25,25 +27,40 @@ export interface OrgView {
   tiers: MembershipTier[];
   vippsKeys: OrgVippsKeys | null;
   warnings: OrgWarning[];
-  /** Supporters current for this period — the count the member tab carries. */
-  activeMembers: number;
+  /**
+   * The organization in numbers (specs/concepts/organization-figures.md). The
+   * member tab carries the active count on every screen, which is why every
+   * screen loads these.
+   */
+  stats: OrganizationStats;
   /** Where this deployment receives this org's payment events. */
   webhookUrl: string;
+}
+
+/**
+ * The period running now, first day to last: the figures count what was ended
+ * inside it, which is days rather than a period key
+ * (specs/concepts/organization-figures.md).
+ */
+function currentPeriodBounds(): StatsPeriodBounds {
+  const key = periods.periodFor().year;
+  const { start, end } = periods.fullPeriod(key);
+  return { key, start, end };
 }
 
 /** Load the chrome-level view of an org the caller has already vetted. */
 export async function orgView(org: Organization, request: Request): Promise<OrgView> {
   const webhookUrl = webhookReceiverUrl(publicOrigin(request), org.slug);
-  const [tiers, vippsKeys, activeMembers] = await Promise.all([
+  const [tiers, vippsKeys, stats] = await Promise.all([
     listMembershipTiers(getDb(), org.id),
     readOrgVippsKeys(getWorkOS(), org.workosOrgId),
-    countActiveMembers(getDb(), org.id, periods.periodFor().year),
+    organizationStats(getDb(), org.id, currentPeriodBounds()),
   ]);
   return {
     org,
     tiers,
     vippsKeys,
-    activeMembers,
+    stats,
     webhookUrl,
     warnings: orgWarnings({
       orgPath: orgPath(org.slug),

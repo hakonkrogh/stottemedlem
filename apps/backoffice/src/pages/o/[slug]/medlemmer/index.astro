@@ -18,7 +18,7 @@ const members = await listOrganizationMembers(getDb(), org.id, currentPeriod);
 ---
 
 <Shell title={`Medlemmer — ${org.name}`} frame={false}>
-  <OrgScreen orgName={org.name} orgPath={orgPath(org.slug)} active="medlemmer" warnings={warnings} activeMembers={view.activeMembers}>
+  <OrgScreen orgName={org.name} orgPath={orgPath(org.slug)} active="medlemmer" warnings={warnings} activeMembers={view.stats.activeMembers}>
     <MemberListScreen
       members={members}
       search={Astro.url.searchParams.get("sok") ?? ""}

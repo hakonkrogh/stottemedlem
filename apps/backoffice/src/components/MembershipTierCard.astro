@@ -17,13 +17,17 @@ interface Props {
   headingLevel?: 2 | 3;
 }
 const { name, annualFeeNok, description, headingLevel = 2 } = Astro.props;
+
+// Norwegian groups thousands with a space, and it is a non-breaking one so a
+// price never wraps in the middle.
+const price = annualFeeNok.toLocaleString("nb-NO").replace(/\s/g, "\u00A0");
 ---
 
 <Card>
   <Stack gap="md">
     <Heading level={headingLevel}>{name}</Heading>
     <p class="price">
-      {annualFeeNok} kr <span class="per">per år</span>
+      {price}&nbsp;kr <span class="per">per år</span>
     </p>
     {
       description && (

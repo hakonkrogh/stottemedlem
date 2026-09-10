@@ -75,11 +75,12 @@ Both branches of `MemberCardFigure.astro`, proven end to end (2026-08-31):
   Delete the pages afterwards, and rebuild if a build ran while they existed.
 - **Driving an admin screen in Storybook (done 2026-09-09 for the member
   list's payment-reference search):** start it with
-  `cd packages/ui && pnpm exec storybook dev -p 6006 --ci --no-open` in the
-  background and READ THE LOG for the port: when another checkout already
-  holds 6006, Storybook silently moves to 6007 while 6006 keeps answering
-  200 with the OTHER worktree's code. Story URLs are
-  `http://localhost:<port>/iframe.html?id=<title-slug>--<story-slug>&viewMode=story`
+  `cd packages/ui && pnpm run storybook` in the background. The port is
+  always 6007 and the script passes `--exact-port`, so another checkout
+  holding it is an early exit rather than a silent move to a neighbour that
+  answers 200 with the OTHER worktree's code (which is how this used to go
+  wrong). Story URLs are
+  `http://localhost:6007/iframe.html?id=<title-slug>--<story-slug>&viewMode=story`
   (`Backoffice/Medlem` + `FoundByPaymentReference` =
   `backoffice-medlem--found-by-payment-reference`). Every `href` a screen
   renders is rewritten by `StoryScreen` through `STORY_ROUTES` in

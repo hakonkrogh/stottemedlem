@@ -125,7 +125,7 @@ const editing = hasErrors || Astro.url.searchParams.has("rediger");
     orgPath={orgPath(org.slug)}
     active="innstillinger"
     warnings={view.warnings}
-    activeMembers={view.activeMembers}
+    activeMembers={view.stats.activeMembers}
   >
     <OrgSettingsScreen
       org={org}

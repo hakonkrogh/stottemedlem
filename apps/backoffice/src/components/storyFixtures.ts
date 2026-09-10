@@ -5,7 +5,7 @@
 // renders is mapped to the story that shows where it leads, so the whole tabbed
 // back office can be clicked through in Storybook without running the app.
 import { CANONICAL_ORIGIN, DPA_VERSION } from "@stottemedlem/core";
-import type { MembershipTier, Organization } from "@stottemedlem/db";
+import type { MembershipTier, Organization, OrganizationStats } from "@stottemedlem/db";
 import {
   FIXTURE_BANNER_URL,
   FIXTURE_LOGO_URL,
@@ -49,10 +49,43 @@ export const TERMS_URL = `${JOIN_URL}/vilkar`;
 export const QR_CARD_URL = `${CANONICAL_ORIGIN}/api/qr/${ORG.slug}`;
 export const WEBHOOK_URL = `${CANONICAL_ORIGIN}/api/vipps/${ORG.slug}`;
 export const ADMIN_NAME = "Kari Nordmann";
-/** Supporters current this period — the pill the member tab carries. Matches
- *  what `everyone` in memberFixtures adds up to, so the chrome and the list
- *  never disagree in a story. */
-export const ACTIVE_MEMBERS = 4;
+/**
+ * The organization in numbers, counted from the very same supporters
+ * `everyone` in memberFixtures holds, so the front page, the chrome's member
+ * pill and the member list never disagree in a story: four current supporters
+ * (one of them ending, which is also the one stop this period), one lapsed,
+ * and one who has approved but not paid yet.
+ */
+export const ORG_STATS: OrganizationStats = {
+  annualSupportNok: 1900,
+  activeMembers: 4,
+  renewingMembers: 3,
+  endingMembers: 1,
+  lapsedMembers: 1,
+  newMembers: 2,
+  stoppedMembers: 1,
+  paidThisPeriodNok: 965,
+  paidAllTimeNok: 5200,
+};
+
+/** Supporters current this period, the pill the member tab carries. */
+export const ACTIVE_MEMBERS = ORG_STATS.activeMembers;
+
+/** The period the stories are set in, as a screen would say it. */
+export const PERIOD_LABEL = "2026";
+
+/** An organization nobody has joined yet: every figure is nothing. */
+export const NO_STATS: OrganizationStats = {
+  annualSupportNok: 0,
+  activeMembers: 0,
+  renewingMembers: 0,
+  endingMembers: 0,
+  lapsedMembers: 0,
+  newMembers: 0,
+  stoppedMembers: 0,
+  paidThisPeriodNok: 0,
+  paidAllTimeNok: 0,
+};
 
 export function fixtureTier(
   id: string,

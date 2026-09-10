@@ -23,7 +23,7 @@ const archivedName = Astro.url.searchParams.get("arkivert");
     orgPath={orgPath(org.slug)}
     active="medlemskap"
     warnings={warnings}
-    activeMembers={view.activeMembers}
+    activeMembers={view.stats.activeMembers}
   >
     <MembershipsScreen
       orgPath={orgPath(org.slug)}

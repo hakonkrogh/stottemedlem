@@ -10,7 +10,7 @@ administrator do sits in one of them.
 
 | Place | What it is for |
 |-------|----------------|
-| **Oversikt** | The front page: what the organization offers, and the addresses it shares |
+| **Oversikt** | The front page: how the organization is doing, and the addresses it shares |
 | **Medlemmer** | The [member list](../use-cases/curate-member-list.md), one member at a time, and writing to them |
 | **Medlemskap** | The [membership](membership-tier.md) offer supporters are shown |
 | **Innstillinger** | The organization's own details — profile, visual identity, and its [Vipps API keys](vipps-api-keys.md) |
@@ -48,24 +48,31 @@ one visit and never has to be re-learned.
   name of the place they return to, so what they do is clear before it is read.
   This holds for every subpage there is or will be; a screen deep in the back
   office is never a place you have to find your own way out of.
-- **The front page leads with the offer.** The first thing an administrator
-  sees is what the organization is actually offering: its
-  [memberships](membership-tier.md), shown as the very same membership cards a
-  supporter is shown (the one-presentation rule) — so the answer to "what do we
-  ask for, and for how much" needs no navigation. After it, the addresses the
-  organization shares: the [join page](join-page.md), its sales terms and its
+- **The front page is how the organization is doing.** The first and main
+  thing an administrator sees is the
+  [organization's figures](organization-figures.md): what a year of support is
+  worth, how many people stand behind it, and what this period has added and
+  taken away. That is the question they came back with, and it is not one any
+  other place answers. After the figures, the addresses the organization
+  shares: the [join page](join-page.md), its sales terms and its
   [QR code card](../use-cases/promote-with-qr-card.md).
-- **The front page repeats nothing that a place already shows.** The members
-  are not a section of their own here — the member list is one click away and
-  says everything the front page could. **How many supporting members are
-  current is instead carried on the member tab itself**, as a quiet number
-  beside its name: the product's one standing figure, visible from every screen
-  rather than only from the front page. It is information, not a warning, and
-  it is shown only once there is somebody to count.
+- **The membership offer is not repeated on the front page.** Every place is
+  one click away from every screen, so showing the
+  [memberships](membership-tier.md) here would be a second copy of a place that
+  is never far, and it would take the room the figures need. The front page
+  answers "how are we doing"; the membership place answers "what do we offer".
+- **The front page counts the members; it does not list them.** No member is
+  named here and no list is repeated: the member list is one click away and
+  says everything about a person that the front page could. **How many
+  supporting members are current is also carried on the member tab itself**, as
+  a quiet number beside its name, so the product's one standing figure is
+  visible from every screen and not only from the front page. It is
+  information, not a warning, and it is shown only once there is somebody to
+  count. It is the same number the front page states, always.
 - **The front page does not edit anything, and does not send you anywhere
-  either.** The memberships are shown, not introduced and not followed by a way
-  in: the place that owns them is a tab away on every screen, so a button
-  repeating that would only be a second door beside the first. Anything not yet
+  either.** The figures and the memberships are shown, not introduced and not
+  followed by a way in: the place that owns them is a tab away on every screen,
+  so a button repeating that would only be a second door beside the first. Anything not yet
   in order is shown here too (see below), and those *do* carry the one action
   that fixes them — a warning is worth a door, an ordinary section is not.
 - **What is not in order is stated in full on the front page**, each with the
@@ -106,7 +113,10 @@ one visit and never has to be re-learned.
   [Set up a supporting membership](../use-cases/set-up-supporting-membership.md),
   [Curate the member list](../use-cases/curate-member-list.md) and
   [Export the member list](../use-cases/export-member-list.md).
+- Its front page states the
+  [organization's figures](organization-figures.md).
 
 ## Referenced by
 - [Use case: Access the back office](../use-cases/access-the-back-office.md)
 - [Concept: Presenting and editing](presenting-and-editing.md)
+- [Concept: Organization figures](organization-figures.md)

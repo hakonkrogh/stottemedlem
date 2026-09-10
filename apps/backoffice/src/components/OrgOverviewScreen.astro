@@ -1,24 +1,25 @@
 ---
-// The front tab of an organization's back office: what the organization
-// offers and the public addresses it shares — plus anything that is not yet in
-// order, each with the one place it is put right
+// The front tab of an organization's back office: how it is doing and the
+// public addresses it shares, plus anything that is not yet in order, each
+// with the one place it is put right
 // (specs/use-cases/set-up-supporting-membership.md).
 //
-// The offer comes first, as the very same membership cards supporters see
-// (specs/concepts/membership-tier.md, one-presentation rule) — the cards say
-// what they are, so nothing introduces them and nothing follows them: the
-// membership tab is right there when the offer needs changing. The members are
-// deliberately NOT a section here either: how many are current is carried on
-// their tab from every screen, and the list itself is one click away. Nothing
-// is edited here.
-import type { MembershipTier } from "@stottemedlem/db";
+// The numbers come first (specs/concepts/organization-figures.md): what a year
+// of support is worth, who stands behind it, and what this period did to both.
+// An administrator comes back a few times a year, and that is the first thing
+// they came to see.
+//
+// The membership offer is deliberately NOT shown here: it has a tab of its
+// own, reachable from every screen, and repeating it cost the front page the
+// room its figures need. Nothing is edited here either.
+import type { OrganizationStats } from "@stottemedlem/db";
 import Alert from "@stottemedlem/ui/components/Alert.astro";
 import Heading from "@stottemedlem/ui/components/Heading.astro";
 import Stack from "@stottemedlem/ui/components/Stack.astro";
 import Text from "@stottemedlem/ui/components/Text.astro";
 import TextLink from "@stottemedlem/ui/components/TextLink.astro";
 import type { OrgWarning } from "../lib/orgWarnings";
-import MembershipTierCard from "./MembershipTierCard.astro";
+import OrgStats from "./OrgStats.astro";
 import OrgWarnings from "./OrgWarnings.astro";
 
 interface Props {
@@ -27,12 +28,23 @@ interface Props {
   termsUrl: string;
   qrCardUrl: string;
   warnings?: OrgWarning[];
-  /** The offer itself, shown as the cards supporters see. */
-  tiers: MembershipTier[];
+  /** The organization in numbers. */
+  stats: OrganizationStats;
+  /** The period running now, as the organization would say it ("2026"). */
+  periodLabel: string;
   /** Set after a price change: who was told, and who the org must tell itself. */
   feeNotice?: { told: number; unreached: number };
 }
-const { orgPath, joinUrl, termsUrl, qrCardUrl, warnings = [], tiers, feeNotice } = Astro.props;
+const {
+  orgPath,
+  joinUrl,
+  termsUrl,
+  qrCardUrl,
+  warnings = [],
+  stats,
+  periodLabel,
+  feeNotice,
+} = Astro.props;
 
 const links = [
   {
@@ -73,23 +85,7 @@ const links = [
 
   <OrgWarnings warnings={warnings} />
 
-  {
-    tiers.length > 0 && (
-      <Stack gap="sm">
-        <Heading level={2}>Medlemskap</Heading>
-        <div class="tiers">
-          {tiers.map((tier) => (
-            <MembershipTierCard
-              name={tier.name}
-              annualFeeNok={tier.annualFeeNok}
-              description={tier.description}
-              headingLevel={3}
-            />
-          ))}
-        </div>
-      </Stack>
-    )
-  }
+  <OrgStats stats={stats} periodLabel={periodLabel} />
 
   <Stack gap="sm">
     <Heading level={2}>Offentlige lenker</Heading>
@@ -117,14 +113,6 @@ const links = [
     display: grid;
     gap: var(--sm-space-md);
     grid-template-columns: repeat(auto-fit, minmax(17rem, 1fr));
-  }
-  /* The cards need real room around them to read as separate offers. */
-  .tiers {
-    display: grid;
-    gap: var(--sm-space-lg) var(--sm-space-xl);
-    grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr));
-    align-items: start;
-    margin-block: var(--sm-space-xs) var(--sm-space-sm);
   }
   .link {
     display: grid;
