@@ -49,6 +49,7 @@ The one message the product itself sends a member is the necessary
 
 | Use case | Status | Solves |
 |----------|--------|--------|
+| [Ask for early access](use-cases/ask-for-early-access.md) | Active | [Collecting annual support](problems/collecting-annual-support.md) |
 | [Access the back office](use-cases/access-the-back-office.md) | Draft | [Collecting annual support](problems/collecting-annual-support.md) |
 | [Manage who administers the organization](use-cases/manage-administrators.md) | Draft | [Collecting annual support](problems/collecting-annual-support.md) |
 | [Set up a supporting membership](use-cases/set-up-supporting-membership.md) | Draft | [Collecting annual support](problems/collecting-annual-support.md) |

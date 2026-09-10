@@ -25,7 +25,11 @@ competing with the organization's own identity, which always comes first.
   for text; the card around it carries the attribution instead.)
 - **Written with the ø** — "støttemedlem.no", never the ASCII fallback
   "stottemedlem.no" — in visible text. (Links/hrefs use the punycode origin as
-  the [join page](join-page.md) rules already require.)
+  the [join page](join-page.md) rules already require. That is about web
+  addresses only: an **e-mail address we invite people to write to is written
+  with the ø**, in the link as well as on the page, so a reader and their mail
+  program see the one address they were given. See
+  [Ask for early access](../use-cases/ask-for-early-access.md).)
 - **Carries the [brand mark](brand-mark.md)**: the red heart precedes the
   wordmark in visible text ("❤️ støttemedlem.no").
 - **Subtle, never dominant.** It is an attribution (footer line, small print),

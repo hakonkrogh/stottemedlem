@@ -1,7 +1,9 @@
 ---
 // Landing page. Messaging (see specs/): register over støttemedlemmer +
 // innkreving av årskontingent som kjerne, kontakt med medlemmene, Vipps som
-// betalingsleverandør med enkel inn-/utmelding.
+// betalingsleverandør med enkel inn-/utmelding. The one thing the page asks
+// for is a message about early access (see
+// specs/use-cases/ask-for-early-access.md).
 import "@fontsource-variable/fraunces";
 import { CANONICAL_ORIGIN } from "@stottemedlem/core";
 import { qrCardSvg } from "@stottemedlem/qr";
@@ -32,14 +34,19 @@ const previewCardSvg = qrCardSvg({
   <body>
     <HeroBackdrop>
       <header>
-        <p class="eyebrow">Kommer snart</p>
+        <p class="eyebrow">Åpent for tidlig tilgang</p>
         <h1><span class="brand-heart" aria-hidden="true">❤️</span> støttemedlem.no</h1>
         <p class="tagline">Register og årskontingent for støttemedlemmer — med Vipps.</p>
         <p class="intro">
           For korps, kor, lag og foreninger som vil la folk i lokalmiljøet støtte dem — år
           etter år.
         </p>
-        <p class="hero-cta"><a href="#innhold">Se hvordan det virker</a></p>
+        <p class="hero-cta">
+          <a class="primary" href="mailto:hei@støttemedlem.no?subject=Tidlig%20tilgang"
+            >Be om tidlig tilgang</a
+          >
+          <a class="secondary" href="#innhold">Se hvordan det virker</a>
+        </p>
       </header>
       <main id="innhold">
       <section>
@@ -121,11 +128,15 @@ const previewCardSvg = qrCardSvg({
       </section>
       </main>
       <footer>
-        <p class="cta">Kommer snart.</p>
+        <p class="cta">
+          <a href="mailto:hei@støttemedlem.no?subject=Tidlig%20tilgang"
+            >Be om tidlig tilgang</a
+          >
+        </p>
         <p class="contact">
-          {/* mailto uses the IDNA/punycode domain — ø in the raw address breaks
-              some email clients; "stttemedlem" (three t's) is correct. */}
-          Spørsmål? Skriv til <a href="mailto:hei@xn--stttemedlem-hgb.no">hei@støttemedlem.no</a>
+          Vi tar inn noen få organisasjoner om gangen. Skriv til <a
+            href="mailto:hei@støttemedlem.no">hei@støttemedlem.no</a
+          >, så tar vi kontakt og hjelper dere i gang.
         </p>
       </footer>
     </HeroBackdrop>
@@ -176,8 +187,16 @@ const previewCardSvg = qrCardSvg({
   }
   .hero-cta {
     margin: 2.25rem 0 0;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem 1.75rem;
   }
-  .hero-cta a {
+  /* The one action the page asks for: get in touch. Same button in the hero
+     and in the footer. */
+  .hero-cta a.primary,
+  .cta a {
     display: inline-block;
     padding: 0.85rem 1.9rem;
     background: #3d6b3f;
@@ -191,9 +210,17 @@ const previewCardSvg = qrCardSvg({
       transform 0.15s ease,
       background 0.15s ease;
   }
-  .hero-cta a:hover {
+  .hero-cta a.primary:hover,
+  .cta a:hover {
     background: #2f5632;
     transform: translateY(-2px);
+  }
+  .hero-cta a.secondary {
+    color: #f3efe6;
+    font-weight: 600;
+    text-decoration: underline;
+    text-underline-offset: 0.28em;
+    text-decoration-thickness: 1px;
   }
   h1,
   h2,
@@ -384,15 +411,7 @@ const previewCardSvg = qrCardSvg({
     text-align: center;
   }
   .cta {
-    display: inline-block;
-    font-weight: 600;
-    color: #f3efe6;
-    padding: 0.5rem 1.25rem;
-    border-radius: 999px;
-    background: rgb(24 18 10 / 0.55);
-    -webkit-backdrop-filter: blur(10px);
-    backdrop-filter: blur(10px);
-    border: 1px solid rgb(255 255 255 / 0.18);
+    margin: 0;
   }
   .contact {
     margin: 1.25rem 0 0;
