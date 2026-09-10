@@ -49,8 +49,8 @@ export function feeChangeNotice(notice: FeeChangeNotice): EmailMessage {
   const greeting = memberName?.trim() ? `Hei ${memberName.trim()},` : "Hei,";
   const direction = newFeeNok > previousFeeNok ? "øker" : "settes ned";
   const contactNote = notice.orgContactEmail
-    ? `E-posten er sendt fra en adresse som ikke leses. Har du spørsmål, kontakt ${orgName} på ${notice.orgContactEmail}.`
-    : `E-posten er sendt fra en adresse som ikke leses. Har du spørsmål, ta kontakt med ${orgName} direkte.`;
+    ? `E-posten er sendt fra en adresse som ikke kan besvares. Har du spørsmål, kontakt ${orgName} på ${notice.orgContactEmail}.`
+    : `E-posten er sendt fra en adresse som ikke kan besvares. Har du spørsmål, ta kontakt med ${orgName} direkte.`;
 
   const lines = [
     greeting,

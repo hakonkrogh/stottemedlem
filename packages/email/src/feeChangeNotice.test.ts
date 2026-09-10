@@ -36,7 +36,7 @@ describe("feeChangeNotice", () => {
 
   it("points questions at the organization's own address, not the noreply sender", () => {
     const message = feeChangeNotice(base);
-    expect(message.text).toContain("adresse som ikke leses");
+    expect(message.text).toContain("adresse som ikke kan besvares");
     expect(message.text).toContain("kontakt Bakvendtland Skolekorps på post@bakvendtland.example");
     expect(message.html).toContain("post@bakvendtland.example");
   });
