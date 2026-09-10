@@ -1219,9 +1219,19 @@ also documents the variants and why the rule exists.
   `until [ "$(gh pr checks <n> --json state --jq '.[0].state')" != "PENDING" ]`
   aborts on its first iteration and looks like the loop condition is wrong.
   Read the plain-text output instead, which prints `pending` / `pass` / `fail`
-  in column 2: `until [ "$(gh pr checks <n> 2>/dev/null | awk '{print $2}')" \
-  != "pending" ]; do sleep 15; done`. The repo's CI job is one check named
-  `check` and takes about 50s.
+  in column 2. **But an EMPTY second column is the other way that loop lies**
+  (hit 2026-09-10, one commit after the note above was written): straight after
+  `gh pr create` the workflow has not been registered yet, so `gh pr checks`
+  prints NOTHING, the substitution is empty, `"" != "pending"` is true, and the
+  loop falls through on its first iteration reporting success on a run that has
+  not started. Wait for a status that is both present and settled:
+
+      while :; do s=$(gh pr checks <n> 2>/dev/null | awk 'NR==1{print $2}')
+        [ -n "$s" ] && [ "$s" != "pending" ] && break; sleep 15; done
+      gh pr checks <n>
+
+  The repo's CI job is one check named `check` and takes about 50s (42s on
+  PR #100).
 - Single package: `pnpm turbo run <task> --filter=@stottemedlem/<name>`.
 - **Running `turbo build` for the backoffice while its dev server is up
   breaks the dev server** (hit 2026-09-08): every page then 500s with
