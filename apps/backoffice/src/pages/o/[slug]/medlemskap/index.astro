@@ -2,6 +2,7 @@
 import MembershipsScreen from "../../../../components/MembershipsScreen.astro";
 import OrgScreen from "../../../../components/OrgScreen.astro";
 import Shell from "../../../../layouts/Shell.astro";
+import { orgIdentity } from "../../../../lib/orgImages";
 import { requireOrgView } from "../../../../lib/orgView";
 import { orgPath } from "../../../../lib/workos";
 
@@ -20,6 +21,7 @@ const archivedName = Astro.url.searchParams.get("arkivert");
 <Shell title={`Medlemskap — ${org.name}`} frame={false}>
   <OrgScreen
     orgName={org.name}
+    logoUrl={orgIdentity(org).logoUrl}
     orgPath={orgPath(org.slug)}
     active="medlemskap"
     warnings={warnings}

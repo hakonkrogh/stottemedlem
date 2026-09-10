@@ -20,8 +20,10 @@ interface Props {
   active: OrgTabId;
   warnings?: OrgWarning[];
   activeMembers?: number;
+  /** The organization's logo, for the stories that show one. */
+  logoUrl?: string | null;
 }
-const { active, warnings = [], activeMembers = ACTIVE_MEMBERS } = Astro.props;
+const { active, warnings = [], activeMembers = ACTIVE_MEMBERS, logoUrl = null } = Astro.props;
 
 const tabs = orgTabs(ORG_PATH, warnings, activeMembers).map((tab) => ({
   ...tab,
@@ -38,6 +40,7 @@ const content = (await Astro.slots.render("default"))
 
 <OrgScreen
   orgName={ORG.name}
+  logoUrl={logoUrl}
   orgPath={storyHref(ORG_PATH)}
   active={active}
   warnings={warnings}

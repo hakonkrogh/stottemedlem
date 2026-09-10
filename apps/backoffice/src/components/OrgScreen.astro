@@ -21,6 +21,12 @@ import type { OrgWarning } from "../lib/orgWarnings";
 
 interface Props {
   orgName: string;
+  /**
+   * The organization's own logo, when it has uploaded one: it stands before
+   * the name so an administrator of several organizations sees at a glance
+   * which one they are in (specs/concepts/back-office.md).
+   */
+  logoUrl?: string | null;
   orgPath: string;
   active: OrgTabId;
   warnings?: OrgWarning[];
@@ -35,6 +41,7 @@ interface Props {
 }
 const {
   orgName,
+  logoUrl = null,
   orgPath,
   active,
   warnings = [],
@@ -68,7 +75,12 @@ const TAB_ICONS: Record<OrgTabId, string> = {
       {canSwitch && <TextLink href="/orgs">Bytt organisasjon</TextLink>}
       <TextLink href="/logout">Logg ut</TextLink>
     </div>
-    <h1 class="org-name"><a href={orgPath}>{orgName}</a></h1>
+    <h1 class="org-name">
+      <a href={orgPath}>
+        {logoUrl && <img class="logo" src={logoUrl} alt="" />}
+        <span class="name">{orgName}</span>
+      </a>
+    </h1>
     <nav class="tabs" aria-label="Organisasjonen">
       {
         tabs.map((tab) => (
@@ -141,14 +153,35 @@ const TAB_ICONS: Record<OrgTabId, string> = {
     letter-spacing: -0.01em;
     overflow-wrap: anywhere;
   }
+  /* A long name wraps beside the logo rather than stretching the row. */
+  .name {
+    min-width: 0;
+  }
   .org-name a {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6rem;
     color: inherit;
     text-decoration: none;
     border-radius: var(--sm-radius-sm);
   }
-  .org-name a:hover {
+  .org-name a:hover .name {
     text-decoration: underline;
     text-underline-offset: 3px;
+  }
+  /* A logo is always framed in a circle with a subtle outline, the same mark
+     supporters meet on the join page. Small here, because the name is what
+     the row is for. */
+  .logo {
+    display: block;
+    flex: none;
+    width: 2.5rem;
+    height: 2.5rem;
+    object-fit: contain;
+    padding: 0.2rem;
+    background: var(--sm-surface);
+    border-radius: 50%;
+    box-shadow: 0 0 0 1px var(--sm-border);
   }
   .org-name a:focus-visible {
     outline: none;

@@ -31,6 +31,8 @@ support.
 - An organization may add a **visual identity** — a logo and a banner image —
   shown on its [join page](join-page.md). Unlike the profile fields
   these are **optional**: the page simply omits what has not been uploaded.
+  The logo also identifies the organization to its own administrators, before
+  its name on every screen of the [back office](back-office.md).
 - An administrator can edit the organization's details — name, public profile,
   and visual identity — in the back office at any time; the public pages
   reflect changes immediately. A name change never changes the slug.

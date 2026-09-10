@@ -10,6 +10,7 @@ import {
   shareableJoinUrl,
   shareableQrCardUrl,
 } from "../../../lib/joinLinks";
+import { orgIdentity } from "../../../lib/orgImages";
 import { orgView } from "../../../lib/orgView";
 import { periods } from "../../../lib/periods";
 import {
@@ -88,6 +89,7 @@ const feeNotice = Astro.url.searchParams.has("varslet") ? { told, unreached } : 
 <Shell title={org.name} frame={false}>
   <OrgScreen
     orgName={org.name}
+    logoUrl={orgIdentity(org).logoUrl}
     orgPath={orgPath(org.slug)}
     active="oversikt"
     warnings={view.warnings}
