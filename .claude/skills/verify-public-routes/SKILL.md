@@ -339,7 +339,10 @@ you clobbered (it is insert-if-absent), so restore edited columns by hand.
 Exit 0 = all held. Redirects are **never** auto-followed — for the legacy
 paths the `Location` header *is* the contract.
 
-The full sweep after a routing change (dev server on 4322):
+The full sweep after a routing change (dev server on 4322, **but check**:
+astro moves to the next free port when 4322 is taken by another worktree, and
+then these commands drive that worktree's server instead of yours. Ask for the
+real one with `bash .claude/skills/dev-logs/devlog.sh port`):
 
     R=.claude/skills/verify-public-routes/routes.mjs
     node $R localhost:4322/bli-medlem/<slug> --status 200 --repeat 2 \

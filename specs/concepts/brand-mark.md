@@ -23,7 +23,9 @@ and never competes with an organization's own identity.
   text, the heart sits in front of it ("❤️ støttemedlem.no").
 - **It is the standard red heart character** — no custom icon, no other color.
   Where an SVG surface cannot rely on emoji fonts, a simple red heart shape may
-  stand in, but the character is the default.
+  stand in, but the character is the default. Both
+  [cards](member-card.md) are such surfaces, and they stand in with the same
+  shape: one heart, drawn one way, wherever the character cannot be typed.
 - The heart is a mark, not a headline: like the attribution it belongs to, it
   stays small and quiet next to the organization's own identity.
 - The heart means **supporting**: the product carries one as its mark, and a
@@ -44,3 +46,5 @@ and never competes with an organization's own identity.
 - [Concept: Brand palette](brand-palette.md)
 - [Concept: Member card](member-card.md) — a surface with no emoji font at all,
   where the red heart shape stands in for the character throughout.
+- [Use case: Promote membership with a QR code card](../use-cases/promote-with-qr-card.md),
+  the organization's card, which is the other such surface.

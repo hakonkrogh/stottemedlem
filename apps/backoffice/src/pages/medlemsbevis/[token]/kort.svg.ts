@@ -1,5 +1,5 @@
 import type { APIRoute } from "astro";
-import { withEmbeddedCardFont } from "../../../lib/cardImage";
+import { withEmbeddedCardFont } from "../../../lib/cardFont";
 import { getDb } from "../../../lib/db";
 import { loadMemberCard, renderMemberCardSvg } from "../../../lib/memberCard";
 

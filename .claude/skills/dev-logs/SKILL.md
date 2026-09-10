@@ -13,6 +13,26 @@ description: Read the backend's stdout locally — console.log/error, request li
 | `grep <pattern> [app]` | case-insensitive grep over the whole log, unwrapped |
 | `status` / `stop [app]` | daemon status / stop it |
 | `path [app]` | print the raw log file path |
+| `port [app]` | the port the server is ACTUALLY on |
+
+## Never hardcode the port (added 2026-09-10)
+
+4322/4321 is what `start` **asks** for. When that port is taken, astro moves to
+the next free one and says so only in its own start line, so a URL you built
+from the number you expected drives **another worktree's dev server**: it
+answers 200, serves its own code against its own D1, and every assertion you
+make measures the wrong thing. This bit in a session where 4322 was held and
+the real server came up on 4323.
+
+`start` now prints `<app> dev server: http://localhost:<actual>` (and says so
+loudly when it had to move), and `devlog.sh port [app]` reads the real one back
+from `.astro/dev.json` for scripting:
+
+    PORT=$(bash .claude/skills/dev-logs/devlog.sh port)
+    curl -s "http://localhost:$PORT/bli-medlem/<slug>/qr"
+
+The worked examples in `verify-public-routes` and elsewhere write `4322`
+literally. Treat that as "the backoffice dev server", not as a number.
 
 ## The facts that make this work (verified 2026-08-18, astro 7.0.3)
 

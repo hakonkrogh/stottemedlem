@@ -2,6 +2,7 @@ import { getOrganizationBySlug } from "@stottemedlem/db";
 import { qrCardSvg, qrSvg } from "@stottemedlem/qr";
 import { qrPngBuffer } from "@stottemedlem/qr/node";
 import type { APIRoute } from "astro";
+import { withEmbeddedCardFont } from "../../../lib/cardFont";
 import { getDb } from "../../../lib/db";
 import { shareableJoinUrl } from "../../../lib/joinLinks";
 
@@ -28,6 +29,12 @@ import { shareableJoinUrl } from "../../../lib/joinLinks";
  * it may not be something a stranger can put there through the URL. An address
  * that names no organization we hold gets no card at all, the way its join
  * page gets no page: a card whose code leads to a 404 is worse than no card.
+ *
+ * The card is served with its typeface riding inside it. It is looked at as a
+ * picture everywhere it matters (an `<img>` in the back office, an `<img>` on
+ * a club's own website, a file dropped into a poster), and an SVG loaded that
+ * way fetches no webfont, so without the embedded face the card would set in
+ * Georgia on every surface but the marketing page that inlines it.
  *
  * The QR code encodes this environment's shareable join-page address (the
  * canonical støttemedlem.no origin in production, staging's own on staging —
@@ -68,7 +75,8 @@ export const GET: APIRoute = async ({ params, url }) => {
     }
     headers.set("Content-Type", "image/svg+xml; charset=utf-8");
     attach(`stottemedlem-kort-${slug}.svg`);
-    return new Response(qrCardSvg({ joinUrl, organizationName: organization.name }), { headers });
+    const card = qrCardSvg({ joinUrl, organizationName: organization.name });
+    return new Response(withEmbeddedCardFont(card), { headers });
   }
 
   if (variant === "qr") {

@@ -2,11 +2,14 @@ import { env } from "cloudflare:workers";
 import { initWasm, Resvg } from "@resvg/resvg-wasm";
 import wasm from "@resvg/resvg-wasm/index_bg.wasm";
 import { MEMBER_CARD_WIDTH } from "@stottemedlem/qr";
-import fraunces from "../assets/fonts/Fraunces.ttf?inline";
+import { CARD_FONT_DATA_URI, CARD_FONT_FAMILY } from "./cardFont";
 
 /**
- * Turning the member's card (specs/concepts/member-card.md) into a real
- * picture.
+ * Turning a card into a real picture.
+ *
+ * There are two: the member's own (specs/concepts/member-card.md) and the
+ * organization's QR card (specs/use-cases/promote-with-qr-card.md). Only the
+ * member's is rasterized; both are set in the typeface `cardFont.ts` carries.
  *
  * A shared card has to preview in a social feed and travel in an email, and
  * neither accepts SVG — so the same drawing is rasterized here. Two things a
@@ -17,30 +20,9 @@ import fraunces from "../assets/fonts/Fraunces.ttf?inline";
  *    beside the bundle) rather than fetched.
  *  - **Fonts.** There is no system font to fall back on: text drawn in a font
  *    the renderer does not hold renders as nothing at all. The card's one
- *    typeface is embedded, and it is the same Fraunces the rest of the product
- *    is set in.
+ *    typeface is embedded (see `cardFont.ts`), and it is the same Fraunces the
+ *    rest of the product is set in.
  */
-
-/** The card's own typeface must be named exactly as the SVG asks for it. */
-export const CARD_FONT_FAMILY = "Fraunces";
-
-/**
- * The card with its typeface riding inside — for serving the SVG to browsers.
- *
- * An SVG embedded as `<img>` loads no webfonts, so without this the card's
- * text falls back to Georgia on the very pages the card exists for. The font
- * is the same 73 KB brand-cut instance the rasterizer embeds, carried as a
- * data URI (~97 KB of base64 on the response, cacheable). The weight range
- * spans the face so a browser never fakes a bold on top of it.
- *
- * Only the SERVED SVG gets this: the rasterizer holds the same font as bytes
- * and needs no @font-face, and the stored-PNG cache keys digest the SVG, so
- * injecting it there would only churn perfectly good cached pictures.
- */
-export function withEmbeddedCardFont(svg: string): string {
-  const face = `<style>@font-face{font-family:${CARD_FONT_FAMILY};font-weight:300 900;src:url(${String(fraunces)}) format("truetype")}</style>`;
-  return svg.replace("</title>", `</title>\n  ${face}`);
-}
 
 let wasmReady: Promise<void> | null = null;
 let fontBytes: Uint8Array | null = null;
@@ -48,7 +30,7 @@ let fontBytes: Uint8Array | null = null;
 function decodeFont(): Uint8Array {
   if (fontBytes) return fontBytes;
   // Vite inlines the file as a base64 data URI; the renderer wants the bytes.
-  const base64 = String(fraunces).split(",")[1] ?? "";
+  const base64 = CARD_FONT_DATA_URI.split(",")[1] ?? "";
   const binary = atob(base64);
   const bytes = new Uint8Array(binary.length);
   for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
