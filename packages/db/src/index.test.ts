@@ -16,6 +16,9 @@ import {
   owesFeeChangeNotice,
   renewalFeeNok,
   resumeCostsNow,
+  type StatsAgreementRow,
+  type StatsPeriodRow,
+  summarizeOrganization,
 } from "./index.js";
 import type { Organization } from "./schema.js";
 
@@ -427,5 +430,192 @@ describe("resumeCostsNow", () => {
   it("works on the accelerated ISO-week calendar too", () => {
     expect(resumeCostsNow(202636, 202636)).toBe(false);
     expect(resumeCostsNow(202635, 202636)).toBe(true);
+  });
+});
+
+describe("summarizeOrganization", () => {
+  const PERIOD = { key: 2026, start: "2026-01-01", end: "2026-12-31" };
+
+  const period = (memberId: string, periodYear: number, paidNok: number): StatsPeriodRow => ({
+    memberId,
+    periodYear,
+    paidNok,
+  });
+
+  const agreement = (
+    agreementId: string,
+    memberId: string | null,
+    annualFeeNok: number,
+    extra: Partial<StatsAgreementRow> = {},
+  ): StatsAgreementRow => ({
+    agreementId,
+    memberId,
+    status: "ACTIVE",
+    annualFeeNok,
+    createdAt: "2026-01-02",
+    stoppedAt: null,
+    ...extra,
+  });
+
+  const stopped = (
+    agreementId: string,
+    memberId: string,
+    annualFeeNok: number,
+    stoppedAt: string,
+  ): StatsAgreementRow =>
+    agreement(agreementId, memberId, annualFeeNok, { status: "STOPPED", stoppedAt });
+
+  it("counts nothing for an organization nobody has joined", () => {
+    expect(summarizeOrganization([], [], PERIOD)).toEqual({
+      annualSupportNok: 0,
+      activeMembers: 0,
+      renewingMembers: 0,
+      endingMembers: 0,
+      lapsedMembers: 0,
+      newMembers: 0,
+      stoppedMembers: 0,
+      paidThisPeriodNok: 0,
+      paidAllTimeNok: 0,
+    });
+  });
+
+  it("expects a year of every running arrangement at today's price", () => {
+    const stats = summarizeOrganization(
+      [period("m-1", 2026, 300), period("m-2", 2026, 1000)],
+      [agreement("a-1", "m-1", 400), agreement("a-2", "m-2", 1000)],
+      PERIOD,
+    );
+    // The tier's fee now, not the 300 that was actually paid for this period.
+    expect(stats.annualSupportNok).toBe(1400);
+  });
+
+  it("leaves an ended arrangement out of the yearly figure but not out of the members", () => {
+    const stats = summarizeOrganization(
+      [period("m-1", 2026, 300), period("m-2", 2026, 300)],
+      [agreement("a-1", "m-1", 300), stopped("a-2", "m-2", 300, "2026-06-01T09:00:00.000Z")],
+      PERIOD,
+    );
+    expect(stats.annualSupportNok).toBe(300);
+    expect(stats.activeMembers).toBe(2);
+    expect(stats.renewingMembers).toBe(1);
+    expect(stats.endingMembers).toBe(1);
+  });
+
+  it("counts one supporter once when they hold two running arrangements", () => {
+    const stats = summarizeOrganization(
+      [period("m-1", 2026, 300)],
+      [
+        agreement("a-1", "m-1", 300, { createdAt: "2026-01-02" }),
+        agreement("a-2", "m-1", 1000, { createdAt: "2026-03-04" }),
+      ],
+      PERIOD,
+    );
+    // The newest arrangement is the one they are on now.
+    expect(stats.annualSupportNok).toBe(1000);
+    expect(stats.renewingMembers).toBe(1);
+  });
+
+  it("tells this period's supporters from the ones who stopped supporting", () => {
+    const stats = summarizeOrganization(
+      [period("m-1", 2026, 300), period("m-2", 2025, 300), period("m-1", 2025, 300)],
+      [agreement("a-1", "m-1", 300)],
+      PERIOD,
+    );
+    expect(stats.activeMembers).toBe(1);
+    expect(stats.lapsedMembers).toBe(1);
+  });
+
+  it("counts a supporter as new only in their first period", () => {
+    const stats = summarizeOrganization(
+      [period("m-1", 2025, 300), period("m-1", 2026, 300), period("m-2", 2026, 150)],
+      [],
+      PERIOD,
+    );
+    expect(stats.newMembers).toBe(1);
+  });
+
+  it("adds up what was paid for this period and what was ever paid", () => {
+    const stats = summarizeOrganization(
+      [period("m-1", 2025, 300), period("m-1", 2026, 300), period("m-2", 2026, 150)],
+      [],
+      PERIOD,
+    );
+    expect(stats.paidThisPeriodNok).toBe(450);
+    expect(stats.paidAllTimeNok).toBe(750);
+  });
+
+  describe("who stopped in this period", () => {
+    it("counts an arrangement ended inside the period", () => {
+      const stats = summarizeOrganization(
+        [period("m-1", 2026, 300)],
+        [stopped("a-1", "m-1", 300, "2026-06-01T09:00:00.000Z")],
+        PERIOD,
+      );
+      expect(stats.stoppedMembers).toBe(1);
+    });
+
+    it("ignores one ended before the period began", () => {
+      const stats = summarizeOrganization(
+        [period("m-1", 2025, 300)],
+        [stopped("a-1", "m-1", 300, "2025-11-30T09:00:00.000Z")],
+        PERIOD,
+      );
+      expect(stats.stoppedMembers).toBe(0);
+    });
+
+    it("takes the last day of the period, and not the first of the next", () => {
+      const onTheEdge = summarizeOrganization(
+        [],
+        [stopped("a-1", "m-1", 300, "2026-12-31T23:59:00.000Z")],
+        PERIOD,
+      );
+      expect(onTheEdge.stoppedMembers).toBe(1);
+      const justAfter = summarizeOrganization(
+        [],
+        [stopped("a-1", "m-1", 300, "2027-01-01T00:01:00.000Z")],
+        PERIOD,
+      );
+      expect(justAfter.stoppedMembers).toBe(0);
+    });
+
+    it("does not count a supporter who stopped and joined again", () => {
+      const stats = summarizeOrganization(
+        [period("m-1", 2026, 300)],
+        [
+          stopped("a-1", "m-1", 300, "2026-06-01T09:00:00.000Z"),
+          agreement("a-2", "m-1", 300, { createdAt: "2026-06-01" }),
+        ],
+        PERIOD,
+      );
+      // They ended an arrangement, not their support.
+      expect(stats.stoppedMembers).toBe(0);
+      expect(stats.renewingMembers).toBe(1);
+    });
+
+    it("counts a person once however many arrangements of theirs ended", () => {
+      const stats = summarizeOrganization(
+        [],
+        [
+          stopped("a-1", "m-1", 300, "2026-02-01T09:00:00.000Z"),
+          stopped("a-2", "m-1", 300, "2026-08-01T09:00:00.000Z"),
+        ],
+        PERIOD,
+      );
+      expect(stats.stoppedMembers).toBe(1);
+    });
+
+    it("counts an arrangement the provider let expire, not only one the member ended", () => {
+      const stats = summarizeOrganization(
+        [],
+        [
+          agreement("a-1", "m-1", 300, {
+            status: "EXPIRED",
+            stoppedAt: "2026-04-01T09:00:00.000Z",
+          }),
+        ],
+        PERIOD,
+      );
+      expect(stats.stoppedMembers).toBe(1);
+    });
   });
 });

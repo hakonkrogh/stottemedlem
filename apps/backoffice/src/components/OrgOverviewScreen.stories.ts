@@ -8,10 +8,12 @@ import {
   ACTIVE_MEMBERS,
   ALL_WARNINGS,
   JOIN_URL,
+  NO_STATS,
   ORG_PATH,
+  ORG_STATS,
+  PERIOD_LABEL,
   QR_CARD_URL,
   TERMS_URL,
-  TIERS,
 } from "./storyFixtures";
 
 export default {
@@ -35,7 +37,8 @@ const overview = (
         joinUrl: JOIN_URL,
         termsUrl: TERMS_URL,
         qrCardUrl: QR_CARD_URL,
-        tiers: TIERS,
+        stats: ORG_STATS,
+        periodLabel: PERIOD_LABEL,
         ...props,
       },
     },
@@ -45,9 +48,16 @@ const overview = (
 /** An organization in order: nothing to fix, just the addresses it shares. */
 export const Default = { args: overview() };
 
-/** Everything a half-finished organization still owes, each with its way in. */
+/** Everything a half-finished organization still owes, each with its way in.
+ *  Nobody has joined it, so it carries no figures at all. */
 export const NeedsSetup = {
-  args: overview({ warnings: ALL_WARNINGS, tiers: [] }, ALL_WARNINGS, 0),
+  args: overview({ warnings: ALL_WARNINGS, stats: NO_STATS }, ALL_WARNINGS, 0),
+};
+
+/** Set up and waiting for its first supporter: every figure is a nothing, and
+ *  the front page is the same front page it will be once they arrive. */
+export const NobodyHasJoinedYet = {
+  args: overview({ stats: NO_STATS }, [], 0),
 };
 
 /** Straight after a price change: who was told, and who the org must tell. */

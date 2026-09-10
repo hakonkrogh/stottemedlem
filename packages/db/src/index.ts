@@ -1386,21 +1386,169 @@ export async function listOrganizationMembers(
   return [...byMember.values()];
 }
 
+/** One paid period, reduced to what a count of the organization needs. */
+export interface StatsPeriodRow {
+  memberId: string;
+  periodYear: number;
+  paidNok: number;
+}
+
+/** One arrangement, priced at what its tier costs today. */
+export interface StatsAgreementRow {
+  agreementId: string;
+  memberId: string | null;
+  status: AgreementStatus;
+  /** The tier's fee now, not the fee the arrangement was made at. */
+  annualFeeNok: number;
+  createdAt: string;
+  /** When the supporter (or the provider) ended it; null while it runs. */
+  stoppedAt: string | null;
+}
+
+/** The first and last day of the period being counted, `YYYY-MM-DD`. */
+export interface StatsPeriodBounds {
+  key: number;
+  start: string;
+  end: string;
+}
+
 /**
- * How many supporting members are current — one number, without reading the
- * whole register. The back office carries it on the member tab from every
- * screen (specs/concepts/back-office.md), so it must stay cheap.
+ * The organization in numbers (specs/concepts/organization-figures.md): what
+ * it can expect in a year, how many people stand behind that, and how the year
+ * running now is going.
  */
-export async function countActiveMembers(
+export interface OrganizationStats {
+  /**
+   * What a year of support is worth if every running arrangement renews at
+   * today's prices. Arrangements that have been ended are not in it: they are
+   * exactly the money the organization should not count on.
+   */
+  annualSupportNok: number;
+  /** Supporters current for this period, the same count the member tab wears. */
+  activeMembers: number;
+  /** Of those, the ones whose arrangement carries them into the next period… */
+  renewingMembers: number;
+  /** …and the ones it does not. */
+  endingMembers: number;
+  /** Supported before, not for this period. */
+  lapsedMembers: number;
+  /** Supporters whose first paid period is the one running now. */
+  newMembers: number;
+  /** Supporters who ended their arrangement in this period and started no new one. */
+  stoppedMembers: number;
+  /** Paid for the period running now, and paid ever. */
+  paidThisPeriodNok: number;
+  paidAllTimeNok: number;
+}
+
+/**
+ * The counting itself, kept apart from the reading so it can be tested.
+ *
+ * A supporter can hold more than one arrangement over time, and briefly two at
+ * once (specs/concepts/membership.md), so running arrangements are counted per
+ * PERSON, and the newest one wins. Counting them per arrangement would let one
+ * supporter's rejoin inflate the yearly figure by a whole membership.
+ */
+export function summarizeOrganization(
+  periods: StatsPeriodRow[],
+  agreements: StatsAgreementRow[],
+  period: StatsPeriodBounds,
+): OrganizationStats {
+  const active = new Set<string>();
+  const everPaid = new Set<string>();
+  const firstPeriod = new Map<string, number>();
+  let paidThisPeriodNok = 0;
+  let paidAllTimeNok = 0;
+
+  for (const row of periods) {
+    everPaid.add(row.memberId);
+    paidAllTimeNok += row.paidNok;
+    if (row.periodYear === period.key) {
+      active.add(row.memberId);
+      paidThisPeriodNok += row.paidNok;
+    }
+    const first = firstPeriod.get(row.memberId);
+    if (first === undefined || row.periodYear < first)
+      firstPeriod.set(row.memberId, row.periodYear);
+  }
+
+  // One running arrangement per supporter, newest first. An arrangement with
+  // nobody on it yet is its own key: it was drafted and not yet approved.
+  const newest = new Map<string, StatsAgreementRow>();
+  const endedInPeriod = new Set<string>();
+  for (const row of agreements) {
+    if (row.status === "ACTIVE") {
+      const key = row.memberId ?? `agreement:${row.agreementId}`;
+      const seen = newest.get(key);
+      if (!seen || row.createdAt > seen.createdAt) newest.set(key, row);
+      continue;
+    }
+    // Ended, and ended while this period was running. Compared as calendar
+    // dates: the period is days, and the timestamp is an instant inside one.
+    const day = row.stoppedAt?.slice(0, 10);
+    if (!row.memberId || !day) continue;
+    if (day >= period.start && day <= period.end) endedInPeriod.add(row.memberId);
+  }
+
+  const running = [...newest.values()];
+  const renewing = new Set(running.flatMap((row) => (row.memberId ? [row.memberId] : [])));
+
+  const renewingMembers = [...active].filter((memberId) => renewing.has(memberId)).length;
+  let newMembers = 0;
+  for (const [, first] of firstPeriod) if (first === period.key) newMembers += 1;
+
+  return {
+    annualSupportNok: running.reduce((sum, row) => sum + row.annualFeeNok, 0),
+    activeMembers: active.size,
+    renewingMembers,
+    endingMembers: active.size - renewingMembers,
+    lapsedMembers: [...everPaid].filter((memberId) => !active.has(memberId)).length,
+    newMembers,
+    // Somebody who ended one arrangement and started another has not stopped
+    // supporting, whatever the rows say: rejoining is a stop and a start on
+    // the same day (specs/concepts/membership.md).
+    stoppedMembers: [...endedInPeriod].filter((memberId) => !renewing.has(memberId)).length,
+    paidThisPeriodNok,
+    paidAllTimeNok,
+  };
+}
+
+/**
+ * The organization in numbers, read in two queries: every period it has ever
+ * been paid for, and every arrangement it has ever made, priced at today's
+ * tier.
+ *
+ * The back office asks for this on every screen, because the member tab wears
+ * the active count from all of them (specs/concepts/back-office.md).
+ */
+export async function organizationStats(
   db: Db,
   orgId: string,
-  currentPeriodKey: number,
-): Promise<number> {
-  const rows = await db
-    .select({ memberId: memberships.memberId })
-    .from(memberships)
-    .where(and(eq(memberships.orgId, orgId), eq(memberships.periodYear, currentPeriodKey)));
-  return new Set(rows.map((row) => row.memberId)).size;
+  period: StatsPeriodBounds,
+): Promise<OrganizationStats> {
+  const [paidPeriods, agreements] = await Promise.all([
+    db
+      .select({
+        memberId: memberships.memberId,
+        periodYear: memberships.periodYear,
+        paidNok: memberships.paidNok,
+      })
+      .from(memberships)
+      .where(eq(memberships.orgId, orgId)),
+    db
+      .select({
+        agreementId: membershipAgreements.id,
+        memberId: membershipAgreements.memberId,
+        status: membershipAgreements.status,
+        annualFeeNok: membershipTiers.annualFeeNok,
+        createdAt: membershipAgreements.createdAt,
+        stoppedAt: membershipAgreements.stoppedAt,
+      })
+      .from(membershipAgreements)
+      .innerJoin(membershipTiers, eq(membershipTiers.id, membershipAgreements.tierId))
+      .where(eq(membershipAgreements.orgId, orgId)),
+  ]);
+  return summarizeOrganization(paidPeriods, agreements, period);
 }
 
 /**

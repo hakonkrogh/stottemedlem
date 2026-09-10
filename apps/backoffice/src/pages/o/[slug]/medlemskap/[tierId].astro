@@ -159,7 +159,7 @@ const title = isNew ? "Legg til medlemskap" : `Endre ${tier?.name}`;
     orgPath={orgPath(org.slug)}
     active="medlemskap"
     warnings={warnings}
-    activeMembers={view.activeMembers}
+    activeMembers={view.stats.activeMembers}
   >
     <MembershipTierFormScreen
       orgName={org.name}

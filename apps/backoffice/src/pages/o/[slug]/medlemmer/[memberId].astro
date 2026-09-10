@@ -173,7 +173,7 @@ const sought = flags.get(PAYMENT_PARAM);
 ---
 
 <Shell title={`${displayName} — ${org.name}`} frame={false}>
-  <OrgScreen orgName={org.name} orgPath={orgPath(org.slug)} active="medlemmer" warnings={warnings} activeMembers={view.activeMembers}>
+  <OrgScreen orgName={org.name} orgPath={orgPath(org.slug)} active="medlemmer" warnings={warnings} activeMembers={view.stats.activeMembers}>
     <MemberDetailScreen
       entry={entry}
       values={values}

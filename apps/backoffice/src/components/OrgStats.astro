@@ -1,0 +1,142 @@
+---
+// The organization in numbers (specs/concepts/organization-figures.md): what a
+// year of support is worth, who stands behind it, and how the period running
+// now is going.
+//
+// Every figure is a plain number with the sentence that says what it counts.
+// Nothing here is a chart: six headline figures are read, not compared against
+// each other, and six bars would say less than the numbers already do. Nothing
+// here is a link either, for the same reason the rest of this page is not: the
+// place that owns the members is a tab away on every screen.
+//
+// They are laid out in two rows of three, and the rows mean something: how the
+// organization stands, then what happened to it in this period. "Nye" and
+// "Sluttet" sit side by side because the trend is the pair of them.
+import type { OrganizationStats } from "@stottemedlem/db";
+import Heading from "@stottemedlem/ui/components/Heading.astro";
+import Stack from "@stottemedlem/ui/components/Stack.astro";
+
+interface Props {
+  stats: OrganizationStats;
+  /** The period running now, as the organization would say it ("2026"). */
+  periodLabel: string;
+}
+const { stats, periodLabel } = Astro.props;
+
+// Norwegian groups thousands with a space; a non-breaking one, so an amount
+// never wraps in the middle. Written as an escape so it stays visible here.
+const kr = (nok: number) => `${nok.toLocaleString("nb-NO").replace(/\s/g, "\u00A0")}\u00A0kr`;
+
+// How the active count breaks down. Said only when it is worth saying: an
+// organization where everybody renews should read as one clean number.
+const activeDetail =
+  stats.activeMembers === 0
+    ? "Ingen støttemedlemmer for perioden ennå."
+    : stats.endingMembers === 0
+      ? "Alle har en avtale som fornyer seg."
+      : `${stats.renewingMembers} fornyes, ${stats.endingMembers} slutter når perioden er ute.`;
+
+const figures = [
+  {
+    label: "Årlig støtte",
+    value: kr(stats.annualSupportNok),
+    detail: "Hvis alle løpende avtaler fornyes til dagens priser.",
+  },
+  {
+    label: "Aktive støttemedlemmer",
+    value: String(stats.activeMembers),
+    detail: activeDetail,
+  },
+  {
+    label: `Betalt i ${periodLabel}`,
+    value: kr(stats.paidThisPeriodNok),
+    detail: `Innbetalt for perioden som løper nå.${
+      stats.paidAllTimeNok > stats.paidThisPeriodNok
+        ? ` ${kr(stats.paidAllTimeNok)} er betalt inn til sammen.`
+        : ""
+    }`,
+  },
+  {
+    label: `Nye i ${periodLabel}`,
+    value: String(stats.newMembers),
+    detail: "Betalte for sin aller første periode.",
+  },
+  {
+    label: `Sluttet i ${periodLabel}`,
+    value: String(stats.stoppedMembers),
+    detail: "Avsluttet den årlige avtalen sin i perioden og startet ingen ny.",
+  },
+  {
+    label: "Utløpte",
+    value: String(stats.lapsedMembers),
+    detail: "Har støttet dere før, men ikke for perioden som løper nå.",
+  },
+];
+---
+
+<Stack gap="sm">
+  <Heading level={2}>Nøkkeltall</Heading>
+  <dl class="figures">
+    {
+      figures.map((figure) => (
+        <div class="figure">
+          <dt>{figure.label}</dt>
+          <dd class="value">{figure.value}</dd>
+          <dd class="detail">{figure.detail}</dd>
+        </div>
+      ))
+    }
+  </dl>
+</Stack>
+
+<style>
+  /* One figure per row on a phone, then two, then two rows of three: an
+     explicit grid, so six figures never leave one orphaned on a row by itself. */
+  .figures {
+    display: grid;
+    gap: var(--sm-space-md);
+    grid-template-columns: 1fr;
+    margin: 0;
+  }
+  @media (min-width: 32rem) {
+    .figures {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+  @media (min-width: 52rem) {
+    .figures {
+      grid-template-columns: repeat(3, 1fr);
+    }
+  }
+  .figure {
+    display: grid;
+    gap: 0.2rem;
+    align-content: start;
+    padding: var(--sm-space-md);
+    background: var(--sm-bg);
+    border: 1px solid var(--sm-border);
+    border-radius: var(--sm-radius-md);
+  }
+  .figure dt {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--sm-muted);
+  }
+  .figure dd {
+    margin: 0;
+  }
+  /* The same face and weight the membership price wears, so a number means the
+     same thing wherever the back office shows one. */
+  .value {
+    font-family: var(--sm-font-display);
+    font-weight: var(--sm-font-display-weight, 600);
+    font-variation-settings: var(--sm-font-display-variation, normal);
+    font-size: 1.75rem;
+    line-height: 1.15;
+    overflow-wrap: anywhere;
+  }
+  .detail {
+    font-size: 0.85rem;
+    color: var(--sm-muted);
+  }
+</style>
