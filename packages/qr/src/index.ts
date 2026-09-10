@@ -10,7 +10,23 @@
  * DOM-only helpers (rasterize/download) in `@stottemedlem/qr/browser`.
  */
 
-import { create, toString as toStringQr } from "qrcode";
+import { toString as toStringQr } from "qrcode";
+import {
+  CARD,
+  DEEP,
+  EDGE,
+  escapeXml,
+  FAINT,
+  FONT,
+  FONT_WEIGHT,
+  HAIRLINE,
+  HEART,
+  heartPath,
+  INK,
+  MUTED,
+  qrModulesPath,
+  r,
+} from "./brand.js";
 
 /** The member's own card — a different owner from the organization's card below. */
 export {
@@ -47,7 +63,10 @@ export interface QrCardOptions {
   title?: string;
   /** Call to action under the QR code. */
   hint?: string;
-  /** Attribution at the bottom of the card. */
+  /**
+   * The wordmark at the bottom of the card. The heart in front of it is drawn,
+   * not typed, so it is not part of this string.
+   */
   footer?: string;
 }
 
@@ -55,23 +74,15 @@ export interface QrCardOptions {
 export const QR_CARD_WIDTH = 400;
 export const QR_CARD_HEIGHT = 520;
 
-// The brand's one action colour (specs/concepts/brand-palette.md). It was Vipps
-// orange until 2026-09-04; a warm accent next to the red heart was the very
-// thing the palette refresh removed, and Vipps is named in the hint anyway.
-const ACCENT = "#3d6b3f";
-const INK = "#1c1917";
-const MUTED = "#57534e";
-const FAINT = "#a8a29e";
-const FONT = "system-ui, -apple-system, 'Segoe UI', sans-serif";
-
-function escapeXml(value: string): string {
-  return value
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&apos;");
-}
+/**
+ * The card carries NO green (specs/concepts/brand-palette.md). The eyebrow
+ * over the organization's name was moss until 2026-09-10, and before that
+ * Vipps orange; both were the product talking on an object whose whole job is
+ * to present ONE organization and hand a stranger a way in. It is the card's
+ * own ink now, and the heart at the bottom is the only colour left: the same
+ * rule the member's card already follows.
+ */
+const EYEBROW = DEEP;
 
 /** Shrink the name to fit the card's width on a single line. */
 function nameFontSize(name: string): number {
@@ -81,19 +92,25 @@ function nameFontSize(name: string): number {
   return 13;
 }
 
-/** One `<path>` covering every dark module of the QR code. */
-function qrModulesPath(url: string): { path: string; moduleCount: number } {
-  const qr = create(url, { errorCorrectionLevel: "M" });
-  const size = qr.modules.size;
-  const segments: string[] = [];
-  for (let row = 0; row < size; row++) {
-    for (let col = 0; col < size; col++) {
-      if (qr.modules.get(row, col)) {
-        segments.push(`M${col} ${row}h1v1h-1z`);
-      }
-    }
-  }
-  return { path: segments.join(""), moduleCount: size };
+/**
+ * The attribution, with its heart drawn rather than typed
+ * (specs/concepts/brand-attribution.md, specs/concepts/brand-mark.md).
+ *
+ * The pair is centred as one unit: the heart is placed from the width of both
+ * rather than from a hand-picked x, so a shorter or longer wordmark stays in
+ * the middle of a card that gets printed at sizes nobody here chooses.
+ */
+function attribution(center: number, baseline: number, label: string, size: number): string {
+  const heartSize = size + 2;
+  const gap = 7;
+  // Fraunces averages a little over half the em per character; erring wide
+  // only nudges the pair a hair left of true centre.
+  const width = heartSize + gap + label.length * size * 0.57;
+  const left = center - width / 2;
+  return `<g>
+    ${heartPath(left, baseline - heartSize + 2, heartSize, HEART)}
+    <text x="${r(left + heartSize + gap)}" y="${baseline}" font-family="${FONT}" font-size="${size}" font-weight="${FONT_WEIGHT}" fill="${FAINT}">${escapeXml(label)}</text>
+  </g>`;
 }
 
 /**
@@ -105,26 +122,26 @@ export function qrCardSvg(options: QrCardOptions): string {
   const name = options.organizationName.trim();
   const title = options.title ?? "Bli støttemedlem";
   const hint = options.hint ?? "Skann med mobilen — betal med Vipps";
-  // The heart is the brand mark — it travels with the attribution.
-  const footer = options.footer ?? "❤️ støttemedlem.no";
+  const footer = options.footer ?? "støttemedlem.no";
 
   const { path, moduleCount } = qrModulesPath(options.joinUrl);
   const qrSize = 264;
   const qrX = (QR_CARD_WIDTH - qrSize) / 2;
   const qrY = 128;
   const scale = qrSize / moduleCount;
+  const center = QR_CARD_WIDTH / 2;
 
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${QR_CARD_WIDTH} ${QR_CARD_HEIGHT}" width="${QR_CARD_WIDTH}" height="${QR_CARD_HEIGHT}" role="img" aria-label="${escapeXml(`${title} i ${name}`)}">
   <title>${escapeXml(`${title} i ${name}`)}</title>
-  <rect x="8" y="8" width="${QR_CARD_WIDTH - 16}" height="${QR_CARD_HEIGHT - 16}" rx="24" fill="#ffffff" stroke="#e7e5e4" stroke-width="2"/>
-  <text x="${QR_CARD_WIDTH / 2}" y="64" text-anchor="middle" font-family="${FONT}" font-size="13" font-weight="700" letter-spacing="2.5" fill="${ACCENT}">${escapeXml(title.toUpperCase())}</text>
-  <text x="${QR_CARD_WIDTH / 2}" y="98" text-anchor="middle" font-family="${FONT}" font-size="${nameFontSize(name)}" font-weight="700" fill="${INK}">${escapeXml(name)}</text>
+  <rect x="8" y="8" width="${QR_CARD_WIDTH - 16}" height="${QR_CARD_HEIGHT - 16}" rx="24" fill="${CARD}" stroke="${EDGE}" stroke-width="2"/>
+  <text x="${center}" y="64" text-anchor="middle" font-family="${FONT}" font-size="13" font-weight="${FONT_WEIGHT}" letter-spacing="2.5" fill="${EYEBROW}">${escapeXml(title.toUpperCase())}</text>
+  <text x="${center}" y="99" text-anchor="middle" font-family="${FONT}" font-size="${nameFontSize(name)}" font-weight="${FONT_WEIGHT}" fill="${INK}">${escapeXml(name)}</text>
   <g transform="translate(${qrX} ${qrY}) scale(${scale})">
     <path d="${path}" fill="${INK}"/>
   </g>
-  <text x="${QR_CARD_WIDTH / 2}" y="434" text-anchor="middle" font-family="${FONT}" font-size="14" fill="${MUTED}">${escapeXml(hint)}</text>
-  <line x1="48" y1="458" x2="${QR_CARD_WIDTH - 48}" y2="458" stroke="#f0efee" stroke-width="2"/>
-  <text x="${QR_CARD_WIDTH / 2}" y="488" text-anchor="middle" font-family="${FONT}" font-size="12" fill="${FAINT}">${escapeXml(footer)}</text>
+  <text x="${center}" y="434" text-anchor="middle" font-family="${FONT}" font-size="15" font-weight="${FONT_WEIGHT}" fill="${MUTED}">${escapeXml(hint)}</text>
+  <line x1="48" y1="458" x2="${QR_CARD_WIDTH - 48}" y2="458" stroke="${HAIRLINE}" stroke-width="2"/>
+  ${attribution(center, 489, footer, 13)}
 </svg>
 `;
 }

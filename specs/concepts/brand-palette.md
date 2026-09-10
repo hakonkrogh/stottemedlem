@@ -27,12 +27,25 @@ it too, for the reason below.
   something, the focused field, the selected tier, the small role label on the
   receipt. It is the same green that says a payment succeeded or a membership
   is active, on purpose: acting and succeeding are the same colour.
-- **The green stops at the [member card](member-card.md).** The card is white,
-  ink and the heart's red, and nothing else. Everywhere else the product is
-  talking to someone, so its own colour belongs there; the card is the one
-  surface that presents two other parties, the member and the organization
-  they back, and a third voice on it is one too many. The card carried a moss
-  rule and a moss valid year for a while, and both are ink now.
+- **The green stops at the cards.** Both of them: the
+  [member card](member-card.md) and the organization's
+  [QR card](../use-cases/promote-with-qr-card.md) are white, ink and the
+  heart's red, and nothing else. Everywhere else the product is talking to
+  someone, so its own colour belongs there; a card is the one kind of surface
+  that presents other parties (a member and the organization they back, or an
+  organization holding a way in open to a stranger), and a third voice on it
+  is one too many. The member card carried a moss rule and a moss valid year
+  for a while, the QR card a moss line over the organization's name; all of it
+  is ink now.
+- **A card is set in the brand's one typeface, and carries it.** Both cards
+  are Fraunces, the same cut the website's headings use, so what a person is
+  handed on paper reads as what they saw on the screen. Because a card is
+  looked at as a picture, where no webfont loads, the face rides inside the
+  drawing rather than being asked for by name.
+- **A card's heart is drawn, not typed.** A card is rasterized and printed
+  with no colour-emoji font in reach, so the "❤️" the
+  [brand mark](brand-mark.md) is elsewhere is a red shape here. Same mark,
+  same red, on a surface that cannot spell it.
 - **A notice is neither green nor red.** Something the organization should
   know or put right (Vipps not yet connected, a price change some members did
   not hear about, a member whose details were erased) is stated in ink on the
@@ -61,11 +74,13 @@ it too, for the reason below.
 - The [brand mark](brand-mark.md) is the one red in the palette.
 - [Brand attribution](brand-attribution.md) uses the ink and muted text of this
   palette, and the heart's red.
-- The [member card](member-card.md) is drawn from this palette, minus the
-  green: white on the cream page, ink, and the red heart.
+- The [member card](member-card.md) and the organization's
+  [QR card](../use-cases/promote-with-qr-card.md) are drawn from this palette,
+  minus the green: white on the cream page, ink, and the red heart.
 - The [payment receipt](payment-receipt.md) and the [join page](join-page.md)
   are the two places a member meets the palette first.
 
 ## Referenced by
 - [Concept: Brand mark](brand-mark.md)
 - [Concept: Member card](member-card.md)
+- [Use case: Promote membership with a QR code card](../use-cases/promote-with-qr-card.md)

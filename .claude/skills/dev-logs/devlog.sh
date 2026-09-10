@@ -12,6 +12,7 @@
 #   devlog.sh status [app]
 #   devlog.sh stop   [app]
 #   devlog.sh path   [app]          print the raw log file path
+#   devlog.sh port   [app]          print the port the server is ACTUALLY on
 # [app] = backoffice (default) | marketing
 set -euo pipefail
 
@@ -62,7 +63,9 @@ case "$cmd" in
       bg=$(node -p 'require("./.astro/dev.json").background' 2>/dev/null || echo "")
       if [ -n "$pid" ] && kill -0 "$pid" 2>/dev/null; then
         if [ "$bg" = "true" ]; then
+          port=$(node -p 'require("./.astro/dev.json").port' 2>/dev/null || echo "$PORT")
           echo "already running in background (pid $pid) — logs readable"
+          echo "$APP dev server: http://localhost:$port"
           exit 0
         fi
         echo "foreground dev server (pid $pid) found — restarting in background so logs are capturable"
@@ -73,6 +76,10 @@ case "$cmd" in
     if [ "$APP" = backoffice ]; then
       pnpm exec wrangler d1 migrations apply DB --local
     fi
+    # The port below is the one we ASK for. astro moves to the next free one
+    # without failing when it is taken (another worktree's server, typically),
+    # so what the server actually listens on is read back from .astro/dev.json
+    # afterwards. Never assume the number.
     if ! pnpm exec astro dev --port "$PORT" --background; then
       # astro only says "exited before becoming ready"; the reason is in the log.
       echo "--- last errors from $LOG ---" >&2
@@ -81,6 +88,11 @@ case "$cmd" in
       echo "    pnpm exec turbo run build --filter='./packages/*'" >&2
       exit 1
     fi
+    actual=$(node -p 'require("./.astro/dev.json").port' 2>/dev/null || echo "$PORT")
+    if [ "$actual" != "$PORT" ]; then
+      echo "NOTE: port $PORT was taken (another worktree?), this server is on $actual"
+    fi
+    echo "$APP dev server: http://localhost:$actual"
     ;;
   tail)
     n="${2:-50}"; resolve_app "${3:-backoffice}"
@@ -104,8 +116,16 @@ case "$cmd" in
     resolve_app "${2:-backoffice}"
     echo "$LOG"
     ;;
+  port)
+    # The port a running server is really on. Worth asking rather than
+    # hardcoding: a taken port makes astro move quietly, and a URL built from
+    # the number you expected then drives ANOTHER worktree's server.
+    resolve_app "${2:-backoffice}"
+    [ -f "$STATE" ] || { echo "no dev server state at $STATE, run: devlog.sh start $APP" >&2; exit 1; }
+    cd "$APP_DIR" && node -p 'require("./.astro/dev.json").port'
+    ;;
   *)
-    echo "usage: devlog.sh start|tail|grep|status|stop|path — see header comment" >&2
+    echo "usage: devlog.sh start|tail|grep|status|stop|path|port — see header comment" >&2
     exit 1
     ;;
 esac

@@ -63,7 +63,22 @@
  * balanced card instead of one with a hole in it.
  */
 
-import { create } from "qrcode";
+import {
+  CARD,
+  DEEP,
+  EDGE,
+  escapeXml,
+  FAINT,
+  FONT,
+  FONT_WEIGHT,
+  HAIRLINE,
+  HEART,
+  heartPath,
+  INK,
+  MUTED,
+  qrModulesPath,
+  r,
+} from "./brand.js";
 
 /**
  * Card canvas — upright, because a phone is where a member looks at their card
@@ -80,14 +95,6 @@ export function memberCardSize(): { width: number; height: number } {
   return { width: MEMBER_CARD_WIDTH, height: MEMBER_CARD_HEIGHT };
 }
 
-const CARD = "#ffffff";
-const EDGE = "#e6dccb";
-const HAIRLINE = "#eee5d6";
-const INK = "#221a12";
-const DEEP = "#3b2d1c";
-const MUTED = "#6e6353";
-const FAINT = "#978a78";
-const HEART = "#e0182d";
 /** The heart of a lapsed card: still there, no longer cheering. */
 const HEART_PAST = "#c9ab9e";
 /**
@@ -100,13 +107,6 @@ const HEART_PAST = "#c9ab9e";
 const BAND_RULE = DEEP;
 /** The ring around the organization's logo: the card's own edge, drawn round. */
 const LOGO_RING = EDGE;
-/**
- * The stack a browser resolves when it draws the SVG itself: "Fraunces" is
- * the rasterizer's embedded face; "Fraunces Variable" is the same family as
- * the website loads (packages/ui tokens), so an inline card matches the
- * shipped PNG instead of falling back to Georgia.
- */
-const FONT = "Fraunces, 'Fraunces Variable', Georgia, serif";
 
 export interface MemberCardOptions {
   /** The member's own name; falls back to a neutral label when unknown. */
@@ -128,20 +128,6 @@ export interface MemberCardOptions {
    * reader cannot make.
    */
   logoDataUri?: string | null;
-}
-
-function escapeXml(value: string): string {
-  return value
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&apos;");
-}
-
-/** Coordinates to one decimal: the arithmetic is fractional, the file needn't be. */
-function r(value: number): number {
-  return Math.round(value * 10) / 10;
 }
 
 /**
@@ -278,25 +264,6 @@ function textEl(x: number, y: number, value: string, options: TextOptions): stri
   return `<text ${parts.join(" ")}>${escapeXml(value)}</text>`;
 }
 
-/** A filled heart, drawn at (x, y) with the given box size. */
-function heartPath(x: number, y: number, size: number, fill: string): string {
-  const scale = size / 24;
-  return `<path transform="translate(${r(x)} ${r(y)}) scale(${r(scale)})" fill="${fill}" d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>`;
-}
-
-/** One `<path>` covering every dark module of the QR code. */
-function qrModulesPath(url: string): { path: string; moduleCount: number } {
-  const qr = create(url, { errorCorrectionLevel: "M" });
-  const size = qr.modules.size;
-  const segments: string[] = [];
-  for (let row = 0; row < size; row++) {
-    for (let col = 0; col < size; col++) {
-      if (qr.modules.get(row, col)) segments.push(`M${col} ${row}h1v1h-1z`);
-    }
-  }
-  return { path: segments.join(""), moduleCount: size };
-}
-
 /**
  * The streak: the member's years as a number inside one big heart — the brand
  * mark carrying the count, rather than a heart per year
@@ -318,7 +285,7 @@ function streakHeart(
   const numberSize = size * (digits >= 2 ? 0.3 : 0.4);
   const baseline = top + size * 0.47 + numberSize * 0.36;
   return `${heartPath(cx - size / 2, top, size, lapsed ? HEART_PAST : HEART)}
-  ${textEl(cx, baseline, String(count), { size: numberSize, weight: 650, fill: CARD, anchor: "middle" })}`;
+  ${textEl(cx, baseline, String(count), { size: numberSize, weight: FONT_WEIGHT, fill: CARD, anchor: "middle" })}`;
 }
 
 /**
@@ -337,14 +304,14 @@ function validityCorner(rightX: number, centerY: number, periodText: string, lap
   );
   const markup = `${textEl(rightX, centerY - 8, label, {
     size: labelSize,
-    weight: 650,
+    weight: FONT_WEIGHT,
     fill: FAINT,
     letterSpacing: 2.4,
     anchor: "end",
   })}
   ${textEl(rightX, centerY + 22, periodText, {
     size: valueSize,
-    weight: 650,
+    weight: FONT_WEIGHT,
     fill: lapsed ? MUTED : INK,
     anchor: "end",
   })}`;
@@ -427,7 +394,7 @@ function attribution(left: number, baseline: number): string {
   const heartSize = size + 2;
   const gap = 10;
   return `${heartPath(left, baseline - heartSize + 3, heartSize, HEART)}
-  ${textEl(left + heartSize + gap, baseline, label, { size, weight: 650, fill: MUTED })}`;
+  ${textEl(left + heartSize + gap, baseline, label, { size, weight: FONT_WEIGHT, fill: MUTED })}`;
 }
 
 /**
@@ -535,18 +502,18 @@ ${hasLogo ? `  ${logoCircle(left + logoSize / 2, bandCenter, logoSize, content.l
     .map((line, index) =>
       textEl(orgLeft, orgFirstBaseline + index * orgLineGap, line, {
         size: org.size,
-        weight: 650,
+        weight: FONT_WEIGHT,
         fill: DEEP,
       }),
     )
     .join("\n  ")}
   ${corner.markup}
 
-  ${textEl(center, nameBaseline, name.value, { size: name.size, weight: 650, fill: INK, anchor: "middle" })}
+  ${textEl(center, nameBaseline, name.value, { size: name.size, weight: FONT_WEIGHT, fill: INK, anchor: "middle" })}
 ${
   headline
     ? `  ${streakHeart(center, heartTop, heartSize, content.hearts, content.lapsed)}
-  ${textEl(center, headlineBaseline, headline.value, { size: headline.size, weight: 650, fill: content.lapsed ? MUTED : DEEP, anchor: "middle" })}
+  ${textEl(center, headlineBaseline, headline.value, { size: headline.size, weight: FONT_WEIGHT, fill: content.lapsed ? MUTED : DEEP, anchor: "middle" })}
 ${content.recruitLine ? `  ${textEl(center, recruitBaseline, content.recruitLine, { size: TYPE.small, fill: MUTED, anchor: "middle" })}\n` : ""}`
     : ""
 }

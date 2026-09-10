@@ -14,9 +14,9 @@ In a FRESH WORKTREE run `pnpm install --frozen-lockfile` first: without
 "@stottemedlem/qr failed to build", which looks like a card bug but is not.
 
 Rebuilds `@stottemedlem/qr` (turbo-cached, ~40ms warm), draws every fixture,
-and writes `card-<case>.svg`, `raster-*.png` and an `index.html`
-contact sheet showing browser-rendered and rasterized side by side. Screenshot
-that one file and you have reviewed every case at once.
+and writes `card-<case>.svg`, `served-card-<case>.svg`, `raster-*.png` and an
+`index.html` contact sheet showing all three side by side. Screenshot that one
+file and you have reviewed every case at once.
 
     --case A,B               fixture(s) to draw (default all)
     --time N                 with --raster: ms per render (the CPU budget)
@@ -39,6 +39,28 @@ Examples:
     render.mjs --list
     render.mjs --case LongNames --raster
     render.mjs --case WithLogo --set hearts=17 --set recruits=4 --raster
+
+## The three columns, and what each one proves
+
+| column | what it is | what only it catches |
+|--------|-----------|----------------------|
+| inlined in a page | the SVG inlined into HTML, browser draws it with the page's loaded Fraunces | real variable-weight text; how min-side and the marketing page show a card |
+| **as served** | `served-*.svg` in an `<img>` | the card **set in Georgia**, because an `<img>` fetches no webfont |
+| resvg | the shipped rasterizer | a missing embedded font (text draws as *nothing*), a logo referenced by URL |
+
+**The middle column is the one most surfaces actually are.** The back office
+shows the QR card as an `<img>`, a club's own website hot-links it as an
+`<img>`, and a mail client shows the member card as one. An SVG loaded that way
+fetches no webfont at all, so the font must ride INSIDE the file
+(`apps/backoffice/src/lib/cardFont.ts` puts it there, and the routes that serve
+a card call it). Miss that and every card silently falls back to Georgia while
+the inline column, on a page that has Fraunces loaded, looks perfect. That is
+exactly the regression the QR card would have shipped when it moved off system
+sans (2026-09-10).
+
+The skill reproduces that injection rather than importing it, because
+`cardFont.ts` gets its bytes from a Vite `?inline` import that plain node
+cannot resolve. If the shipped `@font-face` changes, change it here too.
 
 ## Why `--raster` is the pass that counts
 
@@ -68,7 +90,7 @@ or measure rendered pixels with pngjs), never with font features.
 
 | loop | proves |
 |------|--------|
-| `render-card --raster` | the artwork itself — layout, fitting, the shared PNG. No server. |
+| `render-card --raster` | the artwork itself — layout, fitting, the embedded font, the shared PNG. No server. |
 | Storybook (`pnpm story`, `MemberCard.stories.ts`) | the same artwork with real variable-weight text; the human review surface |
 | `preview-screenshot` on `/medlemsbevis/<token>` | the artwork **in its page**, incl. the full-bleed / `max-width` sizing — needs `verify-public-routes/seed.sh` + a dev server |
 | `verify-qr` | that the QR in the card decodes to the right payload |

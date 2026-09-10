@@ -160,7 +160,8 @@ const USAGE = `render-card — draw the project's cards without a server
   --no-build               skip rebuilding @stottemedlem/qr first
   --list                   list fixture names and exit
 
-Writes card-<case>.svg, raster-*.png with --raster, and index.html —
+Writes card-<case>.svg, served-card-<case>.svg, raster-*.png with --raster,
+and index.html —
 open that with the preview-screenshot skill to see them all at once.`;
 
 async function main() {
@@ -214,6 +215,7 @@ async function main() {
     const svg = options.kind === "org" ? qr.qrCardSvg(args) : qr.memberCardSvg(args);
     const file = `card-${name}`;
     await writeFile(resolve(options.out, `${file}.svg`), svg);
+    await writeFile(resolve(options.out, `served-${file}.svg`), await withEmbeddedFont(svg));
     rendered.push({ file, name, kind: options.kind, svg });
   }
 
@@ -223,6 +225,27 @@ async function main() {
   console.log(`${rendered.length} card(s) → ${options.out}`);
   console.log(`contact sheet: ${resolve(options.out, "index.html")}`);
   if (!options.raster) console.log("(add --raster to see what the shared PNG actually looks like)");
+}
+
+/**
+ * The card as the app SERVES it: the same Fraunces carried inside the drawing
+ * that apps/backoffice/src/lib/cardFont.ts puts there.
+ *
+ * This is what makes the third column honest. Both cards are looked at as an
+ * `<img>` on the surfaces that matter (the back office, a club website that
+ * hot-links the QR card, a mail client), and an SVG loaded that way fetches NO
+ * webfont: without the face inside the file the card silently sets in Georgia,
+ * which the inline column cannot show you because the page around it has
+ * Fraunces loaded.
+ *
+ * The injection is reproduced here rather than imported: `cardFont.ts` gets its
+ * bytes from a Vite `?inline` import, which plain node cannot resolve. Keep the
+ * two in step, the way `rasterize` below is kept in step with the Worker.
+ */
+let fontFaceCss = null;
+async function withEmbeddedFont(svg) {
+  fontFaceCss ??= `<style>@font-face{font-family:Fraunces;font-weight:300 900;src:url(data:font/ttf;base64,${(await readFile(FONT)).toString("base64")}) format("truetype")}</style>`;
+  return svg.replace("</title>", `</title>\n  ${fontFaceCss}`);
 }
 
 /**
@@ -282,7 +305,8 @@ function contactSheet(rendered, raster) {
       (item) => `<section>
   <h2>${item.name}</h2>
   <div class="pair">
-    <figure><figcaption>browser (variable weights)</figcaption>${item.svg}</figure>
+    <figure><figcaption>inlined in a page (variable weights)</figcaption>${item.svg}</figure>
+    <figure><figcaption>as served: &lt;img&gt;, no webfont reachable</figcaption><img src="served-${item.file}.svg" alt=""></figure>
     ${raster ? `<figure><figcaption>resvg — what gets shared</figcaption><img src="raster-${item.file}.png" alt=""></figure>` : ""}
   </div>
 </section>`,

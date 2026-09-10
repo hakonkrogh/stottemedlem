@@ -156,6 +156,13 @@ description: Render any local URL (marketing/backoffice dev or preview server) t
   `curl -sf localhost:6007/index.json` until it answers, and confirm it lists
   YOUR story ids before shooting. Then shoot a story's iframe URL
   directly: `http://localhost:6007/iframe.html?id=<story-id>&viewMode=story`.
+  **A story iframe can shoot BLANK** (hit 2026-09-10): `shot.sh` on that URL
+  captured an empty cream page while the story was fine, because the story
+  renders after the shot is taken. `drive-page` with a wait gets the real
+  thing, and prints the console errors too:
+  `node .claude/skills/drive-page/drive.mjs "<iframe url>" --console
+  --viewport 1200x1400 sleep=3000 shot=<out.png>`. A blank shot is not
+  evidence a story is broken; re-take it this way before believing it.
   Running Storybook did NOT dirty `package.json` / `pnpm-lock.yaml`
   (hash-checked before and after, 2026-08-31) — but `verify-workflow` warns it
   can, so hash them yourself rather than trusting either claim before a push.

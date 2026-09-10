@@ -11,6 +11,7 @@ import {
   FIXTURE_BANNER_URL,
   FIXTURE_LOGO_URL,
 } from "@stottemedlem/ui/components/OrgIdentityHeader.fixtures.ts";
+import { withEmbeddedCardFont } from "../lib/cardFont";
 import type { OrgWarning } from "../lib/orgWarnings";
 import { orgWarnings } from "../lib/orgWarnings";
 
@@ -52,9 +53,13 @@ export const QR_CARD_URL = `${JOIN_URL}/qr`;
  * The very card that address serves, drawn here instead of fetched: a story
  * has no worker behind it, and a broken picture would say nothing about how
  * the front page presents the card.
+ *
+ * With the typeface inside it, exactly as the app serves it: the picture is an
+ * `<img>`, which loads no webfont, so without that the story would review the
+ * card in Georgia while every real surface shows Fraunces.
  */
 export const QR_CARD_PREVIEW_SRC = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(
-  qrCardSvg({ joinUrl: JOIN_URL, organizationName: ORG.name }),
+  withEmbeddedCardFont(qrCardSvg({ joinUrl: JOIN_URL, organizationName: ORG.name })),
 )}`;
 export const WEBHOOK_URL = `${CANONICAL_ORIGIN}/api/vipps/${ORG.slug}`;
 export const ADMIN_NAME = "Kari Nordmann";
