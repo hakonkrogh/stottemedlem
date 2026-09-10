@@ -6,6 +6,7 @@
 // back office can be clicked through in Storybook without running the app.
 import { CANONICAL_ORIGIN, DPA_VERSION } from "@stottemedlem/core";
 import type { MembershipTier, Organization, OrganizationStats } from "@stottemedlem/db";
+import { qrCardSvg } from "@stottemedlem/qr";
 import {
   FIXTURE_BANNER_URL,
   FIXTURE_LOGO_URL,
@@ -46,7 +47,15 @@ export const ORG_WITH_IMAGES: Organization = {
 export const ORG_PATH = `/o/${ORG.slug}`;
 export const JOIN_URL = `${CANONICAL_ORIGIN}/bli-medlem/${ORG.slug}`;
 export const TERMS_URL = `${JOIN_URL}/vilkar`;
-export const QR_CARD_URL = `${CANONICAL_ORIGIN}/api/qr/${ORG.slug}`;
+export const QR_CARD_URL = `${JOIN_URL}/qr`;
+/**
+ * The very card that address serves, drawn here instead of fetched: a story
+ * has no worker behind it, and a broken picture would say nothing about how
+ * the front page presents the card.
+ */
+export const QR_CARD_PREVIEW_SRC = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(
+  qrCardSvg({ joinUrl: JOIN_URL, organizationName: ORG.name }),
+)}`;
 export const WEBHOOK_URL = `${CANONICAL_ORIGIN}/api/vipps/${ORG.slug}`;
 export const ADMIN_NAME = "Kari Nordmann";
 /**

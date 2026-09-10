@@ -9,9 +9,11 @@ import {
   ALL_WARNINGS,
   JOIN_URL,
   NO_STATS,
+  ORG,
   ORG_PATH,
   ORG_STATS,
   PERIOD_LABEL,
+  QR_CARD_PREVIEW_SRC,
   QR_CARD_URL,
   TERMS_URL,
 } from "./storyFixtures";
@@ -34,9 +36,11 @@ const overview = (
       component: OrgOverviewScreen,
       props: {
         orgPath: ORG_PATH,
+        orgName: ORG.name,
         joinUrl: JOIN_URL,
         termsUrl: TERMS_URL,
         qrCardUrl: QR_CARD_URL,
+        qrCardPreviewSrc: QR_CARD_PREVIEW_SRC,
         stats: ORG_STATS,
         periodLabel: PERIOD_LABEL,
         ...props,

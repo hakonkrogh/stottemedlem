@@ -14,6 +14,7 @@ import {
   isValidOrganisasjonsnummer,
   JOIN_REFERRAL_PARAM,
   joinPagePath,
+  joinPageQrPath,
   joinPageTermsPath,
   joinPageTermsUrl,
   joinPageUrl,
@@ -178,6 +179,15 @@ describe("joinPageUrl / joinPageTermsUrl", () => {
     expect(joinPagePath("bakvendtland-skolekorps")).toBe("/bli-medlem/bakvendtland-skolekorps");
     expect(joinPageTermsPath("bakvendtland-skolekorps")).toBe(
       "/bli-medlem/bakvendtland-skolekorps/vilkar",
+    );
+  });
+
+  it("keeps the QR code card beneath the page it points at", () => {
+    // The card's address is pasted into an organization's own website and
+    // carried on printed material, so it is a public address beside the
+    // page's, not an API path (specs/use-cases/promote-with-qr-card.md).
+    expect(joinPageQrPath("bakvendtland-skolekorps")).toBe(
+      "/bli-medlem/bakvendtland-skolekorps/qr",
     );
   });
 });

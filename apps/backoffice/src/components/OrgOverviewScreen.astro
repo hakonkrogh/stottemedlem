@@ -1,6 +1,7 @@
 ---
-// The front tab of an organization's back office: how it is doing and the
-// public addresses it shares, plus anything that is not yet in order, each
+// The front tab of an organization's back office: how it is doing, the public
+// addresses it shares (including the QR code card, shown as the picture it is
+// rather than as an address), plus anything that is not yet in order, each
 // with the one place it is put right
 // (specs/use-cases/set-up-supporting-membership.md).
 //
@@ -19,14 +20,19 @@ import Stack from "@stottemedlem/ui/components/Stack.astro";
 import Text from "@stottemedlem/ui/components/Text.astro";
 import TextLink from "@stottemedlem/ui/components/TextLink.astro";
 import type { OrgWarning } from "../lib/orgWarnings";
+import OrgQrCard from "./OrgQrCard.astro";
 import OrgStats from "./OrgStats.astro";
 import OrgWarnings from "./OrgWarnings.astro";
 
 interface Props {
   orgPath: string;
+  /** The organization's own name, for the QR card's alt text. */
+  orgName: string;
   joinUrl: string;
   termsUrl: string;
   qrCardUrl: string;
+  /** What the QR card picture loads; see OrgQrCard. Stories pass it inline. */
+  qrCardPreviewSrc?: string;
   warnings?: OrgWarning[];
   /** The organization in numbers. */
   stats: OrganizationStats;
@@ -37,9 +43,11 @@ interface Props {
 }
 const {
   orgPath,
+  orgName,
   joinUrl,
   termsUrl,
   qrCardUrl,
+  qrCardPreviewSrc,
   warnings = [],
   stats,
   periodLabel,
@@ -56,11 +64,6 @@ const links = [
     label: "Salgsvilkår",
     url: termsUrl,
     hint: "Denne limer du inn som «salgsvilkår» i Vipps-bestillingen.",
-  },
-  {
-    label: "QR-kode",
-    url: qrCardUrl,
-    hint: "Kortet du kan henge opp eller legge på nettsidene deres.",
   },
 ];
 ---
@@ -105,6 +108,8 @@ const links = [
       }
     </div>
   </Stack>
+
+  <OrgQrCard cardUrl={qrCardUrl} previewSrc={qrCardPreviewSrc} orgName={orgName} />
 </Stack>
 
 <style>

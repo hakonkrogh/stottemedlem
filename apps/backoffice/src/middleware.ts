@@ -23,8 +23,11 @@ const PUBLIC_EXACT = new Set([
   DPA_PATH,
 ]);
 function isPublic(pathname: string): boolean {
-  // /api/qr/* is the public QR embed contract (see docs/qr-codes.md).
-  // /bli-medlem/* is the org's public join page + salgsvilkår
+  // /api/qr/* is the QR card's FORMER address, kept alive as a redirect to
+  // /bli-medlem/<slug>/qr, where the card lives now: an address the product
+  // once handed out must never simply stop working, and an external website
+  // may be embedding it (specs/use-cases/promote-with-qr-card.md).
+  // /bli-medlem/* is the org's public join page + salgsvilkår + QR card
   // (specs/concepts/join-page.md) — Vipps' website verification and
   // prospective supporters reach them without any session. /org/* is the
   // page's former address, kept alive as a redirect (see worker.ts).

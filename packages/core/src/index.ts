@@ -183,6 +183,17 @@ export function joinPageTermsPath(slug: string): string {
 }
 
 /**
+ * The QR code card's path, beneath the join page: `/bli-medlem/<slug>/qr`
+ * (specs/use-cases/promote-with-qr-card.md). It lives with the page it points
+ * at rather than under an API path of its own: an administrator pastes this
+ * address into their own website, and printed material carries it, so it is a
+ * public address like the page's, not a technical one.
+ */
+export function joinPageQrPath(slug: string): string {
+  return `${joinPagePath(slug)}/qr`;
+}
+
+/**
  * The privacy notice's path, beneath the join page:
  * `/bli-medlem/<slug>/personvern`. A supporter must be able to read what is
  * collected about them, and why, BEFORE they leave for the payment app — so

@@ -1,5 +1,10 @@
 import { env } from "cloudflare:workers";
-import { CANONICAL_ORIGIN, joinPagePath, joinPageTermsPath } from "@stottemedlem/core";
+import {
+  CANONICAL_ORIGIN,
+  joinPagePath,
+  joinPageQrPath,
+  joinPageTermsPath,
+} from "@stottemedlem/core";
 
 /**
  * The origin this environment's shareable public addresses live on
@@ -23,7 +28,8 @@ export function shareableJoinTermsUrl(slug: string): string {
 }
 
 /** The organization's QR code card address — the image posters and other
- *  websites embed (specs/use-cases/promote-with-qr-card.md). */
+ *  websites embed (specs/use-cases/promote-with-qr-card.md). It sits beneath
+ *  the join page, so it is routed and public wherever the page is. */
 export function shareableQrCardUrl(slug: string): string {
-  return `${shareableOrigin()}/api/qr/${slug}`;
+  return `${shareableOrigin()}${joinPageQrPath(slug)}`;
 }
