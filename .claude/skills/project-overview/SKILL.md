@@ -1124,6 +1124,21 @@ also documents the variants and why the rule exists.
   first (min-side's own confirm script is gone); (4) a page `<script>` that
   binds inside `<main>` must rebind on `document`'s `sm:page` event
   (OrgImageFields) or delegate to `document` (MemberCardFigure's share).
+  (5) **a control's `name` may not shadow a form property** (fixed
+  2026-09-10, branch fix-membership-price-down): a form exposes its controls
+  as own properties by name, and those beat the built-in ones, so
+  `<button name="action">` (the membership tier form: save + archive) made
+  `form.action` be that button. LiveForms posted to
+  `/o/<slug>/medlemskap/[object%20HTMLButtonElement]`, the `[tierId]` route
+  found no such tier and 303'd to the list, and EVERY save on that screen
+  (add, rename, raise or lower the price, archive) silently did nothing while
+  looking like it worked, for weeks, with no error anywhere. Production logs
+  named it in one line (`cloud-logs`, an odd POST path in `invocations`); the
+  D1 row still holding the old price confirmed it (`verify-public-routes`
+  d1.sh). LiveForms now reads `getAttribute("action"|"method")`, so any
+  control name is safe, but prefer `handling` for the action field like the
+  rest of the app does. `form.dataset`, `form.elements` and any other
+  built-in are shadowable the same way.
   Proved with drive-page's scratch-route + slow-fetch recipes (see that
   skill); backoffice pages themselves can't be driven (no login).
   Screenshot loop: see `preview-screenshot` skill. Gotcha that
@@ -1177,7 +1192,11 @@ also documents the variants and why the rule exists.
   (dev-logs `start` reports only "exited before becoming ready"). Run
   `pnpm exec turbo run build --filter='./packages/*'` from the root once
   (2026-09-02). `render-card` and root `typecheck` build what they need via
-  turbo themselves; the dev server does not.
+  turbo themselves; the dev server does not. That build often answers in
+  milliseconds with `>>> FULL TURBO` and log lines naming ANOTHER worktree's
+  path (the turbo cache is shared): it still wrote `packages/*/dist` here, so
+  trust it after one `ls packages/core/dist` rather than re-running with
+  `--force` (2026-09-10).
 - **A fresh worktree also has no `apps/backoffice/.dev.vars`, and `pnpm
   typecheck` fails because of it** — with six errors in files you did not
   touch (`Property 'VIPPS_CLIENT_ID' does not exist on type 'Env'`, same for

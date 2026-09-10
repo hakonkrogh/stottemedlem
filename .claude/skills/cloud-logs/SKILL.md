@@ -73,6 +73,17 @@ node .claude/skills/cloud-logs/cloudlogs.mjs cost -e staging --since 6h
 node .claude/skills/cloud-logs/cloudlogs.mjs -e production -f '$metadata.trigger^=POST /api/vipps' --since 2d
 ```
 
+**"I changed X and nothing happened": read the request PATHS, not just the
+errors** (2026-09-10). A silent no-op leaves no error and no `console.*` line,
+so `--level error` finds nothing and the story looks unexplainable. What it
+does leave is a request that should not exist. `invocations -e production
+--since 2d -n 60` printed the admin's whole click path in order, and one line
+in it read `POST /o/<slug>/medlemskap/[object%20HTMLButtonElement]`: the
+client script had posted the save to a nonsense address that the dynamic route
+answered with a redirect. Skim the paths around the timestamp the user gives
+you, then confirm with `verify-public-routes`' d1.sh that the row really did
+not change.
+
 Cron runs appear with the cron EXPRESSION as the trigger — e.g. staging's
 hourly renewal job is `-f '$metadata.trigger=0 * * * *'` (reconcile
 `30 * * * *`; production `0 4 * * *` / `0 2 * * *`). A cron that touches only

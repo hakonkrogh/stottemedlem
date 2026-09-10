@@ -60,6 +60,29 @@
     document.querySelectorAll<HTMLFormElement>('form[aria-busy="true"]').forEach(clearBusy);
   }
 
+  /**
+   * Where the form sends, and how: read from the ATTRIBUTES, never from
+   * `form.action` and `form.method`. A form exposes its own controls as
+   * properties under their name, and those beat the built-in ones, so a
+   * single `<button name="action">` makes `form.action` be that button, and
+   * sending it lands on "[object HTMLButtonElement]" beside the real address.
+   * The browser's own submit reads neither property, so the two would
+   * disagree about where the action goes, and an action sent somewhere other
+   * than where the page says goes nowhere, quietly
+   * (specs/concepts/answering-an-action.md).
+   */
+  function targetOf(form: HTMLFormElement, button: HTMLButtonElement | null): string {
+    const attribute = button?.hasAttribute("formaction")
+      ? button.getAttribute("formaction")
+      : form.getAttribute("action");
+    // An absent or empty address means this page, as it does for a plain submit.
+    return attribute || window.location.href;
+  }
+
+  function methodOf(form: HTMLFormElement): string {
+    return (form.getAttribute("method") ?? "get").toLowerCase();
+  }
+
   function onSubmit(event: SubmitEvent): void {
     const form = event.target;
     if (!(form instanceof HTMLFormElement)) return;
@@ -73,7 +96,7 @@
     }
     const button = submitterOf(event, form);
     markBusy(form, button);
-    const native = form.method.toLowerCase() !== "post" || form.dataset.submit === "native";
+    const native = methodOf(form) !== "post" || form.dataset.submit === "native";
     if (native) return;
     event.preventDefault();
     void submitInPlace(form, button);
@@ -82,7 +105,7 @@
   async function submitInPlace(form: HTMLFormElement, button: HTMLButtonElement | null) {
     const body = new FormData(form);
     if (button?.name) body.append(button.name, button.value);
-    const action = button?.hasAttribute("formaction") ? button.formAction : form.action;
+    const action = targetOf(form, button);
     try {
       const response = await fetch(action, {
         method: "POST",
