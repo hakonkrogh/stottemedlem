@@ -121,27 +121,29 @@ description: Render any local URL (marketing/backoffice dev or preview server) t
   again, and confirm `index.json` lists story ids before shooting.
   Since 2026-08-31 the root alias `pnpm story` (= `pnpm stories`) does the
   core+db pre-build AND starts Storybook in one go; the manual form is
-  `pnpm --filter @stottemedlem/ui run storybook --ci`
-  (port 6006, ready in seconds, hot-reloads). **Start it with `nohup … &
-  disown`, NOT with the Bash tool's `run_in_background`** (hit 2026-08-31):
-  backgrounded that way the task reports "completed, exit 0" while the server
-  is dead and every later curl returns `000`, which reads as "Storybook is
-  broken" rather than "nothing is running". From `packages/ui`:
-  `nohup pnpm exec storybook dev -p 6006 --ci --no-open --quiet > /tmp/sb.log 2>&1 &
-  disown`, then poll `curl -so /dev/null -w '%{http_code}' localhost:6006`
-  until it is 200 (about a second). **Keep `--ci` and expect 6006 to be taken
-  by ANOTHER worktree's Storybook** (hit 2026-09-01): without `--ci` a busy
-  port wedges the process on an interactive "use 6007 instead?" prompt, and
-  meanwhile the OTHER instance answers your curl with 200 — its index.json
-  serves that worktree's (or zero) stories, so the poll lies. Pick a unique
-  port (e.g. 6016) and confirm index.json lists YOUR story ids before
-  shooting. Then shoot a story's iframe URL
-  directly: `http://localhost:6006/iframe.html?id=<story-id>&viewMode=story`.
+  `pnpm --filter @stottemedlem/ui run storybook`.
+  **The port is ALWAYS 6007** (fixed 2026-09-10): the package script is
+  `storybook dev -p 6007 --exact-port --ci --no-open`, so a taken port is a
+  loud early exit instead of a silent move to a neighbouring one. Never pass
+  your own `-p`. That silent move is what used to cost the session: another
+  worktree's Storybook held the port, answered your curl with 200, and served
+  ITS stories (or zero) while yours ran somewhere you never looked. With
+  `--exact-port` the failure now says so, and the fix is to kill the other one
+  (`lsof -ti:6007 | xargs kill`), not to pick a different port.
+  **Start it with `nohup … & disown`, NOT with the Bash tool's
+  `run_in_background`** (hit 2026-08-31): backgrounded that way the task
+  reports "completed, exit 0" while the server is dead and every later curl
+  returns `000`, which reads as "Storybook is broken" rather than "nothing is
+  running". From `packages/ui`:
+  `nohup pnpm run storybook --quiet > /tmp/sb.log 2>&1 & disown`, then poll
+  `curl -sf localhost:6007/index.json` until it answers, and confirm it lists
+  YOUR story ids before shooting. Then shoot a story's iframe URL
+  directly: `http://localhost:6007/iframe.html?id=<story-id>&viewMode=story`.
   Running Storybook did NOT dirty `package.json` / `pnpm-lock.yaml`
   (hash-checked before and after, 2026-08-31) — but `verify-workflow` warns it
   can, so hash them yourself rather than trusting either claim before a push.
   **List the ids before shooting — do not derive them from the component
-  name:** `curl -s localhost:6006/index.json | python3 -c "import json,sys;
+  name:** `curl -s localhost:6007/index.json | python3 -c "import json,sys;
   print('\n'.join(sorted(json.load(sys.stdin)['entries'])))"`. Story TITLES in
   this repo are Norwegian while the components are English, so the obvious
   guess is wrong: `MemberListScreen.stories.ts` is
@@ -165,13 +167,12 @@ description: Render any local URL (marketing/backoffice dev or preview server) t
   then `sips -c <h> <w> --cropOffset <top> 0 out.png --out crop.png`. A PNG
   whose pixelWidth equals the requested width still proves no horizontal
   overflow, tall viewport or not.
-  **`run_in_background` DID hold Storybook up this time** (2026-09-09,
-  `pnpm --filter @stottemedlem/ui exec storybook dev -p 6010 --ci --quiet` with
+  **`run_in_background` DID hold Storybook up this time** (2026-09-09, with
   stdout redirected to a file): it served shots for the whole session and only
   reported a non-zero exit when pkill'ed at the end. The 2026-08-31 failure was
   not reproduced, but nohup + disown is still the safer default; whichever you
   use, prove it with `until curl -sf localhost:<port>/index.json; do sleep 2;
-  done` in a background task rather than trusting the task status. Stop with `lsof -ti:6006 |
+  done` in a background task rather than trusting the task status. Stop with `lsof -ti:6007 |
   xargs kill`. If the astro dev server is needed instead (port 4322): it's a
   persistent daemon — "already running" may be a stale one from another session
   serving old code; `pnpm --filter @stottemedlem/backoffice exec astro dev stop`

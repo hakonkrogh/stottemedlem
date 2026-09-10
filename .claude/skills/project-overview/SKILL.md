@@ -88,6 +88,30 @@ also documents the variants and why the rule exists.
   files and any `orgWarnings` caller**: `components/storyFixtures.ts` (the
   `ORG` literal + each `orgWarnings({...})` input) and
   `components/memberFixtures.ts`. Typecheck names them, but expect the cycle.
+  **The front page IS the org's FIGURES since 2026-09-10** (branch
+  membership-overview-stats, spec `specs/concepts/organization-figures.md` NEW;
+  it rewrote back-office.md's old "the members are not a section here" rule AND
+  removed the membership cards from that page, so the front page is now
+  Nøkkeltall + Offentlige lenker + warnings, nothing else):
+  `organizationStats(db, orgId, {key, start, end})` in `@stottemedlem/db` is two
+  queries (every `memberships` row for the org, plus EVERY agreement joined to
+  its tier) reduced by the pure, unit-tested `summarizeOrganization`. It is
+  loaded by `orgView` on EVERY org page as `view.stats`, because the member tab
+  wears `stats.activeMembers` from all of them, so the front page and the badge
+  cannot disagree. `countActiveMembers` is GONE (it was the second definition).
+  Six figures, two rows of three: årlig støtte (ARR), aktive, betalt, nye,
+  sluttet, utløpte. Rules that are easy to get wrong when extending this:
+  (1) ARR counts the newest running agreement PER MEMBER (a supporter can hold
+  two at once, see the rejoin note above) priced at the TIER's fee today, not
+  `membership_agreements.annual_fee_nok`; (2) "sluttet i perioden" is
+  `stopped_at`'s DATE inside `periods.fullPeriod(key)` (hence the bounds
+  argument, not a period key) MINUS anyone with a running agreement, so a
+  rejoin is not a departure; (3) a new org shows the same six figures, all zero
+  (asked for explicitly 2026-09-10, replacing a first cut that hid the section
+  until the first payment). Stories:
+  `backoffice-oversikt--nobody-has-joined-yet` (set up, no supporters) and
+  `--needs-setup` (the same zeroes under a wall of warnings). Adding a figure
+  means updating `ORG_STATS` AND `NO_STATS` in `storyFixtures.ts`.
   **Back-office screens cannot be driven locally** — the seeded org belongs to
   no WorkOS organization, so no login reaches them (see `verify-public-routes`).
   For gated logic, put the DECISION in a pure predicate in `packages/db` and
@@ -947,8 +971,11 @@ also documents the variants and why the rule exists.
   2026-08-31; pre-builds core+db+qr first — the backoffice screen stories
   import `@stottemedlem/qr`, so without its `dist/` the build dies with
   "Failed to resolve entry for package") or
-  `pnpm --filter @stottemedlem/ui run storybook --ci`
-  (port 6006) via the community `@storybook-astro/framework` (Storybook 10 +
+  `pnpm --filter @stottemedlem/ui run storybook`
+  (always port 6007; the script carries `--exact-port --ci --no-open`, so a
+  port another worktree holds is an early exit and never a silent move to a
+  neighbouring port serving someone else's stories) via the community
+  `@storybook-astro/framework` (Storybook 10 +
   Astro 7; storybook-astro.org).
   Pinned at `storybook` + `@storybook/builder-vite` `^10.5.10` and
   `@storybook-astro/framework` `^1.10.0` (upgraded and re-locked deliberately
@@ -986,7 +1013,7 @@ also documents the variants and why the rule exists.
   a UI string finds the component that reads it. Verifying a change to Storybook's
   own chrome means shooting the MANAGER url, not a story iframe:
   `npx playwright screenshot --channel=chrome --viewport-size=1440,900
-  --wait-for-timeout=7000 "http://localhost:6006/?path=/story/primitives-button--primary" out.png`.
+  --wait-for-timeout=7000 "http://localhost:6007/?path=/story/primitives-button--primary" out.png`.
   **Every form answers in place since 2026-09-08** (branch
   form-submission-feedback, spec `specs/concepts/answering-an-action.md`):
   `packages/ui/src/components/LiveForms.astro` is a script-only component
