@@ -246,6 +246,57 @@ Verified 2026-07-08 (backoffice AuthKit login, scaffolding step 3):
   a Location on `error.workos.com` means registration mismatch; an
   `authkit.workos.com` URL means the pair is valid.
 
+### Administrators and invitations (verified against SDK v10.7.0's types, 2026-09-10)
+
+Everything the back office needs to show who administers an organization, and to
+let another person in, is on `workos.userManagement`. All of these return an
+`AutoPaginatable` whose `.data` is the first page, `limit` maxes at 100:
+
+- `listOrganizationMemberships({ organizationId, statuses: ["active"], limit })` is
+  the authority on who has access. Note the options type is a UNION: you must pass
+  `organizationId` or `userId` (or both), and TypeScript rejects neither. A
+  membership carries `userId`, `status` (`active` | `inactive` | `pending`),
+  `organizationName` and `role`, but NOT the person's name or email.
+- `listUsers({ organizationId, limit })` is how you get the names and addresses
+  without an N+1 of `getUser(id)`: build a `Map` by `user.id` and join it to the
+  memberships. `User` has `email`, `name`, `firstName`, `lastName` (all nullable
+  but `email`). Keep a `getUser` fallback for ids the listing misses, or a line
+  vanishes from a list that is meant to be complete.
+- `listInvitations({ organizationId, limit })` returns EVERY state, so filter
+  `state === "pending"` yourself. An `Invitation` carries `email`, `state`
+  (`pending` | `accepted` | `expired` | `revoked`), `createdAt`, `expiresAt`,
+  `acceptInvitationUrl` and `token`.
+- `sendInvitation({ email, organizationId, inviterUserId, expiresInDays?, roleSlug?, locale? })`
+  sends the email. `locale` is a closed enum that DOES include `"nb"`, so the
+  invitation goes out in Norwegian.
+- `revokeInvitation(invitationId)` withdraws one, `resendInvitation(id, { locale })`
+  sends it again, and `deleteOrganizationMembership(membershipId)` takes a
+  person's access away. NONE of the three takes an organization id, so an id
+  posted by a browser must be checked against that organization's own loaded
+  list before it is acted on, or one org's administrator could reach into
+  another's.
+- **WorkOS will let you empty an organization.** `deleteOrganizationMembership`
+  has no last-administrator guard of any kind, so "an organization always keeps
+  at least one administrator" is the product's rule to enforce, in the product's
+  code, every time (`administratorRemovalRefusal` in `@stottemedlem/core`).
+- `updateOrganizationMembership(id, { roleSlug })` and
+  `listOrganizationRoles(organizationId)` exist, so roles ARE available if the
+  product ever wants them. It deliberately does not (2026-09-10): there is one
+  level of access and every back-office screen is admin-only, so a second role
+  would need every screen and every POST gated before it meant anything.
+- Accepting needs NO new route: the invitation link goes to AuthKit, which sends
+  the person back to the registered redirect URI, so the existing `/callback` plus
+  `resolveLanding` puts them in the organization. Working example:
+  `apps/backoffice/src/lib/administrators.ts` +
+  `src/pages/o/[slug]/administratorer.astro`.
+
+**How to find any of this again:** the package ships FLATTENED types, so there is no
+`lib/user-management/` directory to browse, only one big
+`node_modules/@workos-inc/node/lib/factory-*.d.mts`. Grep that file by name
+(`grep -n "sendInvitation\|listInvitations" factory-*.d.mts`), then `sed -n` the
+interface around the hit. Faster and more reliable than the docs site, and it is the
+version actually installed.
+
 ## Astro 7 + adapter v14: env access and per-environment deploys
 
 Two load-bearing facts the scaffold proved (2026-07-08), both easy to get wrong:

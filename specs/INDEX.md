@@ -50,6 +50,7 @@ The one message the product itself sends a member is the necessary
 | Use case | Status | Solves |
 |----------|--------|--------|
 | [Access the back office](use-cases/access-the-back-office.md) | Draft | [Collecting annual support](problems/collecting-annual-support.md) |
+| [Manage who administers the organization](use-cases/manage-administrators.md) | Draft | [Collecting annual support](problems/collecting-annual-support.md) |
 | [Set up a supporting membership](use-cases/set-up-supporting-membership.md) | Draft | [Collecting annual support](problems/collecting-annual-support.md) |
 | [Join as a supporting member](use-cases/join-as-supporting-member.md) | Draft | [Collecting annual support](problems/collecting-annual-support.md) |
 | [Change the annual fee](use-cases/change-the-annual-fee.md) | Draft | [Collecting annual support](problems/collecting-annual-support.md) |

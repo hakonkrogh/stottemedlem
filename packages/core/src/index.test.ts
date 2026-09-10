@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
+  administratorInviteRefusal,
+  administratorRemovalRefusal,
   annualPeriodFor,
   calendarYearScheme,
   cardTokensFromScanCode,
@@ -538,5 +540,52 @@ describe("redundantJoinAction", () => {
 
   it("also ends the arrangement when another one of theirs still runs", () => {
     expect(redundantJoinAction({ ...join, otherAgreementRunning: true })).toBe("refund-and-stop");
+  });
+});
+
+describe("administratorInviteRefusal", () => {
+  const context = {
+    administratorEmails: ["kari@bakvendtland.example"],
+    pendingInviteEmails: ["ola@bakvendtland.example"],
+  };
+
+  it("lets a new address through", () => {
+    expect(administratorInviteRefusal("nils@bakvendtland.example", context)).toBe(null);
+  });
+
+  it("refuses something that is not an email address", () => {
+    expect(administratorInviteRefusal("kari", context)).toBe("invalid-email");
+    expect(administratorInviteRefusal("kari@bakvendtland", context)).toBe("invalid-email");
+    expect(administratorInviteRefusal("", context)).toBe("invalid-email");
+  });
+
+  it("refuses someone who already has access, however it is written", () => {
+    expect(administratorInviteRefusal("kari@bakvendtland.example", context)).toBe(
+      "already-an-administrator",
+    );
+    expect(administratorInviteRefusal("  KARI@Bakvendtland.Example ", context)).toBe(
+      "already-an-administrator",
+    );
+  });
+
+  it("refuses a second invitation to an address already waiting", () => {
+    expect(administratorInviteRefusal("Ola@bakvendtland.example", context)).toBe("already-invited");
+  });
+});
+
+describe("administratorRemovalRefusal", () => {
+  it("lets one of several go", () => {
+    expect(administratorRemovalRefusal("user-2", ["user-1", "user-2"])).toBe(null);
+  });
+
+  it("keeps the last one, whoever asks", () => {
+    expect(administratorRemovalRefusal("user-1", ["user-1"])).toBe("last-administrator");
+  });
+
+  it("refuses somebody who does not have access in the first place", () => {
+    expect(administratorRemovalRefusal("user-9", ["user-1", "user-2"])).toBe(
+      "not-an-administrator",
+    );
+    expect(administratorRemovalRefusal("user-9", [])).toBe("not-an-administrator");
   });
 });

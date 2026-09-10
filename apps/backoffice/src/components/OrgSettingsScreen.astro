@@ -72,6 +72,7 @@ const openWarnings = editing ? [] : warningsForTab(warnings, "innstillinger");
 const editPath = `${orgPath}/innstillinger?rediger=1`;
 const settingsPath = `${orgPath}/innstillinger`;
 const vippsPath = `${orgPath}/vipps`;
+const administratorsPath = `${orgPath}/administratorer`;
 const validatedDate = vippsKeys
   ? new Date(vippsKeys.validatedAt).toLocaleDateString("nb-NO")
   : null;
@@ -156,6 +157,22 @@ const hasImages = !!(identity.logoUrl || identity.bannerUrl);
             {hasImages
               ? "Øverst på siden: bannerbildet er beskåret slik siden viser det, og logoen ligger alltid i en sirkel."
               : "Uten logo og bannerbilde viser siden navnet alene. Begge er valgfrie og legges til under «Endre opplysningene»."}
+          </Text>
+        </section>
+
+        {/* Who may act for the organization
+            (specs/use-cases/manage-administrators.md). The people themselves
+            live on their own page: this is the door, not a second copy of the
+            list. */}
+        <section class="section">
+          <div class="section-head">
+            <Heading level={3}>Administratorer</Heading>
+            <Button variant="secondary" href={administratorsPath}>
+              Se hvem som har tilgang
+            </Button>
+          </div>
+          <Text variant="small">
+            Flere kan dele på arbeidet. Alle som inviteres inn får samme tilgang som deg.
           </Text>
         </section>
 

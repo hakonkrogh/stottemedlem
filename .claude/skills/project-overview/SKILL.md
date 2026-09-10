@@ -74,6 +74,32 @@ also documents the variants and why the rule exists.
   `level={2}` — account links, and tabs with warning-count badges from
   `lib/orgNav.ts` + `lib/orgWarnings.ts`). Vipps keys sit under the
   Innstillinger tab.
+  **Administrators sit there too, since 2026-09-10** (branch
+  workos-user-invites, spec `specs/use-cases/manage-administrators.md` NEW;
+  it retired that use case's line in `access-the-back-office.md`'s Out of
+  scope): `/o/[slug]/administratorer` lists everyone WorkOS says may act for
+  the org plus the invitations still pending, invites a new one by email,
+  withdraws an invitation, and REMOVES an administrator (asked 2026-09-10, same
+  branch, after the first cut left removal out).
+  There is NO local copy of who administers an organization and there must not
+  be one: `lib/administrators.ts` reads WorkOS on every visit, and every
+  decision a screen shows comes from a pure function in `@stottemedlem/core`,
+  unit-tested there because the page cannot be signed into locally:
+  `administratorInviteRefusal` (already has access / already invited / not an
+  address) and `administratorRemovalRefusal`.
+  **The last administrator can never be removed** (`specs/concepts/administrator.md`):
+  an org with nobody who may act for it keeps charging members while no human
+  can change, refund or stop anything, and **WorkOS enforces none of this** --
+  `deleteOrganizationMembership` will happily empty an organization, so the
+  guard is ours alone. A PENDING INVITATION DOES NOT COUNT as an administrator,
+  the screen says why instead of just hiding the button, and removing yourself
+  is allowed (it 303s to `/orgs`, which re-routes you by what you have left).
+  Three traps, all handled: `revokeInvitation` AND
+  `deleteOrganizationMembership` take no organization id, so a posted id is
+  checked against THIS org's own loaded list first; and "demote" was considered
+  and REJECTED (2026-09-10) because the product has one level of access and
+  every screen is admin-only, so there is nothing to demote anyone to. The
+  SDK surface it uses is written up in `stack-docs`.
   **Editable surfaces present first** (specs/concepts/presenting-and-editing.md):
   a screen shows stored values via `@stottemedlem/ui/components/InfoList.astro`
   plus an "Endre" action opening `?rediger=1`; a save closes the form, a
@@ -1005,7 +1031,14 @@ also documents the variants and why the rule exists.
   `pnpm --filter @stottemedlem/ui run storybook`
   (always port 6007; the script carries `--exact-port --ci --no-open`, so a
   port another worktree holds is an early exit and never a silent move to a
-  neighbouring port serving someone else's stories) via the community
+  neighbouring port serving someone else's stories. **When 6007 IS held, do not
+  kill it** (it is another session's): run your own on a free port from
+  `packages/ui` with `npx storybook dev -p 6017 --exact-port --ci --no-open`,
+  confirm it is YOURS with
+  `curl -s localhost:6017/index.json | python3 -c "import sys,json;
+  print([k for k in json.load(sys.stdin)['entries'] if '<your story>' in k])"`,
+  and shoot `iframe.html?viewMode=story&id=…` on that port. Verified
+  2026-09-10) via the community
   `@storybook-astro/framework` (Storybook 10 +
   Astro 7; storybook-astro.org).
   Pinned at `storybook` + `@storybook/builder-vite` `^10.5.10` and
@@ -1154,7 +1187,10 @@ also documents the variants and why the rule exists.
 - **The pre-push sequence, in order** (each of these has bitten someone):
   1. `bash .claude/skills/writing-rules/check-diff.sh HEAD~<n>` over YOUR
      commits, never against `origin/main` on a long-lived branch.
-  2. `node .claude/skills/spec-lint/check.mjs` if any spec moved.
+  2. `node .claude/skills/spec-lint/check.mjs` if any spec moved. A RENAME
+     is the case it exists for: it also checks the `specs/…md` paths cited
+     from code comments, skills and docs, which no other check in this repo
+     reads and which a rename silently breaks.
   3. `node .claude/skills/verify-workflow/run-steps.mjs .github/workflows/ci.yml
      --force-turbo` before ANY push. It replays `pnpm install --frozen-lockfile`
      and `pnpm lint` over the WHOLE repo, which is what catches formatting in
@@ -1183,9 +1219,19 @@ also documents the variants and why the rule exists.
   `until [ "$(gh pr checks <n> --json state --jq '.[0].state')" != "PENDING" ]`
   aborts on its first iteration and looks like the loop condition is wrong.
   Read the plain-text output instead, which prints `pending` / `pass` / `fail`
-  in column 2: `until [ "$(gh pr checks <n> 2>/dev/null | awk '{print $2}')" \
-  != "pending" ]; do sleep 15; done`. The repo's CI job is one check named
-  `check` and takes about 50s.
+  in column 2. **But an EMPTY second column is the other way that loop lies**
+  (hit 2026-09-10, one commit after the note above was written): straight after
+  `gh pr create` the workflow has not been registered yet, so `gh pr checks`
+  prints NOTHING, the substitution is empty, `"" != "pending"` is true, and the
+  loop falls through on its first iteration reporting success on a run that has
+  not started. Wait for a status that is both present and settled:
+
+      while :; do s=$(gh pr checks <n> 2>/dev/null | awk 'NR==1{print $2}')
+        [ -n "$s" ] && [ "$s" != "pending" ] && break; sleep 15; done
+      gh pr checks <n>
+
+  The repo's CI job is one check named `check` and takes about 50s (42s on
+  PR #100).
 - Single package: `pnpm turbo run <task> --filter=@stottemedlem/<name>`.
 - **Running `turbo build` for the backoffice while its dev server is up
   breaks the dev server** (hit 2026-09-08): every page then 500s with
@@ -1451,9 +1497,10 @@ away by mistake (nearly did, 2026-08-31, rebasing onto the one-card PR).
 | (skill) `verify-public-routes` | + `d1.sh "<SQL>" [local\|staging\|production]` — read D1 rows as JSON, now including the DEPLOYED databases (SELECT-only off local; ask staging what shapes it really holds before trusting a fixture) (the member-registry tables incl.); assert the public join pages over real HTTP (status, `/org/*` 301s, `x-sm-cache` miss→hit, brand attribution) + `seed.sh`, the tier-aware local D1 seed; **+ the erasure/retention recipe** (POST `handling=slett` to min-side with an Origin header, read the row back to prove name/email/phone/`vipps_sub`/`card_token` are NULL while the payment rows survive, and drive the nightly sweep via the cron endpoint) — plus the two D1-write traps: NEVER `2>/dev/null` a wrangler write (a rejected batch reads as a failing feature) and shift `period_year` rather than assigning one (UNIQUE on member_id+period_year); **+ `trace-member.sh <id\|card token\|manage token\|URL\|agr_…\|chr-…\|phone\|email> [target]`**: one member's agreements + charges + notices as a single timeline, and the "captured with NO receipt notice" check that answers *did they pay, and were they told?* (a charge REFUNDED before the sweep is the benign cause: the owed-receipt query takes only `status='CHARGED'`) |
 | (skill) `render-email` | `node .claude/skills/render-email/render.mjs <notice> [--set k=v] [--png out.png]`: render a member notice (receipt join/renewal/no-card/bare-org, fee change up/down) from the real `@stottemedlem/email` source with NO dev server, D1, Resend or send: prints the envelope (subject, reply-to, attachment list) + the text/plain body and shoots the HTML body to a PNG. Runs the `.ts` sources through Node's built-in type stripping, so it needs no `pnpm install`. An email has TWO bodies and mail clients show either, so read both; `vitest` proves a string is present but never that a subject reads badly in an inbox list or that two blocks of copy compete |
 | (canonical) `docs/architecture/overview.md` | proposed architecture: 2 deployables (Astro static marketing + one Astro-SSR Worker for backoffice/API/webhooks/cron/queues), D1 as system of record, WorkOS org-gated admin, Vipps Login for members, 11-step scaffolding plan |
-| (skill) `stack-docs` | verified platform gotchas: Astro CF adapter custom worker entry, WorkOS SDK on Workers |
+| (skill) `stack-docs` | verified platform gotchas: Astro CF adapter custom worker entry, WorkOS SDK on Workers (including the user-management surface behind the administrators screen, and how to grep the SDK's flattened `.d.mts` for the rest) |
+| (skill) `workos-context` | `node .claude/skills/workos-context/workos.mjs admins\|invites\|user\|orgs\|raw` reads the AUTHORITY on back-office access: who may act for an organization, their sign-in state, and the invitations still pending. Read-only by design (an invite emails a real person, so sending stays in the product). Needs `WORKOS_API_KEY` from the user, and a key is per WorkOS ENVIRONMENT, so a 404 can mean "wrong environment" rather than "no such org" |
 | (skill) `writing-rules` | `bash .claude/skills/writing-rules/check-diff.sh [--staged|<ref>]` asserts the hard authoring rules over the lines THIS session added (never an em-dash), across specs, docs, skills and code comments. Diff-scoped because the repo's existing prose is full of em-dashes; **includes untracked files** (a new file is invisible to `git diff` and is the writing most likely to break the rule), and downgrades a modified line whose old version already had one. `pnpm lint` never looks at prose, and biome already covers the no-`any` rule |
-| (skill) `spec-lint` | `node .claude/skills/spec-lint/check.mjs` — validates spec links + INDEX registration after any specs/ edit |
+| (skill) `spec-lint` | `node .claude/skills/spec-lint/check.mjs`: validates spec links + INDEX registration after any specs/ edit, PLUS every `specs/…md` path cited from outside specs/ (code comments, skills, docs), which is the half a rename breaks and nothing else looks at |
 | (skill) `preview-screenshot` | headless-Chrome screenshot of any local URL → Read the PNG; the visual validation loop for UI work |
 | (skill) `drive-page` | `node .claude/skills/drive-page/drive.mjs <url> click=… assert=…` — CLICK a real page and assert what happens, incl. `--stub` for browser APIs a headless run lacks (`navigator.share`, clipboard). The only loop that executes an `.astro` client `<script>`; the screenshot loop's behavioural twin |
 | (skill) `dev-logs` | `bash .claude/skills/dev-logs/devlog.sh start\|tail\|grep` — read the dev server's stdout (console.log/error, request lines, SSR stack traces) via `astro dev --background` + `.astro/dev.log`; foreground `pnpm dev` output is unreadable to agents |

@@ -1,0 +1,231 @@
+---
+// Who may act for the organization: how somebody else is let in, and how
+// access is taken away again (specs/use-cases/manage-administrators.md).
+//
+// The people with access and the invitations still waiting are shown as one
+// picture, because an invitation is a promise of access: an administrator
+// asking "who can get in here" is answered in full, not shown half the answer
+// and left to remember the rest.
+//
+// The last administrator has no remove action, and is TOLD so rather than
+// shown a row that quietly lost its button: a rule nobody can see reads as a
+// bug the first time somebody looks for the button they used yesterday.
+import Alert from "@stottemedlem/ui/components/Alert.astro";
+import Button from "@stottemedlem/ui/components/Button.astro";
+import Heading from "@stottemedlem/ui/components/Heading.astro";
+import Stack from "@stottemedlem/ui/components/Stack.astro";
+import Text from "@stottemedlem/ui/components/Text.astro";
+import TextField from "@stottemedlem/ui/components/TextField.astro";
+import type { AdministratorEntry, PendingInviteEntry } from "../lib/administrators";
+import Subpage from "./Subpage.astro";
+
+interface Props {
+  orgName: string;
+  orgPath: string;
+  administrators: AdministratorEntry[];
+  invitations: PendingInviteEntry[];
+  /** An address invited just now. */
+  invitedEmail?: string | null;
+  /** An invitation withdrawn just now. */
+  withdrawnEmail?: string | null;
+  /** Somebody whose access was taken away just now, by name. */
+  removedName?: string | null;
+  /** What was typed, kept when the invitation was refused. */
+  email?: string;
+  /** Why it was refused, said next to the field. */
+  emailError?: string | null;
+  /** Something outside the product went wrong, said above everything. */
+  failure?: string | null;
+}
+const {
+  orgName,
+  orgPath,
+  administrators,
+  invitations,
+  invitedEmail = null,
+  withdrawnEmail = null,
+  removedName = null,
+  email = "",
+  emailError = null,
+  failure = null,
+} = Astro.props;
+
+const date = (iso: string) => new Date(iso).toLocaleDateString("nb-NO");
+// An organization always keeps somebody who may act for it
+// (specs/concepts/administrator.md), so the only one left is offered nothing to
+// press. A pending invitation does not count: it is not access until accepted.
+const alone = administrators.length <= 1;
+---
+
+<Subpage backHref={`${orgPath}/innstillinger`} backLabel="Tilbake til innstillinger">
+  <Stack gap="sm">
+    <Heading level={2}>Administratorer</Heading>
+    <Text variant="lead">
+      Disse kan logge inn og gjøre alt på vegne av {orgName}: endre medlemskap, se medlemslisten og
+      håndtere betalinger. Alle har samme tilgang.
+    </Text>
+  </Stack>
+
+  {failure && <Alert variant="error">{failure}</Alert>}
+  {
+    invitedEmail && (
+      <Alert variant="success">
+        Invitasjonen er sendt til {invitedEmail}. Tilgangen begynner når personen logger inn.
+      </Alert>
+    )
+  }
+  {withdrawnEmail && <Alert variant="success">Invitasjonen til {withdrawnEmail} er trukket tilbake.</Alert>}
+  {removedName && <Alert variant="success">{removedName} har ikke lenger tilgang.</Alert>}
+
+  <section class="section">
+    <Heading level={3}>Har tilgang i dag</Heading>
+    <ul class="people">
+      {
+        administrators.map((person) => (
+          <li class="person">
+            <span class="name">
+              {person.name ?? person.email}
+              {person.isYou && <span class="you">deg</span>}
+            </span>
+            {person.name && <span class="detail">{person.email}</span>}
+            {!alone && (
+              <form
+                method="post"
+                data-confirm={
+                  person.isYou
+                    ? `Fjerne din egen tilgang til ${orgName}? Du mister den med en gang, og må inviteres inn på nytt.`
+                    : `Fjerne tilgangen til ${person.name ?? person.email}? Personen må inviteres inn på nytt for å komme tilbake.`
+                }
+              >
+                <input type="hidden" name="handling" value="fjern" />
+                <input type="hidden" name="person" value={person.userId} />
+                <Button variant="secondary" busy="Fjerner …">
+                  {person.isYou ? "Fjern min tilgang" : "Fjern tilgangen"}
+                </Button>
+              </form>
+            )}
+          </li>
+        ))
+      }
+    </ul>
+    {
+      alone && (
+        <Text variant="small">
+          {`${orgName} har bare én administrator, og den siste kan ikke fjernes. Inviter noen andre inn først, så kan tilgang fjernes herfra.`}
+        </Text>
+      )
+    }
+  </section>
+
+  {
+    invitations.length > 0 && (
+      <section class="section">
+        <Heading level={3}>Invitasjoner som venter</Heading>
+        <ul class="people">
+          {invitations.map((invitation) => (
+            <li class="person pending">
+              <span class="name">{invitation.email}</span>
+              <span class="detail">
+                {`Sendt ${date(invitation.sentAt)}, utløper ${date(invitation.expiresAt)}`}
+              </span>
+              <form
+                method="post"
+                data-confirm={`Trekke tilbake invitasjonen til ${invitation.email}?`}
+              >
+                <input type="hidden" name="handling" value="trekk" />
+                <input type="hidden" name="invitasjon" value={invitation.id} />
+                <Button variant="secondary" busy="Trekker tilbake …">
+                  Trekk tilbake
+                </Button>
+              </form>
+            </li>
+          ))}
+        </ul>
+      </section>
+    )
+  }
+
+  <section class="section">
+    <Heading level={3}>Inviter en ny administrator</Heading>
+    <Text variant="small">
+      Vi sender en e-post med en lenke inn hit. Personen logger inn med sin egen identitet, og
+      lager en innlogging der og da hvis de ikke har en fra før.
+    </Text>
+    <form method="post" class="invite">
+      <Stack gap="md">
+        <input type="hidden" name="handling" value="inviter" />
+        <TextField
+          label="E-postadresse"
+          name="epost"
+          type="email"
+          value={email}
+          required
+          error={emailError ?? undefined}
+        />
+        <Button busy="Sender …">Send invitasjon</Button>
+      </Stack>
+    </form>
+  </section>
+</Subpage>
+
+<style>
+  .section {
+    display: grid;
+    gap: var(--sm-space-sm);
+    padding-top: var(--sm-space-md);
+    border-top: 1px solid var(--sm-border);
+  }
+  .section:first-of-type {
+    padding-top: 0;
+    border-top: none;
+  }
+  .people {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: var(--sm-space-sm);
+  }
+  .person {
+    display: grid;
+    gap: 0.3rem;
+    padding: 0.75rem 1rem;
+    background: var(--sm-surface);
+    border: 1px solid var(--sm-border);
+    border-radius: var(--sm-radius-md);
+  }
+  /* An invitation is not access yet, so its line is quieter than the ones
+     above it: dashed, the way the member list marks something unsettled. */
+  .person.pending {
+    background: transparent;
+    border-style: dashed;
+    border-color: var(--sm-border-strong);
+  }
+  .name {
+    font-weight: 600;
+    overflow-wrap: anywhere;
+  }
+  .detail {
+    font-size: 0.85rem;
+    color: var(--sm-muted);
+    overflow-wrap: anywhere;
+  }
+  .you {
+    margin-left: 0.4rem;
+    padding: 0.15rem 0.5rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    border-radius: 999px;
+    color: var(--sm-accent-deep);
+    background: var(--sm-accent-soft);
+    border: 1px solid var(--sm-accent);
+    white-space: nowrap;
+  }
+  .person form {
+    margin-top: 0.25rem;
+    justify-self: start;
+  }
+  .invite {
+    max-width: 26rem;
+  }
+</style>
