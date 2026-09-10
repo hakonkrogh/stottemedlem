@@ -46,11 +46,13 @@ const { title, frame = true } = Astro.props;
     display: grid;
     align-items: start;
     justify-items: center;
-    padding: 1.5rem 1rem 3rem;
+    /* Generous air above and below every screen, so nothing sits against an
+     * edge. Where a page opens is left entirely to the browser. */
+    padding: 2rem 1rem 6rem;
   }
   body.centered {
     align-items: center;
-    padding: 2rem 1rem;
+    padding: 2.5rem 1rem 4rem;
   }
   main {
     width: 100%;

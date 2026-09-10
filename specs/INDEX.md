@@ -81,6 +81,7 @@ The one message the product itself sends a member is the necessary
 | [Annual period](concepts/annual-period.md) | Draft |
 | [Annual fee](concepts/annual-fee.md) | Draft |
 | [Join page](concepts/join-page.md) | Draft |
+| [Opening a page](concepts/opening-a-page.md) | Active |
 | [Member self-service page](concepts/member-self-service.md) | Draft |
 | [Member card](concepts/member-card.md) | Draft |
 | [Member notice](concepts/member-notice.md) | Draft |

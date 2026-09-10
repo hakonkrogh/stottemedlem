@@ -41,7 +41,7 @@ const { cardToken, version, alt, shareUrl, shareTitle } = Astro.props;
 const { width, height } = memberCardSize();
 ---
 
-<figure class="member-card">
+<figure class="member-card" style={`--sm-card-ratio: ${width} / ${height}`}>
   <img
     src={`${memberCardImagePath(cardToken, "svg")}?v=${version}`}
     alt={alt}
@@ -130,6 +130,10 @@ const { width, height } = memberCardSize();
     display: block;
     width: 100%;
     height: auto;
+    /* The card's shape is known before the picture arrives, so its space is
+     * reserved from the first paint and nothing below it jumps when the
+     * drawing loads. */
+    aspect-ratio: var(--sm-card-ratio);
   }
 
   .member-card__share {
