@@ -1,7 +1,7 @@
 # QR codes — @stottemedlem/qr + endpoint + demo page
 
 Spec: `specs/use-cases/promote-with-qr-card.md` + `specs/concepts/join-page.md`.
-Distinct from the *member's personal referral* QR (`specs/use-cases/earn-stars-and-recruit.md`).
+Distinct from the *member's personal referral* QR (`specs/use-cases/earn-hearts-and-recruit.md`).
 
 ## Package split (`packages/qr`) — respect it
 - `@stottemedlem/qr` (index) — **isomorphic**, safe to bundle for the browser:
