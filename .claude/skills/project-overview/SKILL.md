@@ -164,9 +164,15 @@ also documents the variants and why the rule exists.
   runs over `Astro.slots.render("default")`, so a picture `OrgScreen` itself
   draws (the org logo beside the name) is untouched by it and
   `ORG_WITH_IMAGES` does nothing for it. Such a picture needs a real prop on
-  `StoryScreen`, handed the fixture: `logoUrl={FIXTURE_LOGO_URL}`, re-exported
-  from `storyFixtures.ts`; story `backoffice-oversikt--with-a-logo` is the
-  worked example.
+  `StoryScreen`, handed the fixture (`FIXTURE_LOGO_URL`, re-exported from
+  `storyFixtures.ts`). The logo is the worked example, and its default is ON:
+  `StoryScreen`'s `logoUrl` falls back to that fixture, so ALL NINE screen
+  stories wear the mark and the clickable back office reads as a set-up
+  organization's. A story about an org WITHOUT one passes `logoUrl: null`
+  (Oversikt's `--needs-setup`), and `OrgSettingsScreen.stories.ts` derives it
+  from the org it renders, so the chrome cannot contradict the identity
+  preview inside the screen. Copy that derivation for any future story whose
+  screen shows the organization's own imagery.
   **A screen UNDER a tab (a member, a tier form, the Vipps keys, a message)
   wraps its content in `components/Subpage.astro`** (`backHref` + `backLabel`)
   instead of a `<Stack gap="lg">` root: that renders `@stottemedlem/ui`'s
