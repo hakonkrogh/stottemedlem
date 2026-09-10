@@ -163,6 +163,31 @@ through untouched, so either placement is HMAC-safe. If the non-webhook API surf
 ever outgrows Astro's basic routing, mount Hono in the same `worker.ts` before
 `handle()` — additive, no architecture change.
 
+## Astro templates: a line break before an inline tag EATS the space (verified 2026-09-10)
+
+`compressHTML` defaults to **true**, and it collapses the newline + indentation
+between text and a following tag to **nothing**, not to a space. So this source:
+
+```astro
+<p>Skriv til
+  <a href="mailto:...">hei@example.no</a>, ...</p>
+```
+
+ships as `Skriv til<a href=...>hei@example.no</a>`, so the words run together. Plain
+HTML would render a space there, so the source looks correct and only the output is
+wrong. Verified in **both `astro dev` and `astro build`** (setting
+`compressHTML: false` restores the newline), so a dev-server check does not catch it.
+
+Two consequences:
+
+- Keep the text and the opening tag on the **same line**. When the formatter wants to
+  wrap, break *inside* the tag instead: `... Skriv til <a\n  href="...">text</a\n>`.
+  That is the style biome already produces elsewhere in `apps/marketing`.
+- **A screenshot is how you catch this**: it is invisible in the source and survives
+  lint, typecheck and build. When a change puts a link or `<strong>` inside a
+  sentence, read the rendered text in the shot (or
+  `grep -o 'word.\{0,80\}' dist/index.html`), not just the layout.
+
 ## Astro images (`astro:assets`) — verified 2026-07-07
 
 - **`sharp` is NOT bundled with astro 7** — the default image service throws at
