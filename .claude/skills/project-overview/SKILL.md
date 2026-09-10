@@ -74,6 +74,14 @@ also documents the variants and why the rule exists.
   `level={2}` — account links, and tabs with warning-count badges from
   `lib/orgNav.ts` + `lib/orgWarnings.ts`). Vipps keys sit under the
   Innstillinger tab.
+  **The org's LOGO stands before that name since 2026-09-10** (spec rule in
+  `concepts/back-office.md`, `concepts/organization.md` states it too): every
+  one of the NINE pages rendering `<OrgScreen>` passes
+  `logoUrl={orgIdentity(org).logoUrl}` beside `orgName={org.name}`. Add it to
+  any new one, or that screen loses the logo while its neighbours keep it. It
+  is PASSED, not looked up inside the chrome, on purpose: `innstillinger.astro`
+  reassigns its own `org` after an upload, so `view.org` there is one save
+  behind, exactly as with `org.name`.
   **Administrators sit there too, since 2026-09-10** (branch
   workos-user-invites, spec `specs/use-cases/manage-administrators.md` NEW;
   it retired that use case's line in `access-the-back-office.md`'s Out of
@@ -152,6 +160,13 @@ also documents the variants and why the rule exists.
   (`storyImageSrc`, 2026-09-04) — so a screen that shows the organization's
   imagery needs no story-only props; give it `ORG_WITH_IMAGES` from
   `storyFixtures.ts` and the pictures appear.
+  **That rewriting reaches the SLOT only, never the chrome** (2026-09-10): it
+  runs over `Astro.slots.render("default")`, so a picture `OrgScreen` itself
+  draws (the org logo beside the name) is untouched by it and
+  `ORG_WITH_IMAGES` does nothing for it. Such a picture needs a real prop on
+  `StoryScreen`, handed the fixture: `logoUrl={FIXTURE_LOGO_URL}`, re-exported
+  from `storyFixtures.ts`; story `backoffice-oversikt--with-a-logo` is the
+  worked example.
   **A screen UNDER a tab (a member, a tier form, the Vipps keys, a message)
   wraps its content in `components/Subpage.astro`** (`backHref` + `backLabel`)
   instead of a `<Stack gap="lg">` root: that renders `@stottemedlem/ui`'s

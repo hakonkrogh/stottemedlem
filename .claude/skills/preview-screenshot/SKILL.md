@@ -196,7 +196,16 @@ description: Render any local URL (marketing/backoffice dev or preview server) t
   reported a non-zero exit when pkill'ed at the end. The 2026-08-31 failure was
   not reproduced, but nohup + disown is still the safer default; whichever you
   use, prove it with `until curl -sf localhost:<port>/index.json; do sleep 2;
-  done` in a background task rather than trusting the task status. Stop with `lsof -ti:6007 |
+  done` in a background task rather than trusting the task status.
+  **What is definitely broken is COMBINING the two** (2026-09-10): passing
+  `nohup npx storybook dev … & echo started` as the Bash tool's
+  `run_in_background` command backgrounds a command that returns instantly, the
+  task reports "completed, exit 0" within a second, and the storybook child
+  dies with it: its log stops at "Starting…" and every curl returns `000`,
+  which reads as "Storybook crashed on startup". In `run_in_background`, run
+  the server as the FOREGROUND command of that task (`npx storybook dev -p
+  <port> --exact-port --ci --no-open`, no trailing `&`); keep the `&`/`disown`
+  form for an ordinary blocking Bash call. Stop with `lsof -ti:6007 |
   xargs kill`. If the astro dev server is needed instead (port 4322): it's a
   persistent daemon — "already running" may be a stale one from another session
   serving old code; `pnpm --filter @stottemedlem/backoffice exec astro dev stop`
