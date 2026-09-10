@@ -238,7 +238,18 @@ also documents the variants and why the rule exists.
   origin they arrived at). Public in middleware (with `/favicon.ico` —
   else crawlers get bounced into the login flow), rendered by
   `PublicShell.astro` (indexable, brand attribution; admin `Shell.astro` stays
-  noindex). Astro template gotcha found here twice: text + `{expr}` separated
+  noindex). **Neither layout does anything about scrolling (since 2026-09-10,
+  branch simplify-scroll-spacing).** The iPhone status-bar compensation that
+  used to live in `PublicShell` (an arrival script measuring viewport growth
+  into `--sm-arrival-inset`, plus a `min-height: 100lvh` body hack) is DELETED,
+  and marketing dropped `scroll-behavior: smooth`. Where a page opens is the
+  browser's business; what replaces the compensation is generous top padding
+  and a large bottom padding on every page in both layouts, so a clipped edge
+  still reads. The rule is spec'd in `specs/concepts/opening-a-page.md`, and
+  the long diagnostic history (four on-device videos, two reverts) is in the
+  `preview-screenshot` skill. Do not reinstate any of it unasked. The one
+  deliberate scroll left in the product is `LiveForms.astro` bringing a form's
+  answer into view after a submit, which `answering-an-action.md` requires. Astro template gotcha found here twice: text + `{expr}` separated
   by a newline collapses the space ("arbeidet iNordnes") — join with `{" "}`.
   Same class, third sighting 2026-08-24: **two adjacent expressions on ONE line
   inside a component slot** — `<Text>{a} {b}</Text>` — also lose the space
@@ -668,12 +679,16 @@ also documents the variants and why the rule exists.
   `verify-qr --shrink`, which reports the narrowest the whole drawing may be
   and still decode (this change: 328 px → 239 px).
   Review card artwork with the `render-card` skill, not in Storybook alone.
-  `MemberCardFigure.astro` is now a bare `<img>` (no `<picture>`) and owns two
-  page-level behaviours: FULL-BLEED by default, cancelling `PublicShell`'s
-  gutter (published as `--sm-page-gutter` — don't hard-code 1.25rem), capped
-  at `max-width: 24rem` above 34rem so an upright card does not become a
-  poster on desktop; and an optional `shareUrl` puts a share pill in the
-  card's bottom-right (`navigator.share` → clipboard → plain navigation; drive
+  `MemberCardFigure.astro` is now a bare `<img>` (no `<picture>`). **Corrected
+  2026-09-10:** it is NOT full-bleed any more (this doc said so until then).
+  It sits inside `PublicShell`'s reading column, keeping the gutter published
+  as `--sm-page-gutter` (don't hard-code 1.25rem), with `margin: 0.75rem auto`
+  and `max-width: 24rem` so an upright card does not become a poster. It
+  RESERVES ITS SPACE before the drawing arrives: the figure carries
+  `--sm-card-ratio: <w> / <h>` from `memberCardSize()` and the img an
+  `aspect-ratio`, so nothing below it shifts when the SVG loads
+  (`specs/concepts/opening-a-page.md`). An optional `shareUrl` puts a share
+  pill in the card's bottom-right (`navigator.share` → clipboard → plain navigation; drive
   both branches with `drive-page`). It is shared by min-side, kvittering AND
   `/medlemsbevis/[token]`, so a change there lands on three public pages.
   Public at `/medlemsbevis/<cardToken>` (+ `/kort.svg`, `/kort.png`), embedded
