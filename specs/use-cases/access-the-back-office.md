@@ -52,8 +52,10 @@ From the administrator's point of view:
 - [ ] An administrator can sign out.
 
 ## Out of scope
-- Inviting other people, roles, or fine-grained permissions — membership alone
-  gates access for now; every member of an organization is a full administrator.
+- Giving another person access and taking it away, which is
+  [Manage who administers the organization](manage-administrators.md). Roles
+  and fine-grained permissions remain out of scope entirely: membership alone
+  gates access, and every member of an organization is a full administrator.
 - Member self-service ("Min side"), which is a different population signing in a
   different way (see the member-facing surfaces).
 - Configuring the organization beyond its existence and name — that is
@@ -66,3 +68,4 @@ From the administrator's point of view:
 - [Concept: Administrator](../concepts/administrator.md)
 - [Concept: Organization](../concepts/organization.md)
 - [Use case: Set up a supporting membership](set-up-supporting-membership.md)
+- [Use case: Manage who administers the organization](manage-administrators.md)

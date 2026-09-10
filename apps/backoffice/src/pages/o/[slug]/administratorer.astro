@@ -1,0 +1,128 @@
+---
+import AdministratorsScreen from "../../../components/AdministratorsScreen.astro";
+import OrgScreen from "../../../components/OrgScreen.astro";
+import Shell from "../../../layouts/Shell.astro";
+import {
+  inviteAdministrator,
+  loadAdministrators,
+  removeAdministrator,
+  withdrawInvitation,
+} from "../../../lib/administrators";
+import { requireOrgView } from "../../../lib/orgView";
+import { getWorkOS, orgPath } from "../../../lib/workos";
+
+// Who may act for this organization (specs/use-cases/manage-administrators.md).
+// The list is read from WorkOS on every visit, because WorkOS is the authority
+// on access and a stored copy could only ever be out of date.
+const session = Astro.locals.session;
+const view = await requireOrgView(session, Astro.params.slug, Astro.request);
+if (!view || !session) return Astro.redirect("/orgs");
+const org = view.org;
+const workos = getWorkOS();
+const path = `${orgPath(org.slug)}/administratorer`;
+
+const FIELD_ERRORS = {
+  "invalid-email": "Oppgi en gyldig e-postadresse.",
+  "already-an-administrator": "Denne adressen har allerede tilgang.",
+  "already-invited": "Denne adressen er allerede invitert, og invitasjonen venter fortsatt.",
+} as const;
+const SEND_FAILED = "Vi fikk ikke sendt invitasjonen nå. Prøv igjen om litt.";
+const WITHDRAW_FAILED = "Vi fikk ikke trukket tilbake invitasjonen nå. Prøv igjen om litt.";
+// Both refusals mean the screen was showing something stale (somebody else
+// removed a person since this page was drawn), so they are stated at the top
+// and the fresh list below them is the correction.
+function removeFailure(reason: string | null): string {
+  if (reason === "last-administrator") {
+    return "Den siste administratoren kan ikke fjernes. Inviter noen andre inn først.";
+  }
+  if (reason === "not-an-administrator") return "Denne personen har ikke tilgang lenger.";
+  return "Vi fikk ikke fjernet tilgangen nå. Prøv igjen om litt.";
+}
+
+const people = await loadAdministrators(workos, org.workosOrgId, session.userId);
+let email = "";
+let emailError: string | null = null;
+let failure: string | null = null;
+
+if (Astro.request.method === "POST") {
+  const form = await Astro.request.formData();
+  const handling = form.get("handling");
+
+  if (handling === "trekk") {
+    const withdrawn = await withdrawInvitation(workos, {
+      workosOrgId: org.workosOrgId,
+      invitationId: String(form.get("invitasjon") ?? ""),
+      view: people,
+    });
+    // Either way the answer is the list again, on an address that can be
+    // reloaded (specs/concepts/answering-an-action.md).
+    const query = withdrawn.ok ? `?trukket=${encodeURIComponent(withdrawn.email)}` : "?feil=trekk";
+    return Astro.redirect(`${path}${query}`, 303);
+  }
+
+  if (handling === "fjern") {
+    const removed = await removeAdministrator(workos, {
+      workosOrgId: org.workosOrgId,
+      userId: String(form.get("person") ?? ""),
+      view: people,
+    });
+    if (removed.ok && removed.wasYou) {
+      // They just gave up this organization, so the page they are on is no
+      // longer theirs to see. /orgs routes them by what they have left: another
+      // organization, a choice between several, or creating one.
+      return Astro.redirect("/orgs", 303);
+    }
+    const query = removed.ok
+      ? `?fjernet=${encodeURIComponent(removed.who)}`
+      : `?feil=fjern&grunn=${removed.error}`;
+    return Astro.redirect(`${path}${query}`, 303);
+  }
+
+  if (handling === "inviter") {
+    email = String(form.get("epost") ?? "").trim();
+    const outcome = await inviteAdministrator(workos, {
+      workosOrgId: org.workosOrgId,
+      email,
+      inviterUserId: session.userId,
+      view: people,
+    });
+    if (outcome.ok) {
+      return Astro.redirect(`${path}?invitert=${encodeURIComponent(outcome.email)}`, 303);
+    }
+    // A refusal keeps what was typed and says why beside the field; only a
+    // failure outside the product is stated at the top of the screen.
+    if (outcome.error === "failed") failure = SEND_FAILED;
+    else emailError = FIELD_ERRORS[outcome.error];
+  }
+}
+
+const flags = Astro.url.searchParams;
+const invitedEmail = flags.get("invitert");
+const withdrawnEmail = flags.get("trukket");
+const removedName = flags.get("fjernet");
+if (flags.get("feil") === "trekk") failure = WITHDRAW_FAILED;
+if (flags.get("feil") === "fjern") failure = removeFailure(flags.get("grunn"));
+---
+
+<Shell title={`Administratorer · ${org.name}`} frame={false}>
+  <OrgScreen
+    orgName={org.name}
+    orgPath={orgPath(org.slug)}
+    active="innstillinger"
+    warnings={view.warnings}
+    activeMembers={view.stats.activeMembers}
+  >
+    <AdministratorsScreen
+      orgName={org.name}
+      orgPath={orgPath(org.slug)}
+      administrators={people.administrators}
+      invitations={people.invitations}
+      invitedEmail={invitedEmail}
+      withdrawnEmail={withdrawnEmail}
+      removedName={removedName}
+      email={email}
+      emailError={emailError}
+      failure={failure}
+    />
+  </OrgScreen>
+</Shell>

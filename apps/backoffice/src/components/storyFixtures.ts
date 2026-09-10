@@ -11,6 +11,7 @@ import {
   FIXTURE_BANNER_URL,
   FIXTURE_LOGO_URL,
 } from "@stottemedlem/ui/components/OrgIdentityHeader.fixtures.ts";
+import type { AdministratorEntry, PendingInviteEntry } from "../lib/administrators";
 import { withEmbeddedCardFont } from "../lib/cardFont";
 import type { OrgWarning } from "../lib/orgWarnings";
 import { orgWarnings } from "../lib/orgWarnings";
@@ -63,6 +64,45 @@ export const QR_CARD_PREVIEW_SRC = `data:image/svg+xml;charset=utf-8,${encodeURI
 )}`;
 export const WEBHOOK_URL = `${CANONICAL_ORIGIN}/api/vipps/${ORG.slug}`;
 export const ADMIN_NAME = "Kari Nordmann";
+
+/**
+ * The people who may act for the organization, and the invitation still
+ * waiting (specs/use-cases/manage-administrators.md). The first of them is
+ * the administrator reading the screen.
+ */
+export const ADMINISTRATORS: AdministratorEntry[] = [
+  {
+    userId: "user_01story",
+    membershipId: "om_01story",
+    name: ADMIN_NAME,
+    email: "kari@bakvendtland.example",
+    isYou: true,
+  },
+  {
+    userId: "user_02story",
+    membershipId: "om_02story",
+    name: "Ola Nordmann",
+    email: "ola@bakvendtland.example",
+    isYou: false,
+  },
+  {
+    userId: "user_03story",
+    membershipId: "om_03story",
+    name: null,
+    email: "kasserer@bakvendtland.example",
+    isYou: false,
+  },
+];
+
+export const PENDING_INVITES: PendingInviteEntry[] = [
+  {
+    id: "invitation_01story",
+    email: "nils@bakvendtland.example",
+    sentAt: "2026-09-08T09:00:00.000Z",
+    expiresAt: "2026-09-15T09:00:00.000Z",
+  },
+];
+
 /**
  * The organization in numbers, counted from the very same supporters
  * `everyone` in memberFixtures holds, so the front page, the chrome's member
@@ -182,6 +222,7 @@ const STORY_ROUTES: Record<string, string> = {
   [ORG_PATH]: "backoffice-oversikt--default",
   [`${ORG_PATH}/innstillinger`]: "backoffice-innstillinger--default",
   [`${ORG_PATH}/innstillinger?rediger=1`]: "backoffice-innstillinger--editing",
+  [`${ORG_PATH}/administratorer`]: "backoffice-administratorer--default",
   [`${ORG_PATH}/vipps`]: "backoffice-vipps--stored-keys",
   [`${ORG_PATH}/vipps?rediger=1`]: "backoffice-vipps--replacing-keys",
   [`${ORG_PATH}/medlemmer`]: "backoffice-medlemsliste--default",

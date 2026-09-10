@@ -822,3 +822,76 @@ export function redundantJoinAction(input: RedundantJoinInput): RedundantJoinAct
   if (input.periodBoughtByAgreementId === input.agreementId) return null;
   return input.otherAgreementRunning ? "refund-and-stop" : "refund";
 }
+
+/**
+ * Why an invitation to the back office was not sent
+ * (specs/use-cases/manage-administrators.md). Null means send it.
+ */
+export type AdministratorInviteRefusal =
+  | "invalid-email"
+  | "already-an-administrator"
+  | "already-invited";
+
+/** Who already has access, and who has been asked and not answered yet. */
+export interface AdministratorInviteContext {
+  /** Addresses of the people who can act for the organization today. */
+  administratorEmails: string[];
+  /** Addresses with an invitation still waiting to be accepted. */
+  pendingInviteEmails: string[];
+}
+
+/**
+ * An email address as it is compared: an invitation is about a person, and
+ * `Kari@Eksempel.example` is the same person as `kari@eksempel.example`.
+ */
+export function normalizeAdministratorEmail(email: string): string {
+  return email.trim().toLowerCase();
+}
+
+/**
+ * Whether an address may be invited into an organization's back office.
+ *
+ * Both refusals exist to stop a second email going out about access the
+ * address already has, or has already been offered: an administrator who
+ * cannot remember whether they invited someone should be told, not made to
+ * send another invitation and find out from the recipient.
+ */
+export function administratorInviteRefusal(
+  email: string,
+  context: AdministratorInviteContext,
+): AdministratorInviteRefusal | null {
+  const candidate = normalizeAdministratorEmail(email);
+  // Deliberately the same shape the product accepts for every other address it
+  // is given: something, an @, something with a dot in it.
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(candidate)) return "invalid-email";
+  const has = (list: string[]) => list.some((e) => normalizeAdministratorEmail(e) === candidate);
+  if (has(context.administratorEmails)) return "already-an-administrator";
+  if (has(context.pendingInviteEmails)) return "already-invited";
+  return null;
+}
+
+/**
+ * Why access was not taken away
+ * (specs/use-cases/manage-administrators.md). Null means remove them.
+ */
+export type AdministratorRemovalRefusal = "not-an-administrator" | "last-administrator";
+
+/**
+ * Whether this person's access to an organization may be taken away.
+ *
+ * The invariant it guards is the organization's, not the person's: an
+ * organization with nobody who may act for it goes on collecting money from
+ * its members while no human being can change its offer, refund anyone or stop
+ * it. So the last administrator stays, and removing yourself is refused on
+ * exactly the same ground as removing somebody else.
+ *
+ * A pending invitation is deliberately NOT counted: an invitation is not
+ * access until it is accepted, so it can never stand in for the last one.
+ */
+export function administratorRemovalRefusal(
+  userId: string,
+  administratorUserIds: string[],
+): AdministratorRemovalRefusal | null {
+  if (!administratorUserIds.includes(userId)) return "not-an-administrator";
+  return administratorUserIds.length <= 1 ? "last-administrator" : null;
+}

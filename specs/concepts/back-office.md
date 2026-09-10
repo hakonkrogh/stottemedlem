@@ -13,7 +13,7 @@ administrator do sits in one of them.
 | **Oversikt** | The front page: how the organization is doing, and the addresses it shares |
 | **Medlemmer** | The [member list](../use-cases/curate-member-list.md), one member at a time, and writing to them |
 | **Medlemskap** | The [membership](membership-tier.md) offer supporters are shown |
-| **Innstillinger** | The organization's own details — profile, visual identity, and its [Vipps API keys](vipps-api-keys.md) |
+| **Innstillinger** | The organization's own details — profile, visual identity, its [Vipps API keys](vipps-api-keys.md), and who may act for it |
 
 They are presented in that order, and **settings comes last**: it is where an
 administrator goes when something has to be changed, not where the recurring
@@ -38,10 +38,11 @@ one visit and never has to be re-learned.
   collapsed behind a menu, and never pushed off the edge into a row that has to
   be scrolled to discover them. Their names remain available to anyone whose
   reading is not visual.
-- Screens that belong to a place live **under** it: the Vipps keys belong to
-  Innstillinger, a single member and writing to the members belong to
-  Medlemmer, and a membership's form belongs to Medlemskap. Being deeper in
-  never loses the four places.
+- Screens that belong to a place live **under** it: the Vipps keys and the
+  organization's [administrators](administrator.md) belong to Innstillinger, a
+  single member and writing to the members belong to Medlemmer, and a
+  membership's form belongs to Medlemskap. Being deeper in never loses the four
+  places.
 - **Every such subpage offers the way back at both ends** — at the top, where
   someone who opened the wrong thing looks first, and at the bottom, where
   someone who read to the end arrives. Both are the same: a back arrow and the
