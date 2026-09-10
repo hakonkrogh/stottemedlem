@@ -147,6 +147,14 @@ description: Render any local URL (marketing/backoffice dev or preview server) t
   ITS stories (or zero) while yours ran somewhere you never looked. With
   `--exact-port` the failure now says so, and the fix is to kill the other one
   (`lsof -ti:6007 | xargs kill`), not to pick a different port.
+  **Storybook DELETES that flag from package.json when it runs** (observed
+  2026-09-10, storybook 10.5.10): after a `pnpm story`,
+  `packages/ui/package.json` came back as `storybook dev -p 6007 --ci
+  --no-open`, `--exact-port` gone, with nothing said about it. Swept into a
+  commit it quietly undoes the fix above and hands the next session another
+  worktree's stories. Run `git status` after using Storybook, and restore the
+  flag (`git restore packages/ui/package.json`) instead of committing the
+  rewrite.
   **Start it with `nohup … & disown`, NOT with the Bash tool's
   `run_in_background`** (hit 2026-08-31): backgrounded that way the task
   reports "completed, exit 0" while the server is dead and every later curl
