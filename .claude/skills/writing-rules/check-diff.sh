@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
-# Assert the authoring rules over the lines THIS session added.
+# Assert the authoring rules over the lines THIS session added:
+#   1. never an em-dash;
+#   2. every example organization name is one of the repo's invented ones.
 #
 # Diff-scoped on purpose. The repo's existing prose is full of em-dashes (it
 # predates the rule, and the user writes them freely); a repo-wide grep is
@@ -33,6 +35,9 @@ esac
 # SKILL.md section shipped with four em-dashes). Add them as fully-added files.
 UNTRACKED="$(git ls-files --others --exclude-standard)"
 
+ADDED="$(mktemp -t writing-rules)"
+trap 'rm -f "$ADDED"' EXIT
+
 {
   "${DIFF[@]}"
   if [ -n "$UNTRACKED" ]; then
@@ -44,7 +49,11 @@ UNTRACKED="$(git ls-files --others --exclude-standard)"
       sed 's/^/+/' "$f"
     done <<< "$UNTRACKED"
   fi
-} | awk '
+} > "$ADDED"
+
+status=0
+
+awk '
   function has_dash(t) { return index(t, "\342\200\224") > 0 }
 
   /^\+\+\+ / { file = substr($0, 5); next }
@@ -74,10 +83,24 @@ UNTRACKED="$(git ls-files --others --exclude-standard)"
     for (i = 1; i <= f; i++) print failed[i]
     exit (f > 0)
   }
-' || {
+' "$ADDED" || {
   echo ""
   echo "Rule: never use em-dashes. Replace with a comma, period, colon or parentheses."
-  exit 1
+  status=1
 }
 
-echo "writing rules OK: no em-dashes in added lines."
+# Rule 2 is its own pass, in python, because the names it matches are full of
+# Norwegian letters and awk here is byte-oriented: a bracket expression with Æ
+# Ø Å in it splits into bytes and matches nonsense.
+python3 "$(dirname "${BASH_SOURCE[0]}")/fictional-orgs.py" < "$ADDED" || {
+  echo ""
+  echo "Rule: the repo has ONE example organization, Bakvendtland Skolekorps."
+  echo "Vary the noun only where a fixture exercises text fitting (Bakvendtland"
+  echo "Korps, Bakvendtland og Omegn Skolekorps og Drilltropp). See rule 2 in"
+  echo "the skill's SKILL.md."
+  status=1
+}
+
+[ "$status" -eq 0 ] || exit 1
+
+echo "writing rules OK: no em-dashes, no real organization names, in added lines."

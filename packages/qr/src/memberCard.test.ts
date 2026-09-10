@@ -8,7 +8,7 @@ import {
 
 const base = {
   memberName: "Kari Nordmann",
-  organizationName: "Eksempel Musikkorps",
+  organizationName: "Bakvendtland Skolekorps",
   hearts: 3,
   periodText: "2026",
   joinUrl: "https://xn--stttemedlem-hgb.no/bli-medlem/eksempel?verva=kort-1",
@@ -52,7 +52,7 @@ describe("memberCardSvg", () => {
   it("says who the member is, who they support, and until when", () => {
     const svg = memberCardSvg(base);
     expect(svg).toContain("Kari Nordmann");
-    expect(svg).toContain("Eksempel Musikkorps");
+    expect(svg).toContain("Bakvendtland Skolekorps");
     // The validity corner: a label over the year, green while current.
     expect(svg).toContain("GYLDIG");
     expect(svg).toContain(">2026</text>");
@@ -91,7 +91,7 @@ describe("memberCardSvg", () => {
       base,
       { ...base, hearts: 34, recruits: 12 },
       { ...base, memberName: "Anne-Margrethe Wollertsen Bjørnstad" },
-      { ...base, organizationName: "Sør-Trøndelag Ungdomssymfoniorkester og Musikkforening" },
+      { ...base, organizationName: "Bakvendtland Ungdomssymfoniorkester og Musikkforening" },
       { ...base, hearts: 3, lapsed: true, periodText: "2024" },
     ];
     for (const options of cases) {
@@ -136,7 +136,7 @@ describe("memberCardSvg", () => {
     });
     for (const said of [
       "Kari Nordmann",
-      "Eksempel Musikkorps",
+      "Bakvendtland Skolekorps",
       "GYLDIG",
       "5 år som støttemedlem!",
       "Vervet 2 medlemmer",
@@ -155,7 +155,7 @@ describe("memberCardSvg", () => {
     const crowded = {
       ...base,
       memberName: "Anne-Margrethe Wollertsen Bjørnstad",
-      organizationName: "Vestbygda Skolekorps og Ungdomsorkester",
+      organizationName: "Bakvendtland Korps og Ungdomsorkester",
       hearts: 34,
       recruits: 12,
       logoDataUri: "data:image/png;base64,AAAA",
@@ -173,41 +173,42 @@ describe("memberCardSvg", () => {
   it("breaks a name that would run the width of the band, though it would fit", () => {
     const svg = memberCardSvg({
       ...base,
-      organizationName: "Store Bergan Skolekorps",
+      organizationName: "Bakvendtland Skolekorps",
       logoDataUri: "data:image/png;base64,AAAA",
     });
     // Two lines beside the logo instead of one line reaching for the year.
-    expect(svg).toContain(">Store Bergan</text>");
+    expect(svg).toContain(">Bakvendtland</text>");
     expect(svg).toContain(">Skolekorps</text>");
-    expect(svg).not.toContain(">Store Bergan Skolekorps</text>");
+    expect(svg).not.toContain(">Bakvendtland Skolekorps</text>");
     // Breaking is not shrinking: the band keeps the title step.
-    const size = Number(/font-size="([\d.]+)"[^>]*>Store Bergan</.exec(svg)?.[1]);
+    const size = Number(/font-size="([\d.]+)"[^>]*>Bakvendtland</.exec(svg)?.[1]);
     expect(size).toBe(32);
   });
 
   it("keeps a short organization name on one line", () => {
-    const svg = memberCardSvg({ ...base, organizationName: "Eksempel Musikkorps" });
-    expect(svg).toContain(">Eksempel Musikkorps</text>");
+    // Short enough to read as one line: under the measure, so nothing wraps.
+    const svg = memberCardSvg({ ...base, organizationName: "Bakvendtland Korps" });
+    expect(svg).toContain(">Bakvendtland Korps</text>");
   });
 
   it("sets a long organization name on two lines rather than shrinking it", () => {
     // Beside a logo, where the band has the least room.
     const svg = memberCardSvg({
       ...base,
-      organizationName: "Vestbygda Skolekorps og Ungdomsorkester",
+      organizationName: "Bakvendtland Korps og Ungdomsorkester",
       logoDataUri: "data:image/png;base64,AAAA",
     });
     // Broken between words, and not so that the second line opens with "og".
-    expect(svg).toContain(">Vestbygda Skolekorps og</text>");
+    expect(svg).toContain(">Bakvendtland Korps og</text>");
     expect(svg).toContain(">Ungdomsorkester</text>");
     // Still at the scale's title step, bigger than the year beside it:
     // wrapping bought the room, so nothing had to shrink.
-    const size = Number(/font-size="([\d.]+)"[^>]*>Vestbygda/.exec(svg)?.[1]);
+    const size = Number(/font-size="([\d.]+)"[^>]*>Bakvendtland/.exec(svg)?.[1]);
     expect(size).toBe(32);
   });
 
   it("wraps a very long organization name onto three even lines, never mid-word", () => {
-    const name = "Sør-Trøndelag Ungdomssymfoniorkester og Musikkforening";
+    const name = "Bakvendtland Ungdomssymfoniorkester og Musikkforening";
     // With a logo the band is at its narrowest; no streak, so the band's ink
     // colour picks out the organization's lines and nothing else.
     const svg = memberCardSvg({

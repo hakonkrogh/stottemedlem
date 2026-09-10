@@ -7,7 +7,7 @@
 # running `astro dev` — no restart needed after seeding.
 set -euo pipefail
 
-SLUG="${1:-eksempel-musikkorps}"
+SLUG="${1:-bakvendtland-skolekorps}"
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
 cd "$ROOT/apps/backoffice"
 
@@ -32,8 +32,8 @@ DELETE FROM supporting_members WHERE org_id = 'org-seed-1';
 DELETE FROM membership_tiers WHERE org_id = 'org-seed-1';
 DELETE FROM organizations WHERE id = 'org-seed-1';
 INSERT INTO organizations (id, workos_org_id, name, slug, orgnr, contact_email)
-VALUES ('org-seed-1', 'wos-seed-1', 'Eksempel Musikkorps', '${SLUG}',
-        '923609016', 'post@eksempelkorps.example');
+VALUES ('org-seed-1', 'wos-seed-1', 'Bakvendtland Skolekorps', '${SLUG}',
+        '923609016', 'post@bakvendtland.example');
 INSERT INTO membership_tiers (id, org_id, key, name, description, annual_fee_nok)
 VALUES ('tier-1','org-seed-1','stottemedlem','Støttemedlem','Vanlig støttemedlemskap.',300),
        ('tier-2','org-seed-1','gullmedlem','Gullmedlem','For deg som vil gi litt ekstra.',1000);

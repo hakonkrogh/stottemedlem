@@ -27,8 +27,8 @@ export const Default = { args: inFrame({}) };
 
 export const Filled = {
   args: inFrame({
-    name: "Nordnes Skolekorps",
-    values: { orgnr: "923 609 016", contactEmail: "post@nordnesskolekorps.no" },
+    name: "Bakvendtland Skolekorps",
+    values: { orgnr: "923 609 016", contactEmail: "post@bakvendtland.example" },
     annualFee: "300",
     acceptedDpa: true,
   }),
@@ -40,8 +40,8 @@ export const Filled = {
  */
 export const AgreementNotAccepted = {
   args: inFrame({
-    name: "Nordnes Skolekorps",
-    values: { orgnr: "923 609 016", contactEmail: "post@nordnesskolekorps.no" },
+    name: "Bakvendtland Skolekorps",
+    values: { orgnr: "923 609 016", contactEmail: "post@bakvendtland.example" },
     annualFee: "300",
     fieldErrors: {
       godtarAvtale: "Du må godta databehandleravtalen for å opprette organisasjonen.",
@@ -51,7 +51,7 @@ export const AgreementNotAccepted = {
 
 export const WithErrors = {
   args: inFrame({
-    name: "Nordnes Skolekorps",
+    name: "Bakvendtland Skolekorps",
     values: { orgnr: "123", contactEmail: "post@" },
     annualFee: "gratis",
     fieldErrors: {

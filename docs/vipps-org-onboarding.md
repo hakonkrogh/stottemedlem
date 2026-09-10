@@ -52,17 +52,19 @@ charges.
          - Org only takes Vipps in person (Vippsnummer): order **Faste
            betalinger** as a new product on the agreement — this creates a new
            sales unit for it.
-3. - [ ] **Name the sales unit after the organization** ("Salgsstedets navn" in
-         the order form, verified 2026-08-12 in the
+3. - [ ] **Name the sales unit "Støttemedlem - &lt;organization&gt;"**
+         ("Salgsstedets navn" in the order form, verified 2026-08-12 in the
          [portal walkthrough, step 5](vipps-portal-walkthrough/README.md)).
          This is the *only* name a member ever sees from Vipps: on the payment
          screen, on the yearly charge, and in Vipps' own messages afterwards.
          A refund notification reads "**&lt;sales unit&gt;** har refundert 95,00 kr"
-         and nothing else, so a unit called "Støttemedlem" leaves the member
-         with no idea which organization it concerns. Use the recognizable
-         public name of the org; the form prefills a variant of the legal name,
-         which should be corrected here. (Observed on a live payment,
-         2026-09-09.)
+         and nothing else, so the name has to carry both halves: what the
+         payment is, and which organization it goes to. Neither half alone is
+         enough: "Støttemedlem" says nothing about who, and the organization's
+         name alone says nothing about which of its payments this is. Use the
+         recognizable public name of the org for the second half; the form
+         prefills a variant of the legal name, which should be corrected here.
+         (Observed on a live payment, 2026-09-09.)
 4. - [ ] Provide the **website and sales-terms links** the order form requires
          (verified 2026-07-28 in the
          [portal walkthrough, step 4](vipps-portal-walkthrough/README.md)). The

@@ -145,7 +145,7 @@ describe("retierAgreementExternalId", () => {
 
 describe("slugifyOrganizationName", () => {
   it("transliterates Norwegian letters and squashes separators", () => {
-    expect(slugifyOrganizationName("Nordnes Skolekorps")).toBe("nordnes-skolekorps");
+    expect(slugifyOrganizationName("Bakvendtland Skolekorps")).toBe("bakvendtland-skolekorps");
     expect(slugifyOrganizationName("Bærum Kvinnekor — Øst/Vest")).toBe("baerum-kvinnekor-ost-vest");
     expect(slugifyOrganizationName("Håp i Havet!")).toBe("hap-i-havet");
   });
@@ -157,26 +157,28 @@ describe("slugifyOrganizationName", () => {
 
 describe("joinPageUrl / joinPageTermsUrl", () => {
   it("builds the one stable public address on the canonical punycode origin", () => {
-    expect(joinPageUrl("nordnes-skolekorps")).toBe(
-      "https://xn--stttemedlem-hgb.no/bli-medlem/nordnes-skolekorps",
+    expect(joinPageUrl("bakvendtland-skolekorps")).toBe(
+      "https://xn--stttemedlem-hgb.no/bli-medlem/bakvendtland-skolekorps",
     );
   });
 
   it("can carry a picked membership tier onward by key", () => {
-    expect(joinPageUrl("nordnes-skolekorps", "gullmedlem")).toBe(
-      "https://xn--stttemedlem-hgb.no/bli-medlem/nordnes-skolekorps?medlemskap=gullmedlem",
+    expect(joinPageUrl("bakvendtland-skolekorps", "gullmedlem")).toBe(
+      "https://xn--stttemedlem-hgb.no/bli-medlem/bakvendtland-skolekorps?medlemskap=gullmedlem",
     );
   });
 
   it("puts the salgsvilkår beneath the same address", () => {
-    expect(joinPageTermsUrl("nordnes-skolekorps")).toBe(
-      "https://xn--stttemedlem-hgb.no/bli-medlem/nordnes-skolekorps/vilkar",
+    expect(joinPageTermsUrl("bakvendtland-skolekorps")).toBe(
+      "https://xn--stttemedlem-hgb.no/bli-medlem/bakvendtland-skolekorps/vilkar",
     );
   });
 
   it("exposes the bare path for same-origin links and route matching", () => {
-    expect(joinPagePath("nordnes-skolekorps")).toBe("/bli-medlem/nordnes-skolekorps");
-    expect(joinPageTermsPath("nordnes-skolekorps")).toBe("/bli-medlem/nordnes-skolekorps/vilkar");
+    expect(joinPagePath("bakvendtland-skolekorps")).toBe("/bli-medlem/bakvendtland-skolekorps");
+    expect(joinPageTermsPath("bakvendtland-skolekorps")).toBe(
+      "/bli-medlem/bakvendtland-skolekorps/vilkar",
+    );
   });
 });
 
@@ -199,8 +201,8 @@ describe("the member's card address", () => {
   });
 
   it("leads a scanner into the org's join page carrying the referral", () => {
-    expect(referredJoinPath("nordnes-skolekorps", "kort-1")).toBe(
-      "/bli-medlem/nordnes-skolekorps?verva=kort-1",
+    expect(referredJoinPath("bakvendtland-skolekorps", "kort-1")).toBe(
+      "/bli-medlem/bakvendtland-skolekorps?verva=kort-1",
     );
     expect(JOIN_REFERRAL_PARAM).toBe("verva");
   });
@@ -208,7 +210,7 @@ describe("the member's card address", () => {
   it("is never the address that can stop the membership", () => {
     // The card is made to be shared; the self-service page must never be
     // (specs/concepts/member-card.md).
-    expect(memberCardPath("tok")).not.toBe(memberSelfServicePath("nordnes-skolekorps", "tok"));
+    expect(memberCardPath("tok")).not.toBe(memberSelfServicePath("bakvendtland-skolekorps", "tok"));
     expect(memberCardPath("tok")).not.toContain("min-side");
   });
 });
@@ -228,7 +230,7 @@ describe("the member card's scan address", () => {
 
   it("is shorter than the join address it stands in for", () => {
     const scan = memberScanUrl("https://xn--stttemedlem-hgb.no", token) ?? "";
-    const referred = `https://xn--stttemedlem-hgb.no${referredJoinPath("nordnes-skolekorps", token)}`;
+    const referred = `https://xn--stttemedlem-hgb.no${referredJoinPath("bakvendtland-skolekorps", token)}`;
     expect(scan.length).toBeLessThan(referred.length);
   });
 

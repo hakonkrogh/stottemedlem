@@ -7,8 +7,8 @@
 // wherever a step asks for one, so nothing has to be looked up in another tab.
 //
 // The naming step is the one nobody thinks of by themselves: the sales unit's
-// name is the only name a member sees in Vipps, so it has to be the
-// organization's (specs/concepts/vipps-api-keys.md).
+// name is the only name a member sees in Vipps, so it has to say both what the
+// payment is and who it goes to (specs/concepts/vipps-api-keys.md).
 import Alert from "@stottemedlem/ui/components/Alert.astro";
 import Button from "@stottemedlem/ui/components/Button.astro";
 import Heading from "@stottemedlem/ui/components/Heading.astro";
@@ -75,24 +75,24 @@ const vippsPath = `${orgPath}/vipps`;
 
     <li>
       <div class="step">
-        <Heading level={3}>Gi salgsstedet navnet deres</Heading>
+        <Heading level={3}>Gi salgsstedet riktig navn</Heading>
         <Text>
           Bestillingen spør om «Salgsstedets navn». Dette er det eneste navnet medlemmene ser: i
           Vipps når de betaler, og i varslene Vipps sender dem etterpå, som «… har refundert 95,00
-          kr». Står det bare «Støttemedlem», vet ikke medlemmet hvem det gjelder.
+          kr». Navnet må derfor si begge deler: hva betalingen er, og hvem den går til.
         </Text>
         <InfoList
           items={[
             {
               label: "Skriv dette",
-              value: orgName,
-              hint: "Navnet folk kjenner dere som, ikke navnet på verktøyet",
+              value: `Støttemedlem - ${orgName}`,
+              hint: "Hva betalingen er, og navnet folk kjenner dere som",
             },
           ]}
         />
         <Text variant="small">
           Vipps fyller ofte inn et navn hentet fra Enhetsregisteret. Rett det her. Har salgsstedet
-          allerede et navn som ikke sier hvem dere er, kan dere endre navnet i Vipps-portalen.
+          allerede et annet navn, kan dere endre det i Vipps-portalen.
         </Text>
       </div>
     </li>

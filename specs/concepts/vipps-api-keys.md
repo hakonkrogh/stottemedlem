@@ -19,15 +19,18 @@ moment the register the product maintains becomes able to actually collect
 money.
 
 ## Rules & invariants
-- **The sales unit's name is the organization's name to its members.** Vipps
+- **The sales unit's name is what the payment is, and who it is to.** Vipps
   speaks to a member in its own words, and in those words the only party named
   is the sales unit: the payment screen, the yearly charge, and a message like
-  "… har refundert 95,00 kr" carry that name and nothing else. A sales unit
-  called after the tool ("Støttemedlem") therefore leaves the member unable to
-  tell which organization took or gave back their money. The product cannot set
-  that name (it belongs to the organization's own Vipps agreement), so it
-  **tells the administrator to use the organization's recognizable public
-  name**, at the moment they are setting the sales unit up, and says why.
+  "… har refundert 95,00 kr" carry that name and nothing else. One half alone
+  fails the member: named after the tool ("Støttemedlem") it does not say which
+  organization took or gave back their money, and named only after the
+  organization it does not say which of that organization's payments this is.
+  The name therefore reads **"Støttemedlem - &lt;organization&gt;"**, with the
+  organization's recognizable public name. The product cannot set that name (it
+  belongs to the organization's own Vipps agreement), so it **tells the
+  administrator the exact name to write**, at the moment they are setting the
+  sales unit up, and says why.
 - **The setup errand is explained where the keys are asked for.** Getting from
   an ordinary Vipps agreement to a working sales unit is a job in the payment
   provider's portal, done once, by a volunteer who has not done it before. The

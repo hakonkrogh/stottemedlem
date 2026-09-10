@@ -9,7 +9,7 @@ export const Default = {
   args: {
     label: "Navn på organisasjonen",
     name: "name",
-    placeholder: "F.eks. Nordnes Skolekorps",
+    placeholder: "F.eks. Bakvendtland Skolekorps",
   },
 };
 
@@ -17,7 +17,7 @@ export const WithValue = {
   args: {
     label: "Navn på organisasjonen",
     name: "name",
-    value: "Nordnes Skolekorps",
+    value: "Bakvendtland Skolekorps",
   },
 };
 

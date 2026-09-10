@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { QR_CARD_HEIGHT, QR_CARD_WIDTH, qrCardSvg, qrSvg } from "./index.js";
 import { qrPngBuffer } from "./node.js";
 
-const JOIN_URL = "https://stottemedlem.no/bli-medlem/eksempel-musikkorps";
+const JOIN_URL = "https://stottemedlem.no/bli-medlem/bakvendtland-skolekorps";
 
 describe("qrSvg", () => {
   it("produces a standalone SVG document", async () => {
@@ -21,10 +21,10 @@ describe("qrPngBuffer", () => {
 
 describe("qrCardSvg", () => {
   it("renders a card with the organization name and QR modules", () => {
-    const svg = qrCardSvg({ joinUrl: JOIN_URL, organizationName: "Eksempel Musikkorps" });
+    const svg = qrCardSvg({ joinUrl: JOIN_URL, organizationName: "Bakvendtland Skolekorps" });
     expect(svg).toContain("<svg");
     expect(svg).toContain(`viewBox="0 0 ${QR_CARD_WIDTH} ${QR_CARD_HEIGHT}"`);
-    expect(svg).toContain("Eksempel Musikkorps");
+    expect(svg).toContain("Bakvendtland Skolekorps");
     expect(svg).toContain("BLI STØTTEMEDLEM");
     expect(svg).toContain("Vipps");
     expect(svg).toContain('<path d="M');

@@ -86,15 +86,17 @@ From the organization's point of view:
    product does by itself once they are stored. Two things make it a page in
    the product rather than a link to documentation:
    - It is **filled in with this organization's own values**: the name to give
-     the sales unit is the organization's name, and the website and sales-terms
-     addresses are its own [join page](../concepts/join-page.md) addresses,
-     ready to be copied straight into the order form.
+     the sales unit is written out with the organization's own name in it, and
+     the website and sales-terms addresses are its own
+     [join page](../concepts/join-page.md) addresses, ready to be copied
+     straight into the order form.
    - It states **what the sales unit must be called, and why**: that name is
      the only one members ever see in Vipps, on the payment and in the
-     provider's own messages about their money, so it has to be the
-     organization's ([Vipps API keys](../concepts/vipps-api-keys.md)). An
-     organization that names its sales unit after the tool leaves its members
-     unable to place the payment.
+     provider's own messages about their money, so it names both the payment
+     and the organization ([Vipps API keys](../concepts/vipps-api-keys.md)). An
+     organization that names its sales unit after the tool alone leaves its
+     members unable to place the payment; one that names it after itself alone
+     leaves them unable to tell which of its payments this is.
 
    The guide is reading, not work: it changes nothing, and the one action it
    offers is the way to the key form.
@@ -188,9 +190,9 @@ imagery it shows the banner cropped exactly as the page crops it.
 - [ ] The back office holds a guide to connecting Vipps, reachable from the
       screen that asks for the keys, and pointed to plainly for an organization
       that has none yet.
-- [ ] The guide tells the administrator to name the sales unit after the
-      organization, shows the organization's own name as the name to use, and
-      says what a member sees if it is named after anything else.
+- [ ] The guide shows the exact sales-unit name to write, with the
+      organization's own name in it, and says what a member sees if it is
+      named anything else.
 - [ ] The guide shows the organization's own join-page and sales-terms
       addresses as the two the Vipps order form asks for.
 - [ ] A supporter using that address can complete

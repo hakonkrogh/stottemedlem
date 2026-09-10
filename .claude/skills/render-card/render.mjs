@@ -31,7 +31,7 @@ const FONT = resolve(ROOT, "apps/backoffice/src/assets/fonts/Fraunces.ttf");
 const LOGO =
   "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAIAAAAlC+aJAAABCUlEQVR42u2asRXDIAxEb4y0qbP/HlkjE6T1BoAFkk5nvUdt/w8FSDr8f9/SC2c/93m/potOYAXaTwZZ6Kc0kIu+rwEG9B0N8KDbNEBIf8sBnPTrDqClX3QAM/2KA8jppw7gpx87oAT9wAEe9H6n6isQcCfOBSKfMUf+tSsQ/xofCcTT7//XLhBfyk0EEul3ACwCfhW6XSB9+80Y4Nl+G8nDBGJ6VbcFeLbfcAhPEojseLZAC7RAC7QAn0DfxG4C5R9zXQ+UEiAtKcsX9QptlfKNLYXWYvnmrkJ7vfyAQ2HEVH7IpzBmVRh0K0QNFMIeCnEbhcCTQuRMIfQnErsUCb6KRI9Fwt+56wKF4QaIff1TIAAAAABJRU5ErkJggg==";
 
-const JOIN_URL = "https://xn--stttemedlem-hgb.no/bli-medlem/eksempel-musikkorps?verva=kort-1";
+const JOIN_URL = "https://xn--stttemedlem-hgb.no/bli-medlem/bakvendtland-skolekorps?verva=kort-1";
 
 /**
  * What a MEMBER card's code carries: the short scan address, in capitals
@@ -44,7 +44,7 @@ const SCAN_URL = "HTTPS://XN--STTTEMEDLEM-HGB.NO/V/8P2K4RTZQ9VWXB6MN3HJD5CFG7";
 
 const MEMBER_BASE = {
   memberName: "Kari Eksempel",
-  organizationName: "Eksempel Musikkorps",
+  organizationName: "Bakvendtland Skolekorps",
   hearts: 4,
   periodText: "2026",
   joinUrl: SCAN_URL,
@@ -68,12 +68,12 @@ const MEMBER_CASES = {
   LongNames: {
     ...MEMBER_BASE,
     memberName: "Anne-Margrethe Wollertsen Bjørnstad",
-    organizationName: "Vestbygda Skolekorps og Ungdomsorkester",
+    organizationName: "Bakvendtland Korps og Ungdomsorkester",
     hearts: 7,
   },
   VeryLongOrgName: {
     ...MEMBER_BASE,
-    organizationName: "Sør-Trøndelag Ungdomssymfoniorkester og Musikkforening",
+    organizationName: "Bakvendtland Ungdomssymfoniorkester og Musikkforening",
     hearts: 2,
   },
 };
@@ -99,8 +99,8 @@ const ORG_FIELDS = ["joinUrl", "organizationName", "title", "hint", "footer"];
 
 /** The ORGANIZATION's card — a different owner, so a different fixture set. */
 const ORG_CASES = {
-  Ordinary: { joinUrl: JOIN_URL, organizationName: "Eksempel Musikkorps" },
-  LongName: { joinUrl: JOIN_URL, organizationName: "Vestbygda Skolekorps og Ungdomsorkester" },
+  Ordinary: { joinUrl: JOIN_URL, organizationName: "Bakvendtland Skolekorps" },
+  LongName: { joinUrl: JOIN_URL, organizationName: "Bakvendtland Korps og Ungdomsorkester" },
 };
 
 function parseArgs(argv) {

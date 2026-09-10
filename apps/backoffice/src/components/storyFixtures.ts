@@ -16,10 +16,10 @@ import { orgWarnings } from "../lib/orgWarnings";
 export const ORG: Organization = {
   id: "org-1",
   workosOrgId: "org_01story",
-  name: "Vestbygda Musikkorps",
-  slug: "vestbygda-musikkorps",
+  name: "Bakvendtland Skolekorps",
+  slug: "bakvendtland-skolekorps",
   orgnr: "912345678",
-  contactEmail: "post@vestbygda.example",
+  contactEmail: "post@bakvendtland.example",
   annualFeeNok: null,
   logoKey: null,
   bannerKey: null,

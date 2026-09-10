@@ -152,7 +152,7 @@ export function slugifyOrganizationName(name: string): string {
 /**
  * The path segment every public organization page lives under
  * (specs/concepts/join-page.md). Norwegian "bli medlem" — the address reads as
- * a sentence with the slug appended: /bli-medlem/nordnes-skolekorps.
+ * a sentence with the slug appended: /bli-medlem/bakvendtland-skolekorps.
  * Route matching in the Worker and the middleware derive from this.
  */
 export const JOIN_PAGE_PATH_SEGMENT = "bli-medlem";

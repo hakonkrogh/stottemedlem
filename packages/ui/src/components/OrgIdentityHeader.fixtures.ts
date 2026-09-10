@@ -7,7 +7,7 @@
 const svgDataUrl = (svg: string): string =>
   `data:image/svg+xml,${encodeURIComponent(svg.replace(/\s+/g, " ").trim())}`;
 
-export const FIXTURE_ORG_NAME = "Vestbygda Musikkorps";
+export const FIXTURE_ORG_NAME = "Bakvendtland Skolekorps";
 
 /** A round badge: what most band and club logos look like once uploaded. */
 export const FIXTURE_LOGO_URL = svgDataUrl(`
@@ -15,7 +15,7 @@ export const FIXTURE_LOGO_URL = svgDataUrl(`
     <circle cx="100" cy="100" r="96" fill="#1f3a6e"/>
     <circle cx="100" cy="100" r="84" fill="none" stroke="#e3b341" stroke-width="5"/>
     <text x="100" y="112" text-anchor="middle" font-family="Georgia, serif" font-weight="700"
-      font-size="64" fill="#fff8e8">VM</text>
+      font-size="64" fill="#fff8e8">BS</text>
     <text x="100" y="146" text-anchor="middle" font-family="Georgia, serif" font-size="17"
       letter-spacing="3" fill="#e3b341">SIDEN 1962</text>
   </svg>

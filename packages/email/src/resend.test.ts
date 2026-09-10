@@ -4,8 +4,8 @@ import type { EmailMessage } from "./types.js";
 
 const message = (to: string): EmailMessage => ({
   to,
-  fromName: "Fjellbygda Musikklag",
-  replyTo: "post@fjellbygda-eksempel.no",
+  fromName: "Bakvendtland Skolekorps",
+  replyTo: "post@bakvendtland.example",
   subject: "Prisen endres",
   text: "Hei",
   html: "<p>Hei</p>",
@@ -26,8 +26,8 @@ describe("createResendSender", () => {
     await sender.send([message("ingrid@eksempel.no")]);
 
     const body = JSON.parse(String(fetchMock.mock.calls[0]?.[1]?.body));
-    expect(body[0].from).toBe('"Fjellbygda Musikklag" <noreply@xn--stttemedlem-hgb.no>');
-    expect(body[0].reply_to).toBe("post@fjellbygda-eksempel.no");
+    expect(body[0].from).toBe('"Bakvendtland Skolekorps" <noreply@xn--stttemedlem-hgb.no>');
+    expect(body[0].reply_to).toBe("post@bakvendtland.example");
     expect(body[0].to).toEqual(["ingrid@eksempel.no"]);
   });
 

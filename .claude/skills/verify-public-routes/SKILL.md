@@ -104,7 +104,7 @@ which is why the timeline is merged in node rather than in SQL.
 
 ## Seed first (pages read D1)
 
-    bash .claude/skills/verify-public-routes/seed.sh [slug]     # default: eksempel-musikkorps
+    bash .claude/skills/verify-public-routes/seed.sh [slug]     # default: bakvendtland-skolekorps
 
 Idempotent; writes ONE fictitious org (`org-seed-1`) with **two membership
 tiers**. The tiers matter: since tiering landed (2026-08-19)
@@ -215,7 +215,7 @@ the page HTML itself is never cached. Two states that draw the same card share a
 tag on purpose (`retrying` and `undo` both show four hearts over `GYLDIG 2026`):
 the tag names the picture, not the database.
 
-    curl -s localhost:4322/bli-medlem/eksempel-musikkorps/min-side?n=tok-seed-1 | grep -oE 'kort\.svg\?v=[a-z0-9]+'
+    curl -s localhost:4322/bli-medlem/bakvendtland-skolekorps/min-side?n=tok-seed-1 | grep -oE 'kort\.svg\?v=[a-z0-9]+'
 
 ## Drive the member's own page (min-side)
 
@@ -223,7 +223,7 @@ The other public surface, and the one no login can reach: `min-side` is opened
 with the agreement's `manage_token`, which IS the credential. The seed gives
 you two — `tok-seed-1` (Kari) and `tok-seed-2` (Ola):
 
-    curl -s "http://localhost:4322/bli-medlem/eksempel-musikkorps/min-side?n=tok-seed-1"
+    curl -s "http://localhost:4322/bli-medlem/bakvendtland-skolekorps/min-side?n=tok-seed-1"
 
 **Force the states by editing the agreement, not by driving Vipps.** The page
 branches on `membership_agreements.status`, so every case is one UPDATE away —
@@ -295,7 +295,7 @@ stopping it for real calls Vipps, which local placeholder keys cannot do):
     d1.sh-write "UPDATE membership_agreements SET status='STOPPED' WHERE id='agr-seed-2'"
     curl -s -X POST -H "Origin: http://localhost:4322" \
       -H "Content-Type: application/x-www-form-urlencoded" --data "handling=slett" \
-      "http://localhost:4322/bli-medlem/eksempel-musikkorps/min-side?n=tok-seed-2"
+      "http://localhost:4322/bli-medlem/bakvendtland-skolekorps/min-side?n=tok-seed-2"
 
 Then the four things that actually matter:
 
@@ -303,7 +303,7 @@ Then the four things that actually matter:
            FROM supporting_members WHERE id='mem-seed-2'"   # all NULL but the timestamp
     d1.sh "SELECT count(*), sum(paid_nok) FROM memberships WHERE member_id='mem-seed-2'"
     # their own page and their card must die, and NOBODY ELSE'S may:
-    node $R localhost:4322/bli-medlem/eksempel-musikkorps/min-side?n=tok-seed-2 --status 404
+    node $R localhost:4322/bli-medlem/bakvendtland-skolekorps/min-side?n=tok-seed-2 --status 404
     node $R localhost:4322/medlemsbevis/kort-seed-2 --status 404
     node $R localhost:4322/medlemsbevis/kort-seed-1 --status 200
 
