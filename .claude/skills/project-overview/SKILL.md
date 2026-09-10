@@ -1192,7 +1192,11 @@ also documents the variants and why the rule exists.
   (dev-logs `start` reports only "exited before becoming ready"). Run
   `pnpm exec turbo run build --filter='./packages/*'` from the root once
   (2026-09-02). `render-card` and root `typecheck` build what they need via
-  turbo themselves; the dev server does not.
+  turbo themselves; the dev server does not. That build often answers in
+  milliseconds with `>>> FULL TURBO` and log lines naming ANOTHER worktree's
+  path (the turbo cache is shared): it still wrote `packages/*/dist` here, so
+  trust it after one `ls packages/core/dist` rather than re-running with
+  `--force` (2026-09-10).
 - **A fresh worktree also has no `apps/backoffice/.dev.vars`, and `pnpm
   typecheck` fails because of it** — with six errors in files you did not
   touch (`Property 'VIPPS_CLIENT_ID' does not exist on type 'Env'`, same for
