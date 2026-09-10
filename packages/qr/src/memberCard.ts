@@ -150,7 +150,14 @@ function estimateWidth(text: string, size: number): number {
  * sizes). The `title` step exists because the band answers "member of what?"
  * and was reading as a caption at the middle step (2026-09-04).
  */
-const TYPE = { name: 48, title: 32, middle: 24, small: 16 };
+const TYPE = { name: 56, title: 32, middle: 24, small: 16 };
+
+/**
+ * The room between the years line and the recruit line under it. Both lines
+ * grew a step of the scale (2026-09-10, the member's half was reading small
+ * beside a 200 pt heart), so the gap grew with them.
+ */
+const RECRUIT_GAP = 42;
 
 /**
  * Fit a line by stepping down the given sizes, and only then cut it. Names are
@@ -474,18 +481,20 @@ function drawCard(content: CardContent): string {
   const bodyTop = bandBottom;
   const bodyHeight = ruleY - bodyTop;
 
-  const name = fitScaled(content.memberName, columnWidth, [TYPE.name, TYPE.middle]);
+  const name = fitScaled(content.memberName, columnWidth, [TYPE.name, TYPE.title, TYPE.middle]);
   const nameAdvance = name.size * 0.92;
 
   // The streak grew when the QR code left the middle of the card: the member's
   // half is the member's, and the heart is what says how long they have been
-  // one (specs/concepts/scorecard.md).
+  // one (specs/concepts/scorecard.md). The three lines around it (the name
+  // above, the years line and the recruit line below) each sit a step higher
+  // on the scale than the band and the footer, because this half is the card.
   const heartSize = 200;
   const headline =
-    content.hearts > 0 ? fitScaled(content.headline, columnWidth, [TYPE.middle, TYPE.small]) : null;
+    content.hearts > 0 ? fitScaled(content.headline, columnWidth, [TYPE.title, TYPE.middle]) : null;
   // Heart, headline, and the recruit line under it — absent entirely at zero.
   const streakBlock = headline
-    ? heartSize + 10 + headline.size + (content.recruitLine ? 34 : 0)
+    ? heartSize + 10 + headline.size + (content.recruitLine ? RECRUIT_GAP : 0)
     : 0;
 
   const blockHeight = nameAdvance + 30 + streakBlock;
@@ -494,7 +503,7 @@ function drawCard(content: CardContent): string {
   const nameBaseline = blockTop + name.size * 0.74;
   const heartTop = blockTop + nameAdvance + 30;
   const headlineBaseline = heartTop + heartSize + 10 + (headline?.size ?? 0) * 0.74;
-  const recruitBaseline = headlineBaseline + 34;
+  const recruitBaseline = headlineBaseline + RECRUIT_GAP;
 
   return `${frame(width, height, inner, 32)}
   <line x1="${inner}" y1="${bandBottom}" x2="${width - inner}" y2="${bandBottom}" stroke="${BAND_RULE}" stroke-width="1.5"/>
@@ -514,7 +523,7 @@ ${
   headline
     ? `  ${streakHeart(center, heartTop, heartSize, content.hearts, content.lapsed)}
   ${textEl(center, headlineBaseline, headline.value, { size: headline.size, weight: FONT_WEIGHT, fill: content.lapsed ? MUTED : DEEP, anchor: "middle" })}
-${content.recruitLine ? `  ${textEl(center, recruitBaseline, content.recruitLine, { size: TYPE.small, fill: MUTED, anchor: "middle" })}\n` : ""}`
+${content.recruitLine ? `  ${textEl(center, recruitBaseline, content.recruitLine, { size: TYPE.middle, fill: MUTED, anchor: "middle" })}\n` : ""}`
     : ""
 }
   <line x1="${left}" y1="${ruleY}" x2="${right}" y2="${ruleY}" stroke="${HAIRLINE}" stroke-width="2"/>

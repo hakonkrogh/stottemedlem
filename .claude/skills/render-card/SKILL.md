@@ -126,6 +126,33 @@ so every webhook retry repeated it.
 Rule of thumb: rasterize at most once per request, and prefer a cron/queue or a
 cached PNG for anything that could need several.
 
+## Changing a type size on the member card
+
+Every size on the card comes from ONE object, `TYPE` in
+`packages/qr/src/memberCard.ts`: `{ name, title, middle, small }`. The card sets
+text at those four sizes and no others, which is a product rule, not a style
+choice (`specs/concepts/member-card.md`, "Four sizes, and no others"), so raise
+a step or move a line to another step. Never write a size inline.
+
+Three things break when a size moves, and only the last is visible:
+
+1. **Two tests assert the sizes as literals** (`memberCard.test.ts`): the
+   "four sizes and no others" test lists them, and the long-name test names the
+   step a name lands on. They fail loudly, so trust them.
+2. **The vertical math is hand-tuned around the old sizes.** `drawCard`
+   centres a block of `nameAdvance + 30 + streakBlock` in the body, and the
+   gaps in it (`RECRUIT_GAP`, the 10 under the heart) were picked for the sizes
+   they separated. A bigger line makes the block taller, and a 200 pt heart
+   leaves ~130 pt of slack: the card does not clip, it just gets tight.
+3. **The step-down ladders decide what a long name looks like.** `fitScaled`
+   walks the sizes given to it, so raising `TYPE.name` without putting
+   `TYPE.title` in the name's ladder makes a long name fall a long way in one
+   step (48 → 24 became 56 → 32 → 24 on 2026-09-10).
+
+Then draw **every** fixture (`--raster`, no `--case`) and look at
+`LongNames` and `VeryLongOrgName`: the fixture you changed the size for is the
+one that always looks fine.
+
 ## Exploring colours or a layout twist without touching the shipped code
 
 For a design pass (2026-09-04, the Fløte palette) the card was drawn in
