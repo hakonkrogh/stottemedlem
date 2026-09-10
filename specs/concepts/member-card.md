@@ -74,7 +74,7 @@ surface the member happens to be looking at.
   nothing.
 - **The organization's name is prominent.** It answers "supporting member of
   *what?*", so after the member's own name it is the largest text on the card,
-  set a step above the years line and the valid year beside it.
+  set a step above the valid year beside it.
   A long name wraps onto two or three lines rather than shrinking to a
   whisper: always between words, never inside one, and with the lines as
   even in length as the words allow, so the band reads as a title and not as
@@ -86,11 +86,14 @@ surface the member happens to be looking at.
   cut the website's headings use — people meet the card in feeds, emails and
   print, and it must read as the same brand on every channel. One face, one
   cut, everywhere the product writes.
-- **Four sizes, and no others.** The member's name is the one large thing; the
-  organization's name is a step under it; the years line and the valid year
-  share a middle size; every caption shares a small one. Text that does not fit steps down to the
-  next size rather than shrinking a little at a time, so a long name lands on
-  a size the card already uses. The card does not label itself
+- **Four sizes, and no others.** The member's name is the one large thing;
+  the organization's name is a step under it, and the years line under the
+  heart matches that step, because the middle of the card is the member's own
+  half and its lines are read across a room beside a heart that fills it. The
+  recruit line and the valid year share a middle size; every caption in the
+  band and the footer shares a small one. Text that does not fit steps down to
+  the next size rather than shrinking a little at a time, so a long name lands
+  on a size the card already uses. The card does not label itself
   "støttemedlem" above the name: the QR caption says it, and the card is one.
 - **The card as a picture is drawn once per version of itself.** A card is
   looked at, previewed by every feed it is pasted into, and attached to

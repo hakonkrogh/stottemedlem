@@ -17,7 +17,8 @@ pnpm test           # 189 tests, 12 tasks, all pass
 pnpm typecheck      # 0 errors, but FIRST: cp apps/backoffice/.dev.vars.example \
                     #   apps/backoffice/.dev.vars, or the backoffice drowns in
                     #   bogus "does not exist on type 'Env'" (CI does the same)
-pnpm lint           # 0 errors, 430 warnings (the known .astro false positives)
+pnpm lint           # 0 errors, ~520 warnings (the known .astro false positives;
+                    #   the count only drifts up, and `pnpm lint` still exits 0)
 ```
 
 Run all three from the REPO ROOT, never piped into `head`/`tail` (you read the

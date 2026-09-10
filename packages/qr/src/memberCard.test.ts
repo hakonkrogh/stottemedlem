@@ -82,7 +82,7 @@ describe("memberCardSvg", () => {
   it("steps a long name down the scale rather than cutting it straight away", () => {
     const long = memberCardSvg({ ...base, memberName: "Anne-Margrethe Wollertsen Bjørnstad" });
     expect(long).toContain(">Anne-Margrethe Wollertsen Bjørnstad</text>");
-    expect(long).toMatch(/font-size="24"[^>]*>Anne-Margrethe/);
+    expect(long).toMatch(/font-size="32"[^>]*>Anne-Margrethe/);
   });
 
   it("sets its text at four sizes and no others, whatever the names are", () => {
@@ -103,9 +103,9 @@ describe("memberCardSvg", () => {
         .map((m) => m[1])
         .filter((size) => size !== digit);
       expect(new Set(sizes.map(Number))).toEqual(
-        new Set([48, 32, 24, 16].filter((size) => sizes.includes(String(size)))),
+        new Set([56, 32, 24, 16].filter((size) => sizes.includes(String(size)))),
       );
-      expect(sizes.every((size) => ["48", "32", "24", "16"].includes(size))).toBe(true);
+      expect(sizes.every((size) => ["56", "32", "24", "16"].includes(size))).toBe(true);
     }
   });
 
