@@ -1,0 +1,129 @@
+---
+import { QR_CARD_HEIGHT, QR_CARD_WIDTH } from "@stottemedlem/qr";
+// The organization's QR code card, shown where its public addresses are
+// (specs/use-cases/promote-with-qr-card.md).
+//
+// The card is SHOWN, not described: it is a thing an organization prints and
+// hangs on a wall, and an address on its own tells an administrator nothing
+// about what will come out of the printer. The picture on the page is the very
+// image the endpoint serves, so what is seen here, what an external website
+// embeds, and what is downloaded can never drift apart.
+//
+// Both downloads are offered because they are for different jobs: the whole
+// card is what gets printed and hung up, and the plain code is what goes into
+// a poster, a newsletter or a programme the organization is laying out itself.
+import Button from "@stottemedlem/ui/components/Button.astro";
+import Heading from "@stottemedlem/ui/components/Heading.astro";
+import Stack from "@stottemedlem/ui/components/Stack.astro";
+import Text from "@stottemedlem/ui/components/Text.astro";
+import TextLink from "@stottemedlem/ui/components/TextLink.astro";
+
+interface Props {
+  /** The card's public image address: what is shown, embedded and downloaded. */
+  cardUrl: string;
+  /**
+   * What the `<img>` actually loads. Defaults to `cardUrl`, which is what the
+   * app serves; a story with no server behind it passes the card inline.
+   */
+  previewSrc?: string;
+  /** The organization's name, for the picture's alt text. */
+  orgName: string;
+}
+const { cardUrl, previewSrc = cardUrl, orgName } = Astro.props;
+
+const separator = cardUrl.includes("?") ? "&" : "?";
+const cardDownloadUrl = `${cardUrl}${separator}download=1`;
+const qrDownloadUrl = `${cardUrl}${separator}variant=qr&format=png&download=1`;
+---
+
+<Stack gap="sm">
+  <Heading level={2}>QR-kort</Heading>
+  <Text variant="small">
+    Heng det opp, del det ut, eller legg det på nettsidene deres. Den som skanner koden med
+    mobilen, kommer rett til innmeldingen.
+  </Text>
+
+  <div class="qr">
+    <figure class="qr__card" style={`--sm-qr-ratio: ${QR_CARD_WIDTH} / ${QR_CARD_HEIGHT}`}>
+      <img
+        src={previewSrc}
+        alt={`QR-kort for ${orgName}`}
+        width={QR_CARD_WIDTH}
+        height={QR_CARD_HEIGHT}
+      />
+    </figure>
+
+    <div class="qr__side">
+      <div class="qr__actions">
+        <Button variant="secondary" href={cardDownloadUrl}>Last ned kortet (SVG)</Button>
+        <Button variant="secondary" href={qrDownloadUrl}>Last ned QR-koden (PNG)</Button>
+      </div>
+      <div class="qr__address">
+        <span class="qr__label">Bildeadresse</span>
+        <TextLink href={cardUrl}>{cardUrl}</TextLink>
+        <span class="qr__hint">
+          Herfra kan nettsidene deres hente kortet. Det holder seg oppdatert av seg selv.
+        </span>
+      </div>
+    </div>
+  </div>
+</Stack>
+
+<style>
+  /* The card lies beside what you can do with it as soon as there is room,
+   * and above it on a phone. */
+  .qr {
+    display: grid;
+    gap: var(--sm-space-md);
+    align-items: start;
+    grid-template-columns: minmax(0, 16rem) minmax(0, 1fr);
+  }
+  @media (max-width: 32rem) {
+    .qr {
+      grid-template-columns: minmax(0, 1fr);
+      justify-items: start;
+    }
+    .qr__card {
+      max-width: 16rem;
+    }
+  }
+  .qr__card {
+    margin: 0;
+  }
+  .qr__card img {
+    display: block;
+    width: 100%;
+    height: auto;
+    /* The card's shape is known before the drawing arrives, so nothing below
+     * it jumps when the picture loads. */
+    aspect-ratio: var(--sm-qr-ratio);
+  }
+  .qr__side {
+    display: grid;
+    gap: var(--sm-space-md);
+    min-width: 0;
+  }
+  .qr__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+  .qr__address {
+    display: grid;
+    gap: 0.15rem;
+    min-width: 0;
+  }
+  .qr__address :global(a) {
+    overflow-wrap: anywhere;
+    font-size: 0.9rem;
+  }
+  .qr__label {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--sm-muted);
+  }
+  .qr__hint {
+    font-size: 0.8rem;
+    color: var(--sm-muted);
+  }
+</style>

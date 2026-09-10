@@ -61,6 +61,14 @@ one visit and never has to be re-learned.
   [memberships](membership-tier.md) here would be a second copy of a place that
   is never far, and it would take the room the figures need. The front page
   answers "how are we doing"; the membership place answers "what do we offer".
+- **The front page shows the [QR code card](../use-cases/promote-with-qr-card.md),
+  it does not just name its address.** The card is one of the addresses the
+  organization shares, and it is also a picture the organization prints and
+  hangs up. An address alone tells an administrator nothing about what comes
+  out of the printer, so the card is shown as the card it is, with the two ways
+  of taking it away (the whole card, and the plain code) beside it. This is not
+  a second door to somewhere else: no other place in the back office owns the
+  card, and the picture IS the thing.
 - **The front page counts the members; it does not list them.** No member is
   named here and no list is repeated: the member list is one click away and
   says everything about a person that the front page could. **How many
@@ -114,7 +122,8 @@ one visit and never has to be re-learned.
   [Curate the member list](../use-cases/curate-member-list.md) and
   [Export the member list](../use-cases/export-member-list.md).
 - Its front page states the
-  [organization's figures](organization-figures.md).
+  [organization's figures](organization-figures.md) and shows the
+  [QR code card](../use-cases/promote-with-qr-card.md).
 
 ## Referenced by
 - [Use case: Access the back office](../use-cases/access-the-back-office.md)

@@ -46,6 +46,12 @@ resolve to.
 ## Rules & invariants
 - Every organization has exactly one join page and one sales-terms page, live
   as soon as the organization exists.
+- **What belongs to the page lives beneath its address.** The sales terms, the
+  privacy notice, the organization's imagery, the member's own page and the
+  [QR code card](../use-cases/promote-with-qr-card.md) are all reached under
+  the join page's address rather than at addresses of their own. They are the
+  same public thing seen from different sides, and an administrator who knows
+  the one address can read the others off it.
 - The address derives from the organization's **slug** (see
   [organization](organization.md)) and is **stable**: material that carries it
   (posters, printed QR cards, embeds on external websites, a payment

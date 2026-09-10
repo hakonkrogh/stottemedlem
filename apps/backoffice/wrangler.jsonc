@@ -27,6 +27,17 @@
       "pattern": "xn--stttemedlem-hgb.no/org/*",
       "zone_name": "xn--stttemedlem-hgb.no"
     },
+    // The QR code card's FORMER address, 301ed in the route itself. The card
+    // now lives at /bli-medlem/<slug>/qr, covered by the join page's route
+    // above (specs/use-cases/promote-with-qr-card.md). This stays for the
+    // same reason /org/* does: the back office handed this address out, so
+    // it must lead somewhere, and a redirect only fires on requests this
+    // Worker actually receives. Without the route it falls through to the
+    // marketing Worker and 404s.
+    {
+      "pattern": "xn--stttemedlem-hgb.no/api/qr/*",
+      "zone_name": "xn--stttemedlem-hgb.no"
+    },
     // A member's card is shared by the member, into chats and social feeds
     // (specs/concepts/member-card.md), so it lives on the canonical apex
     // rather than the app host — the short address IS what makes it

@@ -212,7 +212,7 @@ description: Render any local URL (marketing/backoffice dev or preview server) t
 - **A component that pulls its content from a server endpoint cannot be
   reviewed in Storybook** — Storybook serves no app routes, so an
   `<img src="/medlemsbevis/…/kort.svg">` (MemberCardFigure) or
-  `<img src="/api/qr/…">` renders a broken-image icon and proves nothing. When
+  `<img src="/bli-medlem/…/qr">` renders a broken-image icon and proves nothing. When
   the content underneath is a PURE function, add a story-only wrapper that
   calls it and inlines the result: `MemberCardStory.astro` +
   `MemberCard.stories.ts` (`Backoffice/Medlemsbevis`) is the worked example —
@@ -222,10 +222,14 @@ description: Render any local URL (marketing/backoffice dev or preview server) t
   pixel-identical to a resvg-rasterized one** (variable font weights apply in
   the browser, not in resvg — see qr-codes.md), so judge layout in Storybook
   and weight against the real PNG.
-  **Still unreviewable this way:** the ORGANIZATION's QR card (`qrCardSvg`) has
-  no story at all — it is reachable only through `/api/qr/<slug>` (dev server +
-  a seeded org) or baked into the marketing page at build time. Same fix
-  applies whenever someone needs to iterate on it.
+  The ORGANIZATION's QR card (`qrCardSvg`) got the same treatment on
+  2026-09-10, in the simplest form there is: no wrapper component, just a
+  `QR_CARD_PREVIEW_SRC` in `storyFixtures.ts` that calls `qrCardSvg` and
+  encodes it as a `data:image/svg+xml` URI, which the story passes as
+  `OrgQrCard`'s `previewSrc`. So `backoffice-oversikt--default` now shows a
+  real card. Reach for a data URI whenever the component just needs an `<img>`
+  to point at something; reach for a wrapper component (MemberCardStory) when
+  the story needs the drawing INSIDE the page's own markup.
 - **Reviewing the org back office**: every screen has a story that renders
   inside the real tab chrome (`StoryScreen` wraps `OrgScreen`), and every
   in-app link is rewritten to the story behind it
@@ -246,7 +250,10 @@ description: Render any local URL (marketing/backoffice dev or preview server) t
   playwright screenshot` CLI path works.
 - **PUBLIC backoffice pages** (`/bli-medlem/<slug>`, `/bli-medlem/<slug>/vilkar`, `/api/qr/*`)
   need no login and no `.dev.vars` — screenshoot them against `astro dev`
-  directly. Pages that read D1 need the local DB prepared first (from
+  directly. **`/api/qr/*` reads D1 too since 2026-09-10** (the name on the card
+  comes from the org row, and an unknown slug 404s), so it needs the same seed
+  as the join page; it used to answer for any well-formed slug. Pages that read
+  D1 need the local DB prepared first (from
   `apps/backoffice`, shares `.wrangler/state` with astro dev):
   `pnpm exec wrangler d1 migrations apply DB --local`. **Use
   `bash .claude/skills/verify-public-routes/seed.sh [slug]` to seed** — it

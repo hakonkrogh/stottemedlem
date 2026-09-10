@@ -151,7 +151,9 @@ Zone routes vs custom domains (verified live 2026-08-12): a zone route
 **takes precedence over another Worker's custom domain** on the same hostname —
 this is how the SSR backoffice serves the canonical public org pages on the
 apex while the assets-only marketing Worker keeps everything else. Reuse the
-same pattern for future public paths (`/api/qr/*`). Wrangler
+same pattern for future public paths. Better still, hang a new public address
+BENEATH an already-routed page (`/bli-medlem/<slug>/qr`, 2026-09-10): the
+page's route covers it, so there is no new route to forget. Wrangler
 warns "routes will attempt to serve Assets on a configured path" — harmless.
 
 Webhook pattern: route `POST /webhooks/vipps` in `worker.ts` *before* delegating to

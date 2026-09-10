@@ -39,11 +39,41 @@ Distinct from the *member's personal referral* QR (`specs/use-cases/earn-stars-a
   QR codes encode. QR payloads must always use the punycode origin, never raw ø.
 
 ## Surfaces
-- **Backoffice** `GET /api/qr/[slug]` (`apps/backoffice/src/pages/api/qr/[slug].ts`):
-  card SVG by default; `?variant=qr&format=png|svg`; `?download=1`; `?name=` display
-  name (until organizations are persisted — then look it up; keep the URL shape
-  stable, embeds depend on it). QR payload is `joinPageUrl(slug)`, never the
-  request origin — printed codes must survive worker moves.
+- **Backoffice** `GET /bli-medlem/[slug]/qr`
+  (`apps/backoffice/src/pages/bli-medlem/[slug]/qr.ts`). **It moved there from
+  `/api/qr/[slug]` on 2026-09-10** (the user's call: the address is one an
+  administrator reads and pastes into their own website, so it belongs beside
+  the page it points at, not under an API path). Two things fall out of the
+  move: the card is covered by the join page's existing apex zone route, so it
+  needs none of its own, and `/org/<slug>/qr` redirects to it for free via
+  worker.ts. The old address is now a 301 that carries the query string, and it
+  must stay (`src/pages/api/qr/[slug].ts`).
+  It is handed out on the CANONICAL APEX (`shareableQrCardUrl`), which the
+  marketing worker owns, so it needs its own zone route in
+  `apps/backoffice/wrangler.jsonc` (added 2026-09-10, after the address 404ed in
+  production while every local check passed). Verify with `apex-routes.mjs` in
+  `verify-public-routes`. Details:
+  card SVG by default; `?variant=qr&format=png|svg`; `?download=1`. QR payload is
+  `joinPageUrl(slug)`, never the request origin — printed codes must survive
+  worker moves. **The name on the card is read from the org row**
+  (`getOrganizationBySlug`), and a slug with no org row 404s (2026-09-10, when
+  the card became a picture the back office SHOWS). Before that the name came
+  from the URL (`?name=`, falling back to a Title-Cased slug), which predates
+  persisted orgs: it printed "Og" mid-name and let a stranger put any name on a
+  card. `?name=` is now ignored, and the URL shape is otherwise unchanged
+  because embeds depend on it.
+- **Backoffice front page** (`OrgQrCard.astro`, inside `OrgOverviewScreen`):
+  the card is SHOWN, as `<img src="/bli-medlem/<slug>/qr">`, with both downloads and
+  the embed address beside it (`specs/use-cases/promote-with-qr-card.md`,
+  `specs/concepts/back-office.md`). Two things make it reviewable and correct:
+  the component takes a `previewSrc` so a story can inline the card (Storybook
+  serves no app routes), and the card's `FONT` is `system-ui`, so unlike the
+  MEMBER card it needs no embedded webfont to render inside an `<img>`. The
+  same `system-ui` plus the ❤️ emoji in its footer is why the card has no PNG
+  variant: resvg holds one embedded text font and no colour-emoji font, so
+  rasterizing it would silently change the typeface and drop the heart. The
+  printable pair on offer is therefore the card as SVG (vector, scales) and the
+  plain code as a 1024px PNG.
 - **Marketing** front page (`apps/marketing/src/pages/index.astro`): a static
   QR-card *preview* for prospective orgs — `qrCardSvg(...)` is called in the Astro
   frontmatter (build time) and inlined as SVG, so there is no client JS and no
@@ -96,16 +126,17 @@ Distinct from the *member's personal referral* QR (`specs/use-cases/earn-stars-a
   cached pictures. Proof mechanism: load the SVG via `<img>` in a local HTML
   (webfont CSS never applies there) and compare glyphs with/without.
 
-## Open item — domain routing (decided intent, not wired)
-The embed snippet + QR payloads use `https://xn--stttemedlem-hgb.no` paths
-(`/bli-medlem/<slug>`, `/api/qr/<slug>` — the join page and its
-`/bli-medlem/<slug>/vilkar` MUST resolve on the canonical domain before any org
-pastes them into the Vipps portal), but that zone currently serves only the
-static marketing Worker → `/api/qr/*` 404s in production today. Intended
-wiring: zone routes (`.../api/*`) → the backoffice Worker alongside the
-`/bli-medlem/*` + legacy `/org/*` routes already declared; routes coexist with
-the marketing custom domain and win by specificity. **Superseded 2026-08-20:**
-the QR payload no longer hands off straight to Vipps. Since membership tiers
+## Domain routing — wired (2026-09-10)
+The embed snippet + QR payloads use `https://xn--stttemedlem-hgb.no` paths, and
+the apex serves the static marketing Worker except for the zone routes declared
+on the backoffice. `/bli-medlem/*` covers the join page, its
+`/bli-medlem/<slug>/vilkar` (both MUST resolve on the canonical domain before
+any org pastes them into the Vipps portal) and now the QR card at
+`/bli-medlem/<slug>/qr`. The card's former `/api/qr/*` kept its own route for
+the 301 alone. Prove it with `apex-routes.mjs` in `verify-public-routes`.
+
+## What the code SAYS (superseded 2026-08-20)
+The QR payload no longer hands off straight to Vipps. Since membership tiers
 landed, a supporter must SEE and PICK a tier first, so `/bli-medlem/<slug>` is
 a real page that shows the offer and carries the picked tier onward
 (`?medlemskap=<key>`) into Vipps — one address, one page (the earlier

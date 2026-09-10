@@ -61,7 +61,7 @@ also documents the variants and why the rule exists.
   office (`medlemskap/[tierId].astro` = the one add/edit membership form where
   `ny` means create); `src/pages/bli-medlem/[slug]/**`
   is the PUBLIC surface (landing `index.astro`, `vilkar.astro`, `banner.ts`,
-  `logo.ts`), plus `src/pages/api/qr/[slug].ts`. Admin edits call
+  `logo.ts`, `qr.ts`), plus the 301 left at `src/pages/api/qr/[slug].ts`. Admin edits call
   `purgeOrgPublicPages` so the public copy refreshes.
   **Back-office shape (2026-08-27, specs/concepts/back-office.md):** an org is
   FOUR tabbed pages — `index.astro` (Oversikt: public links + warnings),
@@ -229,11 +229,27 @@ also documents the variants and why the rule exists.
   fallback). **Shareable addresses are env-aware since 2026-08-27** (branch
   staging-membership-links; staging used to show PRODUCTION links): backoffice
   code showing/encoding the shareable address (dashboard "Offentlige lenker",
-  `/api/qr/[slug]` payloads) must use `shareableJoinUrl`/`shareableJoinTermsUrl`
+  `/bli-medlem/[slug]/qr` payloads) must use `shareableJoinUrl`/`shareableJoinTermsUrl`
   from `src/lib/joinLinks.ts` — `JOIN_PAGE_ORIGIN` wrangler var (set on staging
   only) falling back to `CANONICAL_ORIGIN`; note this is NOT `PUBLIC_ORIGIN`,
-  which is the Vipps-callback origin (`app.` host on prod, where `/api/*` is
-  routed — the apex only routes `/bli-medlem/*` + `/org/*` to this worker).
+  which is the Vipps-callback origin (`app.` host on prod, where ALL of `/api/*`
+  is routed). **The apex is the MARKETING worker's custom domain**; this worker
+  gets only the zone routes listed in `apps/backoffice/wrangler.jsonc`
+  (`/bli-medlem/*`, `/org/*`, `/api/qr/*`, `/medlemsbevis/*`, `/v/*`, `/V/*`),
+  and any apex path NOT listed there falls through to marketing's assets and
+  404s. So an address the product hands out on the apex needs TWO things: a
+  zone route here, and an `isPublic()` prefix in `src/middleware.ts`. Miss the
+  route and it 404s for everyone; miss the middleware and strangers get bounced
+  into the login flow. Nothing local catches a missing route (dev serves the
+  whole app on one origin) and staging cannot either (it hands out
+  `staging.app.…`, a custom domain that serves the whole host), so production
+  is the only place it shows: run `apex-routes.mjs` in `verify-public-routes`.
+  Cost the QR card a live 404 on 2026-09-10: `shareableQrCardUrl` had pointed at
+  `støttemedlem.no/api/qr/<slug>` since the links went env-aware, with no route
+  to answer it. The card MOVED to `/bli-medlem/<slug>/qr` the same day, which
+  is the durable fix: a public address that lives under the join page cannot
+  fall through, because the page's route already covers it. Prefer that over
+  adding a route whenever a new public address is a page's companion.
   Public pages link to EACH OTHER with relative paths (visitor stays on the
   origin they arrived at). Public in middleware (with `/favicon.ico` —
   else crawlers get bounced into the login flow), rendered by
@@ -1162,6 +1178,14 @@ also documents the variants and why the rule exists.
   pushing more work to the same branch, check `gh pr view --json state`; if
   MERGED, the push needs a NEW PR (same branch works — it diffs against
   main), and audit `git log origin/main..HEAD` for what's stranded.
+- **Waiting for a PR's CI: `gh pr checks <n>` EXITS NON-ZERO while a check is
+  still pending** (exit 8, 2026-09-10), so the obvious
+  `until [ "$(gh pr checks <n> --json state --jq '.[0].state')" != "PENDING" ]`
+  aborts on its first iteration and looks like the loop condition is wrong.
+  Read the plain-text output instead, which prints `pending` / `pass` / `fail`
+  in column 2: `until [ "$(gh pr checks <n> 2>/dev/null | awk '{print $2}')" \
+  != "pending" ]; do sleep 15; done`. The repo's CI job is one check named
+  `check` and takes about 50s.
 - Single package: `pnpm turbo run <task> --filter=@stottemedlem/<name>`.
 - **Running `turbo build` for the backoffice while its dev server is up
   breaks the dev server** (hit 2026-09-08): every page then 500s with
@@ -1415,7 +1439,7 @@ away by mistake (nearly did, 2026-08-31, rebasing onto the one-card PR).
 | go-live-readiness.md | **the one answer to "how is testing standing, are we ready for live testing?"**: the green checks and what they do NOT prove (all 182 tests are in `packages/`, `apps/backoffice` has zero), the provisioned state of both deployed envs, the rehearsed-vs-open ledger with which gaps are production-only, and a re-check command under every line so the next run re-verifies instead of trusting the date |
 | stop-hooks.md | how the two Stop hooks compose + how to test a hook locally. **Write `specs/**` with the Write/Edit tool, never a bash heredoc/python:** the spec hook only reads Edit/Write/MultiEdit/NotebookEdit calls out of the transcript, so Bash-written specs are invisible and it blocks the stop claiming you reconciled nothing — the default outcome in bypass-permissions mode, and it costs a turn every time (hit again 2026-08-27) |
 | dependencies.md | pnpm workspace policy — `catalog:` centralised versions; the 7-day `minimumReleaseAge` supply-chain quarantine (why `pnpm update --latest` silently lands below npm's latest, and why `minimumReleaseAgeExclude` is the wrong fix); `onlyBuiltDependencies`; **the filtered-update trap** — `pnpm --filter X update` strands every OTHER package's `node_modules` and surfaces as a bogus `TS2304: Cannot find name 'crypto'`; re-lock check before pushing |
-| qr-codes.md | @stottemedlem/qr package split, the /api/qr/[slug] embed contract (backoffice), the front-page card preview (marketing), qrcode-lib gotchas, open domain-routing item |
+| qr-codes.md | @stottemedlem/qr package split, the /bli-medlem/[slug]/qr embed contract + its former /api/qr address, the back office's shown card, the front-page card preview (marketing), qrcode-lib gotchas, apex routing |
 | (canonical) `docs/research/pii-in-admin-urls-and-phone-masking.md` | precedent research (2026-08-28) behind the ACCEPTED search-term-in-URL open question: search-in-URL is the industry norm (Stripe/Zendesk ship it as a feature), no GDPR enforcement on the pattern, no competitor masks admin-facing phone numbers, Vipps' masking = strangers-payment pattern; + the hardening options if revisited |
 | phone-number-privacy.md | verified legal ground truth on masking/displaying member phone numbers: NO law requires masking (PCI DSS masks card PANs, nothing similar for phone); GDPR art. 5(1)(c)/25(2) analysis, why full display to org admins is within purpose, + the 2026-08-28 audit of every phone surface and the real gaps (search-in-URL, phone-as-title) |
 | norwegian-receipt-law.md | verified legal ground truth for payment receipts: bokføringsforskriften § 5-1-6b (membership fees need only betalingsdokumentasjon with § 5-1-1 nr. 2–5 — no numbering, no PDF), mval § 3-13 VAT exemption, the rules that do NOT apply (kassasystem, § 5-2-9 file format, tax deduction), + how to curl Lovdata (WebFetch drops legal text) |
