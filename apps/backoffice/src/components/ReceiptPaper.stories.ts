@@ -7,7 +7,7 @@ import ReceiptPaperStory from "./ReceiptPaperStory.astro";
 
 /** Fictitious — a committed fixture must never carry a real organization. */
 const base = {
-  seller: "Eksempel Musikkorps (org.nr. 123 456 789)",
+  seller: "Bakvendtland Skolekorps (org.nr. 123 456 789)",
   memberLabel: "Kari Eksempel",
   what: "Medlemskontingent («Støttemedlem»)",
   period: "14. mars 2026 – 31. desember 2026 (2026)",
@@ -29,7 +29,7 @@ export const WithoutName = { args: { ...base, memberLabel: null } };
 export const LongValues = {
   args: {
     ...base,
-    seller: "Vestbygda Skolekorps og Ungdomsorkester (org.nr. 987 654 321)",
+    seller: "Bakvendtland Korps og Ungdomsorkester (org.nr. 987 654 321)",
     memberLabel: "anne-margrethe.wollertsen.bjornstad@eksempel-epostadresse.no",
     what: "Medlemskontingent («Gull-støttemedlem med ekstra lang tittel»)",
   },

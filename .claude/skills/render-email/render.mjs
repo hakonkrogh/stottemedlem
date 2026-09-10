@@ -15,13 +15,13 @@ const { feeChangeNotice } = await import(`${SRC}/feeChangeNotice.ts`);
 
 /** A member and an org that are obviously fictional (never real org data). */
 const ORG = {
-  orgName: "Eksempel Musikkorps",
+  orgName: "Bakvendtland Skolekorps",
   orgNumber: "918 654 062",
-  orgContactEmail: "post@eksempel.example",
+  orgContactEmail: "post@bakvendtland.example",
   memberName: "Kari Nordmann",
   memberEmail: "kari@eksempel.example",
   tierName: "Støttemedlem",
-  manageUrl: "https://app.example/bli-medlem/eksempel/min-side?n=man-tok",
+  manageUrl: "https://app.example/bli-medlem/bakvendtland-skolekorps/min-side?n=man-tok",
 };
 const RECEIPT = {
   ...ORG,

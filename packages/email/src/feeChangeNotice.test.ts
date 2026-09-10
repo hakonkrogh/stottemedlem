@@ -2,15 +2,15 @@ import { describe, expect, it } from "vitest";
 import { feeChangeNotice } from "./feeChangeNotice.js";
 
 const base = {
-  orgName: "Fjellbygda Musikklag",
-  orgContactEmail: "post@fjellbygda-eksempel.no",
+  orgName: "Bakvendtland Skolekorps",
+  orgContactEmail: "post@bakvendtland.example",
   memberName: "Ingrid Solheim",
   memberEmail: "ingrid@eksempel.no",
   tierName: "Støttemedlem",
   previousFeeNok: 250,
   newFeeNok: 300,
   effectivePeriod: "2027",
-  manageUrl: "https://example.test/bli-medlem/fjellbygda/min-side?n=abc",
+  manageUrl: "https://example.test/bli-medlem/bakvendtland-skolekorps/min-side?n=abc",
 };
 
 describe("feeChangeNotice", () => {
@@ -30,20 +30,20 @@ describe("feeChangeNotice", () => {
 
   it("comes from the organization and replies to it", () => {
     const message = feeChangeNotice(base);
-    expect(message.fromName).toBe("Fjellbygda Musikklag");
-    expect(message.replyTo).toBe("post@fjellbygda-eksempel.no");
+    expect(message.fromName).toBe("Bakvendtland Skolekorps");
+    expect(message.replyTo).toBe("post@bakvendtland.example");
   });
 
   it("points questions at the organization's own address, not the noreply sender", () => {
     const message = feeChangeNotice(base);
     expect(message.text).toContain("adresse som ikke leses");
-    expect(message.text).toContain("kontakt Fjellbygda Musikklag på post@fjellbygda-eksempel.no");
-    expect(message.html).toContain("post@fjellbygda-eksempel.no");
+    expect(message.text).toContain("kontakt Bakvendtland Skolekorps på post@bakvendtland.example");
+    expect(message.html).toContain("post@bakvendtland.example");
   });
 
   it("still points at the organization when it has no contact address", () => {
     const message = feeChangeNotice({ ...base, orgContactEmail: null });
-    expect(message.text).toContain("ta kontakt med Fjellbygda Musikklag direkte");
+    expect(message.text).toContain("ta kontakt med Bakvendtland Skolekorps direkte");
     expect(message.replyTo).toBeUndefined();
   });
 

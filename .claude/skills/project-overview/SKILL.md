@@ -11,6 +11,14 @@ supporting-member fee and curate their list of supporting members. Nothing more.
 A pnpm + Turborepo TypeScript (ESM) monorepo. **Spec-driven:** product intent
 lives in `specs/`, kept in sync with code by a mandatory `Stop`-hook harness.
 
+**One example organization: `Bakvendtland Skolekorps`** (slug
+`bakvendtland-skolekorps`, contact `post@bakvendtland.example`). Every fixture,
+story, seed, spec and doc names it, never a second invented org and never a
+real one; only the noun after `Bakvendtland` varies, where a fixture exercises
+text fitting. Member and person addresses (`kari@eksempel.example`) are people
+and out of scope. Enforced over added lines by the `writing-rules` skill, which
+also documents the variants and why the rule exists.
+
 ## Where things live
 - `apps/marketing/` — Astro static landing page → Cloudflare Worker (assets only).
   Visual identity (decided 2026-07-07): masonry photo-collage backdrop
@@ -572,7 +580,7 @@ lives in `specs/`, kept in sync with code by a mandatory `Stop`-hook harness.
   2026-08-27** (manual branch deploy of vip-staging-accelerated; a later
   main-merge REVERTS it unless that branch merges first). Remote test
   baseline: staging D1 was empty, now seeded with the same fictitious org as
-  seed.sh (`eksempel-musikkorps`, tok-seed-1) — seed.sh is local-only, the
+  seed.sh (`bakvendtland-skolekorps`, tok-seed-1) — seed.sh is local-only, the
   remote variant is its SQL via `CI=1 wrangler d1 execute DB --remote --env
   staging --command "..."` with `period_year` as the CURRENT ISO-week key,
   not `strftime('%Y')`. Manual staging deploy recipe (verified):

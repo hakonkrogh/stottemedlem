@@ -9,7 +9,7 @@
 # running `astro dev` — no restart needed. Run seed.sh first (needs the org row).
 set -euo pipefail
 
-SLUG="${1:-eksempel-musikkorps}"
+SLUG="${1:-bakvendtland-skolekorps}"
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
 cd "$ROOT/apps/backoffice"
 

@@ -22,10 +22,10 @@ import type { Organization } from "./schema.js";
 const base: Organization = {
   id: "00000000-0000-0000-0000-000000000001",
   workosOrgId: "org_test",
-  name: "Nordnes Skolekorps",
-  slug: "nordnes-skolekorps",
+  name: "Bakvendtland Skolekorps",
+  slug: "bakvendtland-skolekorps",
   orgnr: "923609016",
-  contactEmail: "post@nordnesskolekorps.no",
+  contactEmail: "post@bakvendtland.example",
   annualFeeNok: 300,
   createdAt: "2026-07-28 00:00:00",
 };

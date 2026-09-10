@@ -51,7 +51,7 @@ export const BannerFocalPoint = {
 /** A long compound name wraps beside the logo instead of pushing it out. */
 export const LongName = {
   args: {
-    name: "Vestbygda og Omegn Skolekorps og Drilltropp",
+    name: "Bakvendtland og Omegn Skolekorps og Drilltropp",
     logoUrl: FIXTURE_LOGO_URL,
     bannerUrl: FIXTURE_BANNER_URL,
   },

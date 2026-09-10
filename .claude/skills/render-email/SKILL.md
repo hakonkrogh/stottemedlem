@@ -34,7 +34,7 @@ two bodies and mail clients show either one, so check both.
 
 - Runs the `.ts` sources directly through Node's built-in type stripping (Node
   22.18+/24). No build, no `tsx`, no install. `pnpm install` is NOT needed.
-- The fixtures are deliberately fictional (Eksempel Musikkorps, Kari Nordmann);
+- The fixtures are deliberately fictional (Bakvendtland Skolekorps, Kari Nordmann);
   keep real org and member data out of anything committed.
 - Nothing is sent. There is no Resend key in play and no network call.
 - Adding a notice kind to `packages/email`? Add a fixture to `FIXTURES` in

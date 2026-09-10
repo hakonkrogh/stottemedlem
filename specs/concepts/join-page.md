@@ -18,7 +18,7 @@ with their [annual fees](annual-fee.md), each with its own call to action to
 by anyone, with no login.
 
 Its Norwegian address reads as a sentence with the organization's slug
-appended — `støttemedlem.no/bli-medlem/nordnes-skolekorps` — which is what a
+appended — `støttemedlem.no/bli-medlem/bakvendtland-skolekorps` — which is what a
 supporter sees before they click and what an organization reads aloud when it
 tells people how to support it.
 

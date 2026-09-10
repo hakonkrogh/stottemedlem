@@ -16,7 +16,7 @@ const LOGO =
 
 const base = {
   memberName: "Kari Eksempel",
-  organizationName: "Eksempel Musikkorps",
+  organizationName: "Bakvendtland Skolekorps",
   hearts: 4,
   periodText: "2026",
   // The short scan address the card's code really carries (memberScanUrl in
@@ -60,7 +60,7 @@ export const WithoutName = { args: { ...base, memberName: null, logoDataUri: LOG
 export const VeryLongOrgName = {
   args: {
     ...base,
-    organizationName: "Sør-Trøndelag Ungdomssymfoniorkester og Musikkforening",
+    organizationName: "Bakvendtland Ungdomssymfoniorkester og Musikkforening",
     hearts: 2,
     logoDataUri: LOGO,
   },
@@ -71,7 +71,7 @@ export const LongNames = {
   args: {
     ...base,
     memberName: "Anne-Margrethe Wollertsen Bjørnstad",
-    organizationName: "Vestbygda Skolekorps og Ungdomsorkester",
+    organizationName: "Bakvendtland Korps og Ungdomsorkester",
     hearts: 7,
     logoDataUri: LOGO,
   },

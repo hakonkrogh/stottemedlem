@@ -52,7 +52,7 @@ export const PaymentEventsElsewhere = {
     {
       stored: {
         ...STORED_KEYS,
-        webhookUrl: "https://staging.example/api/vipps/vestbygda-musikkorps",
+        webhookUrl: "https://staging.example/api/vipps/bakvendtland-skolekorps",
       },
     },
     PAYMENT_EVENT_WARNING,

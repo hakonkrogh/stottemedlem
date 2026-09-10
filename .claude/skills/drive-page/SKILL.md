@@ -37,14 +37,14 @@ Both branches of `MemberCardFigure.astro`, proven end to end (2026-08-31):
 
     # A phone with a share sheet: the page must call it and NOT navigate away.
     node .claude/skills/drive-page/drive.mjs \
-      "http://localhost:4322/bli-medlem/eksempel-musikkorps/min-side?n=tok-seed-1" \
+      "http://localhost:4322/bli-medlem/bakvendtland-skolekorps/min-side?n=tok-seed-1" \
       --mobile \
       --stub 'window.__shared=null; Object.defineProperty(navigator,"share",{value:d=>{window.__shared=d;return Promise.resolve()},configurable:true})' \
       click='a[data-share]' eval='window.__shared' url=
 
     # A desktop without one: falls back to the clipboard and says so.
     node .claude/skills/drive-page/drive.mjs \
-      "http://localhost:4322/bli-medlem/eksempel-musikkorps/min-side?n=tok-seed-1" \
+      "http://localhost:4322/bli-medlem/bakvendtland-skolekorps/min-side?n=tok-seed-1" \
       --permissions clipboard-read,clipboard-write \
       --stub 'Object.defineProperty(navigator,"share",{value:undefined,configurable:true})' \
       click='a[data-share]' sleep=300 \

@@ -5,9 +5,9 @@ import { membershipReceipt } from "./membershipReceipt.js";
 const EM_DASH = "\u2014";
 
 const base = {
-  orgName: "Eksempel Musikkorps",
+  orgName: "Bakvendtland Skolekorps",
   orgNumber: "918 654 062",
-  orgContactEmail: "post@eksempel.example",
+  orgContactEmail: "post@bakvendtland.example",
   memberName: "Kari Nordmann",
   memberEmail: "kari@eksempel.example",
   tierName: "Støttemedlem",
@@ -17,7 +17,7 @@ const base = {
   paidNok: 240,
   paidDate: "2026-03-14T09:30:00.000Z",
   kind: "join" as const,
-  manageUrl: "https://app.example/bli-medlem/eksempel/min-side?n=tok",
+  manageUrl: "https://app.example/bli-medlem/bakvendtland-skolekorps/min-side?n=tok",
   cardUrl: "https://xn--stttemedlem-hgb.no/medlemsbevis/kort-tok",
 };
 
@@ -25,7 +25,7 @@ describe("membershipReceipt", () => {
   it("carries the fields bokføringsforskriften § 5-1-1 nr. 2–5 requires", () => {
     const message = membershipReceipt(base);
     // nr. 2 — the parties: seller with orgnr, and the buyer by name.
-    expect(message.text).toContain("Eksempel Musikkorps (org.nr. 918 654 062)");
+    expect(message.text).toContain("Bakvendtland Skolekorps (org.nr. 918 654 062)");
     expect(message.text).toContain("Medlem: Kari Nordmann");
     // nr. 3 — what the payment was for.
     expect(message.text).toContain("Medlemskontingent («Støttemedlem»)");
@@ -43,8 +43,8 @@ describe("membershipReceipt", () => {
   it("addresses and attributes like every member notice", () => {
     const message = membershipReceipt(base);
     expect(message.to).toBe("kari@eksempel.example");
-    expect(message.fromName).toBe("Eksempel Musikkorps");
-    expect(message.replyTo).toBe("post@eksempel.example");
+    expect(message.fromName).toBe("Bakvendtland Skolekorps");
+    expect(message.replyTo).toBe("post@bakvendtland.example");
     // Brand attribution: ø visible, punycode in the href.
     expect(message.text).toContain("støttemedlem.no");
     expect(message.html).toContain("https://xn--stttemedlem-hgb.no");
@@ -53,13 +53,13 @@ describe("membershipReceipt", () => {
     expect(message.text).toContain(base.manageUrl);
     // Questions go to the organization, not the unread noreply sender.
     expect(message.text).toContain("adresse som ikke leses");
-    expect(message.text).toContain("kontakt Eksempel Musikkorps på post@eksempel.example");
-    expect(message.html).toContain("post@eksempel.example");
+    expect(message.text).toContain("kontakt Bakvendtland Skolekorps på post@bakvendtland.example");
+    expect(message.html).toContain("post@bakvendtland.example");
   });
 
   it("reads as a renewal when the payment was one", () => {
     const message = membershipReceipt({ ...base, kind: "renewal", paidNok: 1200 });
-    expect(message.subject).toBe("Kvittering: fornyet støttemedlemskap i Eksempel Musikkorps");
+    expect(message.subject).toBe("Kvittering: fornyet støttemedlemskap i Bakvendtland Skolekorps");
     expect(message.text).toContain("er fornyet");
     // The thousands separator is the locale's no-break space, not an ASCII one.
     expect(message.text).toContain("1 200 kr");
@@ -67,7 +67,7 @@ describe("membershipReceipt", () => {
 
   it("keeps the amount out of the subject, and every em dash out of the message", () => {
     const message = membershipReceipt(base);
-    expect(message.subject).toBe("Kvittering: støttemedlemskap i Eksempel Musikkorps");
+    expect(message.subject).toBe("Kvittering: støttemedlemskap i Bakvendtland Skolekorps");
     expect(message.subject).not.toContain("kr");
     expect(message.subject).not.toContain(EM_DASH);
     expect(message.text).not.toContain(EM_DASH);
@@ -81,11 +81,11 @@ describe("membershipReceipt", () => {
       orgContactEmail: null,
       memberName: null,
     });
-    expect(message.text).toContain("Organisasjon: Eksempel Musikkorps\n");
+    expect(message.text).toContain("Organisasjon: Bakvendtland Skolekorps\n");
     // A nameless buyer is still identified — by the address the receipt went to.
     expect(message.text).toContain("Medlem: kari@eksempel.example");
     expect(message.replyTo).toBeUndefined();
-    expect(message.text).toContain("ta kontakt med Eksempel Musikkorps direkte");
+    expect(message.text).toContain("ta kontakt med Bakvendtland Skolekorps direkte");
     expect(message.html).not.toContain("org.nr.");
   });
 });
