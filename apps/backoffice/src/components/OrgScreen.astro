@@ -170,15 +170,15 @@ const TAB_ICONS: Record<OrgTabId, string> = {
     text-underline-offset: 3px;
   }
   /* A logo is always framed in a circle with a subtle outline, the same mark
-     supporters meet on the join page. Small here, because the name is what
-     the row is for. */
+     supporters meet on the join page. Sized in em, so it keeps its proportion
+     to the name it stands before at every screen width. */
   .logo {
     display: block;
     flex: none;
-    width: 1.5rem;
-    height: 1.5rem;
+    width: 2.5em;
+    height: 2.5em;
     object-fit: contain;
-    padding: 0.1rem;
+    padding: 0.15em;
     background: var(--sm-surface);
     border-radius: 50%;
     box-shadow: 0 0 0 1px var(--sm-border);
