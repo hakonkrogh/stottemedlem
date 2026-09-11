@@ -29,6 +29,10 @@ export const GET: APIRoute = async ({ locals, params }) => {
 
   const csv = csvDocument([
     [
+      // First column: the member number is the one identifier that never
+      // changes, so it is what a spreadsheet should be keyed and sorted on
+      // (specs/concepts/member-number.md).
+      "Medlemsnr",
       "Navn",
       "E-post",
       "Telefon",
@@ -42,6 +46,7 @@ export const GET: APIRoute = async ({ locals, params }) => {
       "Registrert",
     ],
     ...members.map((entry) => [
+      entry.member.memberNumber,
       // An erased member keeps their row so the year's totals still add up,
       // but carries no person (specs/concepts/member-data.md). Saying so beats
       // three blank cells an administrator would read as a bug — and beats

@@ -684,6 +684,40 @@ export async function recordCharge(
   return row ?? null;
 }
 
+/**
+ * Hand the member their place in the order, if they do not already hold one
+ * (specs/concepts/member-number.md).
+ *
+ * The next number is one past the highest this organization has ever handed
+ * out, never one past how many members it currently has: a member leaving must
+ * not renumber anybody, and their number must never be given to the next
+ * arrival. The `member_number IS NULL` guard is what makes the whole thing
+ * immutable: a returning supporter, a renewal, a re-delivered webhook and a
+ * nightly sweep all reach this, and every one of them finds the number already
+ * there and changes nothing.
+ *
+ * Read and write are one statement on purpose: two payments landing at the
+ * same instant must not both read the same highest number. The unique index on
+ * (org_id, member_number) is the backstop if they somehow did, and the payment
+ * paths that reach here are all safe to run again.
+ */
+export async function assignMemberNumber(db: Db, memberId: string): Promise<number | null> {
+  const [row] = await db
+    .update(supportingMembers)
+    .set({
+      memberNumber: sql`(select coalesce(max(peers.member_number), 0) + 1 from supporting_members as peers where peers.org_id = ${supportingMembers.orgId})`,
+    })
+    .where(and(eq(supportingMembers.id, memberId), isNull(supportingMembers.memberNumber)))
+    .returning({ memberNumber: supportingMembers.memberNumber });
+  if (row) return row.memberNumber;
+
+  const [existing] = await db
+    .select({ memberNumber: supportingMembers.memberNumber })
+    .from(supportingMembers)
+    .where(eq(supportingMembers.id, memberId));
+  return existing?.memberNumber ?? null;
+}
+
 /** What a captured payment buys: one period of one tier for one supporter. */
 export interface PaidPeriod {
   periodYear: number;
@@ -736,6 +770,11 @@ export async function grantMembershipForCapturedCharge(
     })
     // At most one membership per supporting member per annual period.
     .onConflictDoNothing({ target: [memberships.memberId, memberships.periodYear] });
+
+  // Their place in the order (specs/concepts/member-number.md). Here, because
+  // this is the one path from money to membership: the number is earned by
+  // paying, so a supporter whose payment never completed never takes one.
+  await assignMemberNumber(db, agreement.memberId);
 
   const [membership] = await db
     .select()
@@ -1617,7 +1656,9 @@ export function countMemberStandings(
 
 /**
  * Whether a member matches what the administrator typed. Name, email and phone,
- * because those are the three ways anyone remembers a person.
+ * because those are the three ways anyone remembers a person, plus the member
+ * number, because it is the way a member quotes themselves
+ * (specs/concepts/member-number.md).
  */
 export function matchesMemberSearch(entry: MemberOverview, term: string): boolean {
   const needle = term.trim().toLowerCase();
@@ -1625,8 +1666,23 @@ export function matchesMemberSearch(entry: MemberOverview, term: string): boolea
   return (
     [entry.member.name, entry.member.email, entry.member.phone].some((field) =>
       field?.toLowerCase().includes(needle),
-    ) || chargeIdMatching(entry, term) !== null
+    ) ||
+    memberNumberMatching(entry, term) ||
+    chargeIdMatching(entry, term) !== null
   );
+}
+
+/**
+ * Whether a search term is this member's number. Matched WHOLE, never as a
+ * fragment: "12" typed to find member 12 must not also drag in everyone whose
+ * phone number happens to contain a 12, which is most of them. A number
+ * written out the way it is presented ("nr. 12", "#12") matches too, because
+ * that is how a member reads it off their own card.
+ */
+function memberNumberMatching(entry: MemberOverview, term: string): boolean {
+  if (entry.member.memberNumber === null) return false;
+  const digits = term.trim().replace(/^(medlem\s*)?(nr\.?|#)\s*/i, "");
+  return /^\d+$/.test(digits) && Number(digits) === entry.member.memberNumber;
 }
 
 /**

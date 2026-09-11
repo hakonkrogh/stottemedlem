@@ -10,6 +10,10 @@ export function fixtureMember(
   name: string | null,
   email: string | null,
   phone: string | null,
+  // Their place in the order (specs/concepts/member-number.md). Null is the
+  // real state of a supporter whose first payment has not landed yet, so a
+  // fixture is allowed to say so.
+  memberNumber: number | null = null,
 ): SupportingMember {
   return {
     id,
@@ -17,6 +21,7 @@ export function fixtureMember(
     name,
     email,
     phone,
+    memberNumber,
     vippsSub: `sub-${id}`,
     cardToken: `kort-${id}`,
     referredByMemberId: null,
@@ -50,7 +55,7 @@ export function fixturePeriod(
 
 /** A supporter who joined, paid, and whose arrangement still runs. */
 export const continuing: MemberOverview = {
-  member: fixtureMember("m-1", "Ingrid Solheim", "ingrid@eksempel.example", "4711111111"),
+  member: fixtureMember("m-1", "Ingrid Solheim", "ingrid@eksempel.example", "4711111111", 3),
   latest: fixturePeriod("m-1", 2026, 300),
   status: "active",
   renewing: true,
@@ -61,7 +66,7 @@ export const continuing: MemberOverview = {
 
 /** Paid for this year, then ended the arrangement — still a member until 31 Dec. */
 export const endingAfterThisYear: MemberOverview = {
-  member: fixtureMember("m-2", "Bjørn Aas", "bjorn@eksempel.example", "4722222222"),
+  member: fixtureMember("m-2", "Bjørn Aas", "bjorn@eksempel.example", "4722222222", 17),
   latest: fixturePeriod("m-2", 2026, 240),
   status: "active",
   renewing: false,
@@ -72,7 +77,7 @@ export const endingAfterThisYear: MemberOverview = {
 
 /** Supported for two years and stopped — the one to invite back. */
 export const lapsed: MemberOverview = {
-  member: fixtureMember("m-3", "Marit Fjeld", "marit@eksempel.example", null),
+  member: fixtureMember("m-3", "Marit Fjeld", "marit@eksempel.example", null, 8),
   latest: fixturePeriod("m-3", 2024, 250),
   status: "lapsed",
   renewing: false,
@@ -83,7 +88,7 @@ export const lapsed: MemberOverview = {
 
 /** Consented to a contact address but no name. */
 export const withoutName: MemberOverview = {
-  member: fixtureMember("m-4", null, "ukjent@eksempel.example", null),
+  member: fixtureMember("m-4", null, "ukjent@eksempel.example", null, 24),
   latest: fixturePeriod("m-4", 2026, 125),
   status: "active",
   renewing: true,
@@ -92,7 +97,10 @@ export const withoutName: MemberOverview = {
   chargeIds: ["chr-Ukj3nt26"],
 };
 
-/** Approved seconds ago; the first payment has not landed yet. */
+/**
+ * Approved seconds ago; the first payment has not landed yet. No member number
+ * either, for exactly that reason (specs/concepts/member-number.md).
+ */
 export const nothingPaidYet: MemberOverview = {
   member: fixtureMember("m-5", "Nyinnmeldt Person", null, "4744444444"),
   latest: null,
@@ -105,7 +113,7 @@ export const nothingPaidYet: MemberOverview = {
 
 /** Paying, but joined without sharing an address — nobody can be told anything. */
 export const noWayToReach: MemberOverview = {
-  member: fixtureMember("m-6", "Sigrun Vik", null, "4755555555"),
+  member: fixtureMember("m-6", "Sigrun Vik", null, "4755555555", 1),
   latest: fixturePeriod("m-6", 2026, 300),
   status: "active",
   renewing: true,

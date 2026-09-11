@@ -111,6 +111,12 @@ const LOGO_RING = EDGE;
 export interface MemberCardOptions {
   /** The member's own name; falls back to a neutral label when unknown. */
   memberName?: string | null;
+  /**
+   * Their place in the order of people who started backing this organization
+   * (specs/concepts/member-number.md), the one thing on the card that never
+   * changes. Absent on a card drawn for a member who has none.
+   */
+  memberNumber?: number | null;
   organizationName: string;
   /** Supported annual periods — the count shown inside the streak heart (specs/concepts/scorecard.md). */
   hearts: number;
@@ -158,6 +164,15 @@ const TYPE = { name: 56, title: 32, middle: 24, small: 16 };
  * beside a 200 pt heart), so the gap grew with them.
  */
 const RECRUIT_GAP = 42;
+
+/**
+ * The room between the member's name and their number under it
+ * (specs/concepts/member-number.md). The number belongs to the name: it is
+ * the same person said a second way, so it sits closer to it than the heart
+ * below does, and at the caption size, in capitals: it is a quiet permanent
+ * fact, not a second headline competing with the name it labels.
+ */
+const NUMBER_GAP = 16;
 
 /**
  * Fit a line by stepping down the given sizes, and only then cut it. Names are
@@ -427,6 +442,8 @@ function cardFooter(
 
 interface CardContent {
   memberName: string;
+  /** "MEDLEM NR. 42", or null for a member who has no number. */
+  memberNumberLine: string | null;
   orgName: string;
   hearts: number;
   headline: string;
@@ -483,6 +500,9 @@ function drawCard(content: CardContent): string {
 
   const name = fitScaled(content.memberName, columnWidth, [TYPE.name, TYPE.title, TYPE.middle]);
   const nameAdvance = name.size * 0.92;
+  // The member's number rides under their name, inside the stack, so the block
+  // still centres itself between the band and the rule.
+  const numberAdvance = content.memberNumberLine ? NUMBER_GAP + TYPE.small : 0;
 
   // The streak grew when the QR code left the middle of the card: the member's
   // half is the member's, and the heart is what says how long they have been
@@ -497,11 +517,12 @@ function drawCard(content: CardContent): string {
     ? heartSize + 10 + headline.size + (content.recruitLine ? RECRUIT_GAP : 0)
     : 0;
 
-  const blockHeight = nameAdvance + 30 + streakBlock;
+  const blockHeight = nameAdvance + numberAdvance + 30 + streakBlock;
   const blockTop = bodyTop + (bodyHeight - blockHeight) / 2;
 
   const nameBaseline = blockTop + name.size * 0.74;
-  const heartTop = blockTop + nameAdvance + 30;
+  const numberBaseline = blockTop + nameAdvance + NUMBER_GAP + TYPE.small * 0.74;
+  const heartTop = blockTop + nameAdvance + numberAdvance + 30;
   const headlineBaseline = heartTop + heartSize + 10 + (headline?.size ?? 0) * 0.74;
   const recruitBaseline = headlineBaseline + RECRUIT_GAP;
 
@@ -520,6 +541,10 @@ ${hasLogo ? `  ${logoCircle(left + logoSize / 2, bandCenter, logoSize, content.l
 
   ${textEl(center, nameBaseline, name.value, { size: name.size, weight: FONT_WEIGHT, fill: INK, anchor: "middle" })}
 ${
+  content.memberNumberLine
+    ? `  ${textEl(center, numberBaseline, content.memberNumberLine, { size: TYPE.small, weight: FONT_WEIGHT, fill: MUTED, letterSpacing: 2.4, anchor: "middle" })}\n`
+    : ""
+}${
   headline
     ? `  ${streakHeart(center, heartTop, heartSize, content.hearts, content.lapsed)}
   ${textEl(center, headlineBaseline, headline.value, { size: headline.size, weight: FONT_WEIGHT, fill: content.lapsed ? MUTED : DEEP, anchor: "middle" })}
@@ -537,9 +562,14 @@ export function memberCardSvg(options: MemberCardOptions): string {
   const memberName = options.memberName?.trim() || "Støttemedlem";
   const lapsed = Boolean(options.lapsed);
   const { width, height } = memberCardSize();
+  // A number is a whole, positive place in a queue or it is nothing, and a
+  // zero would claim a place nobody can hold (specs/concepts/member-number.md).
+  const memberNumber =
+    options.memberNumber && options.memberNumber > 0 ? Math.floor(options.memberNumber) : null;
 
   const content: CardContent = {
     memberName,
+    memberNumberLine: memberNumber ? `MEDLEM NR. ${memberNumber}` : null,
     orgName,
     hearts,
     // The exclamation mark is the card cheering; a lapsed card stays factual.
@@ -550,9 +580,11 @@ export function memberCardSvg(options: MemberCardOptions): string {
     lapsed,
     logoDataUri: options.logoDataUri ?? null,
     qr: qrModulesPath(options.joinUrl),
-    alt: `Medlemsbevis: ${memberName} er støttemedlem i ${orgName}${
-      hearts > 0 ? ` på ${hearts}. året` : ""
-    }, ${lapsed ? `støttet til og med ${options.periodText}` : `gyldig ${options.periodText}`}.`,
+    alt: `Medlemsbevis: ${memberName} er støttemedlem${
+      memberNumber ? ` nr. ${memberNumber}` : ""
+    } i ${orgName}${hearts > 0 ? ` på ${hearts}. året` : ""}, ${
+      lapsed ? `støttet til og med ${options.periodText}` : `gyldig ${options.periodText}`
+    }.`,
   };
 
   const body = drawCard(content);

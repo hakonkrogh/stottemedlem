@@ -269,6 +269,19 @@ export function memberCardImagePath(cardToken: string, format: "png" | "svg" = "
 }
 
 /**
+ * A member's place in the order, as it is written wherever the product says it
+ * out loud (specs/concepts/member-number.md). One spelling, so the number a
+ * member reads off their card is the number they can type into a search.
+ *
+ * The card sets the same words in capitals, which is a drawing decision made
+ * where the card is drawn: it cannot reach this, and nothing else should
+ * spell it a second way.
+ */
+export function memberNumberLabel(memberNumber: number): string {
+  return `Medlem nr. ${memberNumber}`;
+}
+
+/**
  * The query parameter carrying a referral into the join page
  * (specs/concepts/member-card.md): the card token of the member whose card was
  * scanned. Norwegian "verva" — recruited.

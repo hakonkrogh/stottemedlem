@@ -29,10 +29,13 @@ register gets there.
 2. The file opens correctly by double-click in common desktop spreadsheet
    tools on Norwegian-locale machines — delimiters and character encoding are
    the product's problem, never the administrator's.
-3. Each member is one row carrying what the member list itself shows: name,
-   email, phone, derived status, the membership (tier) and period last paid
-   for, the amount actually paid, whether the arrangement renews
-   automatically, and when the member was first registered.
+3. Each member is one row carrying what the member list itself shows: their
+   [member number](../concepts/member-number.md), name, email, phone, derived
+   status, the membership (tier) and period last paid for, the amount actually
+   paid, whether the arrangement renews automatically, and when the member was
+   first registered. The number leads the row: it is the one column that never
+   changes, so it is what the organization's own tools can key and sort on,
+   and it is what makes two downloads months apart line up member by member.
 4. The export says exactly what the register says at the moment it is
    downloaded — the same derived status as the list, never more and never
    less. It is a copy, not a second source of truth: the register in the
@@ -48,6 +51,8 @@ register gets there.
 - [ ] Every member appears exactly once, with the same derived status the
       member list shows.
 - [ ] Amounts and periods reflect what was actually paid, as recorded.
+- [ ] A member's number is the same in every download, so two exports taken
+      months apart can be lined up member by member.
 - [ ] The export is not reachable without back-office access to the
       organization.
 
@@ -59,4 +64,6 @@ register gets there.
 - [Use case: Curate the member list](curate-member-list.md) — the screen the
   export lives on, and the register it copies.
 - [Concept: Supporting member](../concepts/supporting-member.md)
+- [Concept: Member number](../concepts/member-number.md): the column that
+  never changes, which is what makes two exports comparable
 - [Concept: Membership](../concepts/membership.md)

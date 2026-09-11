@@ -163,6 +163,7 @@ const overview = (
       name,
       email: null,
       phone: null,
+      memberNumber: null,
       vippsSub: null,
       cardToken: null,
       referredByMemberId: null,
@@ -262,6 +263,43 @@ describe("matchesMemberSearch", () => {
     expect(matchesMemberSearch(ingrid, "chr-14k9Q")).toBe(true);
     expect(matchesMemberSearch(ingrid, "CHR-14K9Q")).toBe(true);
     expect(matchesMemberSearch(ingrid, "chr-99k9Q")).toBe(false);
+  });
+
+  // The number is how a member quotes themselves
+  // (specs/concepts/member-number.md), however they read it off their card.
+  it("finds a member by the number they quote", () => {
+    const numbered = overview("Marit Fjeld", "active", { memberNumber: 12 });
+    expect(matchesMemberSearch(numbered, "12")).toBe(true);
+    expect(matchesMemberSearch(numbered, "nr. 12")).toBe(true);
+    expect(matchesMemberSearch(numbered, "#12")).toBe(true);
+    expect(matchesMemberSearch(numbered, "Medlem nr. 12")).toBe(true);
+  });
+
+  // Matched whole, or "12" would drag in everyone whose member number merely
+  // contains a 12, which is most of them past a hundred members.
+  it("never matches a number as a fragment of another number", () => {
+    // Nothing else about this member is searchable, so only the number can
+    // answer: no name, no address, no payment reference to match by accident.
+    const only = (memberNumber: number) =>
+      overview(null, "lapsed", { memberNumber }, { paid: false });
+    expect(matchesMemberSearch(only(12), "12")).toBe(true);
+    expect(matchesMemberSearch(only(12), "1")).toBe(false);
+    expect(matchesMemberSearch(only(12), "2")).toBe(false);
+    expect(matchesMemberSearch(only(12), "120")).toBe(false);
+    expect(matchesMemberSearch(only(120), "12")).toBe(false);
+  });
+
+  it("leaves phone search alone, digits and all", () => {
+    const numbered = overview("Marit Fjeld", "active", {
+      memberNumber: 12,
+      phone: "4712345678",
+    });
+    expect(matchesMemberSearch(numbered, "47123")).toBe(true);
+    expect(matchesMemberSearch(numbered, "12")).toBe(true);
+  });
+
+  it("matches no number for a supporter who has not paid yet", () => {
+    expect(matchesMemberSearch(overview("Ny", "lapsed", {}, { paid: false }), "0")).toBe(false);
   });
 });
 

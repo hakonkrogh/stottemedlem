@@ -46,7 +46,11 @@ organization's numbers for a year it has already counted do not move.
 6. **Afterwards**, the member's row remains so the periods they paid for still
    count towards the organization's totals — shown as an erased member, never
    as a nameless one. Nothing about them can be edited, and the member list,
-   the export and the back office all say the same thing about them.
+   the export and the back office all say the same thing about them. Their
+   [member number](../concepts/member-number.md) stays with that row: it names
+   no person, it is what keeps the order of everyone who came after them
+   intact, and it is never given to anybody else. Someone who is erased and
+   later joins again arrives as a new member, with a new number.
 
 ## Acceptance criteria
 

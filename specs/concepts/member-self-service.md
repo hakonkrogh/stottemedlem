@@ -29,6 +29,11 @@ the organization and without the organization having to answer.
   hearts collected, the period it is good for, the organization it is for — is
   not repeated as prose underneath it. A page that captions its own
   illustration is longer without saying more.
+- **The one thing said twice is the [member number](member-number.md)**, and it
+  is said twice for a reason: the card is a picture, so the number on it cannot
+  be selected, copied, or read by anything but a pair of eyes. It is the one
+  fact on the card a member has cause to quote to their organization, so this
+  page also says it as text, with what it means: theirs, and never changing.
 - **Sharing the card is offered on the card**, not as a section further down:
   the thing being shared is right there, so the action belongs on it. The
   member's device decides what sharing means — its own share sheet where it
@@ -111,6 +116,8 @@ the organization and without the organization having to answer.
   [Answering an action](answering-an-action.md): the press is answered at
   once, the outcome is said in place, and the page can be reloaded afterwards.
 - Shows, and hands over the address of, the member's [card](member-card.md).
+- States the member's [number](member-number.md) as text, which the card can
+  only show as a picture.
 
 ## Referenced by
 - [Use case: Renew annual membership](../use-cases/renew-annual-membership.md)

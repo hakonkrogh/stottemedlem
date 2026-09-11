@@ -109,6 +109,36 @@ describe("memberCardSvg", () => {
     }
   });
 
+  // The member's place in the order (specs/concepts/member-number.md): the one
+  // fact on the card that is the same today as the day they earned it.
+  it("shows the member's number under their name, and nothing when they have none", () => {
+    expect(memberCardSvg({ ...base, memberNumber: 42 })).toContain("MEDLEM NR. 42");
+    expect(memberCardSvg(base)).not.toContain("MEDLEM NR.");
+    expect(memberCardSvg({ ...base, memberNumber: null })).not.toContain("MEDLEM NR.");
+    // A place in a queue starts at one; a zero would claim a place nobody holds.
+    expect(memberCardSvg({ ...base, memberNumber: 0 })).not.toContain("MEDLEM NR.");
+  });
+
+  it("keeps the number on a lapsed card, since it was earned and never changes", () => {
+    const svg = memberCardSvg({ ...base, memberNumber: 7, lapsed: true, periodText: "2024" });
+    expect(svg).toContain("MEDLEM NR. 7");
+    expect(svg).toContain("STØTTET T.O.M.");
+  });
+
+  it("names the number in the card's description, for a reader who cannot see it", () => {
+    expect(memberCardSvg({ ...base, memberNumber: 42 })).toContain("støttemedlem nr. 42 i");
+  });
+
+  it("sets the number between the member's name and the streak heart", () => {
+    const svg = memberCardSvg({ ...base, memberNumber: 42 });
+    const at = (pattern: RegExp) => Number(pattern.exec(svg)?.[1]);
+    const nameY = at(/<text [^>]*y="([\d.]+)"[^>]*>Kari Nordmann</);
+    const numberY = at(/<text [^>]*y="([\d.]+)"[^>]*>MEDLEM NR\. 42</);
+    const heartsY = at(/<text [^>]*y="([\d.]+)"[^>]*>3 \u00e5r som/);
+    expect(numberY).toBeGreaterThan(nameY);
+    expect(numberY).toBeLessThan(heartsY);
+  });
+
   it("does not label itself above the name", () => {
     expect(memberCardSvg(base)).not.toContain(">STØTTEMEDLEM<");
   });
