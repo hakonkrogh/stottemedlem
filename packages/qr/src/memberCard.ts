@@ -467,38 +467,61 @@ function logoCircle(cx: number, cy: number, size: number, dataUri: string): stri
  * of the page, at sizes a thumb-width screen can actually read and a camera
  * can scan.
  */
-function drawCard(content: CardContent): string {
+/**
+ * The fixed skeleton every card is laid out on: the same numbers whatever the
+ * card says. Kept apart from the drawing so that anything else needing to know
+ * where a piece of the card LANDS reads it from here rather than measuring the
+ * picture (specs/concepts/member-card.md).
+ */
+function cardFrame() {
   const width = MEMBER_CARD_WIDTH;
   const height = MEMBER_CARD_HEIGHT;
   const inner = 20;
   const pad = 40;
   const left = inner + pad;
   const right = width - inner - pad;
-  const center = width / 2;
-  const columnWidth = right - left;
-
   // The band: logo and organization on the left, validity in the corner, and
   // one hairline rule underneath instead of a filled field.
   const bandHeight = 128;
   const bandBottom = inner + bandHeight;
-  const bandCenter = inner + bandHeight / 2;
-  const hasLogo = Boolean(content.logoDataUri);
-  const logoSize = 76;
-  const corner = validityCorner(right, bandCenter, content.periodText, content.lapsed);
-  const orgLeft = hasLogo ? left + logoSize + 22 : left;
-  const org = fitOrgName(content.orgName, right - corner.width - 28 - orgLeft);
-  // One line sits on the band's centre; several straddle it.
-  const orgLineGap = org.size * 1.1;
-  const orgFirstBaseline = bandCenter + org.size * 0.35 - ((org.lines.length - 1) * orgLineGap) / 2;
-
   // The footer sits against the bottom of the card, and the rule above it
   // closes the member's half.
   const footerTop = height - inner - 30 - FOOTER_QR_PANEL;
   const ruleY = footerTop - 26;
-  const bodyTop = bandBottom;
-  const bodyHeight = ruleY - bodyTop;
+  return {
+    width,
+    height,
+    inner,
+    left,
+    right,
+    center: width / 2,
+    columnWidth: right - left,
+    bandBottom,
+    bandCenter: inner + bandHeight / 2,
+    footerTop,
+    ruleY,
+    bodyTop: bandBottom,
+    bodyHeight: ruleY - bandBottom,
+  };
+}
 
-  const name = fitScaled(content.memberName, columnWidth, [TYPE.name, TYPE.title, TYPE.middle]);
+/**
+ * The member's own half: their name, the heart under it, and the lines under
+ * that. Everything here moves with what the card says, so it is computed once
+ * and both the drawing and `memberCardNameBand` read the same numbers.
+ */
+function memberBlock(
+  frame: ReturnType<typeof cardFrame>,
+  content: Pick<
+    CardContent,
+    "memberName" | "memberNumberLine" | "hearts" | "headline" | "recruitLine"
+  >,
+) {
+  const name = fitScaled(content.memberName, frame.columnWidth, [
+    TYPE.name,
+    TYPE.title,
+    TYPE.middle,
+  ]);
   const nameAdvance = name.size * 0.92;
   // The member's number rides under their name, inside the stack, so the block
   // still centres itself between the band and the rule.
@@ -511,20 +534,57 @@ function drawCard(content: CardContent): string {
   // on the scale than the band and the footer, because this half is the card.
   const heartSize = 200;
   const headline =
-    content.hearts > 0 ? fitScaled(content.headline, columnWidth, [TYPE.title, TYPE.middle]) : null;
-  // Heart, headline, and the recruit line under it — absent entirely at zero.
+    content.hearts > 0
+      ? fitScaled(content.headline, frame.columnWidth, [TYPE.title, TYPE.middle])
+      : null;
+  // Heart, headline, and the recruit line under it, absent entirely at zero.
   const streakBlock = headline
     ? heartSize + 10 + headline.size + (content.recruitLine ? RECRUIT_GAP : 0)
     : 0;
 
   const blockHeight = nameAdvance + numberAdvance + 30 + streakBlock;
-  const blockTop = bodyTop + (bodyHeight - blockHeight) / 2;
-
-  const nameBaseline = blockTop + name.size * 0.74;
-  const numberBaseline = blockTop + nameAdvance + NUMBER_GAP + TYPE.small * 0.74;
+  const blockTop = frame.bodyTop + (frame.bodyHeight - blockHeight) / 2;
   const heartTop = blockTop + nameAdvance + numberAdvance + 30;
   const headlineBaseline = heartTop + heartSize + 10 + (headline?.size ?? 0) * 0.74;
-  const recruitBaseline = headlineBaseline + RECRUIT_GAP;
+
+  return {
+    name,
+    nameAdvance,
+    blockTop,
+    nameBaseline: blockTop + name.size * 0.74,
+    numberBaseline: blockTop + nameAdvance + NUMBER_GAP + TYPE.small * 0.74,
+    heartSize,
+    heartTop,
+    headline,
+    headlineBaseline,
+    recruitBaseline: headlineBaseline + RECRUIT_GAP,
+  };
+}
+
+function drawCard(content: CardContent): string {
+  const metrics = cardFrame();
+  const { width, height, inner, left, right, center, bandBottom, bandCenter, footerTop, ruleY } =
+    metrics;
+
+  const hasLogo = Boolean(content.logoDataUri);
+  const logoSize = 76;
+  const corner = validityCorner(right, bandCenter, content.periodText, content.lapsed);
+  const orgLeft = hasLogo ? left + logoSize + 22 : left;
+  const org = fitOrgName(content.orgName, right - corner.width - 28 - orgLeft);
+  // One line sits on the band's centre; several straddle it.
+  const orgLineGap = org.size * 1.1;
+  const orgFirstBaseline = bandCenter + org.size * 0.35 - ((org.lines.length - 1) * orgLineGap) / 2;
+
+  const {
+    name,
+    nameBaseline,
+    numberBaseline,
+    heartSize,
+    heartTop,
+    headline,
+    headlineBaseline,
+    recruitBaseline,
+  } = memberBlock(metrics, content);
 
   return `${frame(width, height, inner, 32)}
   <line x1="${inner}" y1="${bandBottom}" x2="${width - inner}" y2="${bandBottom}" stroke="${BAND_RULE}" stroke-width="1.5"/>
@@ -555,29 +615,75 @@ ${content.recruitLine ? `  ${textEl(center, recruitBaseline, content.recruitLine
   ${cardFooter(left, right, footerTop, content.qr)}`;
 }
 
-export function memberCardSvg(options: MemberCardOptions): string {
+/** Everything the card's layout derives from: its words and its counts. */
+type CardWords = Pick<
+  MemberCardOptions,
+  "memberName" | "organizationName" | "hearts" | "recruits" | "lapsed" | "memberNumber"
+>;
+
+/**
+ * What the card is going to SAY, tidied: the words and counts every other part
+ * of the drawing is derived from. Cheap on purpose, so asking where a line
+ * lands never costs a QR code.
+ */
+function cardWords(options: CardWords) {
   const hearts = Math.max(0, Math.floor(options.hearts));
   const recruits = Math.max(0, Math.floor(options.recruits ?? 0));
-  const orgName = options.organizationName.trim();
-  const memberName = options.memberName?.trim() || "Støttemedlem";
   const lapsed = Boolean(options.lapsed);
-  const { width, height } = memberCardSize();
   // A number is a whole, positive place in a queue or it is nothing, and a
   // zero would claim a place nobody can hold (specs/concepts/member-number.md).
   const memberNumber =
     options.memberNumber && options.memberNumber > 0 ? Math.floor(options.memberNumber) : null;
-
-  const content: CardContent = {
-    memberName,
+  return {
+    memberNumber,
     memberNumberLine: memberNumber ? `MEDLEM NR. ${memberNumber}` : null,
-    orgName,
     hearts,
+    lapsed,
+    orgName: options.organizationName.trim(),
+    memberName: options.memberName?.trim() || "Støttemedlem",
     // The exclamation mark is the card cheering; a lapsed card stays factual.
     headline: `${hearts} år som støttemedlem${lapsed ? "" : "!"}`,
     recruitLine:
       recruits > 0 ? `Vervet ${recruits} ${recruits === 1 ? "medlem" : "medlemmer"}` : null,
+  };
+}
+
+/**
+ * The strip of the card that holds the member's name and NOTHING else: under
+ * the identity band's rule, above the heart, between the column's own margins.
+ * Given as fractions of the card, so a reader can find it whatever size the
+ * card is being shown at.
+ *
+ * It exists so a surface showing the card can ask a plain question about the
+ * picture it actually got: are the words on it? A card whose name strip is
+ * blank has lost its text, and that is a card the product must not hand anyone
+ * in silence (specs/concepts/member-card.md).
+ */
+export function memberCardNameBand(options: CardWords): {
+  top: number;
+  bottom: number;
+  left: number;
+  right: number;
+} {
+  const metrics = cardFrame();
+  const words = cardWords(options);
+  const { blockTop, nameAdvance } = memberBlock(metrics, words);
+  return {
+    top: blockTop / metrics.height,
+    bottom: (blockTop + nameAdvance) / metrics.height,
+    left: metrics.left / metrics.width,
+    right: metrics.right / metrics.width,
+  };
+}
+
+export function memberCardSvg(options: MemberCardOptions): string {
+  const words = cardWords(options);
+  const { hearts, lapsed, orgName, memberName, memberNumber } = words;
+  const { width, height } = memberCardSize();
+
+  const content: CardContent = {
+    ...words,
     periodText: options.periodText,
-    lapsed,
     logoDataUri: options.logoDataUri ?? null,
     qr: qrModulesPath(options.joinUrl),
     alt: `Medlemsbevis: ${memberName} er støttemedlem${

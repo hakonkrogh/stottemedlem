@@ -1225,6 +1225,10 @@ also documents the variants and why the rule exists.
   path (the turbo cache is shared): it still wrote `packages/*/dist` here, so
   trust it after one `ls packages/core/dist` rather than re-running with
   `--force` (2026-09-10).
+  An app's OWN `pnpm build` does not either, and says it differently:
+  `[vite] ✗ Build failed in 450ms` / `Rolldown failed to resolve import
+  "@stottemedlem/core" from .../src/worker.ts`, which reads like a bad import
+  in code you did not touch. Same cause, same one-line fix (2026-09-10).
 - **A fresh worktree also has no `apps/backoffice/.dev.vars`, and `pnpm
   typecheck` fails because of it** — with six errors in files you did not
   touch (`Property 'VIPPS_CLIENT_ID' does not exist on type 'Env'`, same for

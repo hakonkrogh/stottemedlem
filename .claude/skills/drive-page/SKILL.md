@@ -26,10 +26,42 @@ and seed local D1 first (`verify-public-routes/seed.sh`).
 ## Flags
 
 `--mobile` (390x844) · `--viewport WxH` · `--permissions clipboard-read,clipboard-write`
-· `--stub '<js>'` (repeatable) · `--console` · `--keep-going`
+· `--stub '<js>'` (repeatable) · `--route '<glob>::<file>'` (repeatable) · `--console`
+· `--keep-going`
 
 **`--stub` is the important one.** Headless Chrome has no share sheet, no
 Vipps, no phone — so stub the API and assert what the page asked it for.
+
+**`--route` is how you drive a page into a state the product will not produce
+on purpose.** It answers one request with a file's bytes; the page, the server
+and the shipped script all stay real, only that asset is yours. Use it for the
+broken thing you cannot ask the product for: a picture that came out wrong, a
+script that did not arrive, a feed that answered nonsense.
+
+## Worked example: a member card that came back without its words
+
+The card is an `<img>`, so the page cannot see inside it; it draws the picture
+onto a canvas and reports a blank name strip to the operator
+(specs/concepts/member-card.md). Proving that needs a card whose words never
+drew, which is exactly what no healthy server will hand you (2026-09-10):
+
+    # make one: the real card, with its text elements taken out
+    curl -s "http://localhost:$PORT/medlemsbevis/$TOKEN/kort.svg" \
+      | perl -0pe 's{<text\b.*?</text>}{}gs' > /tmp/wordless-card.svg
+
+    # the real card must NOT report
+    node .claude/skills/drive-page/drive.mjs "http://localhost:$PORT/medlemsbevis/$TOKEN" \
+      --stub 'window.__b=[];navigator.sendBeacon=(u)=>{window.__b.push(u);return true}' \
+      sleep=1500 eval='window.__b'          # []
+
+    # the same page, handed a wordless card, MUST report
+    node .claude/skills/drive-page/drive.mjs "http://localhost:$PORT/medlemsbevis/$TOKEN" \
+      --route '**/kort.svg*::/tmp/wordless-card.svg' \
+      --stub 'window.__b=[];navigator.sendBeacon=(u)=>{window.__b.push(u);return true}' \
+      sleep=1500 eval='window.__b'          # ["/api/card-without-words"]
+
+Drop the stub and the whole chain runs for real: `dev-logs` then shows
+`[error] [cards] a member card was drawn without its words`.
 
 ## Worked example: the member card's share action
 

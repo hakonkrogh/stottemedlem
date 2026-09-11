@@ -1,6 +1,6 @@
 ---
 name: render-card
-description: Draw the member card and the org QR card from real `@stottemedlem/qr` code with NO dev server, D1 or auth — and rasterize them through the same resvg + embedded-Fraunces path the Worker ships, which is the only way to see what a shared PNG, og:image or receipt attachment actually looks like. Use for any change to card artwork, layout or text fitting.
+description: Draw the member card and the org QR card from real `@stottemedlem/qr` code with NO dev server, D1 or auth — and rasterize them through the same resvg + embedded-Fraunces path the Worker ships, which is the only way to see what a shared PNG, og:image or receipt attachment actually looks like. Use for any change to card artwork, layout or text fitting. `paint-check.mjs` additionally proves the card's WORDS are there the first time a real browser paints it cold, which every other loop here passes while a member is handed a wordless card.
 ---
 
 # Render the cards
@@ -8,6 +8,8 @@ description: Draw the member card and the org QR card from real `@stottemedlem/q
     node .claude/skills/render-card/render.mjs --raster
     # then: bash .claude/skills/preview-screenshot/shot.sh \
     #         "file://$(pwd)/.card-preview/index.html" <out.png> 900 4000
+    # and, for anything touching the card's typeface or how it is embedded:
+    node .claude/skills/render-card/paint-check.mjs .card-preview/served-card-<case>.svg
 
 In a FRESH WORKTREE run `pnpm install --frozen-lockfile` first: without
 `node_modules` the rebuild step dies with `Command "turbo" not found` and
@@ -86,11 +88,97 @@ geometry (the embedded Fraunces' digit ink spans ~0 to 0.72 em; measure real
 extents with opentype.js against apps/backoffice/src/assets/fonts/Fraunces.ttf,
 or measure rendered pixels with pngjs), never with font features.
 
+## `paint-check.mjs`: does the card still have its WORDS at first paint?
+
+    node .claude/skills/render-card/paint-check.mjs <svg-file-or-url> [flags]
+
+Exits 0 when every engine passed, 1 otherwise.
+
+    --engine chromium|webkit|both   default both (webkit: npx -y playwright install webkit)
+    --width N   CSS width to show the card at (default 384, what the pages cap at)
+    --net N     download throttle kB/s, 0 = off (default 60, chromium only)
+    --cpu N     CPU slowdown factor (default 6, chromium only)
+    --at a,b,c  sample times in ms (default 400,1200,3000,8000,20000)
+    --out DIR   keep the sample PNGs
+
+Every column above is drawn by ONE browser with all the time in the world and a
+warm font cache. A member is not. They get an `<img>`, over a phone network,
+cold, and **an `<img>` is painted once**: whatever is on the card at that
+moment is what they keep. So this loads the served SVG in an `<img>` over real
+(throttled) HTTP with `no-store`, samples the picture over 20 seconds, and
+asserts the one property a picture drawn once has to have:
+
+> **the first paint must already be the settled paint.**
+
+Anything that arrives after the first paint is something a reader can be left
+without forever. Self-tested 2026-09-10 against a card rigged to finish late:
+it fails, names the two PNGs, and exits 1.
+
+### What it does NOT prove, and the hour it saves you
+
+It was built after a member was handed a receipt card with a logo, a heart, a
+QR code and **not one readable word** (specs/concepts/member-card.md). The
+suspect was the typeface: a browser draws text INVISIBLY while it is still
+resolving a face (`font-display` defaults to `block`), and a picture painted in
+that window never gets a second chance. `apps/backoffice/src/lib/cardFont.ts`
+now sets `font-display: swap` so the words are drawn in the fallback serif
+instead of in nothing.
+
+**That guard is not a reproduction.** The wordless state could not be staged in
+either engine, and here is why, so nobody spends another hour on it:
+
+- a **data-URI** face (what we ship) resolved before first paint in every run
+  (chromium throttled to 60 kB/s and 6x CPU, and webkit);
+- an **external** face fails *instantly* inside an SVG image (an SVG image may
+  fetch no external resource), so it falls straight back to Georgia with no
+  invisible window at all. A card rigged that way PASSES this check.
+
+So a pending-forever face inside an `<img>` has no obvious way to be staged
+locally.
+
+**You no longer have to catch it locally.** Since 2026-09-10 the product
+reports itself: `MemberCardFigure.astro` draws the card it was handed onto a
+canvas, and a blank name strip goes to the operator as a Sentry issue tagged
+`area: cards` (`src/pages/api/card-without-words.ts`,
+specs/concepts/operational-alerting.md). So check Sentry for
+**"a member card was drawn without its words"** before spending any time
+reproducing. To exercise that detector, hand a real page a rigged card with
+`drive-page`'s `--route` (worked example in its SKILL.md), which is also the
+quickest way to see a genuinely wordless card at all.
+
+If it ever IS reported in the wild, stop trying to reproduce the race and move
+the pages off the SVG: `MemberCardFigure.astro` can embed `kort.png`, which the
+Worker rasterizes with the font already in hand and cannot race at all.
+
+## Prove a merge or rebase did not move the artwork
+
+The card is drawn by code, so "did resolving that conflict change the picture?"
+has an exact answer: render both sides and diff. `--out` is what makes it
+possible, and it beats reading the layout arithmetic twice.
+
+    cp -R packages/qr/src /tmp/merged-qr-src          # keep your resolution
+    git checkout origin/main -- packages/qr/src/      # draw THEIR card
+    node .claude/skills/render-card/render.mjs --out /tmp/main-cards
+    rm -rf packages/qr/src && cp -R /tmp/merged-qr-src packages/qr/src
+    pnpm --filter @stottemedlem/qr build
+    node .claude/skills/render-card/render.mjs --out /tmp/rebased-cards
+    diff -rq /tmp/main-cards /tmp/rebased-cards       # silence is the proof
+
+Swap the whole `src/` directory, not just `memberCard.ts`: `index.ts` re-exports
+what the file declares, so a half-swap fails to build and reads as a broken
+resolution. Restore before doing anything else, and check `git status` says so.
+
+Worth the four minutes whenever upstream touched the layout. This caught
+nothing on 2026-09-11 (rebasing the wordless-card work onto the member-number
+card, byte-identical), which is exactly the answer you want in writing before
+you force-push.
+
 ## Where this fits among the other loops
 
 | loop | proves |
 |------|--------|
 | `render-card --raster` | the artwork itself — layout, fitting, the embedded font, the shared PNG. No server. |
+| `render-card paint-check.mjs` | that the words are ON the card the first time a real browser paints it, cold and throttled, in two engines |
 | Storybook (`pnpm story`, `MemberCard.stories.ts`) | the same artwork with real variable-weight text; the human review surface |
 | `preview-screenshot` on `/medlemsbevis/<token>` | the artwork **in its page**, incl. the full-bleed / `max-width` sizing — needs `verify-public-routes/seed.sh` + a dev server |
 | `verify-qr` | that the QR in the card decodes to the right payload |

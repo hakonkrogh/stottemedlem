@@ -24,6 +24,7 @@ import {
   loadMemberCardForMemberId,
   memberCardUrl,
   memberCardVersion,
+  memberCardWords,
 } from "../../../lib/memberCard";
 import { publicOrigin, syncAgreement, syncCharge } from "../../../lib/membership";
 import { orgIdentity } from "../../../lib/orgImages";
@@ -254,6 +255,8 @@ const title =
             cardToken={card.member.cardToken}
             version={memberCardVersion(card)}
             alt={`Medlemsbevis for ${card.member.name?.trim() || "deg"} i ${org.name}, med ${card.hearts} hjerter.`}
+            words={memberCardWords(card)}
+            surface="kvittering"
           />
           <Text variant="small">
             Dette er medlemsbeviset ditt. Det er ditt å dele —{" "}

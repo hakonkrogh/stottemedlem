@@ -247,10 +247,12 @@ async function main() {
  * The injection is reproduced here rather than imported: `cardFont.ts` gets its
  * bytes from a Vite `?inline` import, which plain node cannot resolve. Keep the
  * two in step, the way `rasterize` below is kept in step with the Worker.
+ * `font-display: swap` is part of that: it is what stops a face the browser is
+ * still resolving from drawing the card's words as nothing at all.
  */
 let fontFaceCss = null;
 async function withEmbeddedFont(svg) {
-  fontFaceCss ??= `<style>@font-face{font-family:Fraunces;font-weight:300 900;src:url(data:font/ttf;base64,${(await readFile(FONT)).toString("base64")}) format("truetype")}</style>`;
+  fontFaceCss ??= `<style>@font-face{font-family:Fraunces;font-weight:300 900;font-display:swap;src:url(data:font/ttf;base64,${(await readFile(FONT)).toString("base64")}) format("truetype")}</style>`;
   return svg.replace("</title>", `</title>\n  ${fontFaceCss}`);
 }
 
