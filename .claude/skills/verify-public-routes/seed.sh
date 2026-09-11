@@ -51,8 +51,8 @@ DELETE FROM membership_charges WHERE org_id = 'org-seed-1';
 DELETE FROM memberships WHERE org_id = 'org-seed-1';
 DELETE FROM membership_agreements WHERE org_id = 'org-seed-1';
 DELETE FROM supporting_members WHERE org_id = 'org-seed-1';
-INSERT INTO supporting_members (id, org_id, name, email, phone, vipps_sub, card_token)
-VALUES ('mem-seed-1','org-seed-1','Kari Eksempel','kari@eksempel.example','4700000000','sub-seed-1','5eed0001-0000-4000-8000-000000000001');
+INSERT INTO supporting_members (id, org_id, name, email, phone, vipps_sub, card_token, member_number)
+VALUES ('mem-seed-1','org-seed-1','Kari Eksempel','kari@eksempel.example','4700000000','sub-seed-1','5eed0001-0000-4000-8000-000000000001',7);
 INSERT INTO membership_agreements (id, org_id, member_id, tier_id, vipps_agreement_id, external_id,
                                    status, annual_fee_nok, vipps_sub, manage_token, activated_at)
 VALUES ('agr-seed-1','org-seed-1','mem-seed-1','tier-1','agr_seed_1','stottemedlem:seed-1',
@@ -66,6 +66,11 @@ INSERT INTO membership_charges (id, org_id, agreement_id, membership_id, vipps_c
 VALUES ('chg-seed-1','org-seed-1','agr-seed-1','msh-seed-1','chr_seed_1',
         CAST(strftime('%Y','now') AS INTEGER),'INITIAL','CHARGED',110, date('now'), datetime('now'));
 " >/dev/null 2>&1
+
+# Member numbers are seeded by hand (specs/concepts/member-number.md): the
+# product hands them out when a payment is captured, and a seed inserts the
+# rows straight, so without these the card and the member page would show no
+# number at all and look like the feature is broken.
 
 # Years of loyalty and one recruit, so the member's card
 # (specs/concepts/member-card.md) has hearts to draw and a recruit count to
@@ -86,8 +91,8 @@ VALUES
   CAST(strftime('%Y','now') AS INTEGER) - 2, '2000-01-01','2000-12-31',300,300),
  ('msh-seed-h3','org-seed-1','mem-seed-1','agr-seed-1','tier-1','Støttemedlem',
   CAST(strftime('%Y','now') AS INTEGER) - 3, '2000-01-01','2000-12-31',300,300);
-INSERT INTO supporting_members (id, org_id, name, email, vipps_sub, card_token, referred_by_member_id)
-VALUES ('mem-seed-2','org-seed-1','Ola Eksempel','ola@eksempel.example','sub-seed-2','5eed0002-0000-4000-8000-000000000002','mem-seed-1');
+INSERT INTO supporting_members (id, org_id, name, email, vipps_sub, card_token, referred_by_member_id, member_number)
+VALUES ('mem-seed-2','org-seed-1','Ola Eksempel','ola@eksempel.example','sub-seed-2','5eed0002-0000-4000-8000-000000000002','mem-seed-1',31);
 INSERT INTO membership_agreements (id, org_id, member_id, tier_id, vipps_agreement_id, external_id,
                                    status, annual_fee_nok, vipps_sub, manage_token, activated_at)
 VALUES ('agr-seed-2','org-seed-1','mem-seed-2','tier-2','agr_seed_2','gullmedlem:seed-2',
