@@ -97,6 +97,14 @@ export const supportingMembers = sqliteTable("supporting_members", {
   name: text("name"),
   email: text("email"),
   phone: text("phone"),
+  /**
+   * Which place this supporter holds in the order people started backing this
+   * organization (specs/concepts/member-number.md). Unique per org, handed
+   * out when their first payment is captured, and never changed or re-used
+   * afterwards. Null until that first payment lands: the number counts
+   * members, and a supporter whose payment failed never became one.
+   */
+  memberNumber: integer("member_number"),
   /** Vipps' opaque per-user id — how a returning supporter is recognized. */
   vippsSub: text("vipps_sub"),
   /**

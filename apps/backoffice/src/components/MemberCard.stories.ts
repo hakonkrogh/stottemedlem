@@ -16,6 +16,9 @@ const LOGO =
 
 const base = {
   memberName: "Kari Eksempel",
+  // Their place in the order (specs/concepts/member-number.md), the one thing
+  // on the card that is the same today as the day they joined.
+  memberNumber: 42,
   organizationName: "Bakvendtland Skolekorps",
   hearts: 4,
   periodText: "2026",
@@ -55,6 +58,10 @@ export const Lapsed = {
 
 /** A supporter who shared no name; the card still stands. */
 export const WithoutName = { args: { ...base, memberName: null, logoDataUri: LOGO } };
+
+/** The very first supporter this organization ever had, and a four-digit one. */
+export const FirstEver = { args: { ...base, memberNumber: 1, hearts: 1, logoDataUri: LOGO } };
+export const FourDigitNumber = { args: { ...base, memberNumber: 2847, logoDataUri: LOGO } };
 
 /** A name too long for the band even at two lines wraps onto three, still between words. */
 export const VeryLongOrgName = {

@@ -63,6 +63,7 @@ export function memberCardVersion(card: MemberCard): string {
   const { periodText, lapsed } = cardPeriod(card);
   const facts = JSON.stringify([
     card.member.name,
+    card.member.memberNumber,
     card.organization.name,
     card.organization.slug,
     card.organization.logoKey ?? null,
@@ -129,6 +130,7 @@ export async function memberCardOptions(card: MemberCard): Promise<MemberCardOpt
   const cardToken = card.member.cardToken;
   return {
     memberName: card.member.name,
+    memberNumber: card.member.memberNumber,
     organizationName: card.organization.name,
     hearts: card.hearts,
     recruits: card.recruits,

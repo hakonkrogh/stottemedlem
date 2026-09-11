@@ -44,6 +44,8 @@ const SCAN_URL = "HTTPS://XN--STTTEMEDLEM-HGB.NO/V/8P2K4RTZQ9VWXB6MN3HJD5CFG7";
 
 const MEMBER_BASE = {
   memberName: "Kari Eksempel",
+  // Their place in the order (specs/concepts/member-number.md).
+  memberNumber: 42,
   organizationName: "Bakvendtland Skolekorps",
   hearts: 4,
   periodText: "2026",
@@ -65,6 +67,9 @@ const MEMBER_CASES = {
   LongLoyalty: { ...MEMBER_BASE, hearts: 34, recruits: 12 },
   Lapsed: { ...MEMBER_BASE, hearts: 3, periodText: "2024", lapsed: true },
   WithoutName: { ...MEMBER_BASE, memberName: null },
+  FirstEver: { ...MEMBER_BASE, memberNumber: 1, hearts: 1 },
+  FourDigitNumber: { ...MEMBER_BASE, memberNumber: 2847 },
+  NoNumberYet: { ...MEMBER_BASE, memberNumber: null },
   LongNames: {
     ...MEMBER_BASE,
     memberName: "Anne-Margrethe Wollertsen Bjørnstad",
@@ -87,6 +92,7 @@ const MEMBER_CASES = {
  */
 const MEMBER_FIELDS = [
   "memberName",
+  "memberNumber",
   "organizationName",
   "hearts",
   "recruits",

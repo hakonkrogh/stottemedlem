@@ -22,6 +22,11 @@ without creating a duplicate person each year.
 - A supporting member's *current status* (active or lapsed) is derived from their
   [membership](membership.md) for the current annual period — it is never set by
   hand.
+- Once they have paid, a supporting member holds a
+  [member number](member-number.md): their place in the order of people who
+  started backing that organization. It is the one thing about them that never
+  moves, and it survives everything else, a cancellation and an erasure
+  included.
 - The same person can hold a sequence of memberships over multiple annual periods
   (their history), but at most one membership per annual period.
 - A supporting member's identity is captured **at the moment of joining**,
@@ -38,6 +43,8 @@ without creating a duplicate person each year.
 
 ## Relationships
 - Belongs to one [organization](organization.md).
+- Holds one [member number](member-number.md) within it, from their first
+  payment onwards.
 - Has one or more [memberships](membership.md) over time (one per annual period).
 - Has a [scorecard](scorecard.md): hearts derived from those memberships, plus a
   count of members recruited via their referral.

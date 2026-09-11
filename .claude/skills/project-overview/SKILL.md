@@ -849,6 +849,34 @@ also documents the variants and why the rule exists.
   `matchesMemberSearch`, `getOrganizationMember`, `updateMemberContactDetails`);
   status is DERIVED (never a column, never settable) and a supporter with no
   completed payment renders as "Ikke betalt", not lapsed.
+  **The MEMBER NUMBER is the one member fact that is STORED, not derived**
+  (added 2026-09-11, branch add-member-number, spec
+  `specs/concepts/member-number.md` NEW, migration `0015_member_number.sql`):
+  `supporting_members.member_number`, unique per (org_id, member_number), is
+  the member's place in the order of people who started backing that org. It
+  is handed out by `assignMemberNumber` in `@stottemedlem/db`, called from
+  `grantMembershipForCapturedCharge`, the ONE path from money to membership,
+  so a supporter whose payment failed never takes one and a rejoin keeps the
+  one they had (the `member_number IS NULL` guard is the whole immutability
+  rule; every money path reaches it and every later one changes nothing).
+  Next = `max(...) + 1` per org, never `count + 1`: a member leaving must not
+  renumber anybody. It deliberately SURVIVES `anonymizeMember` (it names no
+  person and holds the order of everyone after them) and a refund. Storing it
+  is the exception to "every card is derived", and the reason is in the spec:
+  anything counted out of today's register would move the day someone else's
+  payment was given back. Surfaces: the card (`memberNumber` on
+  `MemberCardOptions`, drawn small-caps under the name, and it MUST be in
+  `memberCardVersion`'s facts array in `lib/memberCard.ts`, or a changed
+  number would serve a stale picture), MemberRow, MemberDetailScreen,
+  `eksport.csv.ts` (first column), min-side (as TEXT, deliberately repeating
+  the card because a picture cannot be copied; spec'd as the one exception to
+  member-self-service.md's "never captions its own card"). Search matches it
+  WHOLE via `memberNumberMatching` (a fragment match would hit every phone
+  number containing those digits). Wording lives in ONE place,
+  `memberNumberLabel` in `@stottemedlem/core`; the card spells its own CAPS
+  variant because `packages/qr` does NOT depend on core. Adding it broke the
+  usual two fixture files plus `packages/db/src/index.test.ts`'s `overview()`
+  literal. Expect that cycle for any new `supporting_members` column.
   **Standing is FOUR values, not two** (added 2026-08-31, branch
   member-status-filters): `memberStanding(entry)` in `@stottemedlem/db` folds
   the two derived facts — `status` active/lapsed and `renewing` (any ACTIVE
@@ -1543,7 +1571,7 @@ away by mistake (nearly did, 2026-08-31, rebasing onto the one-card PR).
 | (skill) `workos-context` | `node .claude/skills/workos-context/workos.mjs admins\|invites\|user\|orgs\|raw` reads the AUTHORITY on back-office access: who may act for an organization, their sign-in state, and the invitations still pending. Read-only by design (an invite emails a real person, so sending stays in the product). Needs `WORKOS_API_KEY` from the user, and a key is per WorkOS ENVIRONMENT, so a 404 can mean "wrong environment" rather than "no such org" |
 | (skill) `writing-rules` | `bash .claude/skills/writing-rules/check-diff.sh [--staged|<ref>]` asserts the hard authoring rules over the lines THIS session added (never an em-dash), across specs, docs, skills and code comments. Diff-scoped because the repo's existing prose is full of em-dashes; **includes untracked files** (a new file is invisible to `git diff` and is the writing most likely to break the rule), and downgrades a modified line whose old version already had one. `pnpm lint` never looks at prose, and biome already covers the no-`any` rule |
 | (skill) `spec-lint` | `node .claude/skills/spec-lint/check.mjs`: validates spec links + INDEX registration after any specs/ edit, PLUS every `specs/…md` path cited from outside specs/ (code comments, skills, docs), which is the half a rename breaks and nothing else looks at |
-| (skill) `preview-screenshot` | headless-Chrome screenshot of any local URL → Read the PNG; the visual validation loop for UI work |
+| (skill) `preview-screenshot` | headless-Chrome screenshot of any local URL → Read the PNG; the visual validation loop for UI work. **shot.sh waits for NOTHING**, so a Storybook story shot with it is a blank PNG; stories need `npx playwright screenshot … --wait-for-timeout=6000` (corrected 2026-09-11; the skill had claimed shot.sh passed `--virtual-time-budget`, and it does not) |
 | (skill) `drive-page` | `node .claude/skills/drive-page/drive.mjs <url> click=… assert=…` — CLICK a real page and assert what happens, incl. `--stub` for browser APIs a headless run lacks (`navigator.share`, clipboard). The only loop that executes an `.astro` client `<script>`; the screenshot loop's behavioural twin |
 | (skill) `dev-logs` | `bash .claude/skills/dev-logs/devlog.sh start\|tail\|grep` — read the dev server's stdout (console.log/error, request lines, SSR stack traces) via `astro dev --background` + `.astro/dev.log`; foreground `pnpm dev` output is unreadable to agents |
 | (skill) `cloud-logs` | search the DEPLOYED backoffice Workers' stored logs (staging + prod, 7-day retention) via `node .claude/skills/cloud-logs/cloudlogs.mjs` — search/filter/count/invocations over the Cloudflare observability query API (needs the dashboard-minted read token in `~/.config/stottemedlem/cloudflare-logs-token`; wrangler OAuth can't do it) + `wrangler tail` for live; errors also in Sentry (~90 d) via the Sentry MCP |

@@ -2,7 +2,7 @@
 // One line of the member list (specs/use-cases/curate-member-list.md). Status
 // is the loudest thing on the row, because "who is current" is the question
 // the list exists to answer; the whole row is the link to the member.
-import { periodLabel } from "@stottemedlem/core";
+import { memberNumberLabel, periodLabel } from "@stottemedlem/core";
 import { type MemberOverview, memberStanding } from "@stottemedlem/db";
 import { standingDescription, standingLabel } from "../lib/memberStanding";
 
@@ -53,10 +53,18 @@ const heartsTitle =
 const recruitsLabel = entry.recruits > 0 ? `· vervet ${entry.recruits}` : null;
 const recruitsTitle =
   entry.recruits === 1 ? "Har vervet ett medlem" : `Har vervet ${entry.recruits} medlemmer`;
+// Their place in the order (specs/concepts/member-number.md). It stands beside
+// the name rather than in the meta row: it is who they are, not how they are
+// doing, and it is what a member quotes when they ring, so it has to be
+// findable by eye in a list that is also searchable by it.
+const numberLabel = member.memberNumber === null ? null : memberNumberLabel(member.memberNumber);
 ---
 
 <a class="row" href={href}>
-  <span class="name">{displayName}</span>
+  <span class="title">
+    <span class="name">{displayName}</span>
+    {numberLabel && <span class="number">{numberLabel}</span>}
+  </span>
   {contact && <span class="contact">{contact}</span>}
   <span class="meta">
     <span class:list={["pill", standing]} title={standingDescription[standing]}>{label}</span>
@@ -94,9 +102,23 @@ const recruitsTitle =
     outline: none;
     box-shadow: 0 0 0 3px var(--sm-focus-ring);
   }
+  /* Name and number read as one thing, and wrap together rather than each
+     claiming a line of the row. */
+  .title {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.1rem 0.5rem;
+  }
   .name {
     font-weight: 600;
     overflow-wrap: anywhere;
+  }
+  .number {
+    font-size: 0.8rem;
+    color: var(--sm-muted);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
   }
   .contact,
   .period {

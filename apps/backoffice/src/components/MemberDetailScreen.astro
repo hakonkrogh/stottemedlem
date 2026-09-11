@@ -8,7 +8,7 @@
 // The recorded details are PRESENTED; correcting them and refunding are
 // deliberate actions behind a button, so looking someone up never means facing
 // a form — and never means being one slip away from moving money.
-import { periodLabel } from "@stottemedlem/core";
+import { memberNumberLabel, periodLabel } from "@stottemedlem/core";
 import { type MemberOverview, type Membership, memberStanding } from "@stottemedlem/db";
 import Alert from "@stottemedlem/ui/components/Alert.astro";
 import Button from "@stottemedlem/ui/components/Button.astro";
@@ -105,6 +105,11 @@ const continuation = renewing
 // Joined in the frontmatter: an Astro template collapses the space between
 // text and an expression that a formatter has put on separate lines.
 const lead = [standingText, continuation].filter(Boolean).join(" ");
+// Their place in the order (specs/concepts/member-number.md), kept through an
+// erasure: the record of support outlives the person's details and
+// keeps the place it earned. It sits under the name, where it belongs to the
+// member rather than to how their membership is doing.
+const numberLabel = member.memberNumber === null ? null : memberNumberLabel(member.memberNumber);
 const totalPaid = history.reduce((sum, period) => sum + period.paidNok, 0);
 
 // What became of each payment, and — where it cannot be given back — why not.
@@ -169,6 +174,7 @@ const periodSurvives =
       <Heading level={2}>{displayName}</Heading>
       <span class:list={["pill", standing]}>{standingLabel[standing]}</span>
     </div>
+    {numberLabel && <Text variant="small">{numberLabel}</Text>}
     <Text variant="lead">{lead}</Text>
   </Stack>
 

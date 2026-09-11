@@ -76,6 +76,7 @@ The one message the product itself sends a member is the necessary
 | [Presenting and editing](concepts/presenting-and-editing.md) | Draft |
 | [Answering an action](concepts/answering-an-action.md) | Active |
 | [Supporting member](concepts/supporting-member.md) | Draft |
+| [Member number](concepts/member-number.md) | Draft |
 | [Member data](concepts/member-data.md) | Draft |
 | [Data processing agreement](concepts/data-processing-agreement.md) | Draft |
 | [Membership](concepts/membership.md) | Draft |

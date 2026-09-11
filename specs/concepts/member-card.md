@@ -39,12 +39,12 @@ surface the member happens to be looking at.
   its public address, both above the paperwork, and draws nothing that looks
   like a card: the attachment is the card, and a text likeness beside it is
   only a worse one.
-- **What the card shows**, and nothing more: the member's name, the
-  organization's name and logo, the years supported — as a count inside one
-  big heart, the streak ([scorecard](scorecard.md)) — the recruit count once
-  above zero, the period the membership is good for, and, in the footer, the
-  QR code beside the [brand attribution](brand-attribution.md) with its
-  [heart](brand-mark.md).
+- **What the card shows**, and nothing more: the member's name, their
+  [member number](member-number.md), the organization's name and logo, the
+  years supported — as a count inside one big heart, the streak
+  ([scorecard](scorecard.md)) — the recruit count once above zero, the period
+  the membership is good for, and, in the footer, the QR code beside the
+  [brand attribution](brand-attribution.md) with its [heart](brand-mark.md).
   It never shows the member's email, phone, what they paid, or anything about
   the organization's other members — it is made to be shown to strangers.
 - **The organization owns the top of the card, the member the middle, and the
@@ -52,8 +52,11 @@ surface the member happens to be looking at.
   The card opens with an identity band — the organization's logo and name,
   with the validity as a small label over the year in its corner, the one
   thing a checker looks for kept in one fixed place. Then the member is the
-  subject: their name large and their streak, with nothing else in that half
-  of the card. A footer under a rule closes it: the product's name on the
+  subject: their name large, their [number](member-number.md) quietly under
+  it, and their streak, with nothing else in that half of the card. The number
+  belongs with the name because it is the same person said a second way, and
+  it is set at the card's smallest size: it is a permanent fact, not a second
+  headline competing with the name it labels. A footer under a rule closes it: the product's name on the
   left, the QR code on the right, and the invitation to scan between them.
   The code used to be a block in the middle, under the member, because of how
   much it had to carry (below); as a footer it signs the card instead of
@@ -112,10 +115,15 @@ surface the member happens to be looking at.
   without a second reload and without anyone clearing anything. (It used to be
   possible to renew and be shown last year's card for a few minutes, because
   the browser held on to the picture while the page around it was fresh.)
-- **Every card is derived.** Hearts come from
+- **Every card is derived, with one deliberate exception.** Hearts come from
   [membership](membership.md) periods and the validity from the current
   [annual period](annual-period.md); nothing on the card is stored as a
-  separate truth, so a refunded year drops off the card by itself.
+  separate truth, so a refunded year drops off the card by itself. The
+  [member number](member-number.md) is the exception, and it has to be: it is
+  a place in an order that already happened, so anything derived from today's
+  register would move the day somebody else's payment was given back. It is
+  therefore also the one thing on the card a lapsed or refunded membership
+  does not take away.
 - **The card has a public address of its own** — short, unguessable, and safe
   to post in public. It is not the same address as the member's
   [self-service page](member-self-service.md): that one can *end* the
@@ -228,8 +236,8 @@ surface the member happens to be looking at.
 ## Relationships
 - Belongs to one [supporting member](supporting-member.md) and one
   [organization](organization.md).
-- Shows the member's [scorecard](scorecard.md) — hearts, and recruits once
-  there are any.
+- Shows the member's [number](member-number.md) and their
+  [scorecard](scorecard.md) — hearts, and recruits once there are any.
 - Appears on the [member self-service page](member-self-service.md) and in the
   [payment receipt](payment-receipt.md).
 - Its QR code leads into the [join page](join-page.md).

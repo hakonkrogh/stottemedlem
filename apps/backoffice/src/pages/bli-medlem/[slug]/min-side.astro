@@ -1,5 +1,5 @@
 ---
-import { joinPagePrivacyPath, periodLabel } from "@stottemedlem/core";
+import { joinPagePrivacyPath, memberNumberLabel, periodLabel } from "@stottemedlem/core";
 import {
   anonymizeMember,
   closeAgreement,
@@ -259,6 +259,17 @@ const statusLine = current
     ].join(" ")
   : `Medlemskapet i ${org.name} er ikke bekreftet ennå.`;
 
+// Their place in the order (specs/concepts/member-number.md). The card shows
+// it too, and this page deliberately does not caption its own card. But the
+// card is a picture, and a number is the one thing on it a member has reason
+// to read out, quote to the organization, or copy. As text it can be.
+// Built as one string in the frontmatter: a space beside an {expr} inside a
+// component slot is unreliable in an Astro template.
+const numberLine =
+  card?.member.memberNumber == null
+    ? null
+    : `${memberNumberLabel(card.member.memberNumber)}. Det er ditt, og det endrer seg aldri.`;
+
 const title = `Ditt støttemedlemskap — ${org.name}`;
 ---
 
@@ -306,6 +317,8 @@ const title = `Ditt støttemedlemskap — ${org.name}`;
     }
 
     <Text variant="lead">{statusLine}</Text>
+
+    {numberLine && <Text variant="small">{numberLine}</Text>}
 
     {stopFailed && <Alert variant="error">Vi fikk ikke stoppet medlemskapet nå. Prøv igjen om litt.</Alert>}
     {resumeFailed && <Alert variant="error">Vi fikk ikke startet medlemskapet igjen nå. Prøv igjen om litt, eller meld deg inn på nytt fra støttemedlemssiden.</Alert>}

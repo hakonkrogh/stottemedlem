@@ -48,7 +48,11 @@ From the supporter's point of view:
    reflected immediately in the organization's
    [member list](curate-member-list.md). Payment is what decides this: the
    supporter returning from Vipps is not by itself proof that anything was
-   paid, and the product never treats it as such.
+   paid, and the product never treats it as such. That same payment is what
+   earns them their [member number](../concepts/member-number.md): their
+   place in the order of people who have backed this organization, theirs for
+   good. A supporter who has been here before keeps the number they already
+   had rather than taking a new one.
 6. The supporter receives confirmation that they are now a supporting member and
    until when their support is valid. The confirmation presents the
    organization's identity the same way the [join page](../concepts/join-page.md)
@@ -121,6 +125,8 @@ From the supporter's point of view:
 
 ## Related
 - [Concept: Supporting member](../concepts/supporting-member.md)
+- [Concept: Member number](../concepts/member-number.md): what a completed
+  first payment earns, besides the membership itself
 - [Concept: Member data](../concepts/member-data.md) — what joining collects,
   what the supporter is told about it, and how long it is kept
 - [Concept: Membership](../concepts/membership.md)

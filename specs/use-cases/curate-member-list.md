@@ -47,9 +47,13 @@ From the organization's point of view:
    never paid — and combine that with a search. Narrowing is a plain address the
    administrator can bookmark, share and reload; the counts beside each choice
    are still the organization's totals, not the narrowed view's.
-4. The administrator can find a specific member — by name, or by whichever
-   contact detail they happen to remember — and see their membership history
-   (which annual periods they have supported, and what was paid each time).
+4. The administrator can find a specific member — by name, by whichever
+   contact detail they happen to remember, or by their
+   [member number](../concepts/member-number.md) — and see their membership
+   history (which annual periods they have supported, and what was paid each
+   time). The number is matched whole and never as a fragment of some other
+   number, because a member quoting theirs expects the one member they named,
+   not everyone whose phone number contains those digits.
    They can also find a member by a **payment reference**: the payment
    provider's own portal lists the organization's transactions with no payer
    name or number at all (only a transaction id, verified 2026-09-09), so the
@@ -111,6 +115,10 @@ From the organization's point of view:
 - [ ] A payment reference copied from the payment provider's portal finds the
       member who made that payment, and opening them from the result lands on
       that very payment.
+- [ ] Every member who has paid shows their
+      [member number](../concepts/member-number.md), in the list and on their
+      own page, and one who has not paid shows none.
+- [ ] Typing a member number finds that member and only that member.
 
 ## Out of scope
 - Manually marking someone as paid/active without an actual payment (kept out to
@@ -145,6 +153,8 @@ From the organization's point of view:
   this is ever revisited.
 - [Concept: Presenting and editing](../concepts/presenting-and-editing.md)
 - [Concept: Membership](../concepts/membership.md)
+- [Concept: Member number](../concepts/member-number.md): the short, permanent
+  way a member and the organization can name the same membership
 - [Concept: Supporting member](../concepts/supporting-member.md)
 - [Concept: Payment reconciliation](../concepts/payment-reconciliation.md) — what
   keeps the list true to the money without anyone reconciling by hand

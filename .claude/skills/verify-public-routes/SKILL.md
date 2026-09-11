@@ -1,6 +1,6 @@
 ---
 name: verify-public-routes
-description: Query the LOCAL, STAGING or PRODUCTION D1 as data (d1.sh), and assert the HTTP contract of the public join pages (status, redirects, x-sm-cache, body text) the way a browser, a QR scanner, or Vipps' website verification sees it — plus a tier-aware local D1 seed, and apex-routes.mjs, which proves the DEPLOYED canonical apex actually routes each public address to this worker instead of falling through to the marketing 404. Use after touching routes, middleware, worker.ts caching/redirects, wrangler.jsonc routes, or anything under src/pages/bli-medlem/.
+description: Query the LOCAL, STAGING or PRODUCTION D1 as data (d1.sh), and assert the HTTP contract of the public join pages (status, redirects, x-sm-cache, body text) the way a browser, a QR scanner, or Vipps' website verification sees it — plus a tier-aware local D1 seed, and apex-routes.mjs, which proves the DEPLOYED canonical apex actually routes each public address to this worker instead of falling through to the marketing 404. Use after touching routes, middleware, worker.ts caching/redirects, wrangler.jsonc routes, anything under src/pages/bli-medlem/, or a D1 migration or write helper (nothing else in the repo covers those).
 ---
 
 # Verify public routes
@@ -519,3 +519,62 @@ redrawn — change what it is derived from and repeat; the digest must move:
 
 Change it back afterwards (see the reset note above — do not leave the seed's
 own rows edited).
+
+## Prove a MIGRATION and a D1 WRITE HELPER (added 2026-09-11)
+
+Nothing in this repo covers either. `packages/db/src/index.test.ts` is pure
+functions only (no D1 harness), `apps/backoffice` has no tests at all, and a
+migration's backfill runs exactly once per database, on deploy, against rows
+you cannot see first. So a wrong `UPDATE … SELECT` and a write helper whose
+emitted SQL does not do what you meant both ship green. Both are provable
+locally in about two minutes.
+
+**1. Apply, then re-run the backfill against rows you control.** Migrations
+are additive and the apply is one-shot, so seed a throwaway org AFTER applying
+and re-run just the backfill statement on it:
+
+    cd apps/backoffice
+    CI=1 npx wrangler d1 migrations apply DB --local
+    CI=1 npx wrangler d1 execute DB --local --file /tmp/scratch-org.sql
+    sed -n '<first>,<last>p' ../../packages/db/migrations/00NN_x.sql > /tmp/backfill.sql
+    CI=1 npx wrangler d1 execute DB --local --file /tmp/backfill.sql
+    bash ../../.claude/skills/verify-public-routes/d1.sh \
+      "select id, name, <new_column> from supporting_members where org_id='org-N'"
+
+Seed the rows so the ORDER is the question: give the member who joined first a
+LATER first payment than the one who joined second, and include one who never
+paid. A backfill that ranks by the wrong column then reads as obviously wrong
+instead of plausibly right. (This is how `0015_member_number.sql` was proved:
+the middle-joining member came out number 1 because she paid first, and the
+never-paid member came out null.) Window functions (`ROW_NUMBER() OVER`) work
+on D1 (verified 2026-09-11), so there is no need to contort a backfill into
+correlated counts.
+
+**2. Run the real helper, not your idea of the SQL it emits.** Drizzle's
+`.set({ col: sql`(select …)` })` renders the table name unaliased, so a
+correlated subquery over the SAME table needs its own alias and there is no
+way to eyeball whether it correlates to the updated row. Drive the actual
+exported function with the scratch `.mts` + `getPlatformProxy` recipe
+(`project-overview`, "Org messages are REMOVED": the pattern outlived the
+feature). **`@stottemedlem/db` is reachable this way**, confirmed 2026-09-11:
+it imports no `cloudflare:workers`, so every repository helper in it can be
+called against the live local D1. Only app libs that pull in `src/lib/periods`
+are out of reach.
+
+    # apps/backoffice/check-thing.mts  (must live HERE, must be .mts)
+    import { getPlatformProxy } from "wrangler";
+    import { assignMemberNumber, createDb } from "@stottemedlem/db";
+    const proxy = await getPlatformProxy<{ DB: D1Database }>({
+      configPath: "./wrangler.jsonc", persist: true });
+    const db = createDb(proxy.env.DB);
+    console.log(await assignMemberNumber(db, "mem-d"));   // 4
+    console.log(await assignMemberNumber(db, "mem-d"));   // 4  ← idempotent
+    await proxy.dispose();
+
+    pnpm dlx tsx check-thing.mts
+
+Assert the three things a write helper is always claimed to do and is never
+checked for: it writes the right value, running it twice changes nothing, and
+it leaves an already-written row alone. Delete the script and the scratch org
+afterwards (`delete from` the child tables first: memberships, then members,
+then tiers, then the org).

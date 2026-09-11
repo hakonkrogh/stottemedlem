@@ -213,8 +213,25 @@ companion script instead of hand-rolling the plumbing:
   COLD story is a blank page or a lone spinner** (hit 2026-08-31): playwright
   shoots at `load`, but a first-visit story still compiles/fetches its module
   after that. Add `--wait-for-timeout=4000` (and re-shoot if still blank —
-  a warm story then renders instantly); shot.sh's Chrome path avoids this via
-  `--virtual-time-budget` but can hang instead (see above).
+  a warm story then renders instantly).
+  **`shot.sh` does NOT avoid this, whatever an earlier note here claimed**
+  (corrected 2026-09-11): its Chrome path passes `--headless=new --disable-gpu
+  --hide-scrollbars --window-size --screenshot` and NOTHING that waits: no
+  `--virtual-time-budget`, no timeout. Read the script if in doubt; it is 25
+  lines. So `shot.sh <story iframe url> out.png 760 1400` on a cold story
+  returns a PNG of the page's background colour and nothing else, which reads
+  exactly like a screen that renders blank. **For any Storybook story, skip
+  shot.sh and go straight to playwright with a wait:**
+
+      npx -y playwright screenshot --channel=chrome --full-page \
+        --viewport-size=800,1200 --wait-for-timeout=6000 \
+        "http://localhost:$PORT/iframe.html?viewMode=story&id=<id>" out.png
+
+  (`--full-page` is still pointless *inside* the story iframe, see below; it is
+  harmless on the outer shot and does help a tall back-office screen that
+  renders into the page rather than the iframe's scroll container.) shot.sh
+  stays the right tool for a dev-server or preview-server page, which is
+  server-rendered and complete at `load`.
   **`--full-page` does NOT work inside Storybook** (hit 2026-09-09 on a long
   guide screen): the story is rendered in the iframe's own scroll container, so
   a mobile shot comes back exactly viewport-sized (390×844) and silently cuts
