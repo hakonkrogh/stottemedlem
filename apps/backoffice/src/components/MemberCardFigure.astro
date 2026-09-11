@@ -13,8 +13,12 @@
 //
 // Sharing is offered ON the card rather than as a paragraph elsewhere on the
 // page: the thing being shared is right there, so the action belongs on it.
+//
+// The card also checks itself here. A picture is painted once, and only the
+// reader's browser can see what actually landed on it, so this is the only
+// place a wordless card can be noticed at all (specs/concepts/member-card.md).
 import { memberCardImagePath } from "@stottemedlem/core";
-import { memberCardSize } from "@stottemedlem/qr";
+import { type MemberCardOptions, memberCardNameBand, memberCardSize } from "@stottemedlem/qr";
 
 interface Props {
   cardToken: string;
@@ -35,10 +39,22 @@ interface Props {
   shareUrl?: string;
   /** What the share sheet calls it. */
   shareTitle?: string;
+  /**
+   * What the card says, so this can work out where its name strip landed and
+   * check that the words are on the picture the reader got. Leaving it out
+   * shows the card without that check.
+   */
+  words?: Pick<
+    MemberCardOptions,
+    "memberName" | "organizationName" | "hearts" | "recruits" | "lapsed"
+  >;
+  /** Which page is showing the card, for the report. Never an address: those carry the member's token. */
+  surface?: "kvittering" | "min-side" | "medlemsbevis";
 }
-const { cardToken, version, alt, shareUrl, shareTitle } = Astro.props;
+const { cardToken, version, alt, shareUrl, shareTitle, words, surface } = Astro.props;
 
 const { width, height } = memberCardSize();
+const band = words && surface ? memberCardNameBand(words) : null;
 ---
 
 <figure class="member-card" style={`--sm-card-ratio: ${width} / ${height}`}>
@@ -47,6 +63,9 @@ const { width, height } = memberCardSize();
     alt={alt}
     width={width}
     height={height}
+    data-card-version={band ? version : undefined}
+    data-card-surface={band ? surface : undefined}
+    data-card-name-band={band ? `${band.top} ${band.bottom} ${band.left} ${band.right}` : undefined}
   />
 
   {
@@ -75,6 +94,86 @@ const { width, height } = memberCardSize();
 </figure>
 
 <script>
+  // Does the card the reader actually got have its words on it?
+  //
+  // The card is an `<img>`, so nothing on this page can look INSIDE it. What a
+  // page can do is draw the picture it was handed onto a canvas and read the
+  // pixels back, and that is enough to answer the one question worth asking:
+  // is the strip where the member's name belongs blank?
+  // (specs/concepts/member-card.md, specs/concepts/operational-alerting.md)
+  //
+  // It is a witness, not a guarantee. `drawImage` rasterizes the picture again
+  // at the moment it is called, so a typeface that arrives late enough to spoil
+  // the first paint but early enough to be ready here goes unseen. What it does
+  // catch is the case that matters: a card whose words never come at all, which
+  // is the card the reader is left holding.
+  function checkCardHasWords(img: HTMLImageElement): void {
+    const band = img.dataset.cardNameBand?.split(" ").map(Number);
+    const surface = img.dataset.cardSurface;
+    const version = img.dataset.cardVersion;
+    if (!band || band.length !== 4 || band.some(Number.isNaN) || !surface || !version) return;
+    const [top, bottom, left, right] = band as [number, number, number, number];
+
+    // Small on purpose: enough pixels to see letters, few enough that reading
+    // them back costs a phone nothing.
+    const width = 240;
+    const height = Math.round((width * img.naturalHeight) / img.naturalWidth);
+    const canvas = document.createElement("canvas");
+    canvas.width = width;
+    canvas.height = height;
+    const context = canvas.getContext("2d", { willReadFrequently: true });
+    if (!context) return;
+    context.fillStyle = "#fff";
+    context.fillRect(0, 0, width, height);
+    context.drawImage(img, 0, 0, width, height);
+
+    /** How many pixels of a region are dark enough to be ink. */
+    const ink = (x0: number, y0: number, x1: number, y1: number): number => {
+      const w = Math.max(1, Math.round(x1 - x0));
+      const h = Math.max(1, Math.round(y1 - y0));
+      const { data } = context.getImageData(Math.round(x0), Math.round(y0), w, h);
+      let dark = 0;
+      for (let i = 0; i < data.length; i += 4) {
+        // Rough luminance. The card is white paper; its words are near-black.
+        const luminance = 0.299 * (data[i] ?? 255) + 0.587 * (data[i + 1] ?? 255) + 0.114 * (data[i + 2] ?? 255);
+        if (luminance < 160) dark++;
+      }
+      return dark;
+    };
+
+    // A card with nothing on it anywhere never loaded; that is not this bug and
+    // the operator must not hear about it. Only a card that DID draw, with a
+    // blank name strip, is a card that lost its words.
+    if (ink(0, 0, width, height) < 200) return;
+    if (ink(left * width, top * height, right * width, bottom * height) >= 12) return;
+
+    navigator.sendBeacon?.(
+      "/api/card-without-words",
+      // Nothing of the member travels: the surface, the card's public version
+      // tag, and how wide it was drawn (specs/concepts/operational-alerting.md).
+      new Blob([JSON.stringify({ surface, version, width: img.clientWidth })], {
+        type: "application/json",
+      }),
+    );
+  }
+
+  for (const img of Array.from(
+    document.querySelectorAll<HTMLImageElement>("img[data-card-name-band]"),
+  )) {
+    // Never let a check break a page: no card is worth less for being
+    // unmeasurable, and a canvas the browser refuses to read back (or refuses
+    // to let us touch at all) simply means no report.
+    const check = () => {
+      try {
+        checkCardHasWords(img);
+      } catch {
+        /* unmeasurable, and that is fine */
+      }
+    };
+    if (img.complete && img.naturalWidth > 0) check();
+    else img.addEventListener("load", check, { once: true });
+  }
+
   // Sharing the card, in whatever way the reader's device can: the phone's own
   // share sheet when it has one, the clipboard otherwise. With no script at
   // all the link still works — it opens the card, which is the address the

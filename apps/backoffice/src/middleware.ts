@@ -20,6 +20,11 @@ const PUBLIC_EXACT = new Set([
   "/logout",
   "/healthz",
   "/favicon.ico",
+  // Where a card that came out without its words says so
+  // (specs/concepts/operational-alerting.md). It is called from the public
+  // member pages, by readers who have no session and never will, and it
+  // accepts nothing but a fixed-shape report it does not store.
+  "/api/card-without-words",
   DPA_PATH,
 ]);
 function isPublic(pathname: string): boolean {

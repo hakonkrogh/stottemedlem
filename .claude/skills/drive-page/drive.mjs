@@ -12,7 +12,7 @@
  *
  * Steps are one argv token each, `verb=arg` or `verb=arg::arg2`. See SKILL.md.
  */
-import { glob } from "node:fs/promises";
+import { glob, readFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 
@@ -48,6 +48,9 @@ flags:
   --permissions a,b  e.g. clipboard-read,clipboard-write
   --stub '<js>'      run this before every page load (repeatable) — fake or
                      remove a browser API, seed storage, record calls
+  --route <glob>::<file>  answer requests matching <glob> with <file>'s bytes
+                     (repeatable): hand the page a rigged asset and prove what
+                     it does with a picture, script or feed it cannot produce
   --console          print console messages and page errors
   --keep-going       do not stop at the first failed assert
 
@@ -63,6 +66,7 @@ steps (one argv token each):
 let viewport = { width: 1440, height: 900 };
 let permissions = [];
 const stubs = [];
+const routes = [];
 let showConsole = false;
 let keepGoing = false;
 const steps = [];
@@ -76,6 +80,7 @@ for (let i = 0; i < argv.length; i++) {
     viewport = { width: Number(w), height: Number(h) };
   } else if (arg === "--permissions") permissions = argv[++i].split(",").filter(Boolean);
   else if (arg === "--stub") stubs.push(argv[++i]);
+  else if (arg === "--route") routes.push(argv[++i]);
   else if (arg === "--console") showConsole = true;
   else if (arg === "--keep-going") keepGoing = true;
   // The first non-flag argument is the URL — decided by position, not by
@@ -90,10 +95,39 @@ if (!url) {
   process.exit(2);
 }
 
+/** Enough of a guess for the things worth rigging. */
+function contentTypeOf(file) {
+  const types = {
+    ".svg": "image/svg+xml; charset=utf-8",
+    ".png": "image/png",
+    ".json": "application/json; charset=utf-8",
+    ".js": "text/javascript; charset=utf-8",
+    ".css": "text/css; charset=utf-8",
+    ".html": "text/html; charset=utf-8",
+  };
+  return types[path.extname(file)] ?? "application/octet-stream";
+}
+
 const chromium = await loadChromium();
 const browser = await chromium.launch({ channel: "chrome" });
 const context = await browser.newContext({ viewport, permissions });
 for (const stub of stubs) await context.addInitScript({ content: stub });
+// A rigged asset. The page, the server and the shipped script stay real; only
+// the bytes of one request are ours, which is how a surface gets driven into a
+// state the product cannot be asked to produce on purpose.
+for (const route of routes) {
+  const separator = route.lastIndexOf("::");
+  const glob = route.slice(0, separator);
+  const file = route.slice(separator + 2);
+  const body = await readFile(file);
+  await context.route(glob, (intercepted) =>
+    intercepted.fulfill({
+      status: 200,
+      contentType: contentTypeOf(file),
+      body,
+    }),
+  );
+}
 
 const page = await context.newPage();
 if (showConsole) {

@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   MEMBER_CARD_HEIGHT,
   MEMBER_CARD_WIDTH,
+  memberCardNameBand,
   memberCardSize,
   memberCardSvg,
 } from "./memberCard.js";
@@ -286,5 +287,54 @@ describe("memberCardSvg", () => {
     const mine = memberCardSvg(base);
     const theirs = memberCardSvg({ ...base, joinUrl: `${base.joinUrl}-annen` });
     expect(mine).not.toBe(theirs);
+  });
+});
+
+describe("memberCardNameBand", () => {
+  /** Every baseline the card writes on, in card units. */
+  function baselines(svg: string): number[] {
+    return [...svg.matchAll(/<text [^>]*y="([\d.]+)"/g)].map((match) => Number(match[1]));
+  }
+
+  it("brackets the member's name and nothing else the card draws", () => {
+    for (const options of [
+      base,
+      { ...base, hearts: 0 },
+      { ...base, hearts: 12, recruits: 4 },
+      { ...base, memberName: "Bartholomew Featherstonehaugh-Wollastonby" },
+      { ...base, memberName: null },
+      // A member number rides under the name and pushes the whole stack, so
+      // the band has to move with it (specs/concepts/member-number.md).
+      { ...base, memberNumber: 42 },
+      { ...base, memberNumber: 2847, hearts: 0 },
+      { ...base, memberNumber: 1, recruits: 2 },
+    ]) {
+      const band = memberCardNameBand(options);
+      const top = band.top * MEMBER_CARD_HEIGHT;
+      const bottom = band.bottom * MEMBER_CARD_HEIGHT;
+      const inside = baselines(memberCardSvg(options)).filter((y) => y > top && y <= bottom);
+      // Exactly one line of the card lives in the strip: the member's name. If
+      // the layout moves and the band does not, a blank-card check would be
+      // measuring the wrong paper (specs/concepts/member-card.md).
+      expect(inside).toHaveLength(1);
+    }
+  });
+
+  it("moves with the member number, so a caller cannot leave it out and still be right", () => {
+    // The number rides under the name and pushes the stack down, so a band
+    // worked out without it describes a different card. Anything asking where
+    // the name landed has to hand over the same facts the drawing was given.
+    expect(memberCardNameBand({ ...base, memberNumber: 42 }).top).not.toBe(
+      memberCardNameBand(base).top,
+    );
+  });
+
+  it("is a real strip of the card, inside its own margins", () => {
+    const band = memberCardNameBand(base);
+    expect(band.top).toBeGreaterThan(0);
+    expect(band.bottom).toBeGreaterThan(band.top);
+    expect(band.bottom).toBeLessThan(1);
+    expect(band.left).toBeGreaterThan(0);
+    expect(band.right).toBeLessThan(1);
   });
 });

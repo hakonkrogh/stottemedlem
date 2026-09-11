@@ -28,8 +28,17 @@ export const CARD_FONT_DATA_URI = String(fraunces);
  * Only a SVG shown to a browser gets this: the rasterizer holds the same font
  * as bytes and needs no `@font-face`, and the stored-PNG cache keys digest the
  * SVG, so injecting it there would only churn perfectly good cached pictures.
+ *
+ * `font-display: swap` is what keeps the card's words on the card. A browser's
+ * default for a face it is still resolving is to draw the text INVISIBLY for
+ * up to three seconds, and an `<img>` is a picture, drawn once, with no second
+ * paint promised to anybody. Lose that race and the member is handed a card
+ * with a logo, a heart and a QR code and not one word on it, which is exactly
+ * what a card must never be (specs/concepts/member-card.md). With `swap` the
+ * words are there from the first paint in the fallback serif, and turn into
+ * Fraunces the moment the face is ready.
  */
 export function withEmbeddedCardFont(svg: string): string {
-  const face = `<style>@font-face{font-family:${CARD_FONT_FAMILY};font-weight:300 900;src:url(${CARD_FONT_DATA_URI}) format("truetype")}</style>`;
+  const face = `<style>@font-face{font-family:${CARD_FONT_FAMILY};font-weight:300 900;font-display:swap;src:url(${CARD_FONT_DATA_URI}) format("truetype")}</style>`;
   return svg.replace("</title>", `</title>\n  ${face}`);
 }

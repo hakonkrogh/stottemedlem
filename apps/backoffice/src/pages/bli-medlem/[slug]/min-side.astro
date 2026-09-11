@@ -24,6 +24,7 @@ import {
   loadMemberCardForMemberId,
   memberCardUrl,
   memberCardVersion,
+  memberCardWords,
 } from "../../../lib/memberCard";
 import { changeTier, publicOrigin, startJoin } from "../../../lib/membership";
 import { periods } from "../../../lib/periods";
@@ -312,6 +313,8 @@ const title = `Ditt støttemedlemskap — ${org.name}`;
           alt={cardAlt}
           shareUrl={memberCardUrl(cardToken)}
           shareTitle={`Medlemsbeviset mitt i ${org.name}`}
+          words={memberCardWords(card)}
+          surface="min-side"
         />
       )
     }

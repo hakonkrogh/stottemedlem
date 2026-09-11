@@ -33,6 +33,7 @@ export {
   MEMBER_CARD_HEIGHT,
   MEMBER_CARD_WIDTH,
   type MemberCardOptions,
+  memberCardNameBand,
   memberCardSize,
   memberCardSvg,
 } from "./memberCard.js";

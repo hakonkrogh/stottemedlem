@@ -41,7 +41,11 @@ it too, for the reason below.
   are Fraunces, the same cut the website's headings use, so what a person is
   handed on paper reads as what they saw on the screen. Because a card is
   looked at as a picture, where no webfont loads, the face rides inside the
-  drawing rather than being asked for by name.
+  drawing rather than being asked for by name. And the words never wait on the
+  face: a picture is drawn once, so a card drawn before its typeface is ready
+  is set in the nearest serif at hand and becomes Fraunces once the face is
+  there. Words in the wrong serif for a moment, never a card with no words on
+  it.
 - **A card's heart is drawn, not typed.** A card is rasterized and printed
   with no colour-emoji font in reach, so the "❤️" the
   [brand mark](brand-mark.md) is elsewhere is a red shape here. Same mark,

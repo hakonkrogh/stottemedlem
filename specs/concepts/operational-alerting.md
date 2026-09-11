@@ -23,6 +23,18 @@ renewing.
   charges that failed, reconciliation reads that failed, payment events that
   could not be applied, member notices that could not be sent, and
   configuration gaps that silently switch a feature off.
+- **Some failures can only be seen by the person they happened to, and those
+  are reported from where they are seen.** Nearly everything here is the
+  product watching its own work. A [member card](member-card.md) is the
+  exception: it is handed over as a picture, and what actually landed on that
+  picture is visible only in the reader's own browser. So the page showing the
+  card checks it there and reports a card that came out without its words. The
+  reader is never told and never asked: they are not the operator, and a
+  broken card is not their problem to carry. Such a report is the only kind
+  raised from an address anybody can reach, so it accepts nothing but a report
+  of a fixed shape, and it is the same one message every time. A stranger can
+  push the count of a known problem up; they cannot put a story of their own in
+  front of the operator.
 - **The channel is email, and only email.** The operator has chosen to be
   informed, not paged: no phone calls, no middle-of-the-night escalation.
   Waiting until morning is an accepted cost.

@@ -89,6 +89,23 @@ surface the member happens to be looking at.
   cut the website's headings use — people meet the card in feeds, emails and
   print, and it must read as the same brand on every channel. One face, one
   cut, everywhere the product writes.
+- **The card's words never wait on its typeface**
+  ([brand palette](brand-palette.md)). A card carrying a logo, a heart and a QR
+  code but not one readable word is not a lesser card: it is not a membership
+  card at all. That is what a member was handed on their receipt page on
+  2026-09-10, so the words are drawn in whatever serif is at hand rather than
+  held back for Fraunces to arrive.
+- **A card with no words on it says so.** The card is a picture, and only the
+  person looking at it can see what actually landed on the paper: no amount of
+  care on the product's side can tell, afterwards, that a member was handed a
+  blank one. So every page that shows a card looks at the picture it drew, and
+  a card whose name strip came out empty is
+  [reported to the operator](operational-alerting.md) by the page itself. The
+  member is never told, and nothing about the member travels: they are holding
+  a broken card, and being asked about it would only make that their problem.
+  The report is a witness, not a guarantee. It cannot catch a card that was
+  blank for a moment and then filled in, only one whose words never arrived,
+  which is the one a reader is left holding.
 - **Four sizes, and no others.** The member's name is the one large thing;
   the organization's name is a step under it, and the years line under the
   heart matches that step, because the middle of the card is the member's own

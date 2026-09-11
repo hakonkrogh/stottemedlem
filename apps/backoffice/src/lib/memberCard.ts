@@ -125,15 +125,32 @@ export function cardScanUrl(slug: string, cardToken: string): string {
   return memberScanUrl(shareableOrigin(), cardToken) ?? referredJoinUrl(slug, cardToken);
 }
 
-/** What the drawing needs, gathered from the card. */
-export async function memberCardOptions(card: MemberCard): Promise<MemberCardOptions> {
-  const cardToken = card.member.cardToken;
+/**
+ * What the card SAYS, without drawing it. Everything the layout derives from,
+ * so a surface can reason about where a line of the card lands (see
+ * `memberCardNameBand`) without paying for a drawing or a logo.
+ */
+export function memberCardWords(
+  card: MemberCard,
+): Pick<
+  MemberCardOptions,
+  "memberName" | "memberNumber" | "organizationName" | "hearts" | "recruits" | "lapsed"
+> {
   return {
     memberName: card.member.name,
     memberNumber: card.member.memberNumber,
     organizationName: card.organization.name,
     hearts: card.hearts,
     recruits: card.recruits,
+    lapsed: cardPeriod(card).lapsed,
+  };
+}
+
+/** What the drawing needs, gathered from the card. */
+export async function memberCardOptions(card: MemberCard): Promise<MemberCardOptions> {
+  const cardToken = card.member.cardToken;
+  return {
+    ...memberCardWords(card),
     ...cardPeriod(card),
     joinUrl: cardToken
       ? cardScanUrl(card.organization.slug, cardToken)
