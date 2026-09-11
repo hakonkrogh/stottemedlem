@@ -150,6 +150,29 @@ If it ever IS reported in the wild, stop trying to reproduce the race and move
 the pages off the SVG: `MemberCardFigure.astro` can embed `kort.png`, which the
 Worker rasterizes with the font already in hand and cannot race at all.
 
+## Prove a merge or rebase did not move the artwork
+
+The card is drawn by code, so "did resolving that conflict change the picture?"
+has an exact answer: render both sides and diff. `--out` is what makes it
+possible, and it beats reading the layout arithmetic twice.
+
+    cp -R packages/qr/src /tmp/merged-qr-src          # keep your resolution
+    git checkout origin/main -- packages/qr/src/      # draw THEIR card
+    node .claude/skills/render-card/render.mjs --out /tmp/main-cards
+    rm -rf packages/qr/src && cp -R /tmp/merged-qr-src packages/qr/src
+    pnpm --filter @stottemedlem/qr build
+    node .claude/skills/render-card/render.mjs --out /tmp/rebased-cards
+    diff -rq /tmp/main-cards /tmp/rebased-cards       # silence is the proof
+
+Swap the whole `src/` directory, not just `memberCard.ts`: `index.ts` re-exports
+what the file declares, so a half-swap fails to build and reads as a broken
+resolution. Restore before doing anything else, and check `git status` says so.
+
+Worth the four minutes whenever upstream touched the layout. This caught
+nothing on 2026-09-11 (rebasing the wordless-card work onto the member-number
+card, byte-identical), which is exactly the answer you want in writing before
+you force-push.
+
 ## Where this fits among the other loops
 
 | loop | proves |
