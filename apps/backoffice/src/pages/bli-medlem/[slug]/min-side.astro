@@ -1,5 +1,10 @@
 ---
-import { joinPagePrivacyPath, memberNumberLabel, periodLabel } from "@stottemedlem/core";
+import {
+  joinPagePrivacyPath,
+  MEMBER_SELF_SERVICE_TOKEN_PARAM,
+  memberNumberLabel,
+  periodLabel,
+} from "@stottemedlem/core";
 import {
   anonymizeMember,
   closeAgreement,
@@ -44,7 +49,7 @@ const db = getDb();
 const org = slug ? await getOrganizationBySlug(db, slug) : null;
 if (!org) return new Response("Fant ikke organisasjonen", { status: 404 });
 
-const token = Astro.url.searchParams.get("n");
+const token = Astro.url.searchParams.get(MEMBER_SELF_SERVICE_TOKEN_PARAM);
 const agreement = token ? await findAgreementByManageToken(db, token) : null;
 if (!agreement || agreement.orgId !== org.id) {
   return new Response("Fant ikke medlemskapet", { status: 404 });
@@ -76,7 +81,10 @@ const action = form?.get("handling") ?? null;
 // This page's own address, with what was just done added to it: the token
 // stays, so the redirect after an action lands back here.
 function ownPageQuery(flags: Record<string, string>): string {
-  const query = new URLSearchParams({ n: Astro.url.searchParams.get("n") ?? "" });
+  const query = new URLSearchParams({
+    [MEMBER_SELF_SERVICE_TOKEN_PARAM]:
+      Astro.url.searchParams.get(MEMBER_SELF_SERVICE_TOKEN_PARAM) ?? "",
+  });
   for (const [key, value] of Object.entries(flags)) query.set(key, value);
   return query.toString();
 }

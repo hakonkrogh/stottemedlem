@@ -49,6 +49,16 @@ renewing.
   alert names the organization and the failing thing (agreement id, event
   type, how many); a member's name, email or phone number never leaves the
   product through an alerting vendor.
+- **A failing request is reported by its address, never by what was typed
+  into it.** Whatever the vendor would attach of the request on its own (the
+  posted form, cookies, credential headers) is stripped before the report
+  leaves, because a form here may hold an organization's
+  [Vipps API keys](vipps-api-keys.md) or a member's contact details. The
+  token in the address of a [member's own page](member-self-service.md) is
+  their login, so it is blanked too; the page itself stays named. A report
+  that had to be stripped says so, so the operator can see when the vendor
+  has started attaching something it did not before (decided 2026-09-11,
+  when the vendor's default was found to attach every posted form).
 - **Only deployed environments speak, and each says which one it is.**
   Production and staging both report (decided 2026-08-27 — staging's
   accelerated calendar makes its nightly work worth watching too), and every
