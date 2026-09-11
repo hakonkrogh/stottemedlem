@@ -234,8 +234,16 @@ export function joinPageTermsUrl(slug: string): string {
  * app or a notice addressed to them.
  */
 export function memberSelfServicePath(slug: string, manageToken: string): string {
-  return `${joinPagePath(slug)}/min-side?n=${encodeURIComponent(manageToken)}`;
+  return `${joinPagePath(slug)}/min-side?${MEMBER_SELF_SERVICE_TOKEN_PARAM}=${encodeURIComponent(manageToken)}`;
 }
+
+/**
+ * The query parameter that carries the manage token on a member's own page
+ * and on the receipt page. Named in one place because the token is a secret,
+ * and whatever reports a failing request to the operator has to know which
+ * parameter to blank (specs/concepts/operational-alerting.md).
+ */
+export const MEMBER_SELF_SERVICE_TOKEN_PARAM = "n";
 
 /**
  * The path segment a member's card lives under

@@ -1,5 +1,9 @@
 ---
-import { formatOrganisasjonsnummer, periodLabel } from "@stottemedlem/core";
+import {
+  formatOrganisasjonsnummer,
+  MEMBER_SELF_SERVICE_TOKEN_PARAM,
+  periodLabel,
+} from "@stottemedlem/core";
 import {
   findAgreementByManageToken,
   findAgreementByVippsId,
@@ -54,7 +58,7 @@ if (!org) return new Response("Fant ikke organisasjonen", { status: 404 });
 // registered redirect can point the page at a specific arrangement. With
 // neither there is nothing to confirm and the visitor is simply sent back
 // to the join page.
-const token = Astro.url.searchParams.get("n");
+const token = Astro.url.searchParams.get(MEMBER_SELF_SERVICE_TOKEN_PARAM);
 const tokenAgreement = token ? await findAgreementByManageToken(db, token) : null;
 const agreementId = tokenAgreement?.vippsAgreementId ?? Astro.url.searchParams.get("agreementId");
 if (!agreementId) return Astro.redirect(`/bli-medlem/${org.slug}`);

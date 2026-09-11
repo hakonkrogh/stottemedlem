@@ -1,5 +1,6 @@
 import { env } from "cloudflare:workers";
 import {
+  MEMBER_SELF_SERVICE_TOKEN_PARAM,
   memberSelfServicePath,
   periodLabel,
   redundantJoinAction,
@@ -126,7 +127,7 @@ export async function startJoin(
       // URL bounced real supporters back to the join page), so the address
       // itself must say which arrangement the supporter returns from — the
       // manage token, minted just above, is already that reference.
-      merchantRedirectUrl: `${origin}/bli-medlem/${org.slug}/kvittering?n=${encodeURIComponent(manageToken)}`,
+      merchantRedirectUrl: `${origin}/bli-medlem/${org.slug}/kvittering?${MEMBER_SELF_SERVICE_TOKEN_PARAM}=${encodeURIComponent(manageToken)}`,
       // The member's own page, reached from their Vipps app. The token is what
       // makes it theirs — see the manage_token column.
       merchantAgreementUrl: `${origin}${memberSelfServicePath(org.slug, manageToken)}`,

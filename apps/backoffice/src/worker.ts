@@ -1,7 +1,12 @@
 import { env } from "cloudflare:workers";
 import { handle } from "@astrojs/cloudflare/handler";
 import * as Sentry from "@sentry/cloudflare";
-import { JOIN_PAGE_PATH_SEGMENT, MEMBER_SCAN_PATH_SEGMENT } from "@stottemedlem/core";
+import {
+  JOIN_PAGE_PATH_SEGMENT,
+  MEMBER_SCAN_PATH_SEGMENT,
+  MEMBER_SELF_SERVICE_TOKEN_PARAM,
+} from "@stottemedlem/core";
+import { redactAlert } from "@stottemedlem/log";
 import { logger } from "./lib/log";
 
 // Public org pages (specs/concepts/join-page.md): the join page, its
@@ -417,6 +422,18 @@ export default Sentry.withSentry(
     // tracing is what the Workers observability dashboard already covers.
     tracesSampleRate: 0,
     sendDefaultPii: false,
+    // A report carries identifiers and counts, never what a person typed
+    // (specs/concepts/operational-alerting.md). The SDK would otherwise
+    // attach the failing request's body to the event: the organization's
+    // Vipps keys on the keys screen, a member's contact details on the
+    // member screen. So it is told not to read bodies at all, and every
+    // event is stripped on its way out as well, which is what catches the
+    // vendor changing its mind after an upgrade: a report that had to be
+    // stripped says so in its `redacted` tag. The same pass blanks the manage
+    // token in a member's own address, which is their login.
+    integrations: [Sentry.httpServerIntegration({ maxRequestBodySize: "none" })],
+    beforeSend: (event) =>
+      redactAlert(event, { secretQueryParams: [MEMBER_SELF_SERVICE_TOKEN_PARAM] }),
   }),
   handler,
 );
