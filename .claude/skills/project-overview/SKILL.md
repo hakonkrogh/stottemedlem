@@ -744,13 +744,38 @@ also documents the variants and why the rule exists.
   Review card artwork with the `render-card` skill, not in Storybook alone.
   `MemberCardFigure.astro` is now a bare `<img>` (no `<picture>`). **Corrected
   2026-09-10:** it is NOT full-bleed any more (this doc said so until then).
-  It sits inside `PublicShell`'s reading column, keeping the gutter published
-  as `--sm-page-gutter` (don't hard-code 1.25rem), with `margin: 0.75rem auto`
-  and `max-width: 24rem` so an upright card does not become a poster. It
-  RESERVES ITS SPACE before the drawing arrives: the figure carries
-  `--sm-card-ratio: <w> / <h>` from `memberCardSize()` and the img an
-  `aspect-ratio`, so nothing below it shifts when the SVG loads
-  (`specs/concepts/opening-a-page.md`). An optional `shareUrl` puts a share
+  **Where it SITS and what stands there while it loads moved to
+  `MemberCardCanvas.astro` (2026-09-14, branch card-skeleton-heartbeat)**;
+  `MemberCardFigure` is now the picture, the share pill and the wordless-card
+  check, wrapped in that canvas. The canvas sits inside `PublicShell`'s reading
+  column, keeping the gutter published as `--sm-page-gutter` (don't hard-code
+  1.25rem), with `margin: 0.75rem auto` and `max-width: 24rem` so an upright
+  card does not become a poster. It RESERVES ITS SPACE before the drawing
+  arrives: the figure carries `--sm-card-ratio: <w> / <h>` from
+  `memberCardSize()` and the img an `aspect-ratio`
+  (`specs/concepts/opening-a-page.md`).
+  **That reservation was BROKEN from the day the card was embedded until
+  2026-09-14, and only `drive-page --delay` could see it:** `margin: … auto`
+  centres the figure, and auto side margins also stop a grid item (every
+  `Stack` is `display: grid`) stretching to its track, so the box was as wide
+  as its contents and an `<img>` with no bytes yet is 0 wide, so the whole card
+  took NO space until its picture landed, and everything below it jumped.
+  `width: 100%` on the figure is the fix. General rule for any picture whose
+  space is reserved: **state the width, never inherit it from the picture**,
+  and prove it by measuring the box in BOTH states.
+  **The waiting box is not blank.** It holds `memberCardSkeletonSvg()` from
+  `@stottemedlem/qr`, drawn by the card's OWN layout functions (`cardFrame`,
+  `memberBlock`), so the skeleton's streak heart lands on exactly the drawn
+  one's x/y/size and the card fades in over it without anything moving. The
+  heart beats (0.85s lub-dub, contracting to 0.93) while the card is on its
+  way, and holds still under `prefers-reduced-motion`. A unit test in
+  `packages/qr/src/memberCard.test.ts` pins skeleton heart == card heart across
+  seven shapes of card. **The trap it caught: a skeleton built by merging the
+  caller's words with defaults** (`{...defaults, ...options}`) silently adds a
+  member-number line the card does not have and moves the heart 16px, so take
+  the words whole or take the defaults whole, never a mix. Stories:
+  `backoffice-medlemsbevis-lastes--*` (`Arriving` loops the transition).
+  An optional `shareUrl` puts a share
   pill in the card's bottom-right (`navigator.share` → clipboard → plain navigation; drive
   both branches with `drive-page`). It is shared by min-side, kvittering AND
   `/medlemsbevis/[token]`, so a change there lands on three public pages.
@@ -1115,7 +1140,21 @@ also documents the variants and why the rule exists.
   `packages/ui/.storybook/main.ts` pulls in app screen stories from
   `apps/backoffice/src` (e.g. CreateOrgScreen, wrapped in the shared
   `ScreenFrame.astro` via a configured-component slot since decorators aren't
-  supported yet). **Storybook's own onboarding UI is turned off** in
+  supported yet).
+  **Storybook serves an `.astro` component's client `<script>` WITHOUT
+  stripping TypeScript** (found 2026-09-14): a type annotation
+  (`function f(): void`), a generic (`querySelectorAll<HTMLElement>(…)`) or an
+  `as` cast there is a syntax error in the browser: the story renders but its
+  behaviour silently does nothing, and the only sign is a `pageerror`
+  (`Unexpected token ':'`, or `"…".forEach is not a function` where a generic
+  parsed as a comparison). The app's own build is happy either way, so this
+  bites ONLY the component that gets a story. Write those scripts in plain JS
+  and narrow with `instanceof` (`if (!(el instanceof HTMLElement)) return;`),
+  which keeps `astro check` green too. Catch it by driving the story with
+  playwright and listening for `pageerror`, never by looking at it.
+  **A component script is also cached hard**: after editing one, Storybook
+  keeps serving the old bundle (the URL carries `sbAstroReload=N`): `story.sh
+  stop`, `rm -rf packages/ui/node_modules/.cache .vite`, `story.sh start`. **Storybook's own onboarding UI is turned off** in
   `packages/ui/.storybook/main.ts` (2026-08-31): `features.sidebarOnboardingChecklist`
   + `features.menuOnboardingChecklist` = false kill the "Getting started"
   checklist box at the top of the sidebar and its Guide menu entry, and
