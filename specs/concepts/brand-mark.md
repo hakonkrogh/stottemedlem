@@ -28,6 +28,12 @@ and never competes with an organization's own identity.
   shape: one heart, drawn one way, wherever the character cannot be typed.
 - The heart is a mark, not a headline: like the attribution it belongs to, it
   stays small and quiet next to the organization's own identity.
+- **The heart is still, with one exception**: while a
+  [member card](member-card.md) is on its way, the heart standing in its place
+  beats at a resting pulse. That is the product saying "this is coming" with
+  its own mark instead of a spinner, and it is the only motion the product
+  asks for. It stops the moment the card lands, and never runs at all for a
+  reader who has asked for less motion.
 - The heart means **supporting**: the product carries one as its mark, and a
   member collects one per supported year on their
   [scorecard](scorecard.md). The shared glyph is deliberate — every heart a

@@ -7,9 +7,12 @@
 // what the picture says, since the picture is the whole content.
 //
 // One card, one image (specs/concepts/member-card.md). The card is drawn
-// upright for a phone, so there is nothing to choose between here — it simply
-// scales inside the page's column, with air around it, and caps at a
-// card-like width where there is room to spare.
+// upright for a phone, so there is nothing to choose between here.
+//
+// Where the card SITS on the page, and what stands there while the picture is
+// still coming, belong to MemberCardCanvas.astro: the box, the card's own
+// beating skeleton, and the fade from the one to the other. This component is
+// the picture, the share action, and the check below.
 //
 // Sharing is offered ON the card rather than as a paragraph elsewhere on the
 // page: the thing being shared is right there, so the action belongs on it.
@@ -18,7 +21,9 @@
 // reader's browser can see what actually landed on it, so this is the only
 // place a wordless card can be noticed at all (specs/concepts/member-card.md).
 import { memberCardImagePath } from "@stottemedlem/core";
-import { type MemberCardOptions, memberCardNameBand, memberCardSize } from "@stottemedlem/qr";
+import { memberCardNameBand, memberCardSize } from "@stottemedlem/qr";
+import type { MemberCardWords } from "../lib/memberCard";
+import MemberCardCanvas from "./MemberCardCanvas.astro";
 
 interface Props {
   cardToken: string;
@@ -44,10 +49,7 @@ interface Props {
    * check that the words are on the picture the reader got. Leaving it out
    * shows the card without that check.
    */
-  words?: Pick<
-    MemberCardOptions,
-    "memberName" | "organizationName" | "hearts" | "recruits" | "lapsed"
-  >;
+  words?: MemberCardWords;
   /** Which page is showing the card, for the report. Never an address: those carry the member's token. */
   surface?: "kvittering" | "min-side" | "medlemsbevis";
 }
@@ -57,7 +59,7 @@ const { width, height } = memberCardSize();
 const band = words && surface ? memberCardNameBand(words) : null;
 ---
 
-<figure class="member-card" style={`--sm-card-ratio: ${width} / ${height}`}>
+<MemberCardCanvas words={words}>
   <img
     src={`${memberCardImagePath(cardToken, "svg")}?v=${version}`}
     alt={alt}
@@ -91,7 +93,7 @@ const band = words && surface ? memberCardNameBand(words) : null;
       </a>
     )
   }
-</figure>
+</MemberCardCanvas>
 
 <script>
   // Does the card the reader actually got have its words on it?
@@ -215,28 +217,12 @@ const band = words && surface ? memberCardNameBand(words) : null;
 </script>
 
 <style>
-  .member-card {
-    position: relative;
-    /* An object on the page, not the page itself: it keeps the reading
-     * column's gutter on both sides and takes a little extra air above and
-     * below, so it reads as a card lying on the page. It stops growing at a
-     * card-like width: upright, the full 38rem column would make it over
-     * 800px tall and it would read as a poster rather than as a card. */
-    margin: 0.75rem auto;
-    max-width: 24rem;
-  }
-  .member-card img {
-    display: block;
-    width: 100%;
-    height: auto;
-    /* The card's shape is known before the picture arrives, so its space is
-     * reserved from the first paint and nothing below it jumps when the
-     * drawing loads. */
-    aspect-ratio: var(--sm-card-ratio);
-  }
-
+  /* The card's own box, the skeleton it arrives over and the cross-fade
+   * between them all live in MemberCardCanvas.astro. What belongs here is the
+   * one thing this component adds to the card: the way to share it. */
   .member-card__share {
     position: absolute;
+    z-index: 2;
     right: 1rem;
     bottom: 1rem;
     display: inline-flex;

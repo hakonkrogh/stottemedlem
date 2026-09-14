@@ -1,0 +1,220 @@
+---
+// The place on a page where the member's card goes, whether or not the card
+// has arrived yet (specs/concepts/member-card.md,
+// specs/concepts/opening-a-page.md).
+//
+// The card is a drawn picture fetched over the network, and on a cold card
+// that takes the best part of a second. The page used to hold an empty box of
+// the right shape for that second, which keeps the text around it still but
+// tells the reader nothing. Instead the box holds the card's own skeleton:
+// the same paper, the same margins, bars where its lines will land, and a
+// heart at exactly the size and place the drawn one takes, because the
+// skeleton is laid out by the card's own layout code
+// (`memberCardSkeletonSvg`), not by a likeness of it.
+//
+// That is what lets the card ARRIVE rather than appear: it fades in over a
+// skeleton it lines up with exactly, so nothing jumps, and the heart the
+// reader is already watching simply gains its colour and its count.
+//
+// The heart beats while the card is on its way. A card is a small proud
+// object about backing someone, and the one shape on it that is not a line of
+// text is a heart; a heart that is alive says "this is coming" without a
+// spinner's impatience. It beats at a resting pulse, contracting slightly,
+// and it holds still for a reader who has asked for less motion.
+//
+// The wrapper is here rather than in each page so the three surfaces that
+// show a card (the receipt, the member's own page, the card's public address)
+// cannot drift apart, and so the story that reviews the transition uses the
+// very same markup and styles as the shipped pages do.
+import { memberCardSize, memberCardSkeletonSvg } from "@stottemedlem/qr";
+import type { MemberCardWords } from "../lib/memberCard";
+
+interface Props {
+  /**
+   * What the card is going to say. The skeleton reads the same words as the
+   * drawing, so its heart lands where the real heart will. Leaving it out
+   * gives a skeleton on an ordinary card's proportions.
+   */
+  words?: MemberCardWords;
+  /**
+   * Who decides when the card is ready. `auto` (the default) waits for the
+   * picture itself; naming a state hands that to the page, which is how the
+   * story holds the transition still long enough to look at.
+   */
+  state?: "auto" | "loading" | "ready";
+}
+const { words, state = "auto" } = Astro.props;
+
+const { width, height } = memberCardSize();
+const skeleton = memberCardSkeletonSvg(words);
+---
+
+<figure
+  class="member-card"
+  data-card-canvas
+  data-card-state={state === "auto" ? undefined : state}
+  style={`--sm-card-ratio: ${width} / ${height}`}
+>
+  <div class="member-card__skeleton" aria-hidden="true" set:html={skeleton} />
+  <slot />
+</figure>
+
+<script>
+  // The card is ready when its picture is. Nothing here is required for the
+  // card to be SEEN: with no script at all the picture is opaque from the
+  // start and simply paints over the skeleton when it lands. What this adds is
+  // the fade, so pair the two states only when there is something to wait for.
+  //
+  // A figure that already names its state belongs to the page (a story), and
+  // is left alone.
+  //
+  // Written in plain JS, narrowing with `instanceof` rather than annotations:
+  // Storybook's Astro framework serves a component's script without stripping
+  // TypeScript, so a type annotation or a `querySelectorAll<T>` here is a
+  // syntax error in the very story that reviews this (found 2026-09-14). The
+  // app's own build is happy either way.
+  function watchCards() {
+    document.querySelectorAll("[data-card-canvas]").forEach((figure) => {
+      if (!(figure instanceof HTMLElement)) return;
+      if (figure.dataset.cardState || figure.dataset.cardWatched) return;
+      const img = figure.querySelector("img");
+      if (!img) return;
+      figure.dataset.cardWatched = "1";
+      const skeleton = figure.querySelector(".member-card__skeleton");
+      // The skeleton is taken away once it has done its job, so no heart goes
+      // on beating out of sight behind a card that has already arrived.
+      if (img.complete && img.naturalWidth > 0) {
+        skeleton?.remove();
+        return;
+      }
+      // A picture that never comes must not leave the reader watching a heart
+      // beat forever either, so a failure ends the wait the same way.
+      const ready = () => {
+        figure.dataset.cardState = "ready";
+        window.setTimeout(() => skeleton?.remove(), 600);
+      };
+      figure.dataset.cardState = "loading";
+      img.addEventListener("load", ready, { once: true });
+      img.addEventListener("error", ready, { once: true });
+    });
+  }
+
+  watchCards();
+  // A card swapped in as the answer to a form (LiveForms) is a new figure on
+  // the same page (specs/concepts/answering-an-action.md).
+  document.addEventListener("sm:page", watchCards);
+</script>
+
+<style>
+  .member-card {
+    position: relative;
+    /* An object on the page, not the page itself: it keeps the reading
+     * column's gutter on both sides and takes a little extra air above and
+     * below, so it reads as a card lying on the page. It stops growing at a
+     * card-like width: upright, the full 38rem column would make it over
+     * 800px tall and it would read as a poster rather than as a card. */
+    margin: 0.75rem auto;
+    /* The width is stated, not inherited from the picture. The `auto` side
+     * margins that centre the card also stop it stretching to its column, so
+     * without this the box is as wide as its contents, and a picture that has
+     * not arrived is 0 wide, which made the whole card take NO space until it
+     * loaded, on the one page whose spec says its space is reserved from the
+     * first paint (found 2026-09-14 with drive-page's --delay; it had been
+     * true since the card was first embedded). */
+    width: 100%;
+    max-width: 24rem;
+  }
+
+  /* The card itself: the picture on the shipped pages, the drawing inlined
+   * in the story. Slotted in, so it is reached deliberately. */
+  .member-card > :global(img),
+  .member-card > :global(svg) {
+    position: relative;
+    z-index: 1;
+    display: block;
+    width: 100%;
+    height: auto;
+    /* The card's shape is known before the picture arrives, so its space is
+     * reserved from the first paint and nothing below it jumps when the
+     * drawing loads. */
+    aspect-ratio: var(--sm-card-ratio);
+  }
+
+  .member-card__skeleton {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+  }
+  .member-card__skeleton :global(svg) {
+    display: block;
+    width: 100%;
+    height: auto;
+  }
+
+  /* The heart is the one thing alive on the skeleton: a resting pulse, a
+   * slight contraction, never a throb. */
+  .member-card__skeleton :global([data-card-heart]) {
+    transform-box: fill-box;
+    transform-origin: center;
+    animation: sm-heartbeat 0.85s ease-in-out infinite;
+  }
+  @keyframes sm-heartbeat {
+    0%,
+    38%,
+    100% {
+      transform: scale(1);
+    }
+    9% {
+      transform: scale(0.93);
+    }
+    18% {
+      transform: scale(1);
+    }
+    27% {
+      transform: scale(0.96);
+    }
+  }
+
+  /* The card is only ever faded where a state is being tracked at all. With
+   * no script the picture is opaque from the start and simply paints over the
+   * skeleton, which is a worse arrival but never a wrong one. */
+  .member-card[data-card-state] > :global(img),
+  .member-card[data-card-state] > :global(svg),
+  .member-card[data-card-state] :global([data-share]) {
+    transition: opacity 420ms ease-out;
+  }
+
+  /* Waiting: the skeleton is the card, and there is nothing yet to share. */
+  .member-card[data-card-state="loading"] > :global(img),
+  .member-card[data-card-state="loading"] > :global(svg),
+  .member-card[data-card-state="loading"] :global([data-share]) {
+    opacity: 0;
+  }
+
+  /* Arriving: the picture fades in over a skeleton that lines up with it
+   * exactly, so the card gains its words and its colour where it stands. The
+   * skeleton is only taken away once the card is fully over it, because
+   * fading both at once would dip the brightness in the middle of the
+   * dissolve. */
+  .member-card[data-card-state="ready"] > :global(img),
+  .member-card[data-card-state="ready"] > :global(svg),
+  .member-card[data-card-state="ready"] :global([data-share]) {
+    opacity: 1;
+  }
+  .member-card[data-card-state="ready"] .member-card__skeleton {
+    visibility: hidden;
+    transition: visibility 0s 440ms;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .member-card__skeleton :global([data-card-heart]) {
+      animation: none;
+    }
+    .member-card[data-card-state] > :global(img),
+    .member-card[data-card-state] > :global(svg),
+    .member-card[data-card-state] :global([data-share]),
+    .member-card[data-card-state="ready"] .member-card__skeleton {
+      transition: none;
+    }
+  }
+</style>

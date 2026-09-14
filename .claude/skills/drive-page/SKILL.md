@@ -26,8 +26,8 @@ and seed local D1 first (`verify-public-routes/seed.sh`).
 ## Flags
 
 `--mobile` (390x844) · `--viewport WxH` · `--permissions clipboard-read,clipboard-write`
-· `--stub '<js>'` (repeatable) · `--route '<glob>::<file>'` (repeatable) · `--console`
-· `--keep-going`
+· `--stub '<js>'` (repeatable) · `--route '<glob>::<file>'` (repeatable)
+· `--delay '<glob>::<ms>'` (repeatable) · `--console` · `--keep-going`
 
 **`--stub` is the important one.** Headless Chrome has no share sheet, no
 Vipps, no phone — so stub the API and assert what the page asked it for.
@@ -37,6 +37,44 @@ on purpose.** It answers one request with a file's bytes; the page, the server
 and the shipped script all stay real, only that asset is yours. Use it for the
 broken thing you cannot ask the product for: a picture that came out wrong, a
 script that did not arrive, a feed that answered nonsense.
+
+**`--delay` is how you look at a page while it is still waiting.** A dev
+server answers in milliseconds and a warm cache in none at all, so a skeleton,
+a spinner or any "not here yet" state is real behaviour that nothing else local
+can see. `--delay '**/kort.svg*::4000'` holds those requests back that long.
+It composes with `--route` (the delay handler falls back to the rig), so
+"held back AND broken when it lands" is two flags, not a script.
+
+**It also changes how the drive navigates, and that is the whole trick**:
+`page.goto` waits for the LOAD event, which a held-back image is part of, so
+without this every step would run *after* the wait it was meant to observe. A
+run with any `--delay` navigates on `domcontentloaded` instead. (Cost an hour
+of "the route interception is not working" on 2026-09-14: it was working, and
+`goto` was swallowing it.)
+
+## Worked example: the card's waiting state, and the bug it found
+
+    node .claude/skills/drive-page/drive.mjs \
+      "http://localhost:$PORT/medlemsbevis/$TOKEN" --mobile \
+      --delay '**/kort.svg*::5000' \
+      sleep=900 eval='(()=>{const f=document.querySelector("[data-card-canvas]");
+        const r=f.getBoundingClientRect();
+        return {box:[r.width,r.height],state:f.dataset.cardState}})()' \
+      shot=/tmp/waiting.png \
+      sleep=5000 eval='…the same again…'
+
+The card is shown over its own skeleton and fades in
+(specs/concepts/member-card.md), so the two reads must agree on the BOX and
+differ only in the state. The first run of this said `[0,0]` while waiting and
+`[350,396]` after: the card took no space at all until its picture arrived,
+which is exactly what specs/concepts/opening-a-page.md forbids, on the page
+that spec names. Cause: `margin: 0.75rem auto` centres the figure, and auto
+side margins also stop a grid item stretching, so the box was as wide as its
+contents and an unloaded `<img>` is 0 wide. `width: 100%` on the figure fixed
+it. **Nothing else in this repo could have seen that**: with the picture in
+hand the box is right, so typecheck, the build, Storybook and a plain
+screenshot all pass while the real page jumps. Measure the box in BOTH states
+whenever a page reserves space for something that loads.
 
 ## Worked example: a member card that came back without its words
 
@@ -142,8 +180,10 @@ Both branches of `MemberCardFigure.astro`, proven end to end (2026-08-31):
   `org-seed-1` and returns JSON, curl-able with no login. Same three traps as
   the scratch pages above, and the dev server may come up on 4323 when 4322
   is taken; `devlog.sh start` prints the port.
-- **A slow server is the case that matters for busy states.** Stub fetch to
-  add a delay, then `shot=` mid-flight:
+- **A slow server is the case that matters for busy states.** For anything the
+  BROWSER fetches (an image, a stylesheet, a script) use `--delay` above. The
+  fetch stub is still the way to slow a call the PAGE'S OWN script makes, since
+  that one never reaches the network layer as its own request:
   `--stub 'const f=window.fetch; window.fetch=(...a)=>new Promise(r=>setTimeout(()=>r(f(...a)),1500))'`.
 
 ## Where this fits among the other loops

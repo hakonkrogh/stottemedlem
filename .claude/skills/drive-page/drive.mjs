@@ -51,6 +51,9 @@ flags:
   --route <glob>::<file>  answer requests matching <glob> with <file>'s bytes
                      (repeatable): hand the page a rigged asset and prove what
                      it does with a picture, script or feed it cannot produce
+  --delay <glob>::<ms>    hold requests matching <glob> back that long
+                     (repeatable): the only way to SEE a page's waiting state,
+                     since a local server answers before anything can be read
   --console          print console messages and page errors
   --keep-going       do not stop at the first failed assert
 
@@ -67,6 +70,7 @@ let viewport = { width: 1440, height: 900 };
 let permissions = [];
 const stubs = [];
 const routes = [];
+const delays = [];
 let showConsole = false;
 let keepGoing = false;
 const steps = [];
@@ -81,6 +85,7 @@ for (let i = 0; i < argv.length; i++) {
   } else if (arg === "--permissions") permissions = argv[++i].split(",").filter(Boolean);
   else if (arg === "--stub") stubs.push(argv[++i]);
   else if (arg === "--route") routes.push(argv[++i]);
+  else if (arg === "--delay") delays.push(argv[++i]);
   else if (arg === "--console") showConsole = true;
   else if (arg === "--keep-going") keepGoing = true;
   // The first non-flag argument is the URL — decided by position, not by
@@ -129,6 +134,28 @@ for (const route of routes) {
   );
 }
 
+// A request held back, so the page can be caught mid-wait. A dev server (or a
+// warm cache) answers in milliseconds, which means a loading state, a skeleton
+// or a spinner is real behaviour nothing local can otherwise look at.
+//
+// Registered AFTER the rigs on purpose: Playwright runs matching handlers in
+// reverse order, so this one sleeps first and then `fallback()`s to whatever
+// would have answered (a --route rig, or the real server). That is what lets
+// "hold it back AND hand it a broken one" be two flags rather than a script.
+for (const spec of delays) {
+  const separator = spec.lastIndexOf("::");
+  const glob = spec.slice(0, separator);
+  const ms = Number(spec.slice(separator + 2));
+  if (!Number.isFinite(ms) || ms < 0) {
+    console.error(`--delay wants <glob>::<ms>, got: ${spec}`);
+    process.exit(2);
+  }
+  await context.route(glob, async (intercepted) => {
+    await new Promise((resolve) => setTimeout(resolve, ms));
+    await intercepted.fallback();
+  });
+}
+
 const page = await context.newPage();
 if (showConsole) {
   page.on("console", (message) => console.log(`console.${message.type()}: ${message.text()}`));
@@ -150,14 +177,19 @@ async function text(selector) {
   return ((await page.textContent(selector)) ?? "").trim();
 }
 
-await page.goto(url);
+// Holding a request back is pointless if the drive then waits for it: `goto`
+// waits for the LOAD event by default, which a delayed image is part of, so
+// every step would run after the wait it was meant to observe. With a delay in
+// play the drive goes on as soon as the document is parsed instead.
+const waitUntil = delays.length > 0 ? "domcontentloaded" : "load";
+await page.goto(url, { waitUntil });
 
 for (const step of steps) {
   const [verb, a, b] = parse(step);
   try {
     switch (verb) {
       case "goto":
-        await page.goto(a);
+        await page.goto(a, { waitUntil });
         break;
       case "click":
         await page.click(a);
