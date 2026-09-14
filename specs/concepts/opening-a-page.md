@@ -36,6 +36,11 @@ survives the imperfect cases without any help.
   is known (most of all the [member card](member-card.md), which is a drawn
   image on a page of text) occupies its full space from the first paint, so
   the text around it never shifts when the picture arrives.
+- **Reserved space is not blank space.** Where the product knows what is
+  coming, the space says so while it waits, rather than holding an empty
+  rectangle the reader has to guess at. The [member card](member-card.md) is
+  the case that matters: its place holds the card's own skeleton, heart and
+  all, and the card fades in over it without anything moving.
 - **The one exception is answering an action**: after a form is submitted, the
   answer is brought into view, because otherwise it would be missed at the
   bottom of a long page. That is a deliberate response to something the person

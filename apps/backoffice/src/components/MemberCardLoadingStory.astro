@@ -1,0 +1,65 @@
+---
+// STORY-ONLY wrapper for the card ARRIVING (specs/concepts/member-card.md).
+// Nothing in the app imports it.
+//
+// The shipped pages wait for a picture fetched from
+// `/medlemsbevis/<token>/kort.svg`, and Storybook serves no such address, so
+// a story of MemberCardFigure would wait forever on a broken image and prove
+// nothing about the transition. What it CAN do is use the real
+// MemberCardCanvas, with the real skeleton, the real cross-fade and the real
+// heartbeat, and drive the state by hand: the card here is the same
+// `memberCardSvg` drawing, inlined, and this decides when it is "ready".
+//
+// So what a reviewer sees is the shipped behaviour with the network taken out
+// of it, and `loop` keeps replaying the moment the card lands, which is the
+// half-second nobody can catch on a real page.
+import { type MemberCardOptions, memberCardSvg } from "@stottemedlem/qr";
+import MemberCardCanvas from "./MemberCardCanvas.astro";
+
+interface Props extends MemberCardOptions {
+  /** `loading` and `ready` hold one end still; `loop` replays the change. */
+  play?: "loading" | "ready" | "loop";
+  /** How long each end is held, in the loop. */
+  holdMs?: number;
+}
+const { play = "loop", holdMs = 2200, ...card } = Astro.props;
+const svg = memberCardSvg(card);
+const words = {
+  memberName: card.memberName,
+  memberNumber: card.memberNumber,
+  organizationName: card.organizationName,
+  hearts: card.hearts,
+  recruits: card.recruits,
+  lapsed: card.lapsed,
+};
+---
+
+<div class="story" data-play={play} data-hold={holdMs}>
+  <MemberCardCanvas words={words} state={play === "ready" ? "ready" : "loading"}>
+    <Fragment set:html={svg} />
+  </MemberCardCanvas>
+</div>
+
+<script>
+  // Replay the arrival: hold the skeleton, let the card in, hold the card,
+  // start over. Only in the looping story: the two still states are there to
+  // be looked at, not animated. Plain JS, for the reason MemberCardCanvas
+  // gives.
+  document.querySelectorAll('.story[data-play="loop"]').forEach((story) => {
+    if (!(story instanceof HTMLElement)) return;
+    const figure = story.querySelector("[data-card-canvas]");
+    if (!(figure instanceof HTMLElement)) return;
+    const hold = Number(story.dataset.hold) || 2200;
+    setInterval(() => {
+      figure.dataset.cardState = figure.dataset.cardState === "ready" ? "loading" : "ready";
+    }, hold);
+  });
+</script>
+
+<style>
+  .story {
+    /* Roughly the phone width the card is drawn for. Judging an upright card
+     * stretched across a desktop story pane tells you nothing useful. */
+    max-width: 24rem;
+  }
+</style>

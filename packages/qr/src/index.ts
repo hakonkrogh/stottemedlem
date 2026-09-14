@@ -35,6 +35,7 @@ export {
   type MemberCardOptions,
   memberCardNameBand,
   memberCardSize,
+  memberCardSkeletonSvg,
   memberCardSvg,
 } from "./memberCard.js";
 

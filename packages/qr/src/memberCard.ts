@@ -676,6 +676,91 @@ export function memberCardNameBand(options: CardWords): {
   };
 }
 
+/**
+ * The tone of a piece of the card that has not arrived yet: the card's own
+ * hairline, a shade deeper, so the skeleton reads as the card's paper with its
+ * ink still missing rather than as a grey loading widget.
+ */
+const WAITING = "#ece3d4";
+/**
+ * The heart while the card is still coming. It is the only shape on the
+ * skeleton that keeps its own identity, because it is the only shape on the
+ * card that is not a line of text, so the reader sees a heart the whole time
+ * and the drawing merely gives it its colour (specs/concepts/member-card.md).
+ */
+const WAITING_HEART = "#f2d3d3";
+
+/** A line of text that has not arrived: a rounded bar where its ink will land. */
+function waitingBar(x: number, y: number, width: number, height: number): string {
+  return `<rect x="${r(x)}" y="${r(y)}" width="${r(width)}" height="${r(height)}" rx="${r(Math.min(height, 12) / 2)}" fill="${WAITING}"/>`;
+}
+
+/** The same bar, centred on the card's middle. */
+function waitingBarCentered(cx: number, y: number, width: number, height: number): string {
+  return waitingBar(cx - width / 2, y, width, height);
+}
+
+/**
+ * The card before its drawing arrives (specs/concepts/member-card.md).
+ *
+ * It is laid out by the SAME functions as the card itself (`cardFrame` and
+ * `memberBlock`), so it is not a likeness of the card but the card's own
+ * skeleton: identical shape, identical margins, and above all a heart at
+ * exactly the place and size the drawn one will take. That is what lets the
+ * card arrive by fading in rather than by appearing: nothing moves, and the
+ * heart the reader was already watching simply gains its colour and its count.
+ *
+ * Everything that is words is a bar; the heart is the heart. The beating is
+ * not here: it belongs to the page showing this, which is where a reader's
+ * preference for stillness is known.
+ */
+export function memberCardSkeletonSvg(options?: CardWords): string {
+  // Given the card's words, the skeleton is laid out on exactly them, never
+  // on them mixed with a default: that would add a line the card does not
+  // have and move the heart off the drawn one.
+  const words = cardWords(
+    // With nothing known about the member, the skeleton still stands on a
+    // card's ordinary proportions: a name, a number under it, one heart.
+    options ?? { organizationName: "", memberName: "", memberNumber: 1, hearts: 1 },
+  );
+  const metrics = cardFrame();
+  const { width, height, inner, left, right, center, columnWidth, bandBottom, bandCenter } =
+    metrics;
+  const { footerTop, ruleY } = metrics;
+  const block = memberBlock(metrics, words);
+
+  const logoSize = 76;
+  const logoCx = left + logoSize / 2;
+  const orgLeft = left + logoSize + 22;
+  const orgWidth = Math.min(320, right - 150 - orgLeft);
+
+  const heart = block.headline
+    ? `<g data-card-heart>${heartPath(center - block.heartSize / 2, block.heartTop, block.heartSize, WAITING_HEART)}</g>
+  ${waitingBarCentered(center, block.headlineBaseline - block.headline.size * 0.72, columnWidth * 0.55, block.headline.size * 0.72)}`
+    : "";
+
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}" width="${width}" height="${height}" role="presentation" aria-hidden="true">
+  ${frame(width, height, inner, 32)}
+  <line x1="${inner}" y1="${bandBottom}" x2="${width - inner}" y2="${bandBottom}" stroke="${HAIRLINE}" stroke-width="1.5"/>
+  <circle cx="${r(logoCx)}" cy="${r(bandCenter)}" r="${r(logoSize / 2 + 3)}" fill="${WAITING}"/>
+  ${waitingBar(orgLeft, bandCenter - 30, orgWidth, 26)}
+  ${waitingBar(orgLeft, bandCenter + 6, orgWidth * 0.66, 26)}
+  ${waitingBar(right - 120, bandCenter - 24, 120, 14)}
+  ${waitingBar(right - 92, bandCenter + 2, 92, 22)}
+
+  ${waitingBarCentered(center, block.blockTop + block.nameAdvance * 0.12, columnWidth * 0.78, block.nameAdvance * 0.76)}
+  ${words.memberNumberLine ? waitingBarCentered(center, block.numberBaseline - TYPE.small * 0.74, 180, TYPE.small * 0.8) : ""}
+  ${heart}
+  ${words.recruitLine ? waitingBarCentered(center, block.recruitBaseline - TYPE.middle * 0.74, columnWidth * 0.4, TYPE.middle * 0.8) : ""}
+
+  <line x1="${left}" y1="${ruleY}" x2="${right}" y2="${ruleY}" stroke="${HAIRLINE}" stroke-width="2"/>
+  ${waitingBar(left, footerTop + FOOTER_QR_PANEL / 2 - 30, 260, 26)}
+  ${waitingBar(left, footerTop + FOOTER_QR_PANEL / 2 + 14, 190, 14)}
+  <rect x="${r(right - FOOTER_QR_PANEL + QR_QUIET)}" y="${r(footerTop + QR_QUIET)}" width="${r(FOOTER_QR_SIZE)}" height="${r(FOOTER_QR_SIZE)}" rx="8" fill="${WAITING}"/>
+</svg>
+`;
+}
+
 export function memberCardSvg(options: MemberCardOptions): string {
   const words = cardWords(options);
   const { hearts, lapsed, orgName, memberName, memberNumber } = words;

@@ -162,6 +162,26 @@ surface the member happens to be looking at.
   same member, and the accepted cost is that a shared card is cropped in some
   feeds rather than shown whole. What the member is looking at is always
   exactly what they hand on.
+- **The card arrives; it does not appear.** The card is a drawn picture
+  fetched over the network, and the first time one is drawn that takes the
+  better part of a second. For that second the place it will take is not empty:
+  it holds the card's own skeleton: the same paper at the same size, the
+  organization's mark, bars where each line will land, and the streak heart at
+  exactly the place and size the drawn one will take. Then the card fades in
+  over it. Because the skeleton is the card's own layout rather than a likeness
+  of it, nothing moves when the card lands: the heart the reader has been
+  watching simply gains its colour and its count, and the words fill in around
+  it. A reader who never sees the skeleton (the picture was already in hand)
+  is shown the card at once, and a picture that never comes at all gives up
+  its place rather than leaving a heart beating over nothing.
+- **The waiting card has a pulse.** The heart is the one shape on the skeleton
+  that is not a placeholder for a line of text, so it is the one thing alive on
+  it: it beats at a resting human pulse, contracting slightly, for as long as
+  the card is on its way. That is the [mark](brand-mark.md) saying the card is
+  coming, in the product's own terms rather than a spinner's. It is the only
+  motion the product asks for, and a reader who has asked for less motion gets
+  a still heart and no fade. The card still arrives, just without the
+  performance.
 - **The card sits on the page with air around it.** Wherever it is shown — the
   thank-you page, the member's own page, its public address — it keeps the
   page's margins on both sides and a little extra space above and below, so it
@@ -261,8 +281,9 @@ surface the member happens to be looking at.
 - Carries [brand attribution](brand-attribution.md) and the
   [brand mark](brand-mark.md).
 - Drawn from the [brand palette](brand-palette.md).
-- Wherever it is shown, its space is reserved before the picture arrives, so
-  the page around it never shifts ([Opening a page](opening-a-page.md)).
+- Wherever it is shown, its space is reserved before the picture arrives and
+  holds the card's own skeleton while it waits, so the page around it never
+  shifts ([Opening a page](opening-a-page.md)).
 
 ## Referenced by
 - [Use case: Earn hearts and recruit new members](../use-cases/earn-hearts-and-recruit.md)

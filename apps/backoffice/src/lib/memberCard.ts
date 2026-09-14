@@ -126,16 +126,21 @@ export function cardScanUrl(slug: string, cardToken: string): string {
 }
 
 /**
+ * Everything the card's layout derives from: its words and its counts. Enough
+ * to say where a line of the card lands, or to draw its skeleton, without
+ * paying for a drawing or a logo.
+ */
+export type MemberCardWords = Pick<
+  MemberCardOptions,
+  "memberName" | "memberNumber" | "organizationName" | "hearts" | "recruits" | "lapsed"
+>;
+
+/**
  * What the card SAYS, without drawing it. Everything the layout derives from,
  * so a surface can reason about where a line of the card lands (see
  * `memberCardNameBand`) without paying for a drawing or a logo.
  */
-export function memberCardWords(
-  card: MemberCard,
-): Pick<
-  MemberCardOptions,
-  "memberName" | "memberNumber" | "organizationName" | "hearts" | "recruits" | "lapsed"
-> {
+export function memberCardWords(card: MemberCard): MemberCardWords {
   return {
     memberName: card.member.name,
     memberNumber: card.member.memberNumber,

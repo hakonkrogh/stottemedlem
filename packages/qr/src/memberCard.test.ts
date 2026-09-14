@@ -4,6 +4,7 @@ import {
   MEMBER_CARD_WIDTH,
   memberCardNameBand,
   memberCardSize,
+  memberCardSkeletonSvg,
   memberCardSvg,
 } from "./memberCard.js";
 
@@ -336,5 +337,79 @@ describe("memberCardNameBand", () => {
     expect(band.bottom).toBeLessThan(1);
     expect(band.left).toBeGreaterThan(0);
     expect(band.right).toBeLessThan(1);
+  });
+});
+
+/**
+ * Where the streak heart was drawn, as `<x>,<y>,<size>`, or null on a card
+ * with no streak. Every heart on either drawing is the same path at a
+ * different scale, so the streak one is found by its size.
+ */
+function streakHeartAt(svg: string): string | null {
+  const heart = 200 / 24;
+  for (const match of svg.matchAll(/translate\(([-\d.]+) ([-\d.]+)\) scale\(([\d.]+)\)/g)) {
+    if (Math.abs(Number(match[3]) - heart) < 0.05) return `${match[1]},${match[2]}`;
+  }
+  return null;
+}
+
+describe("memberCardSkeletonSvg", () => {
+  const words = {
+    memberName: base.memberName,
+    organizationName: base.organizationName,
+    hearts: base.hearts,
+  };
+
+  it("is the same canvas as the card, so the page reserves one shape for both", () => {
+    const skeleton = memberCardSkeletonSvg(words);
+    expect(skeleton).toContain(`viewBox="0 0 ${MEMBER_CARD_WIDTH} ${MEMBER_CARD_HEIGHT}"`);
+    expect(skeleton).toContain(`width="${MEMBER_CARD_WIDTH}"`);
+  });
+
+  it("puts its heart exactly where the card will put the drawn one", () => {
+    // This is the whole point of the skeleton: the card fades in over it, and
+    // a heart that moves on arrival is a card that jumps
+    // (specs/concepts/member-card.md, specs/concepts/opening-a-page.md).
+    for (const options of [
+      base,
+      { ...base, memberNumber: 42 },
+      { ...base, memberNumber: null },
+      { ...base, hearts: 1 },
+      { ...base, hearts: 12, recruits: 3 },
+      { ...base, lapsed: true },
+      {
+        ...base,
+        memberName: "Anne-Margrethe Wollertsen Bjørnstad",
+        organizationName: "Bakvendtland Korps og Ungdomsorkester",
+        hearts: 7,
+      },
+    ]) {
+      const { periodText: _periodText, joinUrl: _joinUrl, ...cardWords } = options;
+      expect(streakHeartAt(memberCardSkeletonSvg(cardWords))).toBe(
+        streakHeartAt(memberCardSvg(options)),
+      );
+    }
+  });
+
+  it("has no heart where the card has none", () => {
+    // A first-year member gets a heart; someone with no supported period gets
+    // no streak on the card, so the skeleton must not promise one.
+    expect(streakHeartAt(memberCardSkeletonSvg({ ...words, hearts: 0 }))).toBeNull();
+    expect(streakHeartAt(memberCardSvg({ ...base, hearts: 0 }))).toBeNull();
+  });
+
+  it("says nothing: it is the card's shape, not a draft of its words", () => {
+    const skeleton = memberCardSkeletonSvg({ ...words, memberNumber: 42 });
+    expect(skeleton).not.toContain("<text");
+    expect(skeleton).not.toContain(base.memberName);
+    expect(skeleton).not.toContain(base.organizationName);
+  });
+
+  it("stands on an ordinary card's proportions when nothing is known yet", () => {
+    expect(streakHeartAt(memberCardSkeletonSvg())).not.toBeNull();
+  });
+
+  it("names its heart, so the page showing it can give it a pulse", () => {
+    expect(memberCardSkeletonSvg(words)).toContain("data-card-heart");
   });
 });
