@@ -168,6 +168,22 @@ Same local D1 as the dev server: seed first (`verify-public-routes/seed.sh`),
 inspect after with `d1.sh`. The jobs call the REAL Vipps test environment, so a
 reprice really does change the price in the test user's app.
 
+**An empty `.dev.vars` makes the whole sweep log NOTHING, and it reads exactly
+like a healthy run** (2026-09-15). A fresh worktree copies `.dev.vars.example`
+to get `pnpm typecheck` passing, and that file ships the Vipps keys EMPTY. The
+scheduled loop calls `getVippsForOrg` per organization and `continue`s on null,
+so with no keys every org is skipped before reconciliation, repricing and
+renewals ever run: the trigger returns HTTP 200, the log holds only the two
+`PUBLIC_ORIGIN not set` warnings and a Vault 401, and nothing tells you the
+jobs never happened. Symptom to recognize: no `[reconcile]` / `[renewals]`
+lines at all. Fill `VIPPS_CLIENT_ID` / `VIPPS_CLIENT_SECRET` /
+`VIPPS_SUBSCRIPTION_KEY` / `VIPPS_MSN` in `apps/backoffice/.dev.vars` (all four,
+or `testEnvironmentKeys()` returns null and you are back where you started).
+For a job whose behaviour does not depend on Vipps ANSWERING (anything measured
+after the per-agreement loop, alerting included), any non-empty placeholder is
+enough: each agreement then fails its Vipps call, the sweep carries on past it
+as designed, and the rest of the run is real.
+
 To see a job do something, create drift first — set an agreement's
 `annual_fee_nok` away from its tier's, then fire `0 2 * * *`; expect
 `repriced 1, failed 0`. A seeded agreement whose id is not real at Vipps

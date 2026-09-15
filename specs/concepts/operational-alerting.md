@@ -52,6 +52,18 @@ renewing.
   reports on — in particular, not on the product's own member-email sending.
 - **Quiet success is recorded, not announced.** Normal work leaves a log
   trail (and context for the next alert), never an email.
+- **A night that never happened is as loud as a night that failed.** Every
+  other report here is made by the product while it works, so the shape it can
+  describe is work that ran and went wrong. Work that never started describes
+  nothing, and a product saying nothing is also what a good night looks like.
+  The product therefore says when unattended work *begins* and when it *ends*,
+  and something outside the product holds the expectation that those arrive:
+  the alarm for a night that never came can only be raised by whoever was
+  waiting for it, because inside the product the part that would notice is the
+  part that did not run. What counts as on time is whatever schedule the
+  product actually keeps, and each deployed environment is judged against its
+  own: they run the same work on deliberately different clocks, and one
+  environment's clock must never be used to read the other's silence.
 - **A situation the product handles by itself is not a failure.** Something
   the product recognizes and puts right on its own — a second payment for a
   period already paid for being

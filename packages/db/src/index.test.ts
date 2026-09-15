@@ -14,8 +14,11 @@ import {
   membershipStanding,
   membershipStatus,
   owesFeeChangeNotice,
+  type ReconciliationRotation,
   renewalFeeNok,
   resumeCostsNow,
+  rotationOutgrewTheRun,
+  rotationWaitedTooLong,
   type StatsAgreementRow,
   type StatsPeriodRow,
   summarizeOrganization,
@@ -617,5 +620,49 @@ describe("summarizeOrganization", () => {
       );
       expect(stats.stoppedMembers).toBe(1);
     });
+  });
+});
+
+describe("the reconciliation rotation", () => {
+  const LIMITS = { agreementsPerRun: 250, maxWaitDays: 3 };
+  const rotation = (over: Partial<ReconciliationRotation> = {}): ReconciliationRotation => ({
+    active: 10,
+    neverReconciled: 0,
+    longestWaitDays: 1,
+    ...over,
+  });
+
+  it("is content while one run still covers the organization", () => {
+    expect(rotationOutgrewTheRun(rotation({ active: 250 }), LIMITS)).toBe(false);
+  });
+
+  it("says so once the organization no longer fits in one run", () => {
+    expect(rotationOutgrewTheRun(rotation({ active: 251 }), LIMITS)).toBe(true);
+  });
+
+  it("is content while everyone comes round inside the allowed wait", () => {
+    expect(rotationWaitedTooLong(rotation({ longestWaitDays: 3 }), LIMITS)).toBe(false);
+  });
+
+  it("says so when somebody has waited longer than the product intends", () => {
+    expect(rotationWaitedTooLong(rotation({ longestWaitDays: 4 }), LIMITS)).toBe(true);
+  });
+
+  it("stays quiet about an organization nothing has ever been read back for", () => {
+    // Null is a brand new organization, not a neglected one. The count of
+    // never-checked agreements is what a first run is judged by, and the
+    // organization outgrowing a run is its own alarm.
+    expect(
+      rotationWaitedTooLong(rotation({ longestWaitDays: null, neverReconciled: 4 }), LIMITS),
+    ).toBe(false);
+  });
+
+  it("stays quiet about an organization with nothing in the rotation at all", () => {
+    expect(rotationOutgrewTheRun(rotation({ active: 0, longestWaitDays: null }), LIMITS)).toBe(
+      false,
+    );
+    expect(rotationWaitedTooLong(rotation({ active: 0, longestWaitDays: null }), LIMITS)).toBe(
+      false,
+    );
   });
 });
