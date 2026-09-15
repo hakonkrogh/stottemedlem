@@ -1251,6 +1251,98 @@ export async function countAbandonedDrafts(
   return rows.length;
 }
 
+/**
+ * What the reconciliation rotation looks like for one organization right now.
+ */
+export interface ReconciliationRotation {
+  /** Live arrangements in the rotation at all. */
+  active: number;
+  /** Of those, how many have never once been read back. */
+  neverReconciled: number;
+  /**
+   * Whole days since the agreement that has waited longest was last read back,
+   * or null when nothing in the rotation has ever been read back. A
+   * never-checked agreement is counted above instead of folded in here:
+   * "waiting since always" is not a number of days.
+   */
+  longestWaitDays: number | null;
+}
+
+/**
+ * How far behind the rotation has fallen for one organization.
+ *
+ * The sweep visits a bounded number of agreements per run, so a night costs a
+ * predictable amount however large an organization grows. The promise attached
+ * to that bound is that bounding DELAYS a check and never cancels one
+ * (specs/concepts/payment-reconciliation.md). A bound keeps that promise only
+ * while the rotation still comes round often enough, and a bound that has
+ * quietly stopped being generous announces nothing by itself: every agreement
+ * is still visited eventually, just eventually later and later. Read after a
+ * run, this turns the delay into a number somebody can be told.
+ */
+export async function reconciliationRotation(
+  db: Db,
+  orgId: string,
+  now: Date = new Date(),
+): Promise<ReconciliationRotation> {
+  const [row] = await db
+    .select({
+      active: sql<number>`count(*)`,
+      // SQLite's min() skips NULLs, which is what we want: the never-checked
+      // are counted separately rather than swallowing the oldest real date.
+      oldest: sql<string | null>`min(${membershipAgreements.lastReconciledAt})`,
+      neverReconciled: sql<number>`sum(case when ${membershipAgreements.lastReconciledAt} is null then 1 else 0 end)`,
+    })
+    .from(membershipAgreements)
+    .where(and(eq(membershipAgreements.orgId, orgId), eq(membershipAgreements.status, "ACTIVE")));
+
+  const oldest = row?.oldest ? Date.parse(row.oldest) : Number.NaN;
+  return {
+    active: Number(row?.active ?? 0),
+    neverReconciled: Number(row?.neverReconciled ?? 0),
+    longestWaitDays: Number.isNaN(oldest)
+      ? null
+      : Math.max(0, Math.floor((now.getTime() - oldest) / 86_400_000)),
+  };
+}
+
+/** The bounds the rotation is judged against; the sweep owns the numbers. */
+export interface RotationLimits {
+  /** Agreements the sweep visits per organization per run. */
+  agreementsPerRun: number;
+  /** How long an agreement may wait its turn before that is worth saying. */
+  maxWaitDays: number;
+}
+
+/**
+ * The organization has outgrown what one run can cover, so the rotation now
+ * takes more than a night to come round. Not yet a wrong record, which is why
+ * it is a warning rather than an alarm, but it is the point where the bound
+ * stops being free: the run is also at its widest, and one run's work has a
+ * ceiling of its own that nothing else measures.
+ */
+export function rotationOutgrewTheRun(
+  rotation: ReconciliationRotation,
+  limits: RotationLimits,
+): boolean {
+  return rotation.active > limits.agreementsPerRun;
+}
+
+/**
+ * Something has been waiting its turn too long. Reached either by an
+ * organization far past one run's reach, or by an agreement that fails every
+ * night: a failed check is deliberately not recorded as a check, so it keeps
+ * its place at the front of the queue and its wait keeps growing. Both mean
+ * the same thing to the operator, which is that a member's payments have gone
+ * unverified for longer than the product intends.
+ */
+export function rotationWaitedTooLong(
+  rotation: ReconciliationRotation,
+  limits: RotationLimits,
+): boolean {
+  return (rotation.longestWaitDays ?? 0) > limits.maxWaitDays;
+}
+
 /** Remember that this agreement has just been read back from Vipps. */
 export async function markAgreementReconciled(
   db: Db,

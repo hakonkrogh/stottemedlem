@@ -208,6 +208,27 @@ async function runScheduledJobs(cron: string): Promise<void> {
         } else if (reconcile.isNoteworthy(report)) {
           reconcileLog.info("reconciled", { ...report, ...ctx });
         }
+        // The sweep is bounded so a night costs a predictable amount, and the
+        // promise that comes with the bound is that it DELAYS a check, never
+        // cancels one (specs/concepts/payment-reconciliation.md). Nothing
+        // about a bound announces when it has stopped being generous: every
+        // agreement is still visited, just later and later, and the record
+        // goes quietly staler with it. These two are how the product notices
+        // that itself, rather than a member noticing it for us.
+        if (reconcile.outgrewTheRun(report)) {
+          reconcileLog.warn("an organization no longer fits in one reconciliation run", {
+            ...report.rotation,
+            agreementsPerRun: reconcile.ROTATION_LIMITS.agreementsPerRun,
+            ...ctx,
+          });
+        }
+        if (reconcile.waitedTooLong(report)) {
+          reconcileLog.warn("agreements are waiting too long to be read back", {
+            ...report.rotation,
+            maxWaitDays: reconcile.ROTATION_LIMITS.maxWaitDays,
+            ...ctx,
+          });
+        }
       }
 
       // Members owed word of a new price are told before anything is arranged
@@ -277,6 +298,98 @@ async function runScheduledJobs(cron: string): Promise<void> {
   }
 }
 
+/**
+ * How late a nightly run may be, and how long it may take, before the vendor
+ * counts it as missed. Cloudflare schedules a cron trigger near its time, not
+ * at it, and a run visits every organization, so both are generous: this is
+ * meant to catch a job that is NOT HAPPENING, never one that is merely slow.
+ */
+const CHECK_IN_MARGIN_MINUTES = 30;
+const CHECK_IN_MAX_RUNTIME_MINUTES = 30;
+
+/** A check-in must never be able to stop the work it watches. */
+function safely<T>(capture: () => T): T | undefined {
+  try {
+    return capture();
+  } catch (error) {
+    // Alerting must never become the outage (specs/concepts/operational-alerting.md).
+    console.error("could not send a nightly check-in", error);
+    return undefined;
+  }
+}
+
+/**
+ * Tell the alerting vendor that a nightly run started, and then how it ended.
+ *
+ * Every other alert in this file speaks from INSIDE a run, so the only shape
+ * they can report is "a job ran, and something in it went wrong". A job that
+ * never runs at all says nothing, and saying nothing is also exactly what a
+ * healthy night looks like: a dropped cron trigger, a deploy that broke the
+ * schedule, or a provider that simply did not fire is indistinguishable from
+ * a quiet night, which is the one thing
+ * specs/concepts/operational-alerting.md opens by promising against.
+ *
+ * No check inside the product can close that, because the code that would
+ * notice is the code that did not run. So the expectation is held OUTSIDE it:
+ * the vendor knows when a run is due and raises the alarm when the run does
+ * not arrive to say so.
+ *
+ * The schedule is sent along with the check-in, so the expectation follows
+ * wrangler.jsonc rather than a dashboard setting somebody has to keep in step.
+ * The slug carries the environment because production and staging run the same
+ * jobs on deliberately different clocks (staging's accelerated calendar makes
+ * "nightly" hourly), and one environment's clock must never be used to judge
+ * the other's silence.
+ */
+async function runScheduledJobsWatched(cron: string): Promise<void> {
+  const job = RECONCILE_CRONS.includes(cron)
+    ? "reconcile"
+    : RENEWAL_CRONS.includes(cron)
+      ? "renewals"
+      : "unrecognized";
+  const monitorSlug = `${job}-${env.SENTRY_ENVIRONMENT || "development"}`;
+  const startedAt = Date.now();
+
+  const checkInId = safely(() =>
+    Sentry.captureCheckIn(
+      { monitorSlug, status: "in_progress" },
+      {
+        schedule: { type: "crontab", value: cron },
+        // Cloudflare's crons are UTC, so the expectation must be read in UTC
+        // too or every run looks half a year late twice a year.
+        timezone: "UTC",
+        checkinMargin: CHECK_IN_MARGIN_MINUTES,
+        maxRuntime: CHECK_IN_MAX_RUNTIME_MINUTES,
+      },
+    ),
+  );
+
+  const finish = (status: "ok" | "error"): void => {
+    safely(() =>
+      checkInId === undefined
+        ? // The opening check-in never left: send the outcome on its own
+          // rather than nothing at all.
+          Sentry.captureCheckIn({ monitorSlug, status })
+        : Sentry.captureCheckIn({
+            monitorSlug,
+            status,
+            checkInId,
+            duration: (Date.now() - startedAt) / 1000,
+          }),
+    );
+  };
+
+  try {
+    await runScheduledJobs(cron);
+    finish("ok");
+  } catch (error) {
+    // The throw still reaches Sentry as an issue through the wrapper below;
+    // this only keeps the monitor's own record honest about how it ended.
+    finish("error");
+    throw error;
+  }
+}
+
 const handler = {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
@@ -330,7 +443,7 @@ const handler = {
    * organization is visited; one organization's failure never stops the others.
    */
   async scheduled(controller, _env, ctx) {
-    ctx.waitUntil(runScheduledJobs(controller.cron));
+    ctx.waitUntil(runScheduledJobsWatched(controller.cron));
   },
 
   /**

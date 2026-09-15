@@ -54,6 +54,17 @@ schedule, not merely *accumulated* from notifications.
 - The work per run is bounded, so the cost of a night is predictable however
   many members an organization has. Bounding delays a check; it never cancels
   one.
+- **The delay the bound creates is measured, not assumed.** A bound that has
+  stopped being generous behaves exactly like one that has not: every
+  arrangement is still checked in turn, only later and later, and the record
+  grows quietly staler while nothing at all looks wrong. So the product watches
+  its own rotation and says when an organization has grown past what one run
+  reaches, and when anything has waited its turn longer than the product
+  intends. An arrangement that fails every time is caught by the same measure:
+  a failed check is not recorded as a check, so its wait keeps growing.
+  Ordinary delay is the bound working and stays quiet; the operator hears only
+  when waiting has stopped being ordinary
+  ([operational alerting](operational-alerting.md)).
 - One arrangement's failure never stops the rest, and a failed check is not
   recorded as a check — the next run tries it first.
 - What the sweep stops chasing, it reports. An arrangement abandoned long enough

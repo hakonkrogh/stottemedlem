@@ -4,6 +4,11 @@ import {
   type Db,
   listChargesForAgreement,
   markAgreementReconciled,
+  type ReconciliationRotation,
+  type RotationLimits,
+  reconciliationRotation,
+  rotationOutgrewTheRun,
+  rotationWaitedTooLong,
   selectAgreementsToReconcile,
 } from "@stottemedlem/db";
 import type { Charge, ChargeStatus, VippsClient } from "@stottemedlem/vipps";
@@ -36,6 +41,19 @@ const DRAFT_LOOKBACK_DAYS = periods.draftLookbackDays;
  * are visited oldest-check-first, so a member never stops coming round.
  */
 const AGREEMENTS_PER_RUN = 250;
+/**
+ * How long an agreement may wait its turn before the operator hears about it.
+ * Generous on purpose: the bound above is meant to delay checks, so an
+ * ordinary delay is the system working. Three nightly runs' worth of waiting
+ * is where "coming round in turn" stops describing what is happening.
+ */
+const MAX_ROTATION_WAIT_DAYS = 3;
+
+/** The bounds this sweep judges its own rotation against. */
+export const ROTATION_LIMITS: RotationLimits = {
+  agreementsPerRun: AGREEMENTS_PER_RUN,
+  maxWaitDays: MAX_ROTATION_WAIT_DAYS,
+};
 
 /**
  * Statuses in which a charge can still take money, or already has. A cancelled
@@ -71,6 +89,14 @@ export interface ReconcileReport {
   failed: number;
   /** Drafts too old to keep asking about, reported rather than dropped quietly. */
   abandonedDrafts: number;
+  /**
+   * Where the rotation stands once this run is done. The sweep is bounded, and
+   * a bound that has stopped being generous looks exactly like one that has
+   * not: every agreement is still visited eventually, just later and later
+   * (specs/concepts/payment-reconciliation.md). Measuring it is the only way
+   * the delay can be noticed by us rather than by a member.
+   */
+  rotation: ReconciliationRotation;
 }
 
 const emptyReport = (): ReconcileReport => ({
@@ -81,6 +107,7 @@ const emptyReport = (): ReconcileReport => ({
   duplicateRenewals: 0,
   failed: 0,
   abandonedDrafts: 0,
+  rotation: { active: 0, neverReconciled: 0, longestWaitDays: null },
 });
 
 // The alarm below alerts the operator directly (stable message, ids in
@@ -195,7 +222,25 @@ export async function reconcileOrganization(
     draftLookbackDays: DRAFT_LOOKBACK_DAYS,
   });
 
+  // Read AFTER the sweep, so it measures who is still waiting once tonight's
+  // visits are done rather than who was waiting before they began.
+  report.rotation = await reconciliationRotation(db, orgId, today);
+
   return report;
+}
+
+/**
+ * The organization has outgrown what one run can cover. Worth saying twice
+ * over: the rotation no longer comes round in a night, and the run itself is
+ * now at its widest, which is a ceiling of its own that nothing else measures.
+ */
+export function outgrewTheRun(report: ReconcileReport): boolean {
+  return rotationOutgrewTheRun(report.rotation, ROTATION_LIMITS);
+}
+
+/** Somebody in the rotation has waited longer than the product intends. */
+export function waitedTooLong(report: ReconcileReport): boolean {
+  return rotationWaitedTooLong(report.rotation, ROTATION_LIMITS);
 }
 
 /** Whether a run found anything worth a line in the log. */

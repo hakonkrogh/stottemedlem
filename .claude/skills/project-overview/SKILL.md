@@ -191,6 +191,45 @@ also documents the variants and why the rule exists.
   `warn` and raised BACKOFFICE-SERVER-6 on staging for a supporter who
   cancelled and re-joined — the refund working exactly as specified. Now
   `info`; the "could not give back" catch stays `error`.)
+  **Alerting coverage (gap analysis 2026-09-15).** Every alert used to fire
+  from INSIDE `scheduled()`, so the only covered shape was "a job ran and
+  reported failures". Two of the silent shapes are now covered; the rest are
+  still open, and are PROPOSALS the user has not decided on.
+  **BUILT 2026-09-15 (1) the nightly job never ran.** No self-check can catch
+  this, because the code that would notice is the code that did not run, so the
+  expectation is held outside the product: `runScheduledJobsWatched` in
+  worker.ts sends Sentry Crons check-ins (in_progress, then ok/error) and
+  UPSERTS the monitor's schedule from the cron string itself, so the monitor
+  follows wrangler.jsonc instead of a dashboard setting. The slug is
+  `<job>-<environment>` (`reconcile-production`, `renewals-staging`, …):
+  monitors are global by slug and the two environments run deliberately
+  different clocks, so sharing a slug would make them fight over the schedule.
+  Every check-in goes through `safely()` because alerting must never become the
+  outage. **Still verify the free plan's cron-monitor quota.**
+  **BUILT 2026-09-15 (2) reconciliation rotation lag.** `AGREEMENTS_PER_RUN =
+  250` per org per run, once nightly: 1,000 active agreements in one org = 4
+  days to come round, 2,500 = 10 days, and nothing said so. `reconcileOrganization`
+  now measures the rotation AFTER its sweep (`reconciliationRotation` in
+  packages/db) and worker.ts raises two warns: "an organization no longer fits
+  in one reconciliation run" (active > 250, which doubles as the D1
+  QUERIES-PER-INVOCATION proxy, see stack-docs) and "agreements are waiting too
+  long to be read back" (`longestWaitDays` > 3). The second also catches an
+  agreement that fails EVERY night, because a failed check is deliberately not
+  recorded as a check, so its wait keeps growing. The predicates are pure and
+  unit-tested in packages/db; a never-reconciled agreement counts in
+  `neverReconciled` rather than faking an infinite wait.
+  **Still open, PROPOSED only:**
+  (3) **a capture still owed a receipt after several runs.** A FAILING send
+  already alerts; a capture never picked up (member anonymized, no email) stays
+  owed forever, silently. Receipt obligation here is legal.
+  (4) **money taken, period not granted**: a CHARGED charge for period N with no
+  memberships row for that member+year, surviving a sweep.
+  (5) **charges stuck non-terminal** (PENDING/DUE/RESERVED well past `due`).
+  Only transitions get reported, so a charge going nowhere is invisible.
+  (6) **D1 size**, low urgency (213 kB vs a 10 GB hard ceiling) and it needs a
+  D1-read API token we do not have.
+  Set in Sentry rather than in code: **quota-exhaustion email**. On the free plan
+  a blown quota stops alerts arriving, and that silence looks like health.
   Triage loop, no dashboard needed: paste the issue's dashboard URL straight
   into the Sentry MCP's `get_sentry_resource` (it returns message, tags, the
   `extra` context and the culprit URL), then `update_issue` with
@@ -238,7 +277,16 @@ also documents the variants and why the rule exists.
 - `packages/db/` — `@stottemedlem/db` (added 2026-07-28, scaffolding step 4):
   Drizzle schema + query helpers over the backoffice `DB` (D1) binding.
   `organizations` table = system of record for the **persisted, never-changing
-  org slug** + public profile (orgnr, contact email, annual fee). Migrations are
+  org slug** + public profile (orgnr, contact email, logo/banner R2 keys, DPA
+  acceptance). The annual fee is NOT there any more: `organizations.annual_fee_nok`
+  is legacy, backfilled into `membership_tiers` by migration 0004, and new code
+  reads tiers only. **`src/schema.ts` is the annotated table inventory** (7 live
+  tables: organizations, membership_tiers, supporting_members,
+  membership_agreements, memberships, membership_charges, member_notices) and
+  every table/column carries a doc comment saying WHY it exists, incl. which
+  columns are dead (`messages_declined_at`) and which tables survive only because
+  migrations are additive (`org_messages`, `org_message_recipients`). Read it
+  before asking D1 what shape it holds. Migrations are
   HAND-WRITTEN SQL in `packages/db/migrations/` (no drizzle-kit), applied via
   `wrangler d1 migrations apply DB --local` from `apps/backoffice`
   (`migrations_dir` points there; local state shared with `astro dev`).
@@ -982,10 +1030,22 @@ also documents the variants and why the rule exists.
   is the point (it is how the 31.8.2026 staging double-payment heals itself),
   but it means merging a money-path change and deploying are the same event as
   far as real money is concerned. The receipts sweep bounds the same risk
-  deliberately with its 14-day lookback; reconciliation does not. **Testing the cron locally:** `astro dev` can't
-  reach `scheduled` — build, then `wrangler dev --test-scheduled` and hit
+  deliberately with its 14-day lookback; reconciliation does not. **Testing the cron locally: USE
+  `bash .claude/skills/vipps-test-rig/cron.sh "0 2 * * *"`.** It already does
+  the whole dance (build, `wrangler dev --test-scheduled`, wait for health,
+  trigger, print only the lines this run added, tear down) and it lives in
+  `vipps-test-rig` where nothing about the name suggests it, so it gets missed
+  and re-done by hand (cost a detour 2026-09-15). By hand it is: build, then
+  `wrangler dev --test-scheduled` and hit
   `/cdn-cgi/handler/scheduled?cron=0+2+*+*+*` (NOT `/__scheduled`, which our
-  custom fetch handler swallows into a /login redirect). The `vipps-test-rig`
+  custom fetch handler swallows into a /login redirect). **A sweep that logs
+  nothing usually means empty Vipps keys in `.dev.vars`, not a healthy run**:
+  every org is skipped before reconciliation; see `vipps-test-rig`. Two traps
+  if you do hand-roll it: never truncate a `nohup` log in place (`: > log`
+  leaves the writer's offset, so the file fills with NULs and greps read empty;
+  cron.sh counts lines before/after instead), and the job runs in
+  `ctx.waitUntil`, so give it seconds after the 200 before reading the log.
+  The `vipps-test-rig`
   skill has a recipe for proving reconciliation against a real agreement.
   `PUBLIC_ORIGIN` is now a wrangler var per env (the deployed origin): a
   scheduled job has no request to derive the origin from, and worker.ts now

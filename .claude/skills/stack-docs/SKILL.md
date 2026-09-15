@@ -1,6 +1,6 @@
 ---
 name: stack-docs
-description: Verified platform facts for the stottemedlem stack (Astro on Cloudflare Workers, WorkOS on Workers, Vipps MobilePay test environment). Load before scaffolding or configuring apps/marketing or apps/backoffice, assuming how the Astro Cloudflare adapter / WorkOS SDK behave on Workers, or starting Vipps API work.
+description: Verified platform facts for the stottemedlem stack (Astro on Cloudflare Workers, WorkOS on Workers, Vipps MobilePay test environment, D1 platform limits and what Cloudflare will and will not alert on). Load before scaffolding or configuring apps/marketing or apps/backoffice, assuming how the Astro Cloudflare adapter / WorkOS SDK behave on Workers, quoting a D1 limit or quota, or starting Vipps API work.
 ---
 # Stack facts (verified 2026-07-03, in-repo)
 
@@ -774,6 +774,57 @@ The facts below informed the choice:
   directly to a Slack incoming webhook from the Worker's own error handling
   (`ctx.waitUntil(fetch(SLACK_WEBHOOK_URL, …))`). Tail Workers require the
   paid Workers plan; in-handler try/catch does not.
+
+## D1 platform limits + capacity watching (verified 2026-09-15)
+
+Source: https://developers.cloudflare.com/d1/platform/limits/ (re-check it, the
+numbers move). This account is **Workers Paid**, so the Paid column applies.
+
+| limit | Workers Paid | note |
+|-------|--------------|------|
+| database size | **10 GB** | HARD, cannot be raised by request. The only D1 ceiling with no escape hatch. |
+| storage per account | 1 TB | requestable |
+| databases per account | 50,000 | we hold 2 (prod + staging) |
+| **queries per Worker invocation** | **1,000** | the tightest real risk for us: the nightly work loops per agreement |
+| bound parameters per query | 100 | caps any `IN (...)` list |
+| columns per table | 100 | our widest table is ~20 |
+| row size | 2 MB | |
+| SQL statement length | 100 KB | |
+| query execution | 30 s | |
+| **Time Travel restore window** | **30 days** | this IS our backup story. Nothing else backs D1 up. |
+
+Rows read/written have no daily quota; they are billed.
+
+**Prod baseline 2026-09-15** (`stottemedlem`, `d7d2afff-7d1e-4df5-987b-9974676550df`,
+created 2026-08-12): 213 kB, 10 tables, region EEUR, read replication disabled,
+24h traffic 91 reads / 5 writes / 311 rows read / 8 rows written. At these row
+sizes the 10 GB ceiling is unreachable even at hundreds of thousands of members,
+so the query-per-invocation cap is the one to design against, not size.
+
+**Reading live size when node_modules is empty** (every fresh worktree):
+`pnpm exec wrangler` fails with `Command "wrangler" not found`. Skip the install:
+
+```sh
+cd apps/backoffice && CI=1 npx --yes wrangler@4 d1 info stottemedlem
+# staging: ... d1 info stottemedlem-staging
+```
+
+It runs off the GLOBAL wrangler OAuth login, so it needs no API token.
+
+**There is NO D1 alert to switch on.** Verified against
+https://developers.cloudflare.com/notifications/notification-available/ : the
+notification catalogue has no D1 type and no Workers type. The only adjacent
+thing is "Usage Based Billing", which needs Pro plan or higher and is
+per-product. So capacity watching has to be ours (a cron step reading `d1 info`
+or the D1 API and throwing to Sentry above a threshold), or it does not exist.
+`specs/concepts/operational-alerting.md` covers FAILURES only (renewals,
+reconciliation, webhooks, notices, config gaps), never capacity.
+
+**The cloud-logs token cannot read D1.** `~/.config/stottemedlem/cloudflare-logs-token`
+is scoped to Workers Observability read; hitting
+`/accounts/<id>/d1/database` with it returns `code 10000 Authentication error`.
+A DIY capacity check needs either a new token with D1 read, or the OAuth session
+via `npx wrangler` above.
 
 ## Forward references (not captured yet)
 
