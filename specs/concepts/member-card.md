@@ -208,6 +208,14 @@ surface the member happens to be looking at.
   of the card to stay scannable. Now it needs a corner. Shortening what the
   code says is the way to make the code smaller; drawing the same code
   smaller only makes it harder to scan.
+- **The code carries the mark in its middle.** The one red on the card appears
+  a third time, small, in the centre of the code
+  ([brand mark](brand-mark.md)). It is the only thing drawn on the code, it is
+  held to a size measured to leave the code readable, and it costs the code a
+  little of how small it may be drawn: the card's code stopped scanning below
+  a picture 239 px wide before the heart and 266 px after, against the 760 px
+  the card is drawn at. That was judged worth it here and would not be at a
+  bigger heart.
 - **The scan address is not the card's address.** A member card has three
   addresses and they do different things, in order of what holding one grants:
   the [self-service page](member-self-service.md) can end the membership and

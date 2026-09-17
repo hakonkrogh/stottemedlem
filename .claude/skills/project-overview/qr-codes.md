@@ -6,7 +6,9 @@ Distinct from the *member's personal referral* QR (`specs/use-cases/earn-hearts-
 ## Package split (`packages/qr`) — respect it
 - `@stottemedlem/qr` (index) — **isomorphic**, safe to bundle for the browser:
   `qrCardSvg({joinUrl, organizationName, ...})` (sync; self-contained 400×520 SVG,
-  XML-escaped name, auto-shrinking font) and `qrSvg(url)` (async).
+  XML-escaped name, auto-shrinking font) and `qrSvg(url)` (async; the plain code
+  as its own SVG, drawn here rather than by the library so it carries the same
+  heart the cards do).
 - `@stottemedlem/qr` also carries `memberCardSvg({...})` (`src/memberCard.ts`) —
   the MEMBER's card (specs/concepts/member-card.md), a different owner from
   `qrCardSvg`'s organization card. **ONE shape, 760×860 UPRIGHT**
@@ -29,11 +31,19 @@ Distinct from the *member's personal referral* QR (`specs/use-cases/earn-hearts-
   rasterized server-side with one embedded text font and no colour-emoji font.
   The logo travels as a data URI inside the SVG — a rasterizer cannot follow a
   link out to R2.
-- `@stottemedlem/qr/node` — `qrPngBuffer(url)`; pulls in pngjs/zlib, so it lives in
-  its own entry. Works on Workers with `nodejs_compat` (backoffice has it).
+- **There is no `@stottemedlem/qr/node` any more** (removed 2026-09-17). It
+  carried `qrPngBuffer(url)`, the `qrcode` library's own PNG renderer, and that
+  renderer draws the code from scratch: once the codes gained the heart in
+  their middle (below) it was a SECOND renderer quietly handing out a
+  different-looking code than every other surface. A code is now drawn once, as
+  SVG, and whoever wants a raster rasterizes that drawing:
+  `renderCardPng(await qrSvg(url), 1024)` in the backoffice, through the same
+  resvg the member card goes through. `qrSvg` is where a code's appearance
+  lives, and the appearance cannot drift.
 - `@stottemedlem/qr/browser` — DOM-only: `svgToPngBlob(svg, {scale})`, `downloadBlob`.
-- Do NOT re-merge these entries: `qrcode`'s package.json `browser` field swaps in a
-  build without `toBuffer`, so an isomorphic entry importing it breaks browser bundles.
+- Do NOT merge `browser` back into the index: `qrcode`'s package.json `browser`
+  field swaps in a different build, and DOM helpers have no business in a
+  Worker bundle.
 - Related helpers live in `@stottemedlem/core`: `slugifyOrganizationName`,
   `joinPageUrl(slug)`, `CANONICAL_ORIGIN` (punycode!) — single source for what
   QR codes encode. QR payloads must always use the punycode origin, never raw ø.
@@ -168,6 +178,80 @@ re-measuring the same way rather than guessing:
 - Prove the size claim with `verify-qr --shrink`, which reports the narrowest
   the drawing may be and still decode (328 px → 239 px on this change).
 
+## Drawing ON the code: the heart in the middle (measured 2026-09-17)
+
+Asked whether the join code may carry the brand heart in its centre, and
+whether the QR standard allows it.
+
+- **The standard has no opinion.** ISO/IEC 18004 defines the symbol, the
+  encoding and the Reed-Solomon correction; it says nothing about logos. A
+  logo is not a feature, it is damage the correction absorbs (~7% of codewords
+  at L, ~15% M, ~25% Q, ~30% H). So "is it allowed" is not answerable from the
+  spec, only from a measurement. Nothing in the standard is violated, and no
+  conforming decoder is *obliged* to read a defaced symbol either.
+- **What must stay intact** whatever the level: the 4-module quiet zone, the
+  three finder squares, the timing lines (row/col 6), the alignment patterns,
+  and the format/version info around the finders. The centre is pure data on
+  our codes, which is why it is the one safe place. **Watch version 7+**: it
+  puts an alignment pattern at the exact centre. The org join address reaches
+  version 7 at level Q, a reason not to go there.
+- **Measured** with `verify-qr/budget.mjs` (which was built for this question).
+  Largest centred cover that still decodes, and the bare shrink floor:
+
+  | payload | EC | modules | cover breaks above | safe to draw | bare floor |
+  |---|---|---|---|---|---|
+  | org join URL (78 ch) | M | 37x37 | 32% of width | 16% | 61 px |
+  | org join URL | H | 49x49 | 45% | 22% | 74 px |
+  | member scan URL (59 ch) | M | 29x29 | 28% | 14% | 51 px |
+  | member scan URL | H | 37x37 | 43% | 19% | 58 px |
+
+- **Keep level M and draw the heart small.** A cover at ~15% of the code's
+  width sits inside the budget at M on both codes and costs almost nothing on
+  the shrink floor. Going to H to afford a *bigger* heart is a bad trade here:
+  it grows the member code 29→37 modules, and this file's own rule (above) is
+  that fewer modules is how a code survives being printed small. The member
+  card's code is the tight one.
+- **The heart is drawn, never typed.** `heartPath()` in `packages/qr/src/brand.ts`
+  (the cards rasterize with one embedded font and no colour-emoji font, so
+  `❤️` comes out an empty box; see the module's own header comment). It needs a
+  **white pad** under it regardless: `HEART` is `#e0182d`, dark enough that a
+  binarizer can take it for a module.
+### Shipped 2026-09-17
+
+`qrModulesPath(url, { heart: true })` OMITS the modules under the heart from
+the path (an omission, never an overlay: the card's own white backs the heart,
+so there is no second shape to keep on the module grid and no seam for a
+rasterizer to leave), and `qrHeartMark(qr)` draws the heart in MODULE
+coordinates so it belongs inside the same scaled `<g>` as the code and no call
+site converts anything. Both in `src/brand.ts`. Three knobs there, all
+commented with what they were measured against: `HEART_SHARE` (0.15),
+rounding to an ODD module count so the hole centres on a module rather than
+straddling two (QR sizes are always odd), and
+`FIRST_VERSION_WITH_CENTRE_ALIGNMENT` (7), past which the code gets no heart
+at all.
+
+Carried by all three surfaces, which is the point: the org card, the member
+card, and the plain code download in BOTH formats.
+
+**What it cost, measured on the real rendered cards** (`verify-qr --shrink`,
+smallest whole-picture width that still decodes):
+
+| surface | drawn at | before | after |
+|---|---|---|---|
+| org QR card | 400 px | 92 px | 92 px |
+| member card | 760 px | 239 px | **266 px** |
+| plain code PNG | 1024 px | n/a | 61 px |
+
+The member card pays one 10% shrink step. Worth knowing before making the heart
+bigger: a 3-module heart there measured the SAME 266 px as the 5-module one, so
+that step is the price of any hole at all, not of this hole's size. That is why
+the heart is as big as it is, and why shrinking it buys nothing back.
+
+Specs reconciled: `specs/concepts/brand-mark.md` (the heart's new place),
+`specs/concepts/member-card.md` (the code's own rules and what the heart cost
+it), `specs/use-cases/promote-with-qr-card.md` (the plain download is the same
+code as the card's).
+
 ## The member card's scan address (added 2026-09-09)
 
 `GET /v/<code>` (`apps/backoffice/src/pages/v/[code].ts`) is what the member
@@ -204,6 +288,8 @@ long address keep working. Unknown or malformed code → 404, revealing nothing.
   the card builds its own `<path>` from it instead of nesting the lib's SVG output.
 
 ## Verifying
-`verify-qr` skill decodes a generated PNG and asserts the payload (scan-level proof).
+`verify-qr` skill decodes a generated PNG and asserts the payload (scan-level proof),
+and `budget.mjs` in that skill sizes a logo drawn on a code before any of it is
+drawn (see the heart section above).
 Card is SVG: rasterize with `svgToPngBlob` in-app, or on macOS
 `qlmanage -t -s 800 -o <outdir> card.svg` for a quick visual Read.

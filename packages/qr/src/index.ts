@@ -6,11 +6,12 @@
  * organizations can print, download, and embed on external websites.
  *
  * This entry is fully isomorphic — bundle it for the browser freely.
- * PNG encoding lives in `@stottemedlem/qr/node` (Workers/Node runtimes);
- * DOM-only helpers (rasterize/download) in `@stottemedlem/qr/browser`.
+ * DOM-only helpers (rasterize/download) live in `@stottemedlem/qr/browser`.
+ * There is no PNG encoder here: a code is DRAWN once, and whoever needs a
+ * raster rasterizes that drawing (the back office does it with the same resvg
+ * the member card goes through), so no second renderer can disagree with it.
  */
 
-import { toString as toStringQr } from "qrcode";
 import {
   CARD,
   DEEP,
@@ -24,6 +25,7 @@ import {
   heartPath,
   INK,
   MUTED,
+  qrHeartMark,
   qrModulesPath,
   r,
 } from "./brand.js";
@@ -46,14 +48,28 @@ export interface QrOptions {
   margin?: number;
 }
 
-/** A plain QR code as a standalone SVG document. */
+/**
+ * A plain QR code as a standalone SVG document: the code on its own, for an
+ * organization laying out its own poster or newsletter.
+ *
+ * Drawn here rather than by the `qrcode` library's own SVG renderer so that it
+ * is the SAME code the cards carry, heart and all. An organization hands out
+ * one QR code, not two that look different depending on which button it came
+ * from.
+ */
 export async function qrSvg(url: string, options: QrOptions = {}): Promise<string> {
-  return toStringQr(url, {
-    type: "svg",
-    errorCorrectionLevel: "M",
-    width: options.width ?? 512,
-    margin: options.margin ?? 2,
-  });
+  const qr = qrModulesPath(url, { heart: true });
+  const margin = options.margin ?? 2;
+  const width = options.width ?? 512;
+  const span = qr.moduleCount + margin * 2;
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${span} ${span}" width="${width}" height="${width}" role="img" aria-label="QR-kode">
+  <rect width="${span}" height="${span}" fill="${CARD}"/>
+  <g transform="translate(${margin} ${margin})">
+    <path d="${qr.path}" fill="${INK}" shape-rendering="crispEdges"/>
+    ${qrHeartMark(qr)}
+  </g>
+</svg>
+`;
 }
 
 export interface QrCardOptions {
@@ -126,7 +142,8 @@ export function qrCardSvg(options: QrCardOptions): string {
   const hint = options.hint ?? "Skann med mobilen — betal med Vipps";
   const footer = options.footer ?? "støttemedlem.no";
 
-  const { path, moduleCount } = qrModulesPath(options.joinUrl);
+  const qr = qrModulesPath(options.joinUrl, { heart: true });
+  const { path, moduleCount } = qr;
   const qrSize = 264;
   const qrX = (QR_CARD_WIDTH - qrSize) / 2;
   const qrY = 128;
@@ -140,6 +157,7 @@ export function qrCardSvg(options: QrCardOptions): string {
   <text x="${center}" y="99" text-anchor="middle" font-family="${FONT}" font-size="${nameFontSize(name)}" font-weight="${FONT_WEIGHT}" fill="${INK}">${escapeXml(name)}</text>
   <g transform="translate(${qrX} ${qrY}) scale(${scale})">
     <path d="${path}" fill="${INK}"/>
+    ${qrHeartMark(qr)}
   </g>
   <text x="${center}" y="434" text-anchor="middle" font-family="${FONT}" font-size="15" font-weight="${FONT_WEIGHT}" fill="${MUTED}">${escapeXml(hint)}</text>
   <line x1="48" y1="458" x2="${QR_CARD_WIDTH - 48}" y2="458" stroke="${HAIRLINE}" stroke-width="2"/>

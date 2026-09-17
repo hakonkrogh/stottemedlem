@@ -1,8 +1,8 @@
 import { getOrganizationBySlug } from "@stottemedlem/db";
 import { qrCardSvg, qrSvg } from "@stottemedlem/qr";
-import { qrPngBuffer } from "@stottemedlem/qr/node";
 import type { APIRoute } from "astro";
 import { withEmbeddedCardFont } from "../../../lib/cardFont";
+import { renderCardPng } from "../../../lib/cardImage";
 import { getDb } from "../../../lib/db";
 import { shareableJoinUrl } from "../../../lib/joinLinks";
 
@@ -46,6 +46,9 @@ const SLUG_PATTERN = /^[a-z0-9](?:[a-z0-9-]{0,62})$/;
 
 const CACHE_HEADER = "public, max-age=3600, s-maxage=86400";
 
+/** Print-quality: the plain code is downloaded to be put on paper. */
+const QR_PNG_WIDTH = 1024;
+
 export const GET: APIRoute = async ({ params, url }) => {
   const slug = params.slug ?? "";
   if (!SLUG_PATTERN.test(slug)) {
@@ -81,10 +84,15 @@ export const GET: APIRoute = async ({ params, url }) => {
 
   if (variant === "qr") {
     if (format === "png") {
-      const png = await qrPngBuffer(joinUrl);
+      // Rasterized from the same drawing the SVG hands out, rather than
+      // encoded a second way: the `qrcode` library's own PNG renderer knows
+      // nothing about the heart in the middle, so it would quietly hand an
+      // organization a different-looking code than every other surface.
+      // No text on this one, so the embedded typeface never comes up.
+      const png = await renderCardPng(await qrSvg(joinUrl), QR_PNG_WIDTH);
       headers.set("Content-Type", "image/png");
       attach(`stottemedlem-qr-${slug}.png`);
-      return new Response(new Uint8Array(png), { headers });
+      return new Response(png, { headers });
     }
     if (format === "svg") {
       headers.set("Content-Type", "image/svg+xml; charset=utf-8");

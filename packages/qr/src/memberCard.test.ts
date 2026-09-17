@@ -31,13 +31,14 @@ describe("memberCardSvg", () => {
   });
 
   it("draws the years as one streak heart carrying the count, plus the brand mark", () => {
-    // The streak heart and the one in the attribution — never one per year.
-    expect(countHearts(memberCardSvg(base))).toBe(2);
+    // Three hearts on a card, and never one per year: the streak, the one in
+    // the attribution, and the one in the middle of the QR code.
+    expect(countHearts(memberCardSvg(base))).toBe(3);
     expect(memberCardSvg(base)).toContain("3 år som støttemedlem!");
-    expect(countHearts(memberCardSvg({ ...base, hearts: 12 }))).toBe(2);
+    expect(countHearts(memberCardSvg({ ...base, hearts: 12 }))).toBe(3);
     expect(memberCardSvg({ ...base, hearts: 12 })).toContain("12 år som støttemedlem!");
-    // Nothing to count means no streak heart at all — only the attribution's.
-    expect(countHearts(memberCardSvg({ ...base, hearts: 0 }))).toBe(1);
+    // Nothing to count means no streak heart at all: the other two stay.
+    expect(countHearts(memberCardSvg({ ...base, hearts: 0 }))).toBe(2);
     expect(memberCardSvg({ ...base, hearts: 0 })).not.toContain("år som støttemedlem");
   });
 
@@ -68,7 +69,7 @@ describe("memberCardSvg", () => {
     // The streak stays — those years were supported — but the cheer goes.
     expect(svg).toContain("3 år som støttemedlem");
     expect(svg).not.toContain("3 år som støttemedlem!");
-    expect(countHearts(svg)).toBe(2);
+    expect(countHearts(svg)).toBe(3);
   });
 
   it("mentions recruits only when there are any", () => {
