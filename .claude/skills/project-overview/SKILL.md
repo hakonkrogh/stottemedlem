@@ -274,11 +274,25 @@ also documents the variants and why the rule exists.
   See `docs/architecture/overview.md` + `stack-docs` (env access + per-env build gotchas).
 - `packages/core/` — `@stottemedlem/core`, shared domain types/logic (incl. org
   slugs, canonical join/landing/salgsvilkår URLs, orgnr MOD11 validation).
+  **`normalizeWebsiteUrl` is the ONE place a user-supplied web address is
+  judged** (added 2026-09-17 for the organization's own website): it reads a
+  missing scheme as https, and refuses a non-http(s) scheme, credentials in
+  front of the host (`user:pass@`), a dotless or trailing-dot host, and
+  anything `new URL` chokes on. Reuse it for any future address a person
+  types; the value is stored normalized, so pages link it straight.
 - `packages/db/` — `@stottemedlem/db` (added 2026-07-28, scaffolding step 4):
   Drizzle schema + query helpers over the backoffice `DB` (D1) binding.
   `organizations` table = system of record for the **persisted, never-changing
-  org slug** + public profile (orgnr, contact email, logo/banner R2 keys, DPA
-  acceptance). The annual fee is NOT there any more: `organizations.annual_fee_nok`
+  org slug** + public profile (orgnr, contact email, the optional own
+  `website_url`, logo/banner R2 keys, DPA acceptance). The website (migration
+  `0016`, 2026-09-17, specs `concepts/organization.md` + `concepts/join-page.md`)
+  is the join page's one link on to the organization itself, rendered as
+  "Les mer om <org name>" under Om organisasjonen and omitted when null; it is
+  NOT part of `isProfileComplete`, so a missing one raises no warning. It is
+  edited through the SHARED `OrgProfileFields.astro`, so a field added there
+  lands on the create-org form too, and `ProfileFormValues` gaining a key
+  breaks `CreateOrgScreen.stories.ts` + `OrgSettingsScreen.stories.ts` on top
+  of the usual fixture files. The annual fee is NOT there any more: `organizations.annual_fee_nok`
   is legacy, backfilled into `membership_tiers` by migration 0004, and new code
   reads tiers only. **`src/schema.ts` is the annotated table inventory** (7 live
   tables: organizations, membership_tiers, supporting_members,

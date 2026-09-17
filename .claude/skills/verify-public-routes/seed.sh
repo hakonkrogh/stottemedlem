@@ -31,9 +31,9 @@ DELETE FROM membership_agreements WHERE org_id = 'org-seed-1';
 DELETE FROM supporting_members WHERE org_id = 'org-seed-1';
 DELETE FROM membership_tiers WHERE org_id = 'org-seed-1';
 DELETE FROM organizations WHERE id = 'org-seed-1';
-INSERT INTO organizations (id, workos_org_id, name, slug, orgnr, contact_email)
+INSERT INTO organizations (id, workos_org_id, name, slug, orgnr, contact_email, website_url)
 VALUES ('org-seed-1', 'wos-seed-1', 'Bakvendtland Skolekorps', '${SLUG}',
-        '923609016', 'post@bakvendtland.example');
+        '923609016', 'post@bakvendtland.example', 'https://bakvendtland.example');
 INSERT INTO membership_tiers (id, org_id, key, name, description, annual_fee_nok)
 VALUES ('tier-1','org-seed-1','stottemedlem','Støttemedlem','Vanlig støttemedlemskap.',300),
        ('tier-2','org-seed-1','gullmedlem','Gullmedlem','For deg som vil gi litt ekstra.',1000);

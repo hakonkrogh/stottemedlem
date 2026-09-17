@@ -61,7 +61,11 @@ Eksempel** (`kort-seed-2`), whose `referred_by_member_id` points at Kari, which
 is what makes her recruit count non-zero. Both are happy-path — the member
 list's other states
 (lapsed, no name, approved-but-not-yet-paid) are covered by Storybook fixtures
-in `apps/backoffice/src/components/memberFixtures.ts`, not by the seed. Note
+in `apps/backoffice/src/components/memberFixtures.ts`, not by the seed. The seeded org also carries a `website_url`
+(2026-09-17), so the join page's "Les mer om <org name>" link is in the local
+page; to see the other half, `UPDATE organizations SET website_url = NULL` and
+request the page with a query string (`?t=1`), which skips the worker's public
+page cache. Note
 the seeded org (`org-seed-1`/`wos-seed-1`) is fictitious and belongs to no
 WorkOS organization, so **no real login can open its back-office pages** — to
 click through an auth-gated screen with data, seed rows against your own org's
