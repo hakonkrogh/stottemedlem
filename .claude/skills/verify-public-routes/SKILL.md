@@ -61,7 +61,18 @@ Eksempel** (`kort-seed-2`), whose `referred_by_member_id` points at Kari, which
 is what makes her recruit count non-zero. Both are happy-path — the member
 list's other states
 (lapsed, no name, approved-but-not-yet-paid) are covered by Storybook fixtures
-in `apps/backoffice/src/components/memberFixtures.ts`, not by the seed. Note
+in `apps/backoffice/src/components/memberFixtures.ts`, not by the seed. **A bare "Fant ikke organisasjonen" on a local join page is almost always the
+slug, not the route or an empty D1** (cost a round trip 2026-09-17, a browser
+autocompleting a half-typed address). The slug must match whole and lowercase:
+`bakvendtland-skolekorps` 200s with or without a trailing slash, while
+`bakvendtland-skole`, `Bakvendtland-Skolekorps` and a trailing `%20` each 404.
+Ask D1 for the slug it actually holds before suspecting anything else.
+
+The seeded org also carries a `website_url`
+(2026-09-17), so the join page's "Les mer om <org name>" link is in the local
+page; to see the other half, `UPDATE organizations SET website_url = NULL` and
+request the page with a query string (`?t=1`), which skips the worker's public
+page cache. Note
 the seeded org (`org-seed-1`/`wos-seed-1`) is fictitious and belongs to no
 WorkOS organization, so **no real login can open its back-office pages** — to
 click through an auth-gated screen with data, seed rows against your own org's

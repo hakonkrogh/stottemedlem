@@ -1,4 +1,4 @@
-import { isValidOrganisasjonsnummer } from "@stottemedlem/core";
+import { isValidOrganisasjonsnummer, normalizeWebsiteUrl } from "@stottemedlem/core";
 import type { OrganizationProfile } from "@stottemedlem/db";
 
 // Shared parsing/validation for the public-profile fields the join page
@@ -9,6 +9,7 @@ import type { OrganizationProfile } from "@stottemedlem/db";
 export interface ProfileFormValues {
   orgnr: string;
   contactEmail: string;
+  websiteUrl: string;
 }
 
 export type ProfileFieldErrors = Partial<Record<keyof ProfileFormValues, string>>;
@@ -24,6 +25,7 @@ export function parseProfileForm(form: FormData): ParsedProfileForm {
   const values: ProfileFormValues = {
     orgnr: String(form.get("orgnr") ?? "").trim(),
     contactEmail: String(form.get("contactEmail") ?? "").trim(),
+    websiteUrl: String(form.get("websiteUrl") ?? "").trim(),
   };
   const fieldErrors: ProfileFieldErrors = {};
 
@@ -33,6 +35,12 @@ export function parseProfileForm(form: FormData): ParsedProfileForm {
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(values.contactEmail)) {
     fieldErrors.contactEmail = "Oppgi en gyldig e-postadresse.";
   }
+  // The website is optional; only an address that was written and cannot be
+  // read as one is an error.
+  const websiteUrl = normalizeWebsiteUrl(values.websiteUrl);
+  if (values.websiteUrl !== "" && websiteUrl === null) {
+    fieldErrors.websiteUrl = "Oppgi en gyldig nettadresse, for eksempel www.organisasjonen.no.";
+  }
 
   if (Object.keys(fieldErrors).length > 0) return { values, fieldErrors };
   return {
@@ -41,6 +49,7 @@ export function parseProfileForm(form: FormData): ParsedProfileForm {
     profile: {
       orgnr: values.orgnr.replaceAll(" ", ""),
       contactEmail: values.contactEmail,
+      websiteUrl,
     },
   };
 }
@@ -49,9 +58,11 @@ export function parseProfileForm(form: FormData): ParsedProfileForm {
 export function profileFormValues(org: {
   orgnr: string | null;
   contactEmail: string | null;
+  websiteUrl: string | null;
 }): ProfileFormValues {
   return {
     orgnr: org.orgnr ?? "",
     contactEmail: org.contactEmail ?? "",
+    websiteUrl: org.websiteUrl ?? "",
   };
 }

@@ -25,7 +25,7 @@ const session = Astro.locals.session;
 if (!session) return Astro.redirect("/login");
 
 let name = "";
-let values = { orgnr: "", contactEmail: "" };
+let values = { orgnr: "", contactEmail: "", websiteUrl: "" };
 let annualFee = "";
 let acceptedDpa = false;
 let fieldErrors: ProfileFieldErrors & {

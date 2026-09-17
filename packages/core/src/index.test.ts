@@ -29,6 +29,7 @@ import {
   membershipTierKey,
   nextAnnualPeriod,
   normalizeMembershipTierDescription,
+  normalizeWebsiteUrl,
   paymentState,
   periodLabel,
   proratedJoinFeeNok,
@@ -296,6 +297,36 @@ describe("isValidOrganisasjonsnummer", () => {
     expect(isValidOrganisasjonsnummer("12345678")).toBe(false);
     expect(isValidOrganisasjonsnummer("92360901a")).toBe(false);
     expect(isValidOrganisasjonsnummer("")).toBe(false);
+  });
+});
+
+describe("normalizeWebsiteUrl", () => {
+  it("reads an address written without a scheme as https", () => {
+    expect(normalizeWebsiteUrl("bakvendtland.example")).toBe("https://bakvendtland.example");
+    expect(normalizeWebsiteUrl("  www.bakvendtland.example  ")).toBe(
+      "https://www.bakvendtland.example",
+    );
+  });
+
+  it("keeps the address the organization wrote, path and all", () => {
+    expect(normalizeWebsiteUrl("https://bakvendtland.example/korpset")).toBe(
+      "https://bakvendtland.example/korpset",
+    );
+    expect(normalizeWebsiteUrl("http://bakvendtland.example")).toBe("http://bakvendtland.example");
+  });
+
+  it("is null for no address at all", () => {
+    expect(normalizeWebsiteUrl("")).toBeNull();
+    expect(normalizeWebsiteUrl("   ")).toBeNull();
+  });
+
+  it("refuses anything that is not an ordinary web address", () => {
+    expect(normalizeWebsiteUrl("javascript://bakvendtland.example/%0aalert(1)")).toBeNull();
+    expect(normalizeWebsiteUrl("mailto:post@bakvendtland.example")).toBeNull();
+    expect(normalizeWebsiteUrl("korpset")).toBeNull();
+    expect(normalizeWebsiteUrl("bakvendtland.example.")).toBeNull();
+    expect(normalizeWebsiteUrl("https://to adresser.example")).toBeNull();
+    expect(normalizeWebsiteUrl("https://noen:hemmelig@bakvendtland.example")).toBeNull();
   });
 });
 

@@ -72,10 +72,15 @@ export function createDb(d1: D1Database) {
   });
 }
 
-/** The profile fields the Vipps order form requires the join page to show. */
+/**
+ * The public profile the join page shows: the fields the Vipps order form
+ * requires, plus the organization's own website, which is optional and simply
+ * left out when the organization has none (specs/concepts/organization.md).
+ */
 export interface OrganizationProfile {
   orgnr: string | null;
   contactEmail: string | null;
+  websiteUrl: string | null;
 }
 
 /**
@@ -150,6 +155,7 @@ export async function ensureOrganization(
       slug,
       orgnr: profile?.orgnr ?? null,
       contactEmail: profile?.contactEmail ?? null,
+      websiteUrl: profile?.websiteUrl ?? null,
     })
     .returning();
   if (!row) throw new Error("insert into organizations returned no row");

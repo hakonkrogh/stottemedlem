@@ -456,6 +456,44 @@ export function isValidOrganisasjonsnummer(input: string): boolean {
   return control === Number(digits[8]);
 }
 
+/**
+ * The organization's own website address, as it should be stored and linked
+ * from the join page (specs/concepts/organization.md).
+ *
+ * An administrator writes the address the way they would say it out loud
+ * ("bakvendtland.example"), so a missing scheme is read as https. Anything
+ * that is not an ordinary web address is refused rather than stored: the join
+ * page turns this into a link supporters follow, and a link that goes
+ * somewhere other than the organization's own site is worse than no link.
+ *
+ * Returns the address to store, or null when the input is not one. Empty input
+ * is null too: an organization without a website, which is the common case.
+ */
+export function normalizeWebsiteUrl(input: string): string | null {
+  const written = input.trim();
+  if (!written) return null;
+  // A leading "word:" is a scheme, unless the word carries a dot, which makes
+  // it a host with a port instead ("bakvendtland.example:8080").
+  const scheme = /^([a-z][a-z0-9+.-]*):/i.exec(written)?.[1];
+  const hasScheme = scheme !== undefined && !scheme.includes(".");
+  if (hasScheme && !/^https?$/i.test(scheme)) return null;
+  let url: URL;
+  try {
+    url = new URL(hasScheme ? written : `https://${written}`);
+  } catch {
+    return null;
+  }
+  if (url.protocol !== "https:" && url.protocol !== "http:") return null;
+  // A name and password in front of the host is a phishing shape, not a
+  // website an organization would hand out.
+  if (url.username || url.password) return null;
+  // A host with no dot is a machine name on somebody's own network, not a
+  // public website, and a trailing dot is the kind of typo that still parses.
+  if (!url.hostname.includes(".") || url.hostname.endsWith(".")) return null;
+  const bare = url.pathname === "/" && !url.search && !url.hash;
+  return bare ? `${url.protocol}//${url.host}` : url.toString();
+}
+
 // ── Annual period (specs/concepts/annual-period.md) ─────────────────────────
 
 /**

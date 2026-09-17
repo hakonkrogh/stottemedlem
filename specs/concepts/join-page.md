@@ -105,6 +105,15 @@ resolve to.
   [Set up a supporting membership](../use-cases/set-up-supporting-membership.md));
   a field the organization has not yet provided is omitted rather than shown
   empty.
+- The page **links on to the organization's own website** when the
+  organization has one ([organization](organization.md)). This page answers
+  what the membership costs and what it gives; it does not tell the
+  organization's own story, and a supporter about to pay a stranger often
+  wants to read that first. It is one plain link beneath the organization's
+  details, offering to read more *about the organization by name*, so it is
+  obvious where it leads before it is followed. An organization without a
+  website simply has no such link: that is the common case, and the reason the
+  product hosts this page at all.
 - The page presents the organization's **visual identity** when uploaded, in
   the familiar social-page arrangement (as Facebook pages do): the banner image
   as a wide **backdrop** at the top, with the logo overlapping the banner's

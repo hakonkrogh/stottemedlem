@@ -1,8 +1,10 @@
 ---
 // The public-profile fields every organization must fill so its join page
 // (specs/concepts/join-page.md) can show what Vipps requires: org.nr
-// and contact info. The membership offer (tiers with prices) is managed on the
-// medlemskap page. Shared by the create-org screen and the org settings page.
+// and contact info, plus the organization's own website, which is optional
+// and becomes the page's one link on to who the organization is. The
+// membership offer (tiers with prices) is managed on the medlemskap page.
+// Shared by the create-org screen and the org settings page.
 import TextField from "@stottemedlem/ui/components/TextField.astro";
 import type { ProfileFieldErrors, ProfileFormValues } from "../lib/orgProfile";
 
@@ -28,4 +30,13 @@ const { values, fieldErrors = {} } = Astro.props;
   placeholder="post@organisasjonen.no"
   required
   error={fieldErrors.contactEmail}
+/>
+{/* Not a `type="url"` field: the browser would demand a scheme, and an
+    administrator writes the address the way they say it. */}
+<TextField
+  label="Nettside (valgfritt)"
+  name="websiteUrl"
+  value={values.websiteUrl}
+  placeholder="www.organisasjonen.no"
+  error={fieldErrors.websiteUrl}
 />

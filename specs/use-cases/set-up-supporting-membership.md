@@ -20,7 +20,10 @@ From the organization's point of view:
    will recognize) and its **public profile**: organisasjonsnummer and contact
    information. These are required — the organization's
    [join page](../concepts/join-page.md) must show them for a payment
-   provider to approve recurring payments.
+   provider to approve recurring payments. Beside them it can give **its own
+   website**, which is optional and becomes the join page's one link on to who
+   the organization is ([organization](../concepts/organization.md)). Like the
+   rest of the profile it can be added or changed later.
 2. Creating the organization includes stating its **first membership**: a
    minimal [membership tier](../concepts/membership-tier.md) — the default
    membership name with the [annual fee](../concepts/annual-fee.md) the
@@ -172,6 +175,11 @@ imagery it shows the banner cropped exactly as the page crops it.
       office offers no link to an individual membership.
 - [ ] After setup the organization has one shareable, live join page with its
       sales-terms page, both at stable addresses.
+- [ ] An administrator can give the organization's own website, at creation or
+      later, and the join page then offers a link to read more about the
+      organization by name; an organization with none shows no such link, and
+      an address that is not a web address is refused with a reason instead of
+      being stored.
 - [ ] An organization missing required profile fields sees a prompt in the back
       office and can complete them; the join page reflects the change
       immediately.
