@@ -23,6 +23,7 @@ export const ORG: Organization = {
   slug: "bakvendtland-skolekorps",
   orgnr: "912345678",
   contactEmail: "post@bakvendtland.example",
+  websiteUrl: "https://bakvendtland.example",
   annualFeeNok: null,
   logoKey: null,
   bannerKey: null,

@@ -1,0 +1,13 @@
+-- The organization's own website (specs/concepts/organization.md): the place a
+-- supporter reads about the organization itself, linked from the join page.
+--
+-- The join page says what the supporting membership costs and what it gives;
+-- it does not say who the organization is or what it did last year. Most
+-- organizations already have somewhere that does, and a supporter standing in
+-- front of the offer for the first time often wants to look there before
+-- paying. So the address is kept here and turned into one link on the page.
+--
+-- Optional, and NULL for every organization that has no website of its own,
+-- which is the very reason this product hosts a page for them. The join page
+-- simply leaves the link out.
+ALTER TABLE organizations ADD COLUMN website_url TEXT;

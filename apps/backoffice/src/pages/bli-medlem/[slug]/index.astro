@@ -64,6 +64,12 @@ const subheadIntro =
 const subheadPromise =
   "Medlemskapet fornyes år for år så lenge du vil være med: du står på organisasjonens liste over støttemedlemmer, hører fra dem gjennom året, og støtten din teller for hvert år som går.";
 
+// The way on to the organization itself, when it has somewhere that tells that
+// story (specs/concepts/join-page.md). The sentence is built here rather than
+// in the template: a space touching an {expr} boundary inside a slot is
+// unreliable in Astro.
+const website = org.websiteUrl ? { url: org.websiteUrl, label: `Les mer om ${org.name}` } : null;
+
 // Set when the join attempt bounced back here (see start.ts). Query strings are
 // not part of the page's cache key, so this never gets cached onto anyone else.
 const joinError = Astro.url.searchParams.get("feil");
@@ -175,6 +181,18 @@ const referral = Astro.url.searchParams.get(JOIN_REFERRAL_PARAM)?.trim() || null
           )
         }
       </dl>
+      {/* On to the organization itself, when it has somewhere that tells that
+          story. This page says what the membership costs; it does not say who
+          the organization is, and a supporter about to pay often wants to
+          look (specs/concepts/join-page.md). Omitted entirely when there is
+          no website, the common case, and the reason this page exists. */}
+      {
+        website && (
+          <Text>
+            <TextLink href={website.url}>{website.label}</TextLink>
+          </Text>
+        )
+      }
     </Stack>
   </Stack>
 </PublicShell>

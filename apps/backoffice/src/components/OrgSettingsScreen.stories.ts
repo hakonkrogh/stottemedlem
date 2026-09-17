@@ -43,7 +43,11 @@ const settings = (props: Record<string, unknown> = {}, warnings: OrgWarning[] = 
           org,
           orgPath: ORG_PATH,
           joinUrl: JOIN_URL,
-          values: { orgnr: ORG.orgnr ?? "", contactEmail: ORG.contactEmail ?? "" },
+          values: {
+            orgnr: ORG.orgnr ?? "",
+            contactEmail: ORG.contactEmail ?? "",
+            websiteUrl: ORG.websiteUrl ?? "",
+          },
           name: ORG.name,
           vippsKeys: storedKeys,
           paymentEventsConnected: true,
@@ -96,8 +100,8 @@ export const DpaJustAccepted = { args: settings({ dpaJustAccepted: true }) };
 export const Incomplete = {
   args: settings(
     {
-      org: { ...ORG, orgnr: null, contactEmail: null },
-      values: { orgnr: "", contactEmail: "" },
+      org: { ...ORG, orgnr: null, contactEmail: null, websiteUrl: null },
+      values: { orgnr: "", contactEmail: "", websiteUrl: "" },
       vippsKeys: null,
       paymentEventsConnected: false,
     },
@@ -109,10 +113,11 @@ export const Incomplete = {
 export const WithErrors = {
   args: settings({
     editing: true,
-    values: { orgnr: "12345", contactEmail: "post@" },
+    values: { orgnr: "12345", contactEmail: "post@", websiteUrl: "korpset" },
     fieldErrors: {
       orgnr: "Oppgi et gyldig organisasjonsnummer (9 siffer).",
       contactEmail: "Oppgi en gyldig e-postadresse.",
+      websiteUrl: "Oppgi en gyldig nettadresse, for eksempel www.organisasjonen.no.",
     },
   }),
 };

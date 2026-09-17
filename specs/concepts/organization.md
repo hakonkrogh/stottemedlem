@@ -28,6 +28,14 @@ support.
   requires these fields (payment-provider approval depends on them); an
   organization missing any of them is prompted to complete its profile in the
   back office.
+- An organization may record its **own website**: the place that tells who it
+  is and what it does, which its [join page](join-page.md) links on to. It is
+  optional, because many of these organizations have no site of their own
+  (which is why the product hosts a page for them), and the page simply leaves
+  the link out. Only an ordinary web address is kept: an administrator writes
+  it the way they would say it aloud, and anything that cannot be read as a
+  website address is refused rather than stored, since a supporter is invited
+  to follow it.
 - An organization may add a **visual identity** — a logo and a banner image —
   shown on its [join page](join-page.md). Unlike the profile fields
   these are **optional**: the page simply omits what has not been uploaded.

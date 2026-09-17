@@ -24,6 +24,12 @@ export const organizations = sqliteTable("organizations", {
   /** Public contact address shown on the join page and in sales terms. */
   contactEmail: text("contact_email"),
   /**
+   * The organization's own website, linked from the join page so a supporter
+   * can read about the organization before joining. Optional: many of these
+   * organizations have no site of their own, and the page omits the link.
+   */
+  websiteUrl: text("website_url"),
+  /**
    * LEGACY single annual fee in whole NOK. Superseded by membership tiers
    * (migration 0004 backfilled it into a tier); kept because migrations are
    * additive. New code reads/writes tiers, never this column.

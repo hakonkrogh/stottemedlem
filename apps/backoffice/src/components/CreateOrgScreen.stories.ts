@@ -10,11 +10,11 @@ export default {
 
 interface ScreenProps {
   name?: string;
-  values?: { orgnr: string; contactEmail: string };
+  values?: { orgnr: string; contactEmail: string; websiteUrl: string };
   annualFee?: string;
   acceptedDpa?: boolean;
   fieldErrors?: Partial<
-    Record<"name" | "orgnr" | "contactEmail" | "annualFee" | "godtarAvtale", string>
+    Record<"name" | "orgnr" | "contactEmail" | "websiteUrl" | "annualFee" | "godtarAvtale", string>
   >;
   error?: string;
 }
@@ -28,7 +28,11 @@ export const Default = { args: inFrame({}) };
 export const Filled = {
   args: inFrame({
     name: "Bakvendtland Skolekorps",
-    values: { orgnr: "923 609 016", contactEmail: "post@bakvendtland.example" },
+    values: {
+      orgnr: "923 609 016",
+      contactEmail: "post@bakvendtland.example",
+      websiteUrl: "bakvendtland.example",
+    },
     annualFee: "300",
     acceptedDpa: true,
   }),
@@ -41,7 +45,11 @@ export const Filled = {
 export const AgreementNotAccepted = {
   args: inFrame({
     name: "Bakvendtland Skolekorps",
-    values: { orgnr: "923 609 016", contactEmail: "post@bakvendtland.example" },
+    values: {
+      orgnr: "923 609 016",
+      contactEmail: "post@bakvendtland.example",
+      websiteUrl: "bakvendtland.example",
+    },
     annualFee: "300",
     fieldErrors: {
       godtarAvtale: "Du må godta databehandleravtalen for å opprette organisasjonen.",
@@ -52,11 +60,12 @@ export const AgreementNotAccepted = {
 export const WithErrors = {
   args: inFrame({
     name: "Bakvendtland Skolekorps",
-    values: { orgnr: "123", contactEmail: "post@" },
+    values: { orgnr: "123", contactEmail: "post@", websiteUrl: "korpset" },
     annualFee: "gratis",
     fieldErrors: {
       orgnr: "Oppgi et gyldig organisasjonsnummer (9 siffer).",
       contactEmail: "Oppgi en gyldig e-postadresse.",
+      websiteUrl: "Oppgi en gyldig nettadresse, for eksempel www.organisasjonen.no.",
       annualFee: "Oppgi årsbeløpet i hele kroner.",
     },
   }),
