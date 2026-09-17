@@ -37,11 +37,12 @@ browsing the organization's own site can join in seconds.
    ([brand palette](../concepts/brand-palette.md)). The line over the
    organization's name was the product's green until 2026-09-10: this card
    exists to present ONE organization and hand a stranger a way in, and the
-   product's own colour was a third voice on it. The heart at the bottom is the only colour left, and it
-   is drawn rather than typed, because the card is printed and rasterized where
-   no emoji font exists. The typeface travels inside the card for the same
-   reason: it is looked at as a picture, on a wall or on somebody else's
-   website, where nothing can be fetched.
+   product's own colour was a third voice on it. The heart is the only colour
+   left, in the two places it appears: beside the wordmark at the bottom, and
+   in the middle of the QR code. Both are drawn rather than typed, because the
+   card is printed and rasterized where no emoji font exists. The typeface
+   travels inside the card for the same reason: it is looked at as a picture,
+   on a wall or on somebody else's website, where nothing can be fetched.
 3. The QR code encodes the organization's
    [join page](../concepts/join-page.md): scanning it with a phone
    opens **Vipps directly** — the supporter lands in the payment for that
@@ -56,7 +57,12 @@ browsing the organization's own site can join in seconds.
    files suitable for both print and web, from where the card is shown. Both
    are offered because they are different jobs: the whole card is what gets
    printed and hung up, and the plain code is what goes into a poster, a
-   newsletter or a programme the organization lays out itself.
+   newsletter or a programme the organization lays out itself. **The plain code
+   is the same code the card carries**, heart and all
+   ([brand mark](../concepts/brand-mark.md)), in every format it is offered in:
+   an organization that puts the downloaded code in its newsletter and the card
+   on the noticeboard has put out one thing twice, not two things that happen
+   to lead to the same place.
 6. An external website (typically the organization's own site) can **embed** the
    card by referencing a stable image address — no code beyond a copy-paste
    snippet. Because the address is stable and the card is generated fresh on
@@ -88,6 +94,11 @@ browsing the organization's own site can join in seconds.
 - [ ] The card carries no colour but the heart, and reads in the product's own
       typeface wherever it is shown: in the back office, embedded on a club's
       website, and on paper.
+- [ ] The code still scans, with the heart on it, off a printed card held up to
+      a phone. This is measured rather than eyeballed, and a change that makes
+      the heart bigger is measured again before it ships.
+- [ ] The downloaded plain code looks like the code on the card, in both the
+      picture formats it is offered in.
 - [ ] A copy-paste snippet lets an external website embed the card; the embedded
       card keeps working and stays current without re-embedding.
 - [ ] The card address the back office shows an administrator serves the card

@@ -8,8 +8,13 @@ import { CARD_FONT_DATA_URI, CARD_FONT_FAMILY } from "./cardFont";
  * Turning a card into a real picture.
  *
  * There are two: the member's own (specs/concepts/member-card.md) and the
- * organization's QR card (specs/use-cases/promote-with-qr-card.md). Only the
- * member's is rasterized; both are set in the typeface `cardFont.ts` carries.
+ * organization's QR card (specs/use-cases/promote-with-qr-card.md). The
+ * member's card is rasterized here, and so is the plain QR code an
+ * organization downloads as PNG: a code is drawn once, as SVG, and whoever
+ * wants pixels rasterizes THAT drawing, so no second renderer can hand out a
+ * code that looks different (qr-codes.md). The organization's card itself is
+ * only ever served as SVG. Both cards are set in the typeface `cardFont.ts`
+ * carries; the plain code has no text on it at all.
  *
  * A shared card has to preview in a social feed and travel in an email, and
  * neither accepts SVG — so the same drawing is rasterized here. Two things a

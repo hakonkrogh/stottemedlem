@@ -12,12 +12,6 @@
         "default": "./dist/index.js"
       }
     },
-    "./node": {
-      "import": {
-        "types": "./dist/node.d.ts",
-        "default": "./dist/node.js"
-      }
-    },
     "./browser": {
       "import": {
         "types": "./dist/browser.d.ts",

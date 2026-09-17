@@ -76,6 +76,8 @@ import {
   heartPath,
   INK,
   MUTED,
+  type QrCode,
+  qrHeartMark,
   qrModulesPath,
   r,
 } from "./brand.js";
@@ -369,14 +371,9 @@ const FOOTER_QR_SIZE = FOOTER_QR_PANEL - QR_QUIET * 2;
  * white, a frame drawn for its own sake, so the code's quiet zone does the
  * work alone.
  */
-function qrCode(
-  left: number,
-  top: number,
-  qrSize: number,
-  qr: { path: string; moduleCount: number },
-): string {
+function qrCode(left: number, top: number, qrSize: number, qr: QrCode): string {
   const pad = QR_QUIET;
-  return `<g transform="translate(${r(left + pad)} ${r(top + pad)}) scale(${r(qrSize / qr.moduleCount)})"><path d="${qr.path}" fill="${INK}"/></g>`;
+  return `<g transform="translate(${r(left + pad)} ${r(top + pad)}) scale(${r(qrSize / qr.moduleCount)})"><path d="${qr.path}" fill="${INK}"/>${qrHeartMark(qr)}</g>`;
 }
 
 /**
@@ -428,12 +425,7 @@ function attribution(left: number, baseline: number): string {
  * instead of a column of it, which is what left the middle to the member
  * (specs/concepts/member-card.md).
  */
-function cardFooter(
-  left: number,
-  right: number,
-  top: number,
-  qr: { path: string; moduleCount: number },
-): string {
+function cardFooter(left: number, right: number, top: number, qr: QrCode): string {
   const middle = top + FOOTER_QR_PANEL / 2;
   return `${attribution(left, middle - 6)}
   ${textEl(left, middle + 28, "Skann og bli støttemedlem", { size: TYPE.small, fill: FAINT })}
@@ -451,7 +443,7 @@ interface CardContent {
   periodText: string;
   lapsed: boolean;
   logoDataUri: string | null;
-  qr: { path: string; moduleCount: number };
+  qr: QrCode;
   alt: string;
 }
 
@@ -770,7 +762,7 @@ export function memberCardSvg(options: MemberCardOptions): string {
     ...words,
     periodText: options.periodText,
     logoDataUri: options.logoDataUri ?? null,
-    qr: qrModulesPath(options.joinUrl),
+    qr: qrModulesPath(options.joinUrl, { heart: true }),
     alt: `Medlemsbevis: ${memberName} er støttemedlem${
       memberNumber ? ` nr. ${memberNumber}` : ""
     } i ${orgName}${hearts > 0 ? ` på ${hearts}. året` : ""}, ${

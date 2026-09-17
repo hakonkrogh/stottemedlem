@@ -26,6 +26,19 @@ and never competes with an organization's own identity.
   stand in, but the character is the default. Both
   [cards](member-card.md) are such surfaces, and they stand in with the same
   shape: one heart, drawn one way, wherever the character cannot be typed.
+- **The heart sits in the middle of the product's QR codes.** Every code the
+  product hands out so that someone can be invited in, on
+  [either card](member-card.md) and on the plain code an organization
+  downloads, carries the mark in its centre. One code, recognisably ours,
+  whichever surface it came off.
+  The QR standard has nothing to say about this: a mark on a code is not a
+  feature of it but damage, survivable only because a code can be rebuilt from
+  part of itself. So the mark is held to what is *measured* to be safe, not to
+  what looks good: it covers a sixth of the code's width, well under half of
+  what makes a code fail, it never reaches the patterns a scanner finds the
+  code by, and a code too dense to spare the room gets no heart at all rather
+  than a heart that costs somebody a scan. A code that cannot be scanned has
+  failed at the one thing it is for, and no branding is worth that.
 - The heart is a mark, not a headline: like the attribution it belongs to, it
   stays small and quiet next to the organization's own identity.
 - **The heart is still, with one exception**: while a
