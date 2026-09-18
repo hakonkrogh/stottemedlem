@@ -195,17 +195,26 @@ also documents the variants and why the rule exists.
   from INSIDE `scheduled()`, so the only covered shape was "a job ran and
   reported failures". Two of the silent shapes are now covered; the rest are
   still open, and are PROPOSALS the user has not decided on.
-  **BUILT 2026-09-15 (1) the nightly job never ran.** No self-check can catch
-  this, because the code that would notice is the code that did not run, so the
-  expectation is held outside the product: `runScheduledJobsWatched` in
-  worker.ts sends Sentry Crons check-ins (in_progress, then ok/error) and
-  UPSERTS the monitor's schedule from the cron string itself, so the monitor
-  follows wrangler.jsonc instead of a dashboard setting. The slug is
-  `<job>-<environment>` (`reconcile-production`, `renewals-staging`, …):
-  monitors are global by slug and the two environments run deliberately
-  different clocks, so sharing a slug would make them fight over the schedule.
-  Every check-in goes through `safely()` because alerting must never become the
-  outage. **Still verify the free plan's cron-monitor quota.**
+  **BUILT 2026-09-15, REBUILT ON A NEW VENDOR 2026-09-16: (1) the nightly job
+  never ran.** No self-check can catch this, because the code that would notice
+  is the code that did not run, so the expectation is held outside the product.
+  `runScheduledJobsWatched` in worker.ts now beats to a **Better Stack
+  heartbeat** when a run finishes: `GET <address>` on a good night, `POST
+  <address>/fail` with an identifiers-only body when the job throws. One
+  address per job per deployed environment, read from the `HEARTBEAT_URL_
+  RENEWALS` / `HEARTBEAT_URL_RECONCILE` secrets, because the two environments
+  run deliberately different clocks and one clock must never be used to read
+  the other's silence. No address (local dev, or a deployed environment nobody
+  set up) logs a warn and runs unwatched. Every beat is wrapped so a dead
+  vendor can never take down the run.
+  The first build used Sentry Crons check-ins, and that is the lesson worth
+  keeping: **Sentry free includes exactly ONE cron monitor**, so of the four
+  slugs it shipped only the first to check in ever became a monitor and the
+  other three were refused in silence. Better Stack free allows 10
+  monitors/heartbeats. Cost of the move: there is no `/start` signal, so run
+  duration is not measured, and the schedule now lives with the vendor rather
+  than being upserted from the cron string, so it must be kept in step with
+  wrangler.jsonc by hand. See stack-docs, "The nightly runs' watchdog".
   **BUILT 2026-09-15 (2) reconciliation rotation lag.** `AGREEMENTS_PER_RUN =
   250` per org per run, once nightly: 1,000 active agreements in one org = 4
   days to come round, 2,500 = 10 days, and nothing said so. `reconcileOrganization`

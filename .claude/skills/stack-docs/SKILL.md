@@ -707,10 +707,10 @@ occurrence), and deliberate business alerts (cron `failed > 0`, missing
 `PUBLIC_ORIGIN`/`RESEND_API_KEY`) go through `captureMessage`. Independent of
 Resend, so "Resend broken" still alerts. Docs:
 docs.sentry.io/platforms/javascript/guides/cloudflare/
-(2) **Healthchecks.io free** (20 checks, email) as the dead-man's switch for
-BOTH cron jobs — Sentry free includes only 1 cron monitor
-(`Sentry.withMonitor`) and there are 2 triggers; Healthchecks also catches
-"the Worker never ran at all".
+(2) a separate **dead-man's switch** for the cron jobs, because Sentry free
+includes only 1 cron monitor and there are 2 triggers in 2 environments.
+Healthchecks.io was the original pick; the switch actually made was to Better
+Stack, see "The nightly runs' watchdog" below.
 **Layer 1 implemented 2026-08-26** (spec `specs/concepts/operational-alerting.md`):
 vendor-neutral `packages/log` (`@stottemedlem/log`:
 `createLoggerFactory(sinks)` → `logger(area)` — the area slug is REQUIRED and
@@ -752,6 +752,84 @@ A DSN can be verified headlessly, no SDK involved — POST one envelope
 32 lowercase hex) to `https://<host>/api/<projectId>/envelope/` with
 content-type `application/x-sentry-envelope`; HTTP 200 + `{"id":…}` = the
 project accepted it and an issue appears.
+### The nightly runs' watchdog (Better Stack heartbeats)
+
+**SWITCHED 2026-09-16, from Sentry Crons to Better Stack heartbeats.** PR #110
+shipped `Sentry.captureCheckIn` with one monitor slug per job per environment
+(`renewals-production`, `reconcile-production`, `renewals-staging`,
+`reconcile-staging`). Sentry then emailed "Cron Monitors 1 / 1, 100% of your
+cron monitors budget consumed": the free plan includes exactly ONE cron
+monitor, the first slug to check in took it, and the other three were refused
+silently. No error, no issue, no monitor: three of the four nightly runs were
+unwatched while looking watched. Anything past the first needs a
+pay-as-you-go budget on Sentry's Subscriptions page.
+
+**Rolling the switch out:** staging first, because its runs are hourly and
+prove the wiring within the hour instead of overnight. Then **delete the
+leftover Sentry cron monitor**: nothing sends check-ins to it any more, so it
+sits there looking permanently missed and keeps e-mailing. A Sentry cron alert
+arriving after 2026-09-16 means that monitor was never cleaned up, NOT that a
+nightly run failed.
+
+**Better Stack free: 10 monitors and heartbeats combined, 1 status page,
+Slack and e-mail alerts** (betterstack.com/pricing). Four heartbeats fit with
+room to spare, which is the whole reason for the move. Sentry stays as the
+ERROR channel; only the dead-man's switch moved.
+
+The heartbeat HTTP contract (betterstack.com/docs/uptime/cron-and-heartbeat-monitor/):
+
+| what | request |
+|------|---------|
+| success | `GET https://uptime.betterstack.com/api/v1/heartbeat/<TOKEN>` |
+| failure | `POST .../<TOKEN>/fail` (body is kept as the run's output) |
+| exit code | `.../<TOKEN>/<code>`, 0 counting as success |
+
+- **There is no `/start` signal.** Better Stack has no equivalent of Sentry's
+  `in_progress` check-in or Healthchecks' `/start`, so there is no
+  "maxRuntime" to configure either. That is not a loss here: a run that hangs
+  simply never sends its beat, so the SAME missed-beat alarm covers both "never
+  started" and "started and never finished". It does mean run DURATION is not
+  measured.
+- **The expectation lives with the vendor, not in the repo.** Each heartbeat
+  carries its own "expect a heartbeat every" period plus a grace, set in the
+  dashboard or via the API. Sentry's check-in could upsert its schedule from
+  the cron string; this cannot, so `wrangler.jsonc` `triggers.crons` and the
+  heartbeat periods have to be kept in step by hand.
+- A heartbeat stays **Pending** until its first request arrives; the clock
+  starts then, not at creation.
+- API (only if the dashboard is not wanted): `POST
+  https://uptime.betterstack.com/api/v2/heartbeats`, `Authorization: Bearer
+  <TOKEN>`, fields `name`, `period` (SECONDS, min 30), `grace` (seconds, ~20%
+  of period recommended), `email`/`sms`/`call`/`push`, `policy_id`,
+  `heartbeat_group_id`. The 201 response carries the `url` to store as the
+  secret.
+
+Wiring in this repo: `runScheduledJobsWatched` in `apps/backoffice/src/worker.ts`
+reads `HEARTBEAT_URL_RENEWALS` / `HEARTBEAT_URL_RECONCILE`. They are SECRETS,
+not vars, for two reasons: vars are inherited by local dev (which must never
+beat into the operator's watchdog and make a real missed night look fine), and
+the address is itself the credential, so whoever holds it can silence the alarm
+by beating in the run's place. Absent address = the run still happens and logs
+a warn saying it is unwatched. Every beat is wrapped so a dead vendor can never
+take down the run, and the failure body is identifiers only (job, environment,
+cron), never member data.
+
+**Verified 2026-09-16 against the real Worker**, not by reading the code:
+a local receiver plus `wrangler dev --test-scheduled` and
+`/cdn-cgi/handler/scheduled?cron=0+2+*+*+*` showed `GET /api/v1/heartbeat/
+tok-reconcile` on a good run, `POST .../tok-reconcile/fail` with body
+`reconcile failed on production (0 2 * * *)` when the job threw, and the
+renewals cron beating to the renewals address.
+
+**TRAP, cost an hour on 2026-09-16: `wrangler dev` serves `dist/`, not `src/`.**
+The first run of that check "passed" while showing a request NO code in the
+tree could produce (`POST .../tok-reconcile` with body `reconcile ok in 0s`),
+because `apps/backoffice/dist` was a build from the previous day of an earlier,
+abandoned heartbeat implementation. Always
+`pnpm turbo run build --filter=@stottemedlem/backoffice` FIRST, the way
+`.claude/skills/vipps-test-rig/cron.sh` does. A stale `dist` does not fail: it
+lies, in the shape of a passing test.
+
 The facts below informed the choice:
 
 - **Sentry Developer (free) plan: email alerts ONLY.** The Slack integration —

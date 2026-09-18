@@ -78,14 +78,22 @@ renewing.
   other report here is made by the product while it works, so the shape it can
   describe is work that ran and went wrong. Work that never started describes
   nothing, and a product saying nothing is also what a good night looks like.
-  The product therefore says when unattended work *begins* and when it *ends*,
-  and something outside the product holds the expectation that those arrive:
-  the alarm for a night that never came can only be raised by whoever was
-  waiting for it, because inside the product the part that would notice is the
-  part that did not run. What counts as on time is whatever schedule the
-  product actually keeps, and each deployed environment is judged against its
-  own: they run the same work on deliberately different clocks, and one
-  environment's clock must never be used to read the other's silence.
+  The product therefore says so when unattended work has *finished*, and
+  something outside the product holds the expectation that the message
+  arrives: the alarm for a night that never came can only be raised by whoever
+  was waiting for it, because inside the product the part that would notice is
+  the part that did not run. One silence covers every way a night can go
+  missing: a run that never started, and a run that started and never reached
+  the end. A run that fails says so on its way out, so a bad night is loud at
+  once rather than only at its next missed message. What counts as on time is
+  whatever schedule the product actually keeps, and each deployed environment
+  is judged against its own: they run the same work on deliberately different
+  clocks, and one environment's clock must never be used to read the other's
+  silence. Being the one waited for is itself a credential: anything that can
+  speak in a run's place can cover up that run's absence, so the address it
+  speaks to is held as closely as any other secret (decided 2026-09-16, when
+  the watchdog moved to a vendor whose address is the whole of its
+  authentication).
 - **A situation the product handles by itself is not a failure.** Something
   the product recognizes and puts right on its own — a second payment for a
   period already paid for being

@@ -77,3 +77,15 @@ EMAIL_FROM_ADDRESS="varsel@xn--stttemedlem-hgb.no"
 # the alerting pipeline locally, paste the DSN of your OWN throwaway Sentry
 # project here (specs/concepts/operational-alerting.md).
 SENTRY_DSN=""
+
+# ── The nightly runs' watchdog (heartbeats) ─────────────────────────────
+# A cron job that never runs reports nothing, and reporting nothing is also
+# what a good night looks like, so the expectation is held outside the product:
+# each nightly run beats to its own address when it finishes, and whoever was
+# waiting raises the alarm when the beat does not come. Leave these empty: the
+# runs still happen locally, just unwatched, and a dev machine beating into the
+# operator's watchdog would make a real missed night look fine. To exercise it,
+# paste heartbeat addresses from your OWN account
+# (specs/concepts/operational-alerting.md).
+HEARTBEAT_URL_RECONCILE=""
+HEARTBEAT_URL_RENEWALS=""

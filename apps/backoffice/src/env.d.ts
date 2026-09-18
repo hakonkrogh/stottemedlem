@@ -65,6 +65,18 @@ interface Env {
    */
   SENTRY_ENVIRONMENT?: string;
   /**
+   * Where the nightly runs report in: one watchdog heartbeat address per job,
+   * set as a secret per DEPLOYED environment:
+   *   wrangler secret put HEARTBEAT_URL_RECONCILE [--env staging]
+   *   wrangler secret put HEARTBEAT_URL_RENEWALS  [--env staging]
+   * Secrets rather than vars because the address is the credential (whoever
+   * holds it can silence the alarm) and because local dev inherits vars, and
+   * local dev must have no way to speak. Absent means the run still happens,
+   * unwatched (specs/concepts/operational-alerting.md).
+   */
+  HEARTBEAT_URL_RECONCILE?: string;
+  HEARTBEAT_URL_RENEWALS?: string;
+  /**
    * The address member notices are sent from. Must be on a domain verified
    * with the provider, so it is always ours — the organization's own address
    * is the reply-to instead (specs/concepts/member-notice.md).

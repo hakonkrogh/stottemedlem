@@ -105,6 +105,17 @@
     // (same Sentry project; events are told apart by SENTRY_ENVIRONMENT):
     //   wrangler secret put SENTRY_DSN [--env staging]
     // Absent = errors are logged, not reported.
+    //
+    // The nightly runs' watchdog addresses are secrets for the same reason,
+    // plus one of their own: the address IS the credential, so whoever holds
+    // it can silence the alarm by beating in the run's place. One heartbeat
+    // per job per DEPLOYED environment (four in all), because the two
+    // environments keep deliberately different clocks:
+    //   wrangler secret put HEARTBEAT_URL_RECONCILE [--env staging]
+    //   wrangler secret put HEARTBEAT_URL_RENEWALS  [--env staging]
+    // Absent = the run still happens, unwatched. Each heartbeat's "expect
+    // every" + grace is held by the vendor, so keep it in step with the cron
+    // expressions below by hand (specs/concepts/operational-alerting.md).
   },
   // ── Bindings ──────────────────────────────────────────────────────────
   // Real resource ids (provisioned 2026-08-12 via `wrangler d1 create`,
@@ -157,6 +168,8 @@
   ],
   // Cron Triggers — handled in src/worker.ts `scheduled` (switch on
   // controller.cron): 04:00 renewal-charge job, 02:00 nightly reconciliation.
+  // Both runs beat to their own watchdog heartbeat when they finish; those
+  // expectations are configured with the vendor and must match these.
   "triggers": {
     "crons": ["0 4 * * *", "0 2 * * *"]
   },
@@ -200,6 +213,9 @@
         // Staging reports to the SAME Sentry project as production; this
         // tag is what keeps the two filterable apart. The DSN is a secret:
         // `wrangler secret put SENTRY_DSN --env staging` (set 2026-08-27).
+        // Staging's nightly watchdog beats to its OWN two heartbeats, whose
+        // expectation is hourly. Production's clock must never be used to
+        // read staging's silence, or the other way round.
         "SENTRY_ENVIRONMENT": "staging"
       },
       "d1_databases": [
@@ -244,7 +260,8 @@
       // Hourly, not nightly: on the week-as-year calendar an accelerated
       // day is ~28 real minutes, so hourly keeps the same cadence relative
       // to the period as production's nightly runs. worker.ts recognizes
-      // these strings alongside the production ones.
+      // these strings alongside the production ones, and beats to staging's
+      // own heartbeats, which expect a beat every hour rather than every day.
       "triggers": {
         "crons": ["0 * * * *", "30 * * * *"]
       }
