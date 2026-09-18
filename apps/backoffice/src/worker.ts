@@ -299,27 +299,14 @@ async function runScheduledJobs(cron: string): Promise<void> {
 }
 
 /**
- * How late a nightly run may be, and how long it may take, before the vendor
- * counts it as missed. Cloudflare schedules a cron trigger near its time, not
- * at it, and a run visits every organization, so both are generous: this is
- * meant to catch a job that is NOT HAPPENING, never one that is merely slow.
+ * How long a heartbeat may take before the run stops waiting for it. The
+ * watchdog is the least important thing happening in a nightly run, so it
+ * never gets to hold one open.
  */
-const CHECK_IN_MARGIN_MINUTES = 30;
-const CHECK_IN_MAX_RUNTIME_MINUTES = 30;
-
-/** A check-in must never be able to stop the work it watches. */
-function safely<T>(capture: () => T): T | undefined {
-  try {
-    return capture();
-  } catch (error) {
-    // Alerting must never become the outage (specs/concepts/operational-alerting.md).
-    console.error("could not send a nightly check-in", error);
-    return undefined;
-  }
-}
+const HEARTBEAT_TIMEOUT_MS = 10_000;
 
 /**
- * Tell the alerting vendor that a nightly run started, and then how it ended.
+ * Where a finished nightly run reports in.
  *
  * Every other alert in this file speaks from INSIDE a run, so the only shape
  * they can report is "a job ran, and something in it went wrong". A job that
@@ -331,61 +318,89 @@ function safely<T>(capture: () => T): T | undefined {
  *
  * No check inside the product can close that, because the code that would
  * notice is the code that did not run. So the expectation is held OUTSIDE it:
- * the vendor knows when a run is due and raises the alarm when the run does
- * not arrive to say so.
+ * the watchdog knows when a run is due and raises the alarm when the run does
+ * not arrive to say so. One address per job per deployed environment, because
+ * production and staging run the same jobs on deliberately different clocks
+ * (staging's accelerated calendar makes "nightly" hourly), and one
+ * environment's clock must never be used to judge the other's silence.
  *
- * The schedule is sent along with the check-in, so the expectation follows
- * wrangler.jsonc rather than a dashboard setting somebody has to keep in step.
- * The slug carries the environment because production and staging run the same
- * jobs on deliberately different clocks (staging's accelerated calendar makes
- * "nightly" hourly), and one environment's clock must never be used to judge
- * the other's silence.
+ * The address is a secret rather than a var, for both of the usual reasons:
+ * holding it is what lets anything claim to be the run, and vars are
+ * inherited by local dev, which must have no way to speak at all.
+ *
+ * The expectation itself (how often a beat is due, and the grace on top) is
+ * held by the watchdog, so it has to be kept in step with wrangler.jsonc
+ * `triggers.crons` by hand.
  */
+function heartbeatAddress(job: string): string | undefined {
+  const secrets = env as typeof env & {
+    HEARTBEAT_URL_RENEWALS?: string;
+    HEARTBEAT_URL_RECONCILE?: string;
+  };
+  if (job === "renewals") return secrets.HEARTBEAT_URL_RENEWALS || undefined;
+  if (job === "reconcile") return secrets.HEARTBEAT_URL_RECONCILE || undefined;
+  return undefined;
+}
+
+/** A heartbeat must never be able to stop the work it watches. */
+async function beat(
+  address: string,
+  outcome: "ok" | "error",
+  ctx: { cron: string; job: string; environment: string },
+): Promise<void> {
+  try {
+    const failed = outcome === "error";
+    const response = await fetch(failed ? `${address}/fail` : address, {
+      method: failed ? "POST" : "GET",
+      // Identifiers only. What actually went wrong is already an issue in the
+      // error channel, and a member's data must never leave through a second
+      // vendor (specs/concepts/operational-alerting.md).
+      body: failed ? `${ctx.job} failed on ${ctx.environment} (${ctx.cron})` : undefined,
+      signal: AbortSignal.timeout(HEARTBEAT_TIMEOUT_MS),
+    });
+    if (response.ok) return;
+    scheduledLog.warn("the watchdog refused a nightly heartbeat", {
+      ...ctx,
+      outcome,
+      status: response.status,
+    });
+  } catch (error) {
+    // Alerting must never become the outage
+    // (specs/concepts/operational-alerting.md). A beat that cannot be sent
+    // costs a false alarm at worst; the run itself carries on either way.
+    console.error("could not send a nightly heartbeat", error);
+  }
+}
+
+/** Run the night's work, and tell the watchdog how it went. */
 async function runScheduledJobsWatched(cron: string): Promise<void> {
   const job = RECONCILE_CRONS.includes(cron)
     ? "reconcile"
     : RENEWAL_CRONS.includes(cron)
       ? "renewals"
       : "unrecognized";
-  const monitorSlug = `${job}-${env.SENTRY_ENVIRONMENT || "development"}`;
-  const startedAt = Date.now();
+  const environment = env.SENTRY_ENVIRONMENT || "development";
+  const ctx = { cron, job, environment };
+  const address = heartbeatAddress(job);
 
-  const checkInId = safely(() =>
-    Sentry.captureCheckIn(
-      { monitorSlug, status: "in_progress" },
-      {
-        schedule: { type: "crontab", value: cron },
-        // Cloudflare's crons are UTC, so the expectation must be read in UTC
-        // too or every run looks half a year late twice a year.
-        timezone: "UTC",
-        checkinMargin: CHECK_IN_MARGIN_MINUTES,
-        maxRuntime: CHECK_IN_MAX_RUNTIME_MINUTES,
-      },
-    ),
-  );
-
-  const finish = (status: "ok" | "error"): void => {
-    safely(() =>
-      checkInId === undefined
-        ? // The opening check-in never left: send the outcome on its own
-          // rather than nothing at all.
-          Sentry.captureCheckIn({ monitorSlug, status })
-        : Sentry.captureCheckIn({
-            monitorSlug,
-            status,
-            checkInId,
-            duration: (Date.now() - startedAt) / 1000,
-          }),
-    );
-  };
+  // No address: local dev, where nothing may speak, and any deployed
+  // environment whose heartbeat has not been set up. That second case is a
+  // configuration gap which silently switches watching off, so it says so
+  // wherever it is deployed.
+  if (!address) {
+    scheduledLog.warn("nightly run is unwatched: no heartbeat address", ctx);
+    await runScheduledJobs(cron);
+    return;
+  }
 
   try {
     await runScheduledJobs(cron);
-    finish("ok");
+    await beat(address, "ok", ctx);
   } catch (error) {
-    // The throw still reaches Sentry as an issue through the wrapper below;
-    // this only keeps the monitor's own record honest about how it ended.
-    finish("error");
+    // The throw still reaches the error channel as an issue through the
+    // wrapper below; this only tells the watchdog how the night ended, so a
+    // run that failed is loud now rather than at its next missed beat.
+    await beat(address, "error", ctx);
     throw error;
   }
 }

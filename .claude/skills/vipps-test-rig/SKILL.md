@@ -152,6 +152,20 @@ pnpm --filter @stottemedlem/vipps run tunnel                  # terminal 2
 exit. **The URL is new on every restart — re-register the webhook after each**
 (`vt webhooks list` to find stale registrations, `vt webhooks delete <id>`).
 
+## Prove the nightly run's watchdog beat
+
+```sh
+bash .claude/skills/vipps-test-rig/beat-check.sh "0 2 * * *"   # reconcile
+bash .claude/skills/vipps-test-rig/beat-check.sh "0 4 * * *"   # renewals
+```
+
+Stands a local receiver where the Better Stack heartbeat would be, runs the
+real `scheduled` handler at it, and prints the request that arrived: `GET
+<address>` on a good night, `POST <address>/fail` when the job throws. Needs no
+Better Stack account. This is the ONLY way to check the one alert that fires
+when the product says nothing, and `pnpm typecheck` passes happily while it
+beats to the wrong address or not at all.
+
 ## Fire a nightly job (reconcile, reprice, renewal charges)
 
 ```sh
