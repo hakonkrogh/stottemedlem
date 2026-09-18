@@ -830,6 +830,47 @@ abandoned heartbeat implementation. Always
 `.claude/skills/vipps-test-rig/cron.sh` does. A stale `dist` does not fail: it
 lies, in the shape of a passing test.
 
+### Could Better Stack take the ERROR channel too? (researched 2026-09-18)
+
+Probably yes, and cheaply, because **Better Stack Errors speaks the Sentry
+protocol**. Their pitch is "keep using your existing Sentry SDK, just send the
+data to Better Stack": the DSN is
+`https://$APPLICATION_TOKEN@$INGESTING_HOST/$APPLICATION_ID`, and Sentry's own
+source-map upload integrations are said to work as-is
+(betterstack.com/docs/errors/collecting-errors/sentry-sdk/).
+
+That means the move would be a SECRET change, not a code change:
+`@sentry/cloudflare`, `withSentry`, `packages/log` and its structural
+`sentrySink` all stay exactly as they are. `packages/log` was built
+vendor-neutral for this and would not be touched.
+
+Quotas, free plan, from betterstack.com/pricing:
+
+| | Sentry free | Better Stack free |
+|---|---|---|
+| errors / exceptions | 5,000 per month | 100,000 per month |
+| retention | (see Sentry) | 90 days |
+| cron monitors | 1 | 10 monitors and heartbeats |
+
+Their Errors product does group exceptions by stack trace into one issue with
+a count, which is what `specs/concepts/operational-alerting.md` requires by
+"one problem is one conversation". Errors, logs and heartbeats would live in
+one vendor, and their storage puts the surrounding logs next to an exception.
+
+**NOT yet verified, and each one could sink it:**
+- That `@sentry/cloudflare` specifically works against their ingest host. The
+  protocol is the same envelope protocol, so the headless DSN check described
+  above (POST an envelope to `/api/<id>/envelope/`, expect 200 + `{"id":…}`)
+  proves or kills this in one curl, BEFORE any code moves.
+- That a new issue can e-mail the operator, and only e-mail, the way the spec
+  requires. Better Stack's notification defaults include more than e-mail.
+- Whether the free plan issues the API tokens the `betterstack-context` skill
+  wants.
+
+Loose end if it happens: `SENTRY_ENVIRONMENT` becomes a misleading name. It
+tags every event AND labels the environment in the nightly heartbeat body
+(worker.ts), so renaming it touches both.
+
 The facts below informed the choice:
 
 - **Sentry Developer (free) plan: email alerts ONLY.** The Slack integration —
