@@ -5,7 +5,7 @@
 //
 // Usage:  node run-steps.mjs <workflow.yml> [job] [--list] [--keep-env] [--force-turbo]
 import { spawnSync } from "node:child_process";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -35,7 +35,15 @@ if (!file) {
   process.exit(2);
 }
 
-const wf = loadYaml().load(readFileSync(resolve(REPO, file), "utf8"));
+// A bare name is what the usage line invites and what everyone types, so
+// resolve it against .github/workflows/ rather than dying on ENOENT.
+const candidates = file.includes("/") ? [file] : [file, `.github/workflows/${file}`];
+const wfPath = candidates.map((c) => resolve(REPO, c)).find((c) => existsSync(c));
+if (!wfPath) {
+  console.error(`No such workflow: ${candidates.join(" or ")}`);
+  process.exit(2);
+}
+const wf = loadYaml().load(readFileSync(wfPath, "utf8"));
 const jobs = wf.jobs ?? {};
 const name = jobName ?? Object.keys(jobs)[0];
 const job = jobs[name];

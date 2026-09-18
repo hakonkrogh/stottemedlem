@@ -12,6 +12,7 @@ scrubbed the way a runner is.
 
 ```bash
 node .claude/skills/verify-workflow/run-steps.mjs <workflow.yml> [job] [flags]
+# a bare name resolves against .github/workflows/, so `ci.yml` is enough
 ```
 
 | flag | effect |
