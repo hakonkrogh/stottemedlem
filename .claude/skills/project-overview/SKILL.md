@@ -26,8 +26,13 @@ also documents the variants and why the rule exists.
   scrim + frosted-glass cards, headings in Fraunces (`@fontsource-variable/fraunces`,
   self-hosted) over system-sans body, warm cream palette with ONE moss green
   action colour (`#3d6b3f`; amber until 2026-09-04, red is the heart's alone:
-  `specs/concepts/brand-palette.md`). **Where colours live, five places:**
-  `packages/ui/src/styles/tokens.css` (every product surface), hard-coded in
+  `specs/concepts/brand-palette.md`). **Where colours live, six places:**
+  `packages/ui/src/styles/tokens.css` (every product surface), overridden to a
+  WHITE ground for the public pages only in `apps/backoffice/src/layouts/
+  PublicShell.astro` (`--sm-bg` in an `is:global` style, since 2026-09-21;
+  the back office and the emails keep the cream, so a "the ground is cream"
+  assumption is now wrong for the join page, min-side, receipt, terms and
+  privacy pages), hard-coded in
   `apps/marketing/src/pages/index.astro` (reads no tokens), the `const`s at the
   top of `packages/qr/src/memberCard.ts` (member card) and `ACCENT` in
   `packages/qr/src/index.ts` (org QR card), and inline styles in
