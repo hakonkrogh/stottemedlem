@@ -258,6 +258,22 @@ surface the member happens to be looking at.
   elsewhere on the page. What sharing means is the reader's device's business:
   its own share sheet where it has one, the card's address on the clipboard
   otherwise.
+- **On the thank-you page, sharing is the one big thing to do, and it names
+  the places.** The moment a member has just paid is when the wish to show
+  the card is strongest, and it is also the first time they have seen one, so
+  the [receipt page](payment-receipt.md) does not leave the offer to a small
+  pill in the card's corner: under the card stands one plain button that says
+  what it is for, in the member's own words ("Dette vil jeg dele"). Pressing
+  it shares nothing yet. It opens the places the card can go, named one by
+  one: Facebook, the phone's messages, email, copying the link, and, only on
+  a device that has one, the device's own share sheet. A member handed a bare
+  address is left to work out what to do with it; a member shown "Facebook"
+  and "Meldinger" is being asked where. Every place works with no scripting
+  at all, because each is a link into that place with the card's address
+  already in it; what the member sends along names the organization and
+  links the card, never anything else about them. The card on that page
+  carries no pill of its own: one page, one way to share, so the two cannot
+  disagree about what sharing means.
 - **Anyone may look; only the member can change it.** The card page offers no
   actions on the membership. A visitor who is not the member sees exactly what
   the member sees.

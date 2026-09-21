@@ -101,6 +101,28 @@ drew, which is exactly what no healthy server will hand you (2026-09-10):
 Drop the stub and the whole chain runs for real: `dev-logs` then shows
 `[error] [cards] a member card was drawn without its words`.
 
+## Worked example: the receipt's share chooser (2026-09-21)
+
+`ShareMemberCard.astro` is a `<details>` whose places are links, plus a
+hidden "Andre apper" button the script shows only where `navigator.share`
+exists. The receipt page cannot reach its "active" state locally (see
+`project-overview`, receipts), so drive a scratch route that composes the
+same components with the seeded card token, then delete it:
+
+    U="http://localhost:$PORT/bli-medlem/<scratch>?kort=5eed0001-0000-4000-8000-000000000001"
+    # no sheet: "Andre apper" stays hidden, every place has its href
+    node .claude/skills/drive-page/drive.mjs "$U" --mobile \
+      --stub 'Object.defineProperty(navigator,"share",{value:undefined,configurable:true})' \
+      click=summary eval='Array.from(document.querySelectorAll("[data-share-to]")).map(e=>[e.dataset.shareTo,e.hidden,e.getAttribute("href")])'
+    # copy lands the card address, and says so
+    node .claude/skills/drive-page/drive.mjs "$U" --permissions clipboard-read,clipboard-write \
+      click=summary click='[data-share-copy]' sleep=300 \
+      eval='navigator.clipboard.readText()' assert='[data-share-copy-label]::Lenke kopiert'
+    # a phone with a sheet: the button appears and the sheet gets title+text+url
+    node .claude/skills/drive-page/drive.mjs "$U" --mobile \
+      --stub 'window.__shared=null; Object.defineProperty(navigator,"share",{value:d=>{window.__shared=d;return Promise.resolve()},configurable:true})' \
+      click=summary click='[data-share-sheet]' sleep=200 eval='window.__shared' url=
+
 ## Worked example: the member card's share action
 
 Both branches of `MemberCardFigure.astro`, proven end to end (2026-08-31):

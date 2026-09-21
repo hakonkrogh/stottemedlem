@@ -22,6 +22,7 @@ import Text from "@stottemedlem/ui/components/Text.astro";
 import TextLink from "@stottemedlem/ui/components/TextLink.astro";
 import MemberCardFigure from "../../../components/MemberCardFigure.astro";
 import ReceiptPaper from "../../../components/ReceiptPaper.astro";
+import ShareMemberCard from "../../../components/ShareMemberCard.astro";
 import PublicShell from "../../../layouts/PublicShell.astro";
 import { getDb } from "../../../lib/db";
 import {
@@ -262,10 +263,15 @@ const title =
             words={memberCardWords(card)}
             surface="kvittering"
           />
+          {/* The wish to share is strongest right here, so the offer is a
+              plain button under the card, and pressing it names the places
+              the card can go (specs/concepts/member-card.md). */}
+          <ShareMemberCard cardUrl={memberCardUrl(card.member.cardToken)} orgName={org.name} />
           <Text variant="small">
-            Dette er medlemsbeviset ditt. Det er ditt å dele —{" "}
-            <TextLink href={memberCardUrl(card.member.cardToken)}>se og del det her</TextLink>. Blir
-            noen støttemedlem ved å skanne QR-koden, teller det som en verving for deg.
+            Dette er medlemsbeviset ditt, og det er ditt å dele. Det har{" "}
+            <TextLink href={memberCardUrl(card.member.cardToken)}>sin egen side</TextLink>, og blir
+            noen støttemedlem ved å skanne QR-koden eller følge lenken, teller det som en verving
+            for deg.
           </Text>
         </Stack>
       )

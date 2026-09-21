@@ -28,7 +28,12 @@ reconstruct one.
 - **The [member card](member-card.md) comes first, the paperwork after it.**
   A receipt is a thank-you before it is a document, and the card is the
   thank-you, so the card is offered before the receipt says anything about
-  itself.
+  itself. On the page, the card comes with the invitation to share it: one
+  plain button under the card, which opens the places the card can go
+  (Facebook, messages, email, a copied link). Where and how is the
+  [card](member-card.md)'s rule; the receipt's rule is only that the offer
+  stands between the card and the paperwork, so a member who wants to show
+  the card does not have to hunt for it.
 - **The email offers the card; it does not draw one.** The email carries the
   card as an attached picture where one can be made, and links its public
   address so the member can look at it and share it. Both come before the

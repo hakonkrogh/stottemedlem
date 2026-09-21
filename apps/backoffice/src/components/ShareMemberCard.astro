@@ -1,0 +1,221 @@
+---
+// The invitation to share the card, where the member has just earned it
+// (specs/concepts/member-card.md, specs/concepts/payment-receipt.md).
+//
+// On the thank-you page the wish to share is at its strongest and the
+// member has never seen a card before, so the offer is a plain button that
+// says what it is for, not a pill in the card's corner. Pressing it does not
+// share anything yet: it opens the places the card can go, named one by one,
+// so the member picks where rather than being handed a bare address and left
+// to work out what to do with it.
+//
+// The places are links, so every one of them works with no scripting at all:
+// Facebook's own share page, the phone's messages app, the mail app, and the
+// card's own page. The script adds two things on top: "copy the link", and,
+// only on a device that has one, the device's own share sheet.
+//
+// Only ever the CARD's address is offered here. The member's self-service
+// address can end the membership and must never be shared
+// (specs/concepts/member-self-service.md).
+interface Props {
+  /** The card's own public address (memberCardUrl). */
+  cardUrl: string;
+  /** Whose supporter the member now is. Named in what they send along. */
+  orgName: string;
+}
+const { cardUrl, orgName } = Astro.props;
+
+const subject = `Medlemsbeviset mitt i ${orgName}`;
+const message = `Jeg er støttemedlem i ${orgName} ❤️ Se medlemsbeviset mitt: ${cardUrl}`;
+const facebook = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(cardUrl)}`;
+// `?&` is the one spelling both iPhones and Android phones read as "no
+// recipient, this body".
+const messages = `sms:?&body=${encodeURIComponent(message)}`;
+const email = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(message)}`;
+---
+
+<details class="share" data-share-card>
+  <summary class="share__open">
+    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+      <path
+        d="M12 3v12M12 3l-4 4M12 3l4 4M5 13v6a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-6"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      />
+    </svg>
+    Dette vil jeg dele
+  </summary>
+  <div class="share__where" role="group" aria-label="Hvor vil du dele medlemsbeviset?">
+    <a class="share__to" href={facebook} target="_blank" rel="noopener" data-share-to="facebook">
+      Facebook
+    </a>
+    <a class="share__to" href={messages} data-share-to="meldinger">Meldinger</a>
+    <a class="share__to" href={email} data-share-to="e-post">E-post</a>
+    <a class="share__to" href={cardUrl} data-share-to="kopier" data-share-copy>
+      <span data-share-copy-label>Kopier lenken</span>
+    </a>
+    <button
+      class="share__to"
+      type="button"
+      hidden
+      data-share-to="andre"
+      data-share-sheet
+      data-share-url={cardUrl}
+      data-share-title={subject}
+      data-share-text={message}
+    >
+      Andre apper …
+    </button>
+  </div>
+</details>
+
+<script>
+  // Plain JS on purpose: this component has a story, and Storybook serves a
+  // component script without stripping TypeScript.
+
+  // A device with its own share sheet gets one more place to send the card.
+  // Hidden in the markup so a device without one never shows a dead button.
+  function offerShareSheet() {
+    if (!navigator.share) return;
+    document.querySelectorAll("[data-share-sheet]").forEach((button) => {
+      if (button instanceof HTMLElement) button.hidden = false;
+    });
+  }
+  offerShareSheet();
+  // A page LiveForms swaps in after a form answer gets the same offer.
+  document.addEventListener("sm:page", offerShareSheet);
+
+  // Bound on the document rather than on the links, for the same reason.
+  document.addEventListener("click", (event) => {
+    const target = event.target instanceof Element ? event.target : null;
+    if (!target) return;
+
+    const sheet = target.closest("button[data-share-sheet]");
+    if (sheet instanceof HTMLButtonElement) {
+      if (!navigator.share) return;
+      const { shareUrl, shareTitle, shareText } = sheet.dataset;
+      navigator
+        .share({ title: shareTitle, text: shareText, url: shareUrl })
+        .catch(() => {});
+      return;
+    }
+
+    const copy = target.closest("a[data-share-copy]");
+    if (copy instanceof HTMLAnchorElement) {
+      // No clipboard: the link opens the card, which is at least the address
+      // the member wanted.
+      if (!navigator.clipboard) return;
+      event.preventDefault();
+      const label = copy.querySelector("[data-share-copy-label]");
+      navigator.clipboard.writeText(copy.href).then(
+        () => {
+          if (!label) return;
+          const previous = label.textContent;
+          label.textContent = "Lenke kopiert";
+          setTimeout(() => {
+            label.textContent = previous;
+          }, 2500);
+        },
+        () => {
+          window.location.href = copy.href;
+        },
+      );
+    }
+  });
+</script>
+
+<style>
+  .share {
+    margin: 0;
+  }
+  /* The opener is the page's one primary action, drawn like the Button
+   * primitive (which cannot render as a <summary>). */
+  .share__open {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5em;
+    width: 100%;
+    box-sizing: border-box;
+    padding: 0.65rem 0.85rem;
+    font: inherit;
+    font-size: 1rem;
+    font-weight: 600;
+    line-height: 1.2;
+    text-align: center;
+    color: var(--sm-accent-ink);
+    background: var(--sm-accent);
+    border: 1px solid var(--sm-accent);
+    border-radius: var(--sm-radius-md);
+    cursor: pointer;
+    list-style: none;
+    user-select: none;
+    transition:
+      background-color 120ms ease,
+      border-color 120ms ease;
+  }
+  .share__open::-webkit-details-marker {
+    display: none;
+  }
+  .share__open::marker {
+    content: "";
+  }
+  .share__open:hover {
+    background: var(--sm-accent-hover);
+    border-color: var(--sm-accent-hover);
+  }
+  .share__open:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px var(--sm-focus-ring);
+  }
+  .share__open svg {
+    width: 1.1em;
+    height: 1.1em;
+    flex: none;
+  }
+  .share[open] .share__open {
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+  }
+
+  /* The places, as a row of pills under the opener, on the same field. */
+  .share__where {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    padding: 0.75rem;
+    background: var(--sm-accent-soft);
+    border: 1px solid var(--sm-accent);
+    border-top: 0;
+    border-radius: 0 0 var(--sm-radius-md) var(--sm-radius-md);
+  }
+  .share__to {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.5rem 0.9rem;
+    font: inherit;
+    font-size: 0.9375rem;
+    font-weight: 600;
+    line-height: 1.2;
+    color: var(--sm-ink);
+    background: var(--sm-surface);
+    border: 1px solid var(--sm-border-strong);
+    border-radius: 999px;
+    text-decoration: none;
+    cursor: pointer;
+  }
+  .share__to:hover {
+    border-color: var(--sm-accent-deep);
+  }
+  .share__to:focus-visible {
+    outline: 3px solid var(--sm-focus-ring);
+    outline-offset: 2px;
+  }
+  .share__to[hidden] {
+    display: none;
+  }
+</style>
