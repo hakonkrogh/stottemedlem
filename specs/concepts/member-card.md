@@ -169,6 +169,14 @@ surface the member happens to be looking at.
   [self-service page](member-self-service.md): that one can *end* the
   membership, so it must never be shared, while the card is made for sharing.
   Holding a card address grants nothing but looking at the card.
+- **Handed to a person, the address is spelled the way they read it**:
+  støttemedlem.no with its ø, not the ASCII form a browser encodes that as.
+  The card's address is posted, pasted and read aloud by people, and the
+  encoded spelling reads as a garbled domain rather than as the product's
+  name, which is the opposite of what a shared card is for. Everything a
+  machine reads keeps the ASCII form, and that is not in tension with this:
+  a QR payload, an embed snippet and a link written into an email all go to
+  readers that break on the ø ([brand attribution](brand-attribution.md)).
 - **A shared card previews as the card.** When the address is pasted into a
   chat or a social feed, the card itself is what appears — an image of the
   card, not a bare link. How much of it a given feed shows is that feed's

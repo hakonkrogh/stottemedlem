@@ -1,6 +1,7 @@
 import { env } from "cloudflare:workers";
 import {
   CANONICAL_ORIGIN,
+  CANONICAL_ORIGIN_DISPLAY,
   joinPagePath,
   joinPageQrPath,
   joinPageTermsPath,
@@ -15,6 +16,25 @@ import {
  */
 export function shareableOrigin(): string {
   return (env.JOIN_PAGE_ORIGIN || CANONICAL_ORIGIN).replace(/\/+$/, "");
+}
+
+/**
+ * The same origin written the way a person reads it: støttemedlem.no with its
+ * ø, not the punycode a browser encodes it as.
+ *
+ * This form is for an address the product hands to a PERSON to pass on, which
+ * is what the share chooser does (specs/concepts/member-card.md): the address
+ * is read, pasted and posted by people, and the ASCII form reads as a garbled
+ * domain rather than as ours. Anything a machine reads keeps the punycode
+ * form: QR payloads, embed snippets and hrefs written into emails, where a
+ * raw ø breaks some scanners and clients (see CANONICAL_ORIGIN).
+ *
+ * Only the canonical origin has a display form. Staging's own origin is
+ * already ASCII and is returned unchanged.
+ */
+export function readableShareableOrigin(): string {
+  const origin = shareableOrigin();
+  return origin === CANONICAL_ORIGIN ? CANONICAL_ORIGIN_DISPLAY : origin;
 }
 
 /** The organization's shareable join-page address on this environment. */

@@ -12,7 +12,7 @@ import {
   loadMemberCard,
   memberCardImageUrl,
   memberCardPicturePath,
-  memberCardUrl,
+  memberCardShareUrl,
   memberCardVersion,
   memberCardWords,
 } from "../../../lib/memberCard";
@@ -68,7 +68,7 @@ const alt = `Medlemsbevis for ${memberName} i ${org.name}, med ${card.hearts} hj
       alt={alt}
       words={memberCardWords(card)}
       surface="medlemsbevis"
-      cardUrl={memberCardUrl(cardToken)}
+      cardUrl={memberCardShareUrl(cardToken)}
       orgName={org.name}
       voice="anyone"
     />

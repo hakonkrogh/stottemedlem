@@ -125,7 +125,12 @@ const email = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURICo
       if (!navigator.clipboard) return;
       event.preventDefault();
       const label = copy.querySelector("[data-share-copy-label]");
-      navigator.clipboard.writeText(copy.href).then(
+      // The attribute, never the property: reading `.href` hands back the
+      // address the way a browser normalizes it, which spells støttemedlem.no
+      // as punycode, and the whole point of this address is that a person
+      // reads it.
+      const address = copy.getAttribute("href") || copy.href;
+      navigator.clipboard.writeText(address).then(
         () => {
           if (!label) return;
           const previous = label.textContent;
@@ -135,7 +140,7 @@ const email = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURICo
           }, 2500);
         },
         () => {
-          window.location.href = copy.href;
+          window.location.href = address;
         },
       );
     }

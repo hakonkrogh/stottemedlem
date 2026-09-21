@@ -26,6 +26,7 @@ import PublicShell from "../../../layouts/PublicShell.astro";
 import { getDb } from "../../../lib/db";
 import {
   loadMemberCardForMemberId,
+  memberCardShareUrl,
   memberCardUrl,
   memberCardVersion,
   memberCardWords,
@@ -264,7 +265,7 @@ const title =
             alt={`Medlemsbevis for ${card.member.name?.trim() || "deg"} i ${org.name}, med ${card.hearts} hjerter.`}
             words={memberCardWords(card)}
             surface="kvittering"
-            cardUrl={memberCardUrl(card.member.cardToken)}
+            cardUrl={memberCardShareUrl(card.member.cardToken)}
             orgName={org.name}
           />
           <Text variant="small">
