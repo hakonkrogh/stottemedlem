@@ -516,7 +516,10 @@ also documents the variants and why the rule exists.
   words the shared message uses: the default `member` speaks as them
   ("medlemsbeviset mitt", the kvittering page), `anyone` claims nothing about
   the sender, which `/medlemsbevis` passes because whoever was handed the card
-  can share on from there.
+  can share on from there. The address the chooser hands out comes from
+  `memberCardShareUrl` (readable ø spelling, via `readableShareableOrigin`
+  in `lib/joinLinks.ts`), NOT `memberCardUrl` (punycode), which stays right
+  for og:image, email links and anything a machine parses.
   **The receipt page's "active" state cannot be rendered locally**: it asks
   Vipps about a real agreement, and the seeded `agr_seed_1` exists nowhere on
   apitest, so `status` stays `unknown` and the card section never renders. To
@@ -1337,6 +1340,14 @@ also documents the variants and why the rule exists.
   control name is safe, but prefer `handling` for the action field like the
   rest of the app does. `form.dataset`, `form.elements` and any other
   built-in are shadowable the same way.
+  **Same family, different mechanism, hit 2026-09-21: `anchor.href` is not
+  what you wrote.** The property resolves and NORMALIZES the attribute, so
+  an href of `https://støttemedlem.no/…` reads back as
+  `https://xn--stttemedlem-hgb.no/…`. That silently undid the share
+  chooser's whole point for the copy action, which wrote `copy.href` to the
+  clipboard. Read `getAttribute("href")` whenever the exact spelling
+  matters. The general rule for both traps: **a DOM property is the
+  browser's answer, the attribute is yours.**
   Proved with drive-page's scratch-route + slow-fetch recipes (see that
   skill); backoffice pages themselves can't be driven (no login).
   Screenshot loop: see `preview-screenshot` skill. Gotcha that
@@ -1458,6 +1469,18 @@ also documents the variants and why the rule exists.
   pushing more work to the same branch, check `gh pr view --json state`; if
   MERGED, the push needs a NEW PR (same branch works — it diffs against
   main), and audit `git log origin/main..HEAD` for what's stranded.
+  **Do not open a stacked PR here at all** (the rule this note earned on
+  2026-09-21, when TWO went astray in one session: #120 and #121 both said
+  MERGED, main had neither, and the user found out by looking at the live
+  site for a button that was never deployed). Telling the user the merge
+  order does not work, because the trap springs on whoever merges, not on
+  whoever wrote it: a branch left undeleted is the default. Open every PR
+  against `main`. A change that genuinely depends on unmerged work either
+  waits, or ships as ONE PR carrying both commits, which is how #122
+  recovered these two. **A PR's state never proves a change shipped**, so
+  read the file instead: `git show origin/main:<path> | grep <the new
+  string>`, or `git log --oneline origin/main..<branch>`, which lists
+  exactly what has not landed.
 - **Waiting for a PR's CI: `gh pr checks <n>` EXITS NON-ZERO while a check is
   still pending** (exit 8, 2026-09-10), so the obvious
   `until [ "$(gh pr checks <n> --json state --jq '.[0].state')" != "PENDING" ]`
