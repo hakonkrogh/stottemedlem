@@ -22,15 +22,26 @@ interface Props {
   cardUrl: string;
   /** Whose supporter the member now is. Named in what they send along. */
   orgName: string;
+  /**
+   * Who is doing the sharing, which decides whose voice the message speaks
+   * in. The member's own surfaces (the thank-you page) know it is them, so
+   * the card is "mitt". The card's public address can be opened by whoever
+   * was handed it, so from there the message claims nothing about the sender
+   * and is the invitation alone.
+   */
+  voice?: "member" | "anyone";
 }
-const { cardUrl, orgName } = Astro.props;
+const { cardUrl, orgName, voice = "member" } = Astro.props;
 
 // What goes with the link is an invitation, not a caption: the reader is
 // asked to join, and told the link is how. "Se medlemsbeviset mitt" alone
 // read as odd in a text message, since it said nothing about why the reader
 // was being sent it (2026-09-21).
 const subject = `Vil du også bli støttemedlem i ${orgName}?`;
-const message = `Jeg er støttemedlem i ${orgName} ❤️ Vil du også bli med? Her er medlemsbeviset mitt, og hvordan du blir støttemedlem: ${cardUrl}`;
+const message =
+  voice === "member"
+    ? `Jeg er støttemedlem i ${orgName} ❤️ Vil du også bli med? Her er medlemsbeviset mitt, og hvordan du blir støttemedlem: ${cardUrl}`
+    : `Vil du bli støttemedlem i ${orgName}? ❤️ Her er medlemsbeviset til en som støtter, og veien inn: ${cardUrl}`;
 const facebook = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(cardUrl)}`;
 // `?&` is the one spelling both iPhones and Android phones read as "no
 // recipient, this body".

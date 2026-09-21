@@ -1,0 +1,51 @@
+---
+import type { MemberCardWords } from "../lib/memberCard";
+// The card, and under it the way to share it
+// (specs/concepts/member-card.md).
+//
+// The two belong together wherever a member is handed their card and asked to
+// pass it on: the thank-you page they land on after paying, and the card's own
+// public address, which is where the receipt email sends them. One component,
+// so the two pages cannot drift into offering sharing differently, and so a
+// third page that shows a card gets the whole offer by using this instead of
+// composing the pieces again.
+//
+// The card here carries no share pill of its own: one page, one way to share.
+import MemberCardFigure from "./MemberCardFigure.astro";
+import ShareMemberCard from "./ShareMemberCard.astro";
+
+interface Props {
+  cardToken: string;
+  /** Which version of the card to show (memberCardVersion). */
+  version: string;
+  alt: string;
+  /** What the card says, so the picture can be checked for its words. */
+  words?: MemberCardWords;
+  /** Which page is showing the card, for the report. Never an address. */
+  surface: "kvittering" | "min-side" | "medlemsbevis";
+  /**
+   * The card's own public address (memberCardUrl), never the member's
+   * self-service address, which can end the membership
+   * (specs/concepts/member-self-service.md).
+   */
+  cardUrl: string;
+  /** Whose supporter the member now is. Named in what they send along. */
+  orgName: string;
+  /**
+   * Who is doing the sharing on this page, which decides whose voice the
+   * shared message speaks in (see ShareMemberCard). The member's own pages
+   * leave it at the default.
+   */
+  voice?: "member" | "anyone";
+}
+const { cardToken, version, alt, words, surface, cardUrl, orgName, voice } = Astro.props;
+---
+
+<MemberCardFigure
+  cardToken={cardToken}
+  version={version}
+  alt={alt}
+  words={words}
+  surface={surface}
+/>
+<ShareMemberCard cardUrl={cardUrl} orgName={orgName} voice={voice} />

@@ -503,9 +503,20 @@ also documents the variants and why the rule exists.
   `<details>` button under the card, opening Facebook / Meldinger (sms:) /
   E-post (mailto:) / Kopier lenken as plain links with the card's address in
   them, plus "Andre apper" (navigator.share) un-hidden by script only where a
-  sheet exists. The receipt's card deliberately has NO share pill (min-side
-  and `/medlemsbevis` keep theirs), so one page has one way to share. Its
-  script is plain JS because it has a story (`backoffice-del-medlemsbeviset`).
+  sheet exists. Its script is plain JS because it has a story
+  (`backoffice-del-medlemsbeviset`).
+  **Card + chooser is ONE component, `components/MemberCardWithShare.astro`**
+  (same day, second branch share-on-card-page): the kvittering page AND
+  `/medlemsbevis/[token]` both render it, so the offer cannot drift between
+  them, and a new page showing a card should use it rather than composing
+  `MemberCardFigure` + `ShareMemberCard` again. A card shown with the chooser
+  has NO share pill; **min-side is the one surface still on the bare
+  `MemberCardFigure` with its corner pill** (deliberate, not an oversight,
+  but it is the odd one out now). `ShareMemberCard`'s `voice` prop picks whose
+  words the shared message uses: the default `member` speaks as them
+  ("medlemsbeviset mitt", the kvittering page), `anyone` claims nothing about
+  the sender, which `/medlemsbevis` passes because whoever was handed the card
+  can share on from there.
   **The receipt page's "active" state cannot be rendered locally**: it asks
   Vipps about a real agreement, and the seeded `agr_seed_1` exists nowhere on
   apitest, so `status` stays `unknown` and the card section never renders. To

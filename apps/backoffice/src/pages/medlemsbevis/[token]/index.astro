@@ -5,13 +5,14 @@ import OrgIdentityHeader from "@stottemedlem/ui/components/OrgIdentityHeader.ast
 import Stack from "@stottemedlem/ui/components/Stack.astro";
 import Text from "@stottemedlem/ui/components/Text.astro";
 import TextLink from "@stottemedlem/ui/components/TextLink.astro";
-import MemberCardFigure from "../../../components/MemberCardFigure.astro";
+import MemberCardWithShare from "../../../components/MemberCardWithShare.astro";
 import PublicShell from "../../../layouts/PublicShell.astro";
 import { getDb } from "../../../lib/db";
 import {
   loadMemberCard,
   memberCardImageUrl,
   memberCardPicturePath,
+  memberCardUrl,
   memberCardVersion,
   memberCardWords,
 } from "../../../lib/memberCard";
@@ -56,12 +57,20 @@ const alt = `Medlemsbevis for ${memberName} i ${org.name}, med ${card.hearts} hj
         the link to their card arrives at their organization, not at a bare
         picture on a stranger's site. */}
     <OrgIdentityHeader {...orgIdentity(org)} />
-    <MemberCardFigure
+    {/* The card, and under it the same offer the thank-you page makes: this
+        is the address the receipt email sends the member to when they want to
+        show the card, so passing it on belongs here too
+        (specs/concepts/member-card.md). Anybody may be looking, so what is
+        sent on from here claims nothing about who sent it. */}
+    <MemberCardWithShare
       cardToken={cardToken}
       version={memberCardVersion(card)}
       alt={alt}
       words={memberCardWords(card)}
       surface="medlemsbevis"
+      cardUrl={memberCardUrl(cardToken)}
+      orgName={org.name}
+      voice="anyone"
     />
 
     <Stack gap="sm">

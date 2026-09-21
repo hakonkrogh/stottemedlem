@@ -20,9 +20,8 @@ import OrgIdentityHeader from "@stottemedlem/ui/components/OrgIdentityHeader.ast
 import Stack from "@stottemedlem/ui/components/Stack.astro";
 import Text from "@stottemedlem/ui/components/Text.astro";
 import TextLink from "@stottemedlem/ui/components/TextLink.astro";
-import MemberCardFigure from "../../../components/MemberCardFigure.astro";
+import MemberCardWithShare from "../../../components/MemberCardWithShare.astro";
 import ReceiptPaper from "../../../components/ReceiptPaper.astro";
-import ShareMemberCard from "../../../components/ShareMemberCard.astro";
 import PublicShell from "../../../layouts/PublicShell.astro";
 import { getDb } from "../../../lib/db";
 import {
@@ -256,17 +255,18 @@ const title =
     {
       (status === "active" || status === "already-a-member") && card?.member.cardToken && (
         <Stack gap="sm">
-          <MemberCardFigure
+          {/* The wish to share is strongest right here, so the card comes
+              with the offer under it, and pressing that names the places the
+              card can go (specs/concepts/member-card.md). */}
+          <MemberCardWithShare
             cardToken={card.member.cardToken}
             version={memberCardVersion(card)}
             alt={`Medlemsbevis for ${card.member.name?.trim() || "deg"} i ${org.name}, med ${card.hearts} hjerter.`}
             words={memberCardWords(card)}
             surface="kvittering"
+            cardUrl={memberCardUrl(card.member.cardToken)}
+            orgName={org.name}
           />
-          {/* The wish to share is strongest right here, so the offer is a
-              plain button under the card, and pressing it names the places
-              the card can go (specs/concepts/member-card.md). */}
-          <ShareMemberCard cardUrl={memberCardUrl(card.member.cardToken)} orgName={org.name} />
           <Text variant="small">
             Dette er medlemsbeviset ditt, og det er ditt å dele. Det har{" "}
             <TextLink href={memberCardUrl(card.member.cardToken)}>sin egen side</TextLink>, og blir
