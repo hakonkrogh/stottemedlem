@@ -1,7 +1,7 @@
-// The thank-you page's invitation to share the card
-// (specs/concepts/member-card.md): one button that says what it is for, and
-// under it the places the card can go. What needs reviewing is the closed
-// button on its own and the opened row of places; the "Andre apper" place
+// The invitation to share the card (specs/concepts/member-card.md), shown
+// under the card on the thank-you page and at the card's own address. What
+// needs reviewing is the closed button on its own, the opened row of places,
+// and the two voices the shared message speaks in. The "Andre apper" place
 // only appears on a device with a share sheet, so it is absent here.
 import ShareMemberCard from "./ShareMemberCard.astro";
 
@@ -16,8 +16,11 @@ export default {
   component: ShareMemberCard,
 };
 
-/** As the page shows it: closed, one clear action. */
+/** As the member's own pages show it: closed, one clear action. */
 export const Closed = { args: base };
+
+/** At the card's public address, where anybody may be the one sharing. */
+export const SharedByAnyone = { args: { ...base, voice: "anyone" } };
 
 /** A long organization name in what the member sends along. */
 export const LongOrgName = {

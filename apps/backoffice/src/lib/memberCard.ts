@@ -13,7 +13,7 @@ import {
 } from "@stottemedlem/db";
 import { type MemberCardOptions, memberCardSvg } from "@stottemedlem/qr";
 import { orgLogoDataUri } from "./cardImage";
-import { shareableOrigin } from "./joinLinks";
+import { readableShareableOrigin, shareableOrigin } from "./joinLinks";
 import { periods } from "./periods";
 
 /**
@@ -33,6 +33,15 @@ export async function loadMemberCard(db: Db, cardToken: string): Promise<MemberC
 /** The card's own public address — what the member shares. */
 export function memberCardUrl(cardToken: string): string {
   return `${shareableOrigin()}${memberCardPath(cardToken)}`;
+}
+
+/**
+ * The same address, spelled for the person who will pass it on: støttemedlem.no
+ * with its ø (see `readableShareableOrigin`). This is what the share chooser
+ * puts into a message, a post and the clipboard.
+ */
+export function memberCardShareUrl(cardToken: string): string {
+  return `${readableShareableOrigin()}${memberCardPath(cardToken)}`;
 }
 
 /**

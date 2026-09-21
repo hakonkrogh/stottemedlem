@@ -169,6 +169,14 @@ surface the member happens to be looking at.
   [self-service page](member-self-service.md): that one can *end* the
   membership, so it must never be shared, while the card is made for sharing.
   Holding a card address grants nothing but looking at the card.
+- **Handed to a person, the address is spelled the way they read it**:
+  støttemedlem.no with its ø, not the ASCII form a browser encodes that as.
+  The card's address is posted, pasted and read aloud by people, and the
+  encoded spelling reads as a garbled domain rather than as the product's
+  name, which is the opposite of what a shared card is for. Everything a
+  machine reads keeps the ASCII form, and that is not in tension with this:
+  a QR payload, an embed snippet and a link written into an email all go to
+  readers that break on the ø ([brand attribution](brand-attribution.md)).
 - **A shared card previews as the card.** When the address is pasted into a
   chat or a social feed, the card itself is what appears — an image of the
   card, not a bare link. How much of it a given feed shows is that feed's
@@ -258,22 +266,35 @@ surface the member happens to be looking at.
   elsewhere on the page. What sharing means is the reader's device's business:
   its own share sheet where it has one, the card's address on the clipboard
   otherwise.
-- **On the thank-you page, sharing is the one big thing to do, and it names
-  the places.** The moment a member has just paid is when the wish to show
-  the card is strongest, and it is also the first time they have seen one, so
-  the [receipt page](payment-receipt.md) does not leave the offer to a small
-  pill in the card's corner: under the card stands one plain button that says
-  what it is for, in the member's own words ("Dette vil jeg dele"). Pressing
-  it shares nothing yet. It opens the places the card can go, named one by
-  one: Facebook, the phone's messages, email, copying the link, and, only on
-  a device that has one, the device's own share sheet. A member handed a bare
-  address is left to work out what to do with it; a member shown "Facebook"
-  and "Meldinger" is being asked where. Every place works with no scripting
-  at all, because each is a link into that place with the card's address
-  already in it; what the member sends along names the organization and
-  links the card, never anything else about them. The card on that page
-  carries no pill of its own: one page, one way to share, so the two cannot
-  disagree about what sharing means.
+- **Where the card is shown to be passed on, sharing is the one big thing to
+  do, and it names the places.** That is two pages: the
+  [thank-you page](payment-receipt.md), because the moment a member has just
+  paid is when the wish to show the card is strongest and the first time they
+  have seen one, and the card's own public address, because that is where the
+  receipt email sends a member who wants to look at their card and hand it
+  on. Neither leaves the offer to a small pill in the card's corner: under
+  the card stands one plain button that says what it is for, in the member's
+  own words ("Dette vil jeg dele"). Pressing it shares nothing yet. It opens
+  the places the card can go, named one by one: Facebook, the phone's
+  messages, email, copying the link, and, only on a device that has one, the
+  device's own share sheet. A member handed a bare address is left to work
+  out what to do with it; a member shown "Facebook" and "Meldinger" is being
+  asked where. Every place works with no scripting at all, because each is a
+  link into that place with the card's address already in it. A card shown
+  with this offer carries no pill of its own: one page, one way to share, so
+  the two cannot disagree about what sharing means. The two pages show the
+  same offer because they render the same one thing, card and offer together,
+  rather than each assembling it.
+- **What is sent along is an invitation, in the voice of whoever can be
+  sending it.** It names the organization, asks the reader whether they want
+  to join too, and says the link is where the card and the way in are. It
+  never says anything else about the member. On the member's own pages it
+  speaks as them, because only they can be standing there: *my* card. At the
+  card's public address it claims nothing about the sender, because whoever
+  was handed the card can pass it on from there, and a message in the
+  member's voice in a stranger's hands would be a small lie. (A first version
+  only captioned the link, "se medlemsbeviset mitt", and read as odd in a
+  text message: the reader was handed a card with no word about why.)
 - **Anyone may look; only the member can change it.** The card page offers no
   actions on the membership. A visitor who is not the member sees exactly what
   the member sees.
