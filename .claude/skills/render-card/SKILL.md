@@ -1,6 +1,6 @@
 ---
 name: render-card
-description: Draw the member card and the org QR card from real `@stottemedlem/qr` code with NO dev server, D1 or auth — and rasterize them through the same resvg + embedded-Fraunces path the Worker ships, which is the only way to see what a shared PNG, og:image or receipt attachment actually looks like. Use for any change to card artwork, layout or text fitting. `paint-check.mjs` additionally proves the card's WORDS are there the first time a real browser paints it cold, which every other loop here passes while a member is handed a wordless card.
+description: Draw the member card and the org QR card from real `@stottemedlem/qr` code with NO dev server, D1 or auth, and rasterize them through the same resvg + embedded-Fraunces path the Worker ships, which is the only way to see what a shared PNG, og:image or receipt attachment actually looks like. Use for any change to card artwork, layout or text fitting. `paint-check.mjs` additionally proves the card's WORDS are there the first time a real browser paints it cold, which every other loop here passes while a member is handed a wordless card. `variants.mjs` draws several edited copies of the card side by side on the same fixtures, for a design pass that must not touch the shipped code.
 ---
 
 # Render the cards
@@ -49,6 +49,14 @@ Examples:
 | inlined in a page | the SVG inlined into HTML, browser draws it with the page's loaded Fraunces | real variable-weight text; how min-side and the marketing page show a card |
 | **as served** | `served-*.svg` in an `<img>` | the card **set in Georgia**, because an `<img>` fetches no webfont |
 | resvg | the shipped rasterizer | a missing embedded font (text draws as *nothing*), a logo referenced by URL |
+| skeleton | `memberCardSkeletonSvg` inlined | that the waiting card still matches the drawn one (same field, heart in the same place) |
+
+The sheet's ground is the page's own cream (`--sm-bg`, #faf6ee), because a
+card is judged on the ground it lies on: the footer's cream field is a shade
+under the page, and only the edge and shadow keep the card an object. The
+skeleton is inlined and cannot be loaded as an SVG file: it carries a bare
+`data-card-heart` attribute for the page's pulse, which an XML parser
+rejects.
 
 **The middle column is the one most surfaces actually are.** The back office
 shows the QR card as an `<img>`, a club's own website hot-links it as an
@@ -178,6 +186,7 @@ you force-push.
 | loop | proves |
 |------|--------|
 | `render-card --raster` | the artwork itself — layout, fitting, the embedded font, the shared PNG. No server. |
+| `render-card variants.mjs` | several versions of the artwork on one contact sheet, from edited copies, no build; the design-pass loop |
 | `render-card paint-check.mjs` | that the words are ON the card the first time a real browser paints it, cold and throttled, in two engines |
 | Storybook (`pnpm story`, `MemberCard.stories.ts`) | the same artwork with real variable-weight text; the human review surface |
 | `preview-screenshot` on `/medlemsbevis/<token>` | the artwork **in its page**, incl. the full-bleed / `max-width` sizing — needs `verify-public-routes/seed.sh` + a dev server |
@@ -243,26 +252,46 @@ one that always looks fine.
 
 ## Exploring colours or a layout twist without touching the shipped code
 
-For a design pass (2026-09-04, the Fløte palette) the card was drawn in
-several palettes side by side without editing `packages/qr`: copy
-`packages/qr/src/memberCard.ts` to the scratchpad, turn the colour `const`s
-into `let`s plus an exported `setTheme({...})`, and run the copy DIRECTLY,
-no build step (Node 24 strips types from a `.ts` import). Two things bite:
+    node .claude/skills/render-card/variants.mjs --init A,B,C --dir $SCRATCH/alt
+    # edit $SCRATCH/alt/card-A.ts, card-B.ts, ... (any change: colours, rules, fields)
+    node .claude/skills/render-card/variants.mjs --dir $SCRATCH/alt [--case WithLogo,Lapsed]
+    bash .claude/skills/preview-screenshot/shot.sh \
+      "file://$SCRATCH/alt/out/index.html" $SCRATCH/alt/sheet.png 1640 3200
 
-- `import { create } from "qrcode"` does not resolve from outside the
-  package; replace it with
-  `createRequire("<repo>/packages/qr/package.json")("qrcode")`.
-- Rasterize the copy through the same resvg + embedded Fraunces path as
-  `render.mjs` (copy its `rasterize()`; resolve `@resvg/resvg-wasm` via
-  `createRequire` from `apps/backoffice/package.json`). A theme that inverts
-  the card MUST give the QR modules their own colour: the code is drawn in
-  the card's INK, and a cream ink on the white panel renders an unscannable
-  blank (caught 2026-09-04 on the dark variant).
+`--init` copies `memberCard.ts` once per name next to a `brand.ts` that runs
+from outside the package (the `qrcode` import is the one thing that does not
+resolve from there, and the copies need no build: Node 24 strips the types).
+The draw pass renders every `card-<name>.ts` plus `current` (the built
+package) through the same resvg + embedded-Fraunces path as `render.mjs`, on
+`render.mjs`'s own fixtures, and writes one contact sheet. Used for the Fløte
+palette (2026-09-04, by hand) and the five-way rules/colours review
+(2026-09-21, which is when it became a tool). Keep a variant's edits in a
+small script that string-replaces on a fresh copy and throws when a
+replacement finds nothing: a variant that silently renders the original is
+the trap.
+
+Two things bite when editing a copy:
+
+- A theme that inverts the card MUST give the QR modules their own colour:
+  the code is drawn in the card's INK, and a cream ink on the white panel
+  renders an unscannable blank (caught 2026-09-04 on the dark variant).
+- resvg supports `<mask>` and `<clipPath>` (used for the ticket-stub notches),
+  but a mask on the shadowed card rect cuts the shadow too. Fine for a notch,
+  wrong for anything meant to keep the card's edge.
 
 Every colour has its own constant, so a per-role palette is a plain object;
 hex-swapping the finished SVG works for colour-only variants but not for
 removing the band fill or changing a stroke. The palette itself is
 `specs/concepts/brand-palette.md`.
+
+What the 2026-09-21 review established about lines on a white card, so the
+next pass starts from it: a rule at the card's `HAIRLINE` (#eee5d6, ~8% ink)
+reads as no line at all in the raster; ~20% ink (#d9cdb9) reads as a soft
+line; the `DEEP` band rule (~85%) reads heavier than the card's own edge. Two
+rules that differ in colour, weight or extent read as a mistake, not a
+hierarchy, and `INK` next to `DEEP` reads as one colour rendered
+inconsistently. The five rendered alternatives and the research behind them
+are at https://claude.ai/artifact/GvRhgKn3bkpoBs3MhQe3RB.
 
 **Proving a colour is GONE: grep the emitted SVG for its hex, not the raster.**
 Eyes miss a 2 px rule or a logo ring, and a raster cannot be searched:

@@ -242,17 +242,19 @@ describe("memberCardSvg", () => {
 
   it("wraps a very long organization name onto three even lines, never mid-word", () => {
     const name = "Bakvendtland Ungdomssymfoniorkester og Musikkforening";
-    // With a logo the band is at its narrowest; no streak, so the band's ink
-    // colour picks out the organization's lines and nothing else.
+    // With a logo the band is at its narrowest. The organization's lines are
+    // the only text in the name's ink set from the left: the member's name is
+    // centred, the year is set against the right edge, and the footer's lines
+    // are in the muted ink.
     const svg = memberCardSvg({
       ...base,
       organizationName: name,
       hearts: 0,
       logoDataUri: "data:image/png;base64,AAAA",
     });
-    const lines = [...svg.matchAll(/<text [^>]*fill="#3b2d1c"[^>]*>([^<]*)<\/text>/g)].map(
-      (match) => match[1],
-    );
+    const lines = [...svg.matchAll(/<text [^>]*fill="#221a12"[^>]*>([^<]*)<\/text>/g)]
+      .filter((match) => !match[0].includes("text-anchor="))
+      .map((match) => match[1]);
     expect(lines).toHaveLength(3);
     // Every word, in order, each whole: the lines re-join to the name itself.
     expect(lines.join(" ")).toBe(name);

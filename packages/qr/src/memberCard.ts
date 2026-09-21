@@ -37,11 +37,22 @@
  * organization, and the product's own colour was a third voice in that
  * (specs/concepts/brand-palette.md). The band used to carry a
  * deeper cream fill and a gold label; both went 2026-09-04 with the palette
- * refresh, so the top of the card is one line rather than a second field. The
- * card itself was cream until the same day: on the cream page it barely
- * lifted off the ground, so it is white now, and the QR code sits straight on
- * it instead of on a white panel of its own (there is nothing brighter than
- * the card left to make a panel from).
+ * refresh. The card itself was cream until the same day: on the cream page it
+ * barely lifted off the ground, so it is white now, and the QR code sits
+ * straight on it instead of on a white panel of its own (there is nothing
+ * brighter than the card left to make a panel from).
+ * The card draws NO rules (2026-09-21). It drew two: an ink rule under the
+ * band and a pale hairline over the footer, and the two disagreed on colour,
+ * weight and extent, so they read as a mistake rather than a hierarchy (the
+ * band's was the darkest line on the card, darker than the card's own edge;
+ * the footer's was too pale to be seen in the raster). Now the band is
+ * divided from the member by space alone, and the footer is a cream field
+ * with the card's rounded bottom: the product signs the card on its own
+ * paper. One field, at the bottom, which is why it does not compete with an
+ * organization's mark the way the old band fill did.
+ * Two inks for words, not three: the organization's name and the years line
+ * used to sit in a "deep" brown one shade off the member's name, which read
+ * as the same ink rendered inconsistently. They are the name's ink now.
  *
  * Two constraints shape the drawing:
  *  - **No emoji.** The card is rasterized on a server with exactly one
@@ -65,13 +76,11 @@
 
 import {
   CARD,
-  DEEP,
   EDGE,
   escapeXml,
   FAINT,
   FONT,
   FONT_WEIGHT,
-  HAIRLINE,
   HEART,
   heartPath,
   INK,
@@ -97,16 +106,21 @@ export function memberCardSize(): { width: number; height: number } {
   return { width: MEMBER_CARD_WIDTH, height: MEMBER_CARD_HEIGHT };
 }
 
-/** The heart of a lapsed card: still there, no longer cheering. */
-const HEART_PAST = "#c9ab9e";
 /**
- * The rule that closes the identity band. It is the card's own ink, not a
- * colour: the card carries NO green (specs/concepts/brand-palette.md). The
- * rule and the valid year were moss until 2026-09-09, which made the product
- * the third party competing for attention on an object whose whole job is to
- * present the member and their organization.
+ * The heart of a lapsed card: still there, no longer cheering. A neutral warm
+ * grey, in the card's own family of tones: it was a pinkish tan until
+ * 2026-09-21, which sat between the red and the browns and belonged to
+ * neither.
  */
-const BAND_RULE = DEEP;
+const HEART_PAST = "#c9c0b4";
+/**
+ * The footer's field: the palette's cream, a shade under the page's, so the
+ * product signs the card on its own paper (specs/concepts/member-card.md).
+ * It replaced the rule that closed the member's half (2026-09-21): a field
+ * needs no line to say where it starts, and the card's white edge and shadow
+ * still lift it off the cream page.
+ */
+const FOOTER_FIELD = "#f6f1e7";
 /** The ring around the organization's logo: the card's own edge, drawn round. */
 const LOGO_RING = EDGE;
 
@@ -384,16 +398,29 @@ function qrCode(left: number, top: number, qrSize: number, qr: QrCode): string {
  * page. The card is white rather than the page's cream so it lifts off that
  * page; the hairline edge is what keeps its shape on a white email ground.
  * The margin the card keeps from the canvas edge is room for its shadow.
+ *
+ * The footer's field is part of the frame: it fills the card from `fieldTop`
+ * down, sharing the card's rounded bottom corners, and the edge is drawn over
+ * it so the card keeps one outline.
  */
-function frame(width: number, height: number, inner: number, radius: number): string {
+function frame(
+  width: number,
+  height: number,
+  inner: number,
+  radius: number,
+  fieldTop: number,
+): string {
   const w = width - inner * 2;
   const h = height - inner * 2;
+  const bottom = height - inner;
+  const field = `M ${inner} ${r(fieldTop)} H ${width - inner} V ${bottom - radius} a ${radius} ${radius} 0 0 1 -${radius} ${radius} H ${inner + radius} a ${radius} ${radius} 0 0 1 -${radius} -${radius} Z`;
   return `<defs>
     <filter id="card-shadow" x="-10%" y="-10%" width="120%" height="130%">
       <feDropShadow dx="0" dy="6" stdDeviation="10" flood-color="#8a7355" flood-opacity="0.16"/>
     </filter>
   </defs>
   <rect x="${inner}" y="${inner}" width="${w}" height="${h}" rx="${radius}" fill="${CARD}" filter="url(#card-shadow)"/>
+  <path d="${field}" fill="${FOOTER_FIELD}"/>
   <rect x="${inner}" y="${inner}" width="${w}" height="${h}" rx="${radius}" fill="none" stroke="${EDGE}" stroke-width="2"/>`;
 }
 
@@ -418,17 +445,19 @@ function attribution(left: number, baseline: number): string {
 
 /**
  * The footer: the product's name on the left, the code that leads into the
- * organization's join page on the right.
+ * organization's join page on the right, on the footer's own field.
  *
  * The two belong together (the name says whose card this is, the code is
  * what makes it recruit) and side by side they take a band of the card
  * instead of a column of it, which is what left the middle to the member
- * (specs/concepts/member-card.md).
+ * (specs/concepts/member-card.md). The invitation to scan is the one thing on
+ * the card that asks the reader to do something, so it is set in the muted
+ * ink rather than the faintest one (2026-09-21).
  */
 function cardFooter(left: number, right: number, top: number, qr: QrCode): string {
   const middle = top + FOOTER_QR_PANEL / 2;
   return `${attribution(left, middle - 6)}
-  ${textEl(left, middle + 28, "Skann og bli støttemedlem", { size: TYPE.small, fill: FAINT })}
+  ${textEl(left, middle + 28, "Skann og bli støttemedlem", { size: TYPE.small, fill: MUTED })}
   ${qrCode(right - FOOTER_QR_PANEL, top, FOOTER_QR_SIZE, qr)}`;
 }
 
@@ -473,13 +502,13 @@ function cardFrame() {
   const left = inner + pad;
   const right = width - inner - pad;
   // The band: logo and organization on the left, validity in the corner, and
-  // one hairline rule underneath instead of a filled field.
+  // nothing drawn under it: space divides it from the member.
   const bandHeight = 128;
   const bandBottom = inner + bandHeight;
-  // The footer sits against the bottom of the card, and the rule above it
-  // closes the member's half.
+  // The footer sits against the bottom of the card on its own field, whose
+  // top edge closes the member's half.
   const footerTop = height - inner - 30 - FOOTER_QR_PANEL;
-  const ruleY = footerTop - 26;
+  const fieldTop = footerTop - 26;
   return {
     width,
     height,
@@ -491,9 +520,9 @@ function cardFrame() {
     bandBottom,
     bandCenter: inner + bandHeight / 2,
     footerTop,
-    ruleY,
+    fieldTop,
     bodyTop: bandBottom,
-    bodyHeight: ruleY - bandBottom,
+    bodyHeight: fieldTop - bandBottom,
   };
 }
 
@@ -555,8 +584,7 @@ function memberBlock(
 
 function drawCard(content: CardContent): string {
   const metrics = cardFrame();
-  const { width, height, inner, left, right, center, bandBottom, bandCenter, footerTop, ruleY } =
-    metrics;
+  const { width, height, inner, left, right, center, bandCenter, footerTop, fieldTop } = metrics;
 
   const hasLogo = Boolean(content.logoDataUri);
   const logoSize = 76;
@@ -578,14 +606,13 @@ function drawCard(content: CardContent): string {
     recruitBaseline,
   } = memberBlock(metrics, content);
 
-  return `${frame(width, height, inner, 32)}
-  <line x1="${inner}" y1="${bandBottom}" x2="${width - inner}" y2="${bandBottom}" stroke="${BAND_RULE}" stroke-width="1.5"/>
+  return `${frame(width, height, inner, 32, fieldTop)}
 ${hasLogo ? `  ${logoCircle(left + logoSize / 2, bandCenter, logoSize, content.logoDataUri ?? "")}\n` : ""}  ${org.lines
     .map((line, index) =>
       textEl(orgLeft, orgFirstBaseline + index * orgLineGap, line, {
         size: org.size,
         weight: FONT_WEIGHT,
-        fill: DEEP,
+        fill: INK,
       }),
     )
     .join("\n  ")}
@@ -599,11 +626,10 @@ ${
 }${
   headline
     ? `  ${streakHeart(center, heartTop, heartSize, content.hearts, content.lapsed)}
-  ${textEl(center, headlineBaseline, headline.value, { size: headline.size, weight: FONT_WEIGHT, fill: content.lapsed ? MUTED : DEEP, anchor: "middle" })}
+  ${textEl(center, headlineBaseline, headline.value, { size: headline.size, weight: FONT_WEIGHT, fill: content.lapsed ? MUTED : INK, anchor: "middle" })}
 ${content.recruitLine ? `  ${textEl(center, recruitBaseline, content.recruitLine, { size: TYPE.middle, fill: MUTED, anchor: "middle" })}\n` : ""}`
     : ""
 }
-  <line x1="${left}" y1="${ruleY}" x2="${right}" y2="${ruleY}" stroke="${HAIRLINE}" stroke-width="2"/>
   ${cardFooter(left, right, footerTop, content.qr)}`;
 }
 
@@ -716,9 +742,8 @@ export function memberCardSkeletonSvg(options?: CardWords): string {
     options ?? { organizationName: "", memberName: "", memberNumber: 1, hearts: 1 },
   );
   const metrics = cardFrame();
-  const { width, height, inner, left, right, center, columnWidth, bandBottom, bandCenter } =
-    metrics;
-  const { footerTop, ruleY } = metrics;
+  const { width, height, inner, left, right, center, columnWidth, bandCenter } = metrics;
+  const { footerTop, fieldTop } = metrics;
   const block = memberBlock(metrics, words);
 
   const logoSize = 76;
@@ -732,8 +757,7 @@ export function memberCardSkeletonSvg(options?: CardWords): string {
     : "";
 
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}" width="${width}" height="${height}" role="presentation" aria-hidden="true">
-  ${frame(width, height, inner, 32)}
-  <line x1="${inner}" y1="${bandBottom}" x2="${width - inner}" y2="${bandBottom}" stroke="${HAIRLINE}" stroke-width="1.5"/>
+  ${frame(width, height, inner, 32, fieldTop)}
   <circle cx="${r(logoCx)}" cy="${r(bandCenter)}" r="${r(logoSize / 2 + 3)}" fill="${WAITING}"/>
   ${waitingBar(orgLeft, bandCenter - 30, orgWidth, 26)}
   ${waitingBar(orgLeft, bandCenter + 6, orgWidth * 0.66, 26)}
@@ -745,7 +769,6 @@ export function memberCardSkeletonSvg(options?: CardWords): string {
   ${heart}
   ${words.recruitLine ? waitingBarCentered(center, block.recruitBaseline - TYPE.middle * 0.74, columnWidth * 0.4, TYPE.middle * 0.8) : ""}
 
-  <line x1="${left}" y1="${ruleY}" x2="${right}" y2="${ruleY}" stroke="${HAIRLINE}" stroke-width="2"/>
   ${waitingBar(left, footerTop + FOOTER_QR_PANEL / 2 - 30, 260, 26)}
   ${waitingBar(left, footerTop + FOOTER_QR_PANEL / 2 + 14, 190, 14)}
   <rect x="${r(right - FOOTER_QR_PANEL + QR_QUIET)}" y="${r(footerTop + QR_QUIET)}" width="${r(FOOTER_QR_SIZE)}" height="${r(FOOTER_QR_SIZE)}" rx="8" fill="${WAITING}"/>
