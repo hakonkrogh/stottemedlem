@@ -25,8 +25,12 @@ interface Props {
 }
 const { cardUrl, orgName } = Astro.props;
 
-const subject = `Medlemsbeviset mitt i ${orgName}`;
-const message = `Jeg er støttemedlem i ${orgName} ❤️ Se medlemsbeviset mitt: ${cardUrl}`;
+// What goes with the link is an invitation, not a caption: the reader is
+// asked to join, and told the link is how. "Se medlemsbeviset mitt" alone
+// read as odd in a text message, since it said nothing about why the reader
+// was being sent it (2026-09-21).
+const subject = `Vil du også bli støttemedlem i ${orgName}?`;
+const message = `Jeg er støttemedlem i ${orgName} ❤️ Vil du også bli med? Her er medlemsbeviset mitt, og hvordan du blir støttemedlem: ${cardUrl}`;
 const facebook = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(cardUrl)}`;
 // `?&` is the one spelling both iPhones and Android phones read as "no
 // recipient, this body".
