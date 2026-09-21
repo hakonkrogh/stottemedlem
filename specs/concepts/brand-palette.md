@@ -30,13 +30,15 @@ it too, for the reason below.
 - **The green stops at the cards.** Both of them: the
   [member card](member-card.md) and the organization's
   [QR card](../use-cases/promote-with-qr-card.md) are white, ink and the
-  heart's red, and nothing else. Everywhere else the product is talking to
+  heart's red, and nothing else; the member card's footer sits on the
+  palette's own cream, which is the ground the product already writes on, not
+  a colour. Everywhere else the product is talking to
   someone, so its own colour belongs there; a card is the one kind of surface
   that presents other parties (a member and the organization they back, or an
   organization holding a way in open to a stranger), and a third voice on it
   is one too many. The member card carried a moss rule and a moss valid year
-  for a while, the QR card a moss line over the organization's name; all of it
-  is ink now.
+  for a while, the QR card a moss line over the organization's name; the
+  year is ink now, and the member card's rule went altogether.
 - **A card is set in the brand's one typeface, and carries it.** Both cards
   are Fraunces, the same cut the website's headings use, so what a person is
   handed on paper reads as what they saw on the screen. Because a card is
@@ -80,7 +82,8 @@ it too, for the reason below.
   palette, and the heart's red.
 - The [member card](member-card.md) and the organization's
   [QR card](../use-cases/promote-with-qr-card.md) are drawn from this palette,
-  minus the green: white on the cream page, ink, and the red heart.
+  minus the green: white on the cream page, ink, and the red heart, and the
+  member card's footer on the cream.
 - The [payment receipt](payment-receipt.md) and the [join page](join-page.md)
   are the two places a member meets the palette first.
 

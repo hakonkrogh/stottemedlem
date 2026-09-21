@@ -56,25 +56,45 @@ surface the member happens to be looking at.
   it, and their streak, with nothing else in that half of the card. The number
   belongs with the name because it is the same person said a second way, and
   it is set at the card's smallest size: it is a permanent fact, not a second
-  headline competing with the name it labels. A footer under a rule closes it: the product's name on the
-  left, the QR code on the right, and the invitation to scan between them.
+  headline competing with the name it labels. A footer on a field of its own
+  closes it: the product's name on the left, the QR code on the right, and
+  the invitation to scan between them.
   The code used to be a block in the middle, under the member, because of how
   much it had to carry (below); as a footer it signs the card instead of
   interrupting it. The card itself
   stays colour-neutral (white and ink) so any organization's logo sits
   comfortably, and the heart red is the only colour on it: **no green,
-  anywhere**. The [palette](brand-palette.md)'s moss green drew the rule under
+  anywhere**. The [palette](brand-palette.md)'s moss green drew a rule under
   the band and the valid year until it went, because a card presents two
   parties, the member and the organization they back, and the product's own
-  colour was a third voice in that. What was green is the card's own ink now:
-  the rule, and the year while it is current. The band is a
-  line, not a filled field: a second colour field at the top competed with
-  the organization's own mark. The card is white, not the page's cream: a
+  colour was a third voice in that. The year is the card's own ink now, while
+  it is current. The card is white, not the page's cream: a
   cream card on the cream member page barely lifted off it, and a card is
   meant to read as an object lying on the page. Being the brightest thing on
   the page, it draws the QR code straight on itself; the code used to sit in
   a white panel of its own, which on a white card would be a frame drawn for
   nothing.
+- **The card draws no lines.** It drew two for a while, an ink rule under
+  the band and a pale one over the footer, and two lines that disagree on
+  colour, weight and extent read as a mistake, not as a structure: the top
+  one was the darkest line on the card, darker than its own edge, and the
+  bottom one too faint to see in the shared picture. Now space alone divides
+  the band from the member. The band is neither a line nor a filled field: a
+  second colour field at the top competed with the organization's own mark.
+  The footer is the one field on the card, the palette's cream with the
+  card's own rounded bottom corners, because the product signs the card there
+  and a signature sits on its own paper. One field, at the bottom, competes
+  with nobody's logo, and it needs no line to say where the member's half
+  ends. The card's white edge and shadow still lift it off the cream page.
+- **Two inks for the words, not three.** The member's name, the
+  organization's name, the year and the years line share one ink; the
+  number, the recruit line, the attribution and the invitation to scan share
+  a muted one; only the small label over the year is fainter. The
+  organization's name and the years line used to sit in a third ink one shade
+  off the name's, which read as the same ink rendered inconsistently rather
+  than as a step down. The invitation to scan is the one thing on the card
+  that asks the reader to do something, so it is not the faintest thing on
+  it.
 - **The organization's name is prominent.** It answers "supporting member of
   *what?*", so after the member's own name it is the largest text on the card,
   set a step above the valid year beside it.
@@ -166,8 +186,8 @@ surface the member happens to be looking at.
   fetched over the network, and the first time one is drawn that takes the
   better part of a second. For that second the place it will take is not empty:
   it holds the card's own skeleton: the same paper at the same size, the
-  organization's mark, bars where each line will land, and the streak heart at
-  exactly the place and size the drawn one will take. Then the card fades in
+  footer's field, the organization's mark, bars where each line will land,
+  and the streak heart at exactly the place and size the drawn one will take. Then the card fades in
   over it. Because the skeleton is the card's own layout rather than a likeness
   of it, nothing moves when the card lands: the heart the reader has been
   watching simply gains its colour and its count, and the words fill in around
@@ -249,7 +269,9 @@ surface the member happens to be looking at.
   not completed a payment has no card yet; there is nothing to prove.
 - **A lapsed card keeps the years and drops the cheer.** The validity corner
   says "Støttet t.o.m." with the last supported year instead of "Gyldig", the
-  streak heart goes muted, and the exclamation mark goes — the years were real
+  streak heart goes a neutral grey from the card's own family of tones (not a
+  faded red, and not a pink: a heart that is neither red nor ink belongs to
+  nothing on the card), and the exclamation mark goes — the years were real
   and stay counted, but the card stops celebrating. It never pretends the
   membership is current.
 - **The card says what every other surface says, a renewal still being retried
