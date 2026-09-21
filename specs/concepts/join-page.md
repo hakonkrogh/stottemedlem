@@ -129,7 +129,8 @@ resolve to.
   alone sits beside the name; no reserved empty space). The organization's
   imagery never displaces the verification-required profile fields. This
   identity presentation is **one thing shown in every place** an organization
-  is presented: the join page, the receipt a new supporter lands on, and the
+  is presented: the join page, the receipt a new supporter lands on, the
+  public page of a member's [card](member-card.md), and the
   back office's own preview of the public page (see
   [Set up a supporting membership](../use-cases/set-up-supporting-membership.md)),
   so what an administrator sees in the back office is what a supporter sees.

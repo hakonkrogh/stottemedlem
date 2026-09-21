@@ -1,6 +1,7 @@
 ---
 import { periodLabel, referredJoinPath } from "@stottemedlem/core";
 import Heading from "@stottemedlem/ui/components/Heading.astro";
+import OrgIdentityHeader from "@stottemedlem/ui/components/OrgIdentityHeader.astro";
 import Stack from "@stottemedlem/ui/components/Stack.astro";
 import Text from "@stottemedlem/ui/components/Text.astro";
 import TextLink from "@stottemedlem/ui/components/TextLink.astro";
@@ -14,6 +15,7 @@ import {
   memberCardVersion,
   memberCardWords,
 } from "../../../lib/memberCard";
+import { orgIdentity } from "../../../lib/orgImages";
 
 // The member's card at its own public address (specs/concepts/member-card.md):
 // the one page a supporting member can hand to anybody. It offers nothing but
@@ -49,6 +51,11 @@ const alt = `Medlemsbevis for ${memberName} i ${org.name}, med ${card.hearts} hj
   noindex
 >
   <Stack gap="lg">
+    {/* The same identity the member joined under on the join page and saw
+        again on the receipt (specs/concepts/join-page.md): a member following
+        the link to their card arrives at their organization, not at a bare
+        picture on a stranger's site. */}
+    <OrgIdentityHeader {...orgIdentity(org)} />
     <MemberCardFigure
       cardToken={cardToken}
       version={memberCardVersion(card)}
