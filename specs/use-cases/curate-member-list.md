@@ -89,6 +89,12 @@ From the organization's point of view:
    it, and can give one back. That is the only way a member stops being current
    before their year runs out — and it is still not a status action: the money
    moves, and the status follows it.
+10. From a member's own page, the administrator can open that member's
+    [card](../concepts/member-card.md), at the same public address the member
+    shares. The organization is shown the card, never a likeness of it, so
+    what it sees is exactly what the member holds and hands on. A supporter
+    with no completed payment has no card to open, and neither does a member
+    whose details were erased.
 
 ## Acceptance criteria
 - [ ] The list shows every supporting member with their current standing and
@@ -119,6 +125,8 @@ From the organization's point of view:
       [member number](../concepts/member-number.md), in the list and on their
       own page, and one who has not paid shows none.
 - [ ] Typing a member number finds that member and only that member.
+- [ ] A member who has paid offers a way to their card from their own page,
+      and a member who never paid or was erased offers none.
 
 ## Out of scope
 - Manually marking someone as paid/active without an actual payment (kept out to

@@ -21,6 +21,15 @@ export default {
 
 const membersPath = `${ORG_PATH}/medlemmer`;
 
+// The card's public address, the way the page derives it: a member with a
+// paid period has one, a member who never paid or was erased has none.
+const cardUrlFor = (memberId: string, entry: unknown): string | null => {
+  const e = entry as { history?: unknown[]; member?: { anonymizedAt?: string | null } };
+  return (e.history?.length ?? 0) > 0 && !e.member?.anonymizedAt
+    ? `https://xn--stttemedlem-hgb.no/medlemsbevis/kort-${memberId}`
+    : null;
+};
+
 const inFrame = (memberId: string, props: Record<string, unknown>) => ({
   active: "medlemmer",
   warnings: [],
@@ -30,6 +39,7 @@ const inFrame = (memberId: string, props: Record<string, unknown>) => ({
       props: {
         membersPath,
         memberPath: `${membersPath}/${memberId}`,
+        cardUrl: cardUrlFor(memberId, props.entry),
         ...props,
       },
     },

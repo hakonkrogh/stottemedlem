@@ -56,6 +56,12 @@ interface Props {
   membersPath: string;
   /** This member's own address, which the edit action opens. */
   memberPath: string;
+  /**
+   * The public address of the member's card, so the organization can see the
+   * proof the member holds (specs/concepts/member-card.md). Null while there
+   * is no card: nothing paid yet, or the person erased.
+   */
+  cardUrl?: string | null;
 }
 const {
   entry,
@@ -73,6 +79,7 @@ const {
   eraseError = null,
   membersPath,
   memberPath,
+  cardUrl = null,
 } = Astro.props;
 const { member, latest, status, renewing, history } = entry;
 
@@ -360,6 +367,16 @@ const periodSurvives =
                 .filter(Boolean)
                 .join(" · ")}
             </Text>
+            {
+              /* The card is this history as the member carries it. A link, not a
+                 copy of the card: what the organization sees is exactly what the
+                 member shares (specs/concepts/member-card.md). */
+              cardUrl && (
+                <Text variant="small">
+                  <TextLink href={cardUrl}>Se medlemsbeviset</TextLink>
+                </Text>
+              )
+            }
             <ul class="history">
               {history.map((period) => (
                 <li>

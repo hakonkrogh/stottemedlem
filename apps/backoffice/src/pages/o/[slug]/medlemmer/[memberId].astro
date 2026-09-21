@@ -1,6 +1,7 @@
 ---
 import {
   anonymizeMember,
+  ensureMemberCardToken,
   findChargeByVippsId,
   getMembershipAgreement,
   getOrganizationMember,
@@ -12,6 +13,7 @@ import MemberDetailScreen from "../../../../components/MemberDetailScreen.astro"
 import OrgScreen from "../../../../components/OrgScreen.astro";
 import Shell from "../../../../layouts/Shell.astro";
 import { getDb } from "../../../../lib/db";
+import { memberCardUrl } from "../../../../lib/memberCard";
 import {
   type MemberContactFieldErrors,
   memberContactFormValues,
@@ -169,6 +171,14 @@ const confirming = refunded
 // Erasing is irreversible in the same way, and asks in the same place: the
 // link opens this confirmation, and only the confirmation can erase.
 const erasing = !erased && !entry.member.anonymizedAt && Astro.url.searchParams.has("slett");
+// The member's card, at the address the member shares: what the organization
+// sees is what the member holds. A supporter who has never paid has no card,
+// and an erased member's card is gone (specs/concepts/member-card.md).
+const cardToken =
+  entry.history.length > 0 && !entry.member.anonymizedAt
+    ? await ensureMemberCardToken(db, entry.member.id)
+    : null;
+const cardUrl = cardToken ? memberCardUrl(cardToken) : null;
 // Arrived from a search for a payment reference: the page points that payment out.
 const sought = flags.get(PAYMENT_PARAM);
 ---
@@ -191,6 +201,7 @@ const sought = flags.get(PAYMENT_PARAM);
       eraseError={eraseError}
       membersPath={membersPath}
       memberPath={memberPath}
+      cardUrl={cardUrl}
     />
   </OrgScreen>
 </Shell>
