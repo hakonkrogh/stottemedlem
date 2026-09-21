@@ -270,8 +270,12 @@ surface the member happens to be looking at.
   address is left to work out what to do with it; a member shown "Facebook"
   and "Meldinger" is being asked where. Every place works with no scripting
   at all, because each is a link into that place with the card's address
-  already in it; what the member sends along names the organization and
-  links the card, never anything else about them. The card on that page
+  already in it; what the member sends along is an invitation: it names the
+  organization, asks the reader whether they want to join too, and says the
+  link is where the card and the way in are. It never says anything else
+  about the member. (A first version only captioned the link, "se
+  medlemsbeviset mitt", and read as odd in a text message: the reader was
+  handed a card with no word about why.) The card on that page
   carries no pill of its own: one page, one way to share, so the two cannot
   disagree about what sharing means.
 - **Anyone may look; only the member can change it.** The card page offers no
