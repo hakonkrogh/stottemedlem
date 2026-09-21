@@ -19,7 +19,7 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "../../..");
 const QR_DIST = resolve(ROOT, "packages/qr/dist/index.js");
-const FONT = resolve(ROOT, "apps/backoffice/src/assets/fonts/Fraunces.ttf");
+export const FONT = resolve(ROOT, "apps/backoffice/src/assets/fonts/Fraunces.ttf");
 
 /**
  * Fictitious throughout — a rendered card may end up in a screenshot or a doc,
@@ -58,7 +58,7 @@ const MEMBER_BASE = {
  * the real world supplies. Keep this in step with MemberCard.stories.ts — the
  * two exist for the same reason, one in a browser and one in the rasterizer.
  */
-const MEMBER_CASES = {
+export const MEMBER_CASES = {
   WithLogo: MEMBER_BASE,
   WithoutLogo: { ...MEMBER_BASE, logoDataUri: null },
   FirstYear: { ...MEMBER_BASE, hearts: 1 },
@@ -335,7 +335,10 @@ ${rows}
 `;
 }
 
-main().catch((error) => {
-  console.error(String(error.message ?? error));
-  process.exit(1);
-});
+// Run only as a script: variants.mjs imports the fixtures from here.
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+  main().catch((error) => {
+    console.error(String(error.message ?? error));
+    process.exit(1);
+  });
+}
