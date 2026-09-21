@@ -1175,9 +1175,17 @@ also documents the variants and why the rule exists.
   colors/type/space — restyle here, not in components) + `base.css`.
   **`OrgIdentityHeader.astro` (moved here 2026-09-04) is THE one presentation
   of an organization** (banner backdrop, circular logo, name): the public join
-  page, the receipt AND the back office's settings preview all render it, fed
+  page, the receipt, the member card's public page (`/medlemsbevis/<token>`,
+  since 2026-09-21: it is the "Se og del medlemsbeviset ditt" link in the
+  receipt email, NOT min-side, which is the manage link and still has no
+  header) AND the back office's settings preview all render it, fed
   by `apps/backoffice/src/lib/orgImages.ts`'s `orgIdentity(org)` — never
-  re-draw a logo/banner by hand elsewhere. Its `OrgIdentityHeader.fixtures.ts`
+  re-draw a logo/banner by hand elsewhere. Adding it to a page is one import +
+  `<OrgIdentityHeader {...orgIdentity(org)} />` above the content, and the
+  spec list of where it appears (`concepts/join-page.md`, "one thing shown in
+  every place") must gain that page. To SEE it locally with real images, the
+  seeded org needs `verify-public-routes`' `seed-images.sh` after `seed.sh`
+  (name-only otherwise). Its `OrgIdentityHeader.fixtures.ts`
   holds drawn SVG data-URI logo/banner for stories (no binaries, no real org).
   **Importing a plain `.ts` module through the `./components/*` wildcard
   export needs the `.ts` extension on the path**

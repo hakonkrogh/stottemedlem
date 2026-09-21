@@ -261,6 +261,15 @@ surface the member happens to be looking at.
 - **Anyone may look; only the member can change it.** The card page offers no
   actions on the membership. A visitor who is not the member sees exactly what
   the member sees.
+- **The card's public page opens with the organization.** Above the card
+  stands the organization's own identity, the banner, the circled logo and the
+  name, presented exactly as on the [join page](join-page.md) and the
+  [receipt](payment-receipt.md). A member follows the link to their card from
+  the receipt, weeks or years after joining; what they should land on is the
+  organization they back, looking the way it looked when they joined, and not
+  a bare picture on a site they do not recognise. The card still leads among
+  the page's content: the identity is the organization's frame around it, not
+  a rival to it, and the card is drawn no differently for it.
 - **The organization looks the same way everyone else does.** A member's page
   in the [back office](back-office.md) leads to that member's card at its
   public address, so an administrator checking what a supporter was handed,
