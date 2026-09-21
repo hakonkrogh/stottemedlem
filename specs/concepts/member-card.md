@@ -68,8 +68,8 @@ surface the member happens to be looking at.
   the band and the valid year until it went, because a card presents two
   parties, the member and the organization they back, and the product's own
   colour was a third voice in that. The year is the card's own ink now, while
-  it is current. The card is white, not the page's cream: a
-  cream card on the cream member page barely lifted off it, and a card is
+  it is current. The card is white, not the palette's cream: a
+  cream card on the then-cream member page barely lifted off it, and a card is
   meant to read as an object lying on the page. Being the brightest thing on
   the page, it draws the QR code straight on itself; the code used to sit in
   a white panel of its own, which on a white card would be a frame drawn for
@@ -85,7 +85,10 @@ surface the member happens to be looking at.
   card's own rounded bottom corners, because the product signs the card there
   and a signature sits on its own paper. One field, at the bottom, competes
   with nobody's logo, and it needs no line to say where the member's half
-  ends. The card's white edge and shadow still lift it off the cream page.
+  ends. The member's page is white too since 2026-09-21
+  ([palette](brand-palette.md)), so the card's edge and shadow are what
+  hold it as an object there, and the cream footer is the one warm field on
+  the page.
 - **Two inks for the words, not three.** The member's name, the
   organization's name, the year and the years line share one ink; the
   number, the recruit line, the attribution and the invitation to scan share
