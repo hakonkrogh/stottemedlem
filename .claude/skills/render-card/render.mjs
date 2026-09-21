@@ -222,7 +222,12 @@ async function main() {
     const file = `card-${name}`;
     await writeFile(resolve(options.out, `${file}.svg`), svg);
     await writeFile(resolve(options.out, `served-${file}.svg`), await withEmbeddedFont(svg));
-    rendered.push({ file, name, kind: options.kind, svg });
+    // The member card's skeleton is laid out by the same code, so it is
+    // reviewed beside the card it stands in for. It is inlined, never loaded
+    // as a file: it carries a bare `data-card-heart` attribute the page hooks
+    // the pulse on, which is HTML, not XML.
+    const skeleton = options.kind === "member" ? qr.memberCardSkeletonSvg(args) : null;
+    rendered.push({ file, name, kind: options.kind, svg, skeleton });
   }
 
   if (options.raster) await rasterize(rendered, options.out, qr, options.time);
@@ -316,6 +321,7 @@ function contactSheet(rendered, raster) {
     <figure><figcaption>inlined in a page (variable weights)</figcaption>${item.svg}</figure>
     <figure><figcaption>as served: &lt;img&gt;, no webfont reachable</figcaption><img src="served-${item.file}.svg" alt=""></figure>
     ${raster ? `<figure><figcaption>resvg — what gets shared</figcaption><img src="raster-${item.file}.png" alt=""></figure>` : ""}
+    ${item.skeleton ? `<figure><figcaption>skeleton, while the card is on its way</figcaption>${item.skeleton}</figure>` : ""}
   </div>
 </section>`,
     )
@@ -323,7 +329,9 @@ function contactSheet(rendered, raster) {
   return `<!doctype html><meta charset="utf-8"><title>Cards</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300..900&display=swap');
-body { margin: 0; padding: 20px; background: #e9e5df; font: 13px system-ui; }
+/* The page's own cream (packages/ui tokens --sm-bg): a card is judged on the
+   ground it actually lies on, and the footer's field is a shade under it. */
+body { margin: 0; padding: 20px; background: #faf6ee; font: 13px system-ui; }
 h2 { margin: 0 0 6px; font: 600 12px ui-monospace, monospace; color: #5b5147; }
 section { margin-bottom: 26px; }
 .pair { display: flex; gap: 18px; align-items: flex-start; }

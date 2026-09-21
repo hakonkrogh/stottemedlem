@@ -49,6 +49,14 @@ Examples:
 | inlined in a page | the SVG inlined into HTML, browser draws it with the page's loaded Fraunces | real variable-weight text; how min-side and the marketing page show a card |
 | **as served** | `served-*.svg` in an `<img>` | the card **set in Georgia**, because an `<img>` fetches no webfont |
 | resvg | the shipped rasterizer | a missing embedded font (text draws as *nothing*), a logo referenced by URL |
+| skeleton | `memberCardSkeletonSvg` inlined | that the waiting card still matches the drawn one (same field, heart in the same place) |
+
+The sheet's ground is the page's own cream (`--sm-bg`, #faf6ee), because a
+card is judged on the ground it lies on: the footer's cream field is a shade
+under the page, and only the edge and shadow keep the card an object. The
+skeleton is inlined and cannot be loaded as an SVG file: it carries a bare
+`data-card-heart` attribute for the page's pulse, which an XML parser
+rejects.
 
 **The middle column is the one most surfaces actually are.** The back office
 shows the QR card as an `<img>`, a club's own website hot-links it as an
