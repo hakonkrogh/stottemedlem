@@ -497,6 +497,22 @@ also documents the variants and why the rule exists.
   failing send cannot loop). The nightly cron is still the backstop. The page
   therefore no longer knows the email has gone: it says "kommer også på
   e-post til …" until a `receipt` notice exists.
+  **The receipt page's card comes with a share chooser since 2026-09-21**
+  (branch receipt-social-share, rule in `concepts/member-card.md`):
+  `components/ShareMemberCard.astro` is one full-width "Dette vil jeg dele"
+  `<details>` button under the card, opening Facebook / Meldinger (sms:) /
+  E-post (mailto:) / Kopier lenken as plain links with the card's address in
+  them, plus "Andre apper" (navigator.share) un-hidden by script only where a
+  sheet exists. The receipt's card deliberately has NO share pill (min-side
+  and `/medlemsbevis` keep theirs), so one page has one way to share. Its
+  script is plain JS because it has a story (`backoffice-del-medlemsbeviset`).
+  **The receipt page's "active" state cannot be rendered locally**: it asks
+  Vipps about a real agreement, and the seeded `agr_seed_1` exists nowhere on
+  apitest, so `status` stays `unknown` and the card section never renders. To
+  see or drive the card + share section, write a scratch route under
+  `src/pages/bli-medlem/<name>/` that composes the same components with the
+  seeded card token (`5eed0001-0000-4000-8000-000000000001`), drive it with
+  `drive-page` (its SKILL.md has the run), and delete it afterwards.
   Nothing had to be provisioned for this (checked 2026-09-01): both queues
   already had the backoffice worker as producer AND consumer — the consumer was
   attached for the old drop-everything stub — and `wrangler queues info
