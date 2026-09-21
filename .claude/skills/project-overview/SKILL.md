@@ -945,6 +945,14 @@ also documents the variants and why the rule exists.
   `matchesMemberSearch`, `getOrganizationMember`, `updateMemberContactDetails`);
   status is DERIVED (never a column, never settable) and a supporter with no
   completed payment renders as "Ikke betalt", not lapsed.
+  **The member's page links their CARD since 2026-09-21** ("Se medlemsbeviset"
+  under Støttehistorikk, spec'd in `curate-member-list.md` step 10 +
+  `member-card.md`): the page passes `cardUrl` (`memberCardUrl` over
+  `ensureMemberCardToken`, only for a member with history and not erased) and
+  the screen shows nothing when it is null. The stories derive the same rule in
+  `cardUrlFor`. It is an ABSOLUTE href, which `StoryScreen`'s route rewriting
+  leaves alone, so `drive-page` can assert it verbatim on the story
+  (`assert=a[href="https://xn--stttemedlem-hgb.no/medlemsbevis/kort-m-1"]`).
   **The MEMBER NUMBER is the one member fact that is STORED, not derived**
   (added 2026-09-11, branch add-member-number, spec
   `specs/concepts/member-number.md` NEW, migration `0015_member_number.sql`):

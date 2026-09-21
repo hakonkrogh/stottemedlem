@@ -258,6 +258,14 @@ surface the member happens to be looking at.
 - **Anyone may look; only the member can change it.** The card page offers no
   actions on the membership. A visitor who is not the member sees exactly what
   the member sees.
+- **The organization looks the same way everyone else does.** A member's page
+  in the [back office](back-office.md) leads to that member's card at its
+  public address, so an administrator checking what a supporter was handed,
+  or answering a question about it, sees the card itself and not a
+  back-office rendering of it
+  ([curate the member list](../use-cases/curate-member-list.md)). There is
+  nothing to lead to while there is no card: a supporter who has not paid, or
+  a member whose details were erased.
 - **The QR code carries the member's referral.** Scanning it goes by way of the
   card's scan address (above) and opens the organization's join page, and a
   join completed from that scan counts as a recruit for the member whose card
@@ -317,4 +325,5 @@ surface the member happens to be looking at.
 
 ## Referenced by
 - [Use case: Earn hearts and recruit new members](../use-cases/earn-hearts-and-recruit.md)
+- [Use case: Curate the member list](../use-cases/curate-member-list.md)
 - [Concept: Scorecard](scorecard.md)
