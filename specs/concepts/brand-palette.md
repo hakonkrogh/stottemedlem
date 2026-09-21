@@ -61,12 +61,19 @@ it too, for the reason below.
   red that reads as a warning, clearly darker and duller than the heart, so a
   red heart never looks like a red button and a red button never looks like a
   heart.
-- **Cream and ink are the ground, everywhere.** Public pages, the back office
-  and the emails share the same warm off-white and warm near-black, so a
-  person who joined on a phone recognizes the receipt and the card as the
-  same product. Objects lying on that ground, the member card and the
-  receipt slip, are white with a hairline edge, so they lift off the cream
-  instead of dissolving into it.
+- **Cream and ink are the product's own ground; the public pages stand on
+  white.** The back office and the emails share the warm off-white and warm
+  near-black, so a person who joined on a phone recognizes the receipt and
+  the card as the same product. The public pages (the join page, the member's
+  own page, the receipt, the terms and the privacy page) are white instead
+  (decided 2026-09-21): there the product presents someone else, an
+  organization to a stranger or a member to themselves, and its own paper
+  colour is one more voice on a page whose colours should be the club's and
+  the member's. Objects lying on either ground, the member card and the
+  receipt slip, are white with a hairline edge and a soft shadow; on the
+  cream they lift off it, on the white the edge and the shadow alone hold
+  them, and the member card's cream footer becomes the warmest thing on the
+  page.
 - **The organization's own colours come first.** The palette is deliberately
   quiet so any club's logo and name sit on top of it; the product's green
   never competes with a club's red or yellow.
@@ -82,8 +89,8 @@ it too, for the reason below.
   palette, and the heart's red.
 - The [member card](member-card.md) and the organization's
   [QR card](../use-cases/promote-with-qr-card.md) are drawn from this palette,
-  minus the green: white on the cream page, ink, and the red heart, and the
-  member card's footer on the cream.
+  minus the green: white, ink, and the red heart, and the member card's
+  footer on the cream.
 - The [payment receipt](payment-receipt.md) and the [join page](join-page.md)
   are the two places a member meets the palette first.
 

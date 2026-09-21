@@ -1,7 +1,8 @@
 ---
 // Frame for the PUBLIC org pages (/org/<slug>…): indexable (no robots noindex —
 // Vipps' website verification must be able to read them), a single readable
-// column on the warm brand background, and the mandatory subtle støttemedlem.no
+// column on a white ground (the product's cream steps back where it presents
+// an organization or a member, see specs/concepts/brand-palette.md), and the mandatory subtle støttemedlem.no
 // attribution (specs/concepts/brand-attribution.md: ø in visible text, punycode
 // in the href).
 import "@stottemedlem/ui/tokens.css";
@@ -63,6 +64,16 @@ const { title, description, noindex, previewImage, previewImageAlt } = Astro.pro
     </footer>
   </body>
 </html>
+
+<style is:global>
+  /* The public pages stand on white, not on the product's cream
+   * (specs/concepts/brand-palette.md): here the product presents someone
+   * else, an organization or a member, and its own paper colour steps back.
+   * Everything else in the palette stays as the tokens say. */
+  :root {
+    --sm-bg: #ffffff;
+  }
+</style>
 
 <style>
   main {

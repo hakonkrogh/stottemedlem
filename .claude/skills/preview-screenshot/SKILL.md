@@ -274,7 +274,13 @@ companion script instead of hand-rolling the plumbing:
   `/log`, one unbuilt workspace dep at a time) is in `devlog.sh tail`; fix all
   at once with `pnpm turbo build --filter='@stottemedlem/backoffice^...'`
   (hit 2026-08-28). The dark pill at the bottom
-  of astro-dev screenshots is Astro's dev toolbar, not the page.
+  of astro-dev screenshots is Astro's dev toolbar, not the page. **For shots a
+  person will look at (a before/after page for the user), turn it off first**
+  (2026-09-21): `cd apps/backoffice && npx astro preferences disable devToolbar`
+  writes `devToolbar.enabled=false` into the app's gitignored
+  `.astro/settings.json`, so it is per worktree and never a commit; restart
+  the daemon (`devlog.sh stop` + `start`) for it to take. At phone width the
+  pill lands in the middle of the page, over the copy, not at the bottom.
 - **A component that pulls its content from a server endpoint cannot be
   reviewed in Storybook** — Storybook serves no app routes, so an
   `<img src="/medlemsbevis/…/kort.svg">` (MemberCardFigure) or
