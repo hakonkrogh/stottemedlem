@@ -752,12 +752,20 @@ projects only when those surfaces get wired; no project for marketing
 (assets-only, no code). Still pending: the
 Healthchecks.io pings. Verified in workerd via
 `wrangler dev --test-scheduled` → `/cdn-cgi/handler/scheduled`.
-A DSN can be verified headlessly, no SDK involved — POST one envelope
+A DSN can be verified headlessly, no SDK involved: POST one envelope
 (three newline-separated JSON lines: `{event_id,sent_at,dsn}`,
 `{"type":"event"}`, `{event_id,timestamp,platform,level,message}`; event_id =
 32 lowercase hex) to `https://<host>/api/<projectId>/envelope/` with
-content-type `application/x-sentry-envelope`; HTTP 200 + `{"id":…}` = the
-project accepted it and an issue appears.
+content-type `application/x-sentry-envelope`. Sentry answers HTTP 200 +
+`{"id":…}`.
+**CORRECTED 2026-09-22 against a real Better Stack DSN:** the envelope's own
+`dsn` header field is NOT accepted as authentication there. Without an
+`X-Sentry-Auth` header the ingest host answers `401 {"detail":"Unauthorized"}`,
+which reads exactly like a bad DSN and is not. Send
+`X-Sentry-Auth: Sentry sentry_version=7, sentry_key=<KEY>, sentry_client=<any>`
+and it answers `200 {}`, an empty object rather than Sentry's `{"id":…}`. So
+judge the check by the STATUS, not the body.
+`.claude/skills/betterstack-context/dsn-check.mjs <dsn>` does all of this.
 ### The nightly runs' watchdog (Better Stack heartbeats)
 
 **SWITCHED 2026-09-16, from Sentry Crons to Better Stack heartbeats.** PR #110
