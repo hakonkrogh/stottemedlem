@@ -46,6 +46,33 @@ authentication here. The script sends the header.
 It files one real event into the application, labelled as a check and safe to
 resolve.
 
+## Prove the DEPLOYED error channel delivers
+
+```sh
+bash .claude/skills/betterstack-context/alert-check.sh staging
+```
+
+`dsn-check.mjs` proves a DSN is good. This proves the deployed WORKER is
+actually using it, which is a different question and the one that goes wrong
+quietly. A wrong `SENTRY_DSN` secret does not fail, it goes silent, and
+typecheck, vitest and dsn-check all pass while it does.
+
+It works by POSTing to `/api/card-without-words`, the product's one alert
+raised from an address anybody can reach, which answers 204 whatever happens
+and raises a real error on the way. Within seconds the vendor's error list
+should show "a member card was drawn without its words", tagged Backoffice and
+`staging`. The environment tag is half the proof.
+
+**Staging only, and the script refuses `production` for a reason.** That
+message is a CONSTANT, so a test in production fires the same issue a genuinely
+broken card would, inflating its count forever and training the operator to
+dismiss the one alert that says members are being handed wordless cards.
+Production wiring is inferred from staging: same code, same DSN, same command
+writing the secret.
+
+**Verified working 2026-09-22**, staging Worker through to the vendor, on the
+day the error channel moved off Sentry.
+
 ## Rules
 
 - **Read-only by default.** `create` is the only write and it is explicit.
@@ -55,6 +82,10 @@ resolve.
   commits the operator to being informed, never paged, and Better Stack's own
   defaults do not match that. Check any heartbeat made in the dashboard the
   same way.
+- **The vendor's error list resists automated clicking.** Resolving a row from
+  the browser worked once and then silently did nothing across three further
+  attempts on a second row (2026-09-22). Resolve by hand rather than spending
+  the session on it.
 - **`raw` is the escape hatch**, so this stays a generic surface. Reach for a
   documented endpoint through it rather than growing a command per call.
 - **The token is the user's to give.** Read from `BETTERSTACK_API_TOKEN`,
