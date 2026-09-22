@@ -57,6 +57,29 @@ product. It would now leave it towards a model provider, not merely a log store.
 - If the subprocessor list matters to us over time, it is published, so it can
   be re-read rather than asked about. Nothing notifies us when it changes.
 
+## How to check this for the next vendor
+
+The method generalises, and one step of it is the one worth knowing, because
+it is the step that nearly sent this chase down a blind alley.
+
+1. **Read the TERMS first, not the agreement.** The question is not what the
+   agreement says but whether it binds us, and vendors answer that in the
+   terms, usually by incorporating it by reference ("part of this Agreement").
+   Where they do, signup already accepted it and there is nothing to obtain.
+   Looking for a signature flow, a request form or an enterprise gate wastes
+   the afternoon and can end in reporting a blocker that does not exist.
+2. **Then the agreement**, for whether Standard Contractual Clauses are
+   incorporated for restricted transfers. That, not a framework certification,
+   is the thing that stands on its own.
+3. **Then the schedules**, for the subprocessor list. This is where a vendor's
+   own vendors appear, and it is the part most likely to contain something we
+   would not have guessed. It is also the part that changes silently.
+4. **Record the date.** Nothing notifies us when any of the three change.
+
+Treat a certification claim as unverified unless the public register was
+actually searched, and say so. It rarely decides anything, because the clauses
+are normally incorporated in parallel.
+
 ## Sources
 
 - betterstack.com/terms (incorporation of the agreement into the terms)
