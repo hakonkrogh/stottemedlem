@@ -49,6 +49,18 @@ Averaging rather than nearest-neighbour is deliberate: sampling drops whole
 modules and reports a code as unscannable long before a real screen or printer
 would.
 
+**What the shrink floor does NOT cover: a card passed through a chat.** The
+floor is measured on the picture this repo draws. A shared card is recompressed
+by whatever app carries it and is first shown as a thumbnail, which can be
+narrower than the floor, so the reader has to open it full size before anything
+can read the code. Nobody has measured a real WhatsApp / Messenger / Snapchat
+round trip here. Do that before promising that a shared card picture recruits on
+its own (it matters for sharing the card as a `files:` payload, see the Web Share
+section in `stack-docs`). Phones can read a code out of a saved picture without a
+camera (iOS Live Text in Photos, Google Lens, Circle to Search on newer Android),
+so the path exists; it just costs the reader a deliberate long-press, where a
+plain link costs one tap.
+
 ## `budget.mjs`: how much may a LOGO cover?
 
     node .claude/skills/verify-qr/budget.mjs "<payload>" [--ec L,M,Q,H] [--cover <percent-of-width>]

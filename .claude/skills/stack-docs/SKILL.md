@@ -975,6 +975,13 @@ https://caniuse.com/web-share · https://w3c.github.io/web-share/
   Snapchat. Reported cost: several targets drop `url` and `text` when a file is
   present, which would lose the link the whole thing exists to spread. The card's own
   QR code is the fallback way in when that happens.
+- **A picture is not a dead end for the link.** If a target keeps the file and
+  drops `url`, the card's QR code is still readable off the saved picture with no
+  camera: iOS Live Text in Photos (iOS 15+), Google Lens, and Circle to Search on
+  Android 14+ phones read a code straight off screen. It is a deliberate
+  long-press, not a tap, so the link should still travel wherever the target
+  allows it. UNTESTED here, and chat recompression is a separate unknown (see
+  `verify-qr`).
 - **Cancelling rejects with `AbortError`.** A bare `.catch(() => {})` therefore hides
   both "user changed their mind" and "the call was refused"; only the latter should
   fall back to the clipboard.
