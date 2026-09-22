@@ -170,7 +170,7 @@ export const DPA_PATH = "/databehandleravtale";
  * written. Change this when the agreement changes in substance, and every
  * organization is asked to accept the new one; leave it alone for typos.
  */
-export const DPA_VERSION = "2026-09-22";
+export const DPA_VERSION = "2026-09-22.2";
 
 /** The join page's path on the canonical origin, e.g. `/bli-medlem/<slug>`. */
 export function joinPagePath(slug: string): string {
@@ -432,6 +432,74 @@ export function csvDocument(rows: readonly (readonly (string | number | null)[])
     return /[;"\r\n]/.test(text) ? `"${text.replaceAll('"', '""')}"` : text;
   };
   return `\uFEFF${rows.map((row) => row.map(field).join(";")).join("\r\n")}\r\n`;
+}
+
+/**
+ * Why a supporter is asked for a postal address, unless the organization has
+ * written a reason of its own (specs/use-cases/collect-postal-addresses.md):
+ * every organization gets printed member cards to post, so this is true of
+ * all of them from the first day.
+ */
+export const DEFAULT_POSTAL_ADDRESS_REASON = "Slik kan vi sende deg medlemsbeviset i posten";
+
+/**
+ * The organization's reason for asking for a postal address, quoted the way
+ * the supporter reads it (specs/use-cases/collect-postal-addresses.md): in
+ * Norwegian quotation marks, without a full stop of its own inside them, so
+ * the sentence around it can end normally.
+ */
+export function quotedPostalAddressReason(reason: string): string {
+  return `«${reason.trim().replace(/[.\s]+$/, "")}»`;
+}
+
+/**
+ * A postal address as the product holds it: its parts, never one line of
+ * text (specs/use-cases/collect-postal-addresses.md).
+ */
+export interface PostalAddressParts {
+  streetAddress: string | null;
+  postalCode: string | null;
+  city: string | null;
+  country: string | null;
+}
+
+/**
+ * Whether a country, as the payment provider codes it ("NO") or as a person
+ * types it, is Norway: the home country, which an envelope does not name.
+ */
+export function isNorway(country: string | null): boolean {
+  return country === null || /^\s*(no|nor|norge|noreg|norway)\s*$/i.test(country);
+}
+
+/**
+ * The address the way it goes on an envelope: street, then postal code and
+ * place, then the country only when it is not Norway. Parts that are missing
+ * are left out rather than written as blanks, and an address with no parts at
+ * all is no lines.
+ */
+export function postalAddressLines(address: PostalAddressParts): string[] {
+  const street = address.streetAddress?.trim() ?? "";
+  const place = [address.postalCode?.trim(), address.city?.trim()]
+    .filter((part): part is string => Boolean(part))
+    .join(" ");
+  const country = isNorway(address.country) ? "" : (address.country?.trim() ?? "");
+  return [street, place, country].filter(Boolean);
+}
+
+/**
+ * A phone number the way a person reads it aloud. Norwegian numbers, with or
+ * without the country code the payment provider prefixes them with, are
+ * grouped the Norwegian way (mobiles 3-2-3, landlines 2-2-2-2); anything else
+ * is left as it was written.
+ */
+export function formatPhoneNumber(phone: string): string {
+  const digits = phone.replace(/[\s-]/g, "");
+  const national = digits.match(/^(?:\+?47)?(\d{8})$/)?.[1];
+  if (!national) return phone;
+  const groups = /^[49]/.test(national)
+    ? [national.slice(0, 3), national.slice(3, 5), national.slice(5)]
+    : [national.slice(0, 2), national.slice(2, 4), national.slice(4, 6), national.slice(6)];
+  return groups.join(" ");
 }
 
 /**

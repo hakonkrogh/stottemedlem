@@ -46,6 +46,37 @@ const inFrame = (memberId: string, props: Record<string, unknown>) => ({
   },
 });
 
+/**
+ * In an organization that asks for postal addresses, the address is one of
+ * the details, presented and corrected in the same place
+ * (specs/use-cases/collect-postal-addresses.md).
+ */
+export const WithPostalAddress = {
+  args: inFrame("m-1", {
+    entry: { ...continuing, history: [fixturePeriod("m-1", 2026, 300)] },
+    values: { name: "Ingrid Solheim", email: "ingrid@eksempel.example", phone: "4711111111" },
+    addressValues: {
+      streetAddress: "Bakvendtveien 12",
+      postalCode: "9999",
+      city: "Bakvendtland",
+      country: "NO",
+    },
+    payments: [fixturePayment(2026, 300)],
+  }),
+};
+
+/** The address fields open with the rest, and a postal code that cannot be one is refused. */
+export const EditingPostalAddress = {
+  args: inFrame("m-1", {
+    entry: { ...continuing, history: [fixturePeriod("m-1", 2026, 300)] },
+    values: { name: "Ingrid Solheim", email: "ingrid@eksempel.example", phone: "4711111111" },
+    addressValues: { streetAddress: "Bakvendtveien 12", postalCode: "99", city: "", country: "" },
+    addressErrors: { postalCode: "Et norsk postnummer har fire siffer." },
+    editing: true,
+    payments: [fixturePayment(2026, 300)],
+  }),
+};
+
 /** What is recorded, presented — correcting it is a separate, asked-for action. */
 export const Continuing = {
   args: inFrame("m-1", {

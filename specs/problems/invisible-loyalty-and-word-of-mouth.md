@@ -34,6 +34,7 @@ thanked, or repeated deliberately.
 ## Solved by
 - [Use case: Earn hearts and recruit new members](../use-cases/earn-hearts-and-recruit.md)
 - [Use case: Print the member cards](../use-cases/print-member-cards.md)
+- [Use case: Collect postal addresses](../use-cases/collect-postal-addresses.md)
 
 ## Related
 - [Concept: Member card](../concepts/member-card.md)

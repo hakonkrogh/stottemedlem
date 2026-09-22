@@ -8,8 +8,18 @@
 // This is also the place the settings tab's badge points at, so anything not
 // in order that belongs here is stated in full at the top — a count on a tab
 // is never left unexplained once you have followed it.
-import { DPA_PATH, DPA_VERSION, formatOrganisasjonsnummer } from "@stottemedlem/core";
-import { hasAcceptedDpa, type Organization } from "@stottemedlem/db";
+import {
+  DPA_PATH,
+  DPA_VERSION,
+  formatOrganisasjonsnummer,
+  quotedPostalAddressReason,
+} from "@stottemedlem/core";
+import {
+  collectsPostalAddresses,
+  hasAcceptedDpa,
+  type Organization,
+  postalAddressReason,
+} from "@stottemedlem/db";
 import Alert from "@stottemedlem/ui/components/Alert.astro";
 import Button from "@stottemedlem/ui/components/Button.astro";
 import Heading from "@stottemedlem/ui/components/Heading.astro";
@@ -20,10 +30,15 @@ import Text from "@stottemedlem/ui/components/Text.astro";
 import TextField from "@stottemedlem/ui/components/TextField.astro";
 import TextLink from "@stottemedlem/ui/components/TextLink.astro";
 import { orgIdentity } from "../lib/orgImages";
-import type { ProfileFieldErrors, ProfileFormValues } from "../lib/orgProfile";
+import type {
+  PostalAddressChoiceValues,
+  ProfileFieldErrors,
+  ProfileFormValues,
+} from "../lib/orgProfile";
 import { type OrgWarning, warningsForTab } from "../lib/orgWarnings";
 import type { OrgVippsKeys } from "../lib/vippsKeys";
 import OrgImageFields from "./OrgImageFields.astro";
+import OrgPostalAddressFields from "./OrgPostalAddressFields.astro";
 import OrgProfileFields from "./OrgProfileFields.astro";
 import OrgWarnings from "./OrgWarnings.astro";
 
@@ -39,6 +54,9 @@ interface Props {
   name: string;
   nameError?: string;
   imageErrors?: { logo?: string; banner?: string };
+  /** Whether supporters are asked for a postal address, and why. */
+  postalAddress: PostalAddressChoiceValues;
+  postalAddressError?: string;
   saved?: boolean;
   /** The data processing agreement was accepted just now. */
   dpaJustAccepted?: boolean;
@@ -58,6 +76,8 @@ const {
   name,
   nameError,
   imageErrors = {},
+  postalAddress,
+  postalAddressError,
   saved = false,
   dpaJustAccepted = false,
   vippsKeys,
@@ -107,6 +127,7 @@ const hasImages = !!(identity.logoUrl || identity.bannerUrl);
         <Stack gap="lg">
           <TextField label="Navn" name="name" value={name} required error={nameError} />
           <OrgProfileFields values={values} fieldErrors={fieldErrors} />
+          <OrgPostalAddressFields values={postalAddress} error={postalAddressError} />
           <OrgImageFields org={org} errors={imageErrors} />
           <Button busy="Lagrer …" block>
             Lagre
@@ -135,6 +156,27 @@ const hasImages = !!(identity.logoUrl || identity.bannerUrl);
               },
               { label: "Kontakt-e-post", value: org.contactEmail },
               { label: "Nettside", value: org.websiteUrl },
+            ]}
+          />
+        </section>
+
+        {/* The one thing the organization decides about what is collected
+            (specs/use-cases/collect-postal-addresses.md): on unless opted
+            out, presented with the reason, since that is what the supporters
+            read. */}
+        <section class="section">
+          <div class="section-head">
+            <Heading level={3}>Postadresse</Heading>
+          </div>
+          <InfoList
+            items={[
+              {
+                label: "Ber medlemmene om postadresse",
+                value: collectsPostalAddresses(org) ? "Ja" : "Nei",
+                hint: collectsPostalAddresses(org)
+                  ? `Medlemmene får lese hvorfor: ${quotedPostalAddressReason(postalAddressReason(org))}${org.postalAddressReason ? "" : " (standardteksten)"}`
+                  : "Medlemmene deler bare navn, e-post og telefon. Sett haken tilbake under «Endre opplysningene» om dere får noe å sende i posten.",
+              },
             ]}
           />
         </section>

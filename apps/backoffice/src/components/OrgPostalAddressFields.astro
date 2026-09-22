@@ -1,0 +1,47 @@
+---
+// Whether the organization asks its supporters for a postal address, and in
+// which words (specs/use-cases/collect-postal-addresses.md). On for every
+// organization until it opts out: the printed member cards are meant for
+// envelopes. The supporter always reads a reason; the organization may put
+// its own words in place of the standard ones.
+import { DEFAULT_POSTAL_ADDRESS_REASON } from "@stottemedlem/core";
+import Checkbox from "@stottemedlem/ui/components/Checkbox.astro";
+import Text from "@stottemedlem/ui/components/Text.astro";
+import TextField from "@stottemedlem/ui/components/TextField.astro";
+import type { PostalAddressChoiceValues } from "../lib/orgProfile";
+
+interface Props {
+  values: PostalAddressChoiceValues;
+  error?: string;
+}
+const { values, error } = Astro.props;
+---
+
+<div class="postal-address">
+  <Checkbox name="collectPostalAddress" checked={values.collectPostalAddress}>
+    Be medlemmene om postadresse
+  </Checkbox>
+  <Text variant="small">
+    Vipps spør om adressen sammen med navn, e-post og telefon når noen melder seg inn. Adressen
+    står under hvert kort på medlemsbevisene til utskrift, klar til konvolutten. Ta bort haken
+    om dere ikke har noe å sende i posten.
+  </Text>
+  <TextField
+    label="Egen begrunnelse (valgfritt)"
+    name="postalAddressReason"
+    value={values.postalAddressReason}
+    placeholder={DEFAULT_POSTAL_ADDRESS_REASON}
+    error={error}
+  />
+  <Text variant="small">
+    Medlemmene får lese hvorfor dere ber om adressen før de deler den. Skriver dere ingenting,
+    står det «{DEFAULT_POSTAL_ADDRESS_REASON}».
+  </Text>
+</div>
+
+<style>
+  .postal-address {
+    display: grid;
+    gap: var(--sm-space-sm);
+  }
+</style>

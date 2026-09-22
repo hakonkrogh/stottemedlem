@@ -33,7 +33,12 @@ the gain is that "they accepted" describes something that actually happened.
 ## Rules & invariants
 - **One text, same for everyone.** The product collects the same data from
   every supporter of every organization, so there is nothing per-organization
-  to configure and nothing an administrator can get wrong.
+  to configure and nothing an administrator can get wrong. The one choice an
+  organization has, opting out of asking supporters for a postal address
+  ([collect postal addresses](../use-cases/collect-postal-addresses.md)), is
+  named in that same text as something the product holds unless the
+  organization has opted out, so the text still needs no per-organization
+  version.
 - **Accepted by an explicit tick when the organization is created.** The create
   form carries a checkbox naming the agreement and linking it. It is
   **required** — an organization cannot be created without it — and **never

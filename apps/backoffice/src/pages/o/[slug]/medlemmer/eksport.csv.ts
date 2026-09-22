@@ -1,5 +1,10 @@
 import { csvDocument, periodLabel } from "@stottemedlem/core";
-import { listOrganizationMembers, type MemberStanding, memberStanding } from "@stottemedlem/db";
+import {
+  collectsPostalAddresses,
+  listOrganizationMembers,
+  type MemberStanding,
+  memberStanding,
+} from "@stottemedlem/db";
 import type { APIRoute } from "astro";
 import { getDb } from "../../../../lib/db";
 import { requireOrgAccess } from "../../../../lib/orgAccess";
@@ -27,6 +32,19 @@ export const GET: APIRoute = async ({ locals, params }) => {
     unpaid: "Ikke betalt",
   };
 
+  // The postal address, as its parts, only where the organization asks for
+  // one (specs/use-cases/collect-postal-addresses.md): every other
+  // organization's file names the three details and nothing more.
+  const postalAddresses = collectsPostalAddresses(org);
+  const addressColumns = postalAddresses ? ["Gateadresse", "Postnummer", "Poststed", "Land"] : [];
+  const addressCells = (member: {
+    streetAddress: string | null;
+    postalCode: string | null;
+    city: string | null;
+    country: string | null;
+  }) =>
+    postalAddresses ? [member.streetAddress, member.postalCode, member.city, member.country] : [];
+
   const csv = csvDocument([
     [
       // First column: the member number is the one identifier that never
@@ -36,6 +54,7 @@ export const GET: APIRoute = async ({ locals, params }) => {
       "Navn",
       "E-post",
       "Telefon",
+      ...addressColumns,
       "Status",
       "Hjerter",
       "Vervet",
@@ -54,6 +73,7 @@ export const GET: APIRoute = async ({ locals, params }) => {
       entry.member.anonymizedAt ? "Slettet medlem" : entry.member.name,
       entry.member.email,
       entry.member.phone,
+      ...addressCells(entry.member),
       statusLabel[memberStanding(entry)],
       entry.hearts,
       entry.recruits,

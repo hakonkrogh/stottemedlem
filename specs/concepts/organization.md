@@ -36,6 +36,12 @@ support.
   it the way they would say it aloud, and anything that cannot be read as a
   website address is refused rather than stored, since a supporter is invited
   to follow it.
+- An organization **asks its supporters for a postal address** unless it
+  opts out, and the reason is shown to supporters before they join: a
+  standard one, so that the member card can be posted, or the organization's
+  own words in its place
+  ([collect postal addresses](../use-cases/collect-postal-addresses.md),
+  [member data](member-data.md)).
 - An organization may add a **visual identity** — a logo and a banner image —
   shown on its [join page](join-page.md). Unlike the profile fields
   these are **optional**: the page simply omits what has not been uploaded.

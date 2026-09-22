@@ -6,7 +6,11 @@
  * table lives.
  */
 import type { D1Database } from "@cloudflare/workers-types";
-import { membershipTierKey, slugifyOrganizationName } from "@stottemedlem/core";
+import {
+  DEFAULT_POSTAL_ADDRESS_REASON,
+  membershipTierKey,
+  slugifyOrganizationName,
+} from "@stottemedlem/core";
 import { and, asc, desc, eq, gte, inArray, isNull, like, lt, lte, ne, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import {
@@ -81,6 +85,33 @@ export interface OrganizationProfile {
   orgnr: string | null;
   contactEmail: string | null;
   websiteUrl: string | null;
+  /**
+   * Why the organization asks its supporters for a postal address, in its own
+   * words, or null for the standard reason
+   * (specs/use-cases/collect-postal-addresses.md).
+   */
+  postalAddressReason: string | null;
+  /** When the organization opted out of asking; null while it asks. */
+  postalAddressesDeclinedAt: string | null;
+}
+
+/**
+ * Whether this organization asks its supporters for a postal address: every
+ * organization does unless it has opted out
+ * (specs/use-cases/collect-postal-addresses.md).
+ */
+export function collectsPostalAddresses(
+  org: Pick<Organization, "postalAddressesDeclinedAt">,
+): boolean {
+  return !org.postalAddressesDeclinedAt;
+}
+
+/**
+ * The reason a supporter of this organization reads for being asked: the
+ * organization's own words, or the standard one when it wrote none.
+ */
+export function postalAddressReason(org: Pick<Organization, "postalAddressReason">): string {
+  return org.postalAddressReason?.trim() || DEFAULT_POSTAL_ADDRESS_REASON;
 }
 
 /**
@@ -156,6 +187,8 @@ export async function ensureOrganization(
       orgnr: profile?.orgnr ?? null,
       contactEmail: profile?.contactEmail ?? null,
       websiteUrl: profile?.websiteUrl ?? null,
+      postalAddressReason: profile?.postalAddressReason ?? null,
+      postalAddressesDeclinedAt: profile?.postalAddressesDeclinedAt ?? null,
     })
     .returning();
   if (!row) throw new Error("insert into organizations returned no row");
@@ -530,6 +563,11 @@ export interface SupporterIdentity {
   email?: string | null;
   phone?: string | null;
   /**
+   * The postal address, present only when the organization asked for one and
+   * the supporter's profile held one (specs/use-cases/collect-postal-addresses.md).
+   */
+  address?: MemberPostalAddress | null;
+  /**
    * Who brought them in, when the join began by scanning a card. Only ever
    * applied to a person we are meeting for the first time: someone who has
    * supported this organization before was not recruited today, and a recruit
@@ -560,6 +598,9 @@ export async function ensureSupportingMember(
     ...(identity.name ? { name: identity.name } : {}),
     ...(identity.email ? { email: identity.email } : {}),
     ...(identity.phone ? { phone: identity.phone } : {}),
+    // An address with no parts is no address: it must not blank one the
+    // member typed in themselves.
+    ...(identity.address && hasPostalAddress(identity.address) ? identity.address : {}),
   };
 
   if (existing) {
@@ -1892,6 +1933,10 @@ export async function anonymizeMember(
       name: null,
       email: null,
       phone: null,
+      streetAddress: null,
+      postalCode: null,
+      city: null,
+      country: null,
       // Clearing the sub means a returning supporter is met as a new member
       // rather than re-attached to the row they asked us to forget. Their
       // history starts over — that is what erasure costs, and it is theirs to
@@ -2112,6 +2157,46 @@ export interface MemberContactDetails {
   name: string | null;
   email: string | null;
   phone: string | null;
+}
+
+/**
+ * A member's postal address as its parts
+ * (specs/use-cases/collect-postal-addresses.md). Every part may be missing:
+ * the provider's profile may hold none, and a person types what they know.
+ */
+export interface MemberPostalAddress {
+  streetAddress: string | null;
+  postalCode: string | null;
+  city: string | null;
+  country: string | null;
+}
+
+/** Whether any part of an address is there at all. */
+export function hasPostalAddress(address: MemberPostalAddress): boolean {
+  return Boolean(
+    address.streetAddress?.trim() ||
+      address.postalCode?.trim() ||
+      address.city?.trim() ||
+      address.country?.trim(),
+  );
+}
+
+/**
+ * Correct a member's postal address from the back office. Like every
+ * correction, it touches nothing about what was paid.
+ */
+export async function updateMemberPostalAddress(
+  db: Db,
+  orgId: string,
+  memberId: string,
+  address: MemberPostalAddress,
+): Promise<SupportingMember | null> {
+  const [row] = await db
+    .update(supportingMembers)
+    .set(address)
+    .where(and(eq(supportingMembers.orgId, orgId), eq(supportingMembers.id, memberId)))
+    .returning();
+  return row ?? null;
 }
 
 /**

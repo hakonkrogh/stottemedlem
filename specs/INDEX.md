@@ -64,6 +64,7 @@ The one message the product itself sends a member is the necessary
 | [Keep supporting members in the loop](use-cases/keep-supporters-in-the-loop.md) | Retired | [Supporters never hear back](problems/supporters-never-hear-back.md) |
 | [Earn hearts and recruit new members](use-cases/earn-hearts-and-recruit.md) | Draft | [Invisible loyalty and word of mouth](problems/invisible-loyalty-and-word-of-mouth.md) |
 | [Print the member cards](use-cases/print-member-cards.md) | Draft | [Invisible loyalty and word of mouth](problems/invisible-loyalty-and-word-of-mouth.md) |
+| [Collect postal addresses](use-cases/collect-postal-addresses.md) | Draft | [Invisible loyalty and word of mouth](problems/invisible-loyalty-and-word-of-mouth.md) |
 | [Erase a member's personal data](use-cases/erase-member-data.md) | Draft | [Keeping an accurate list](problems/keeping-an-accurate-member-list.md) |
 
 ## Concepts — *shared vocabulary*

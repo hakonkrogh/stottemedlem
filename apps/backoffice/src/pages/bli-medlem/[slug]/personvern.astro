@@ -1,9 +1,16 @@
 ---
-import { formatOrganisasjonsnummer, joinPagePath, joinPageTermsPath } from "@stottemedlem/core";
 import {
+  formatOrganisasjonsnummer,
+  joinPagePath,
+  joinPageTermsPath,
+  quotedPostalAddressReason,
+} from "@stottemedlem/core";
+import {
+  collectsPostalAddresses,
   getOrganizationBySlug,
   listMembershipTiers,
   MEMBER_IDENTITY_RETENTION_YEARS,
+  postalAddressReason,
 } from "@stottemedlem/db";
 import Heading from "@stottemedlem/ui/components/Heading.astro";
 import Stack from "@stottemedlem/ui/components/Stack.astro";
@@ -73,14 +80,24 @@ const tiers = await listMembershipTiers(db, org.id);
           og bare fordi du sier ja til å dele dem i Vipps-appen når du melder deg inn. Vi henter dem
           én gang, ved innmelding, og aldri senere.
         </li>
+        {
+          collectsPostalAddresses(org) && (
+            <li>
+              <strong>Postadressen din.</strong> {org.name} ber om den, og sier hvorfor:{" "}
+              {quotedPostalAddressReason(postalAddressReason(org))}. Den kommer fra
+              Vipps-profilen din på samme måte, én gang, ved innmelding.
+            </li>
+          )
+        }
         <li>
           <strong>Medlemskapet ditt:</strong> hvilket støttemedlemskap du har, hvilke år du har
           støttet, hva du betalte og når.
         </li>
       </ul>
       <Text>
-        Det er alt. Vi ber ikke om fødselsnummer, adresse eller fødselsdato, og vi henter ikke inn
-        opplysninger om deg fra andre steder.
+        Det er alt. Vi ber ikke om fødselsnummer
+        {collectsPostalAddresses(org) ? " eller fødselsdato" : ", adresse eller fødselsdato"}, og
+        vi henter ikke inn opplysninger om deg fra andre steder.
       </Text>
     </section>
 
@@ -125,7 +142,8 @@ const tiers = await listMembershipTiers(db, org.id);
       <Text>
         Så lenge du er støttemedlem, og deretter i {MEMBER_IDENTITY_RETENTION_YEARS} år etter det
         siste året du støttet — like lenge som betalingene må kunne dokumenteres. Året etter det
-        slettes navn, e-postadresse og telefonnummer automatisk. Betalingshistorikken blir liggende
+        slettes navn, e-postadresse{collectsPostalAddresses(org) ? ", telefonnummer og postadresse" : " og telefonnummer"}{" "}
+        automatisk. Betalingshistorikken blir liggende
         uten at den peker på deg, slik at organisasjonens tall for et år som allerede er rapportert,
         ikke endrer seg.
       </Text>

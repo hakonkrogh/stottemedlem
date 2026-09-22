@@ -15,7 +15,9 @@ import { shareableJoinUrl } from "../../../lib/joinLinks";
 import { applyImageField, orgIdentity } from "../../../lib/orgImages";
 import {
   type ProfileFieldErrors,
+  parsePostalAddressChoice,
   parseProfileForm,
+  postalAddressChoiceValues,
   profileFormValues,
 } from "../../../lib/orgProfile";
 import { requireOrgView } from "../../../lib/orgView";
@@ -42,6 +44,8 @@ const settingsPath = `${orgPath(org.slug)}/innstillinger`;
 
 let values = profileFormValues(org);
 let fieldErrors: ProfileFieldErrors = {};
+let postalAddress = postalAddressChoiceValues(org);
+let postalAddressError: string | undefined;
 let name = org.name;
 let nameError: string | undefined;
 let imageErrors: { logo?: string; banner?: string } = {};
@@ -63,6 +67,11 @@ if (Astro.request.method === "POST") {
   const parsed = parseProfileForm(form);
   values = parsed.values;
   fieldErrors = parsed.fieldErrors;
+  // Whether supporters are asked for a postal address, and why
+  // (specs/use-cases/collect-postal-addresses.md).
+  const choice = parsePostalAddressChoice(form, org);
+  postalAddress = choice.values;
+  postalAddressError = choice.error;
   name = String(form.get("name") ?? "").trim();
   if (!name) nameError = "Skriv inn et navn på organisasjonen.";
 
@@ -72,6 +81,7 @@ if (Astro.request.method === "POST") {
 
   const patch: Partial<OrganizationProfile> & { name?: string } & Partial<OrganizationImages> = {};
   if (parsed.profile) Object.assign(patch, parsed.profile);
+  if (choice.choice) Object.assign(patch, choice.choice);
   if (!nameError && name !== org.name) {
     // The WorkOS org is the identity source; keep its name mirrored.
     await getWorkOS().organizations.updateOrganization({ organization: workosOrgId, name });
@@ -98,7 +108,12 @@ if (Astro.request.method === "POST") {
   if (Object.keys(patch).length > 0) {
     org = (await updateOrganizationProfile(getDb(), workosOrgId, patch)) ?? org;
   }
-  const ok = Object.keys(fieldErrors).length === 0 && !nameError && !logo.error && !banner.error;
+  const ok =
+    Object.keys(fieldErrors).length === 0 &&
+    !nameError &&
+    !postalAddressError &&
+    !logo.error &&
+    !banner.error;
   if (ok) {
     // The public pages serve a cached copy; clear this datacenter's copy so the
     // admin sees the change on their next look (visitors self-heal on traffic).
@@ -115,7 +130,11 @@ const saved = Astro.url.searchParams.has("lagret");
 const dpaAccepted = Astro.url.searchParams.has("godtatt");
 // A save closes the form again; anything still wrong keeps it open.
 const hasErrors =
-  Object.keys(fieldErrors).length > 0 || !!nameError || !!imageErrors.logo || !!imageErrors.banner;
+  Object.keys(fieldErrors).length > 0 ||
+  !!nameError ||
+  !!postalAddressError ||
+  !!imageErrors.logo ||
+  !!imageErrors.banner;
 const editing = hasErrors || Astro.url.searchParams.has("rediger");
 ---
 
@@ -138,6 +157,8 @@ const editing = hasErrors || Astro.url.searchParams.has("rediger");
       name={name}
       nameError={nameError}
       imageErrors={imageErrors}
+      postalAddress={postalAddress}
+      postalAddressError={postalAddressError}
       saved={saved}
       dpaJustAccepted={dpaAccepted}
       vippsKeys={view.vippsKeys}
