@@ -11,6 +11,23 @@ companion script instead of hand-rolling the plumbing:
 `bash .claude/skills/preview-screenshot/story.sh start|port|ids [match]|url <story-id>|log|stop`
 (see the Storybook section below).
 
+**The app dev server's port is not fixed either.** This section used to name
+only Storybook, which reads as though 4322 were dependable. It is not, and in a
+repo worked in several worktrees at once it often is not free. Start the server
+and ask for its port through `dev-logs`, never by hand:
+
+    bash .claude/skills/dev-logs/devlog.sh start
+    PORT=$(bash .claude/skills/dev-logs/devlog.sh port)
+    bash .claude/skills/preview-screenshot/shot.sh "http://localhost:$PORT/<path>" out.png
+
+**The failure mode is worse than a connection error (2026-09-22).** Running
+`pnpm run dev` by hand and curling 4322 returned HTTP 500, because 4322 was
+another worktree's server and 4322 was not where this one had landed. The real
+server, on 4325, was serving the page perfectly. A 500 from a stranger's server
+reads exactly like your own change breaking the page, and the fix for it is to
+go looking for a bug that is not there. The dev server announces its real port
+in its own first lines of output; `devlog.sh port` reads it back.
+
 - Writes the PNG (default 1440×1200) and prints its path; Read the PNG to view it.
 - Save output PNGs to the session scratchpad, not the repo.
 - Widths ≥ 500: uses `/Applications/Google Chrome.app` with `--headless=new` —
