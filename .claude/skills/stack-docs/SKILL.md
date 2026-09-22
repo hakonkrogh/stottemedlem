@@ -1,6 +1,6 @@
 ---
 name: stack-docs
-description: Verified platform facts for the stottemedlem stack (Astro on Cloudflare Workers, WorkOS on Workers, Vipps MobilePay test environment, D1 platform limits and what Cloudflare will and will not alert on). Load before scaffolding or configuring apps/marketing or apps/backoffice, assuming how the Astro Cloudflare adapter / WorkOS SDK behave on Workers, quoting a D1 limit or quota, or starting Vipps API work.
+description: Verified platform facts for the stottemedlem stack (Astro on Cloudflare Workers, WorkOS on Workers, Vipps MobilePay test environment, D1 platform limits and what Cloudflare will and will not alert on), plus one explicitly UNVERIFIED section on the browser's Web Share API. Load before scaffolding or configuring apps/marketing or apps/backoffice, assuming how the Astro Cloudflare adapter / WorkOS SDK behave on Workers, quoting a D1 limit or quota, starting Vipps API work, or reaching for `navigator.share`.
 ---
 # Stack facts (verified 2026-07-03, in-repo)
 
@@ -945,6 +945,45 @@ is scoped to Workers Observability read; hitting
 A DIY capacity check needs either a new token with D1 read, or the OAuth session
 via `npx wrangler` above.
 
+## Web Share API (`navigator.share`): NOT verified in-repo, model knowledge 2026-09-22
+
+Written while designing the member card's sharing (branch `web-share-member-card`).
+Nothing here was measured on a device or against a live browser: treat every line as
+a claim to check before it decides anything. Canonical sources to re-fetch:
+https://developer.mozilla.org/en-US/docs/Web/API/Navigator/share ·
+https://caniuse.com/web-share · https://w3c.github.io/web-share/
+
+- **Where it exists at all.** iOS/iPadOS Safari and every iOS browser, Android
+  Chrome, Safari on macOS, Chrome/Edge on Windows. **Not** Firefox on desktop, and
+  **not** Chrome on macOS or Linux. So a hand-made chooser stays the desktop path;
+  the sheet is an enhancement, never the only way.
+- **It needs a secure context and transient user activation.** The call must happen
+  inside the click handler. Awaiting a fetch first (for a picture) spends the
+  activation on iOS and the call is rejected, so anything shared has to be in hand
+  before the press.
+- **`title` is ignored by most targets.** `text` and `url` are what travel. Many
+  targets concatenate them, which is why a `text` that already contains the address
+  sends the address twice. Put the address in exactly one of the two.
+- **`url` is canonicalized by the browser.** Expect an IDN host to arrive as
+  punycode in the receiving app. This repo deliberately hands people the ø spelling
+  (`readableShareableOrigin`, rule in `specs/concepts/member-card.md`), so if the
+  readable form must survive, it belongs in `text` with no `url` field. UNTESTED and
+  the first thing to check on a real phone.
+- **Sharing the card picture** is `files: [File]`, gated on
+  `navigator.canShare({files})` (feature-detect: `canShare` without `files` support
+  still returns true for other payloads). It is the only route into Instagram or
+  Snapchat. Reported cost: several targets drop `url` and `text` when a file is
+  present, which would lose the link the whole thing exists to spread. The card's own
+  QR code is the fallback way in when that happens.
+- **Cancelling rejects with `AbortError`.** A bare `.catch(() => {})` therefore hides
+  both "user changed their mind" and "the call was refused"; only the latter should
+  fall back to the clipboard.
+
+Local proof: headless Chrome has no sheet, so drive the stubbed API with
+`drive-page`'s `--stub` (it already has worked examples for both share paths) and
+assert what the page ASKED for. Everything above about how a target renders the
+payload can only be settled on a device.
+
 ## Forward references (not captured yet)
 
 | topic | where |
@@ -952,3 +991,4 @@ via `npx wrangler` above.
 | Cloudflare product guidance (D1, Queues, Cron Triggers, static assets, wrangler) | global `cloudflare` / `wrangler` skills + https://developers.cloudflare.com/ |
 | Text/cards over the marketing collage — DECIDED 2026-07-07: localized top scrim + frosted-glass cards (implemented in apps/marketing); duotone brand tint is the fallback if photo colors prove too busy | smashingmagazine.com/2023/08/designing-accessible-text-over-images-part1/ (+part2) · ishadeed.com/article/handling-text-over-image-css/ · superdesign.dev/styles/glassmorphism · web.dev/learn/css/blend-modes |
 | Vipps Recurring API behaviour | `docs/research/vipps-recurring-payments.md` (canonical, cited) |
+| Web Share API (`files`, target behaviour, support table) | https://developer.mozilla.org/en-US/docs/Web/API/Navigator/share · https://caniuse.com/web-share |

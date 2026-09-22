@@ -517,6 +517,19 @@ also documents the variants and why the rule exists.
   ("medlemsbeviset mitt", the kvittering page), `anyone` claims nothing about
   the sender, which `/medlemsbevis` passes because whoever was handed the card
   can share on from there.
+  **What the two share paths actually put in the `navigator.share` payload**
+  (read 2026-09-22 on branch `web-share-member-card`, no code changed yet):
+  the chooser's "Andre apper" button sends `{title, text, url}` where `text`
+  ALREADY ends with the card address, so the address travels twice in any
+  target that appends `url` after `text`; that address is the readable ø form
+  (`memberCardShareUrl`). The min-side pill sends `{title, url}` with no text
+  at all, and its url is `memberCardUrl` (punycode origin) read back off the
+  anchor's `.href` PROPERTY, which is exactly the normalization
+  `ShareMemberCard`'s copy path avoids by reading `getAttribute("href")`. So
+  the one surface that hands a member a bare address hands them the garbled
+  spelling, against the readable-address rule in `concepts/member-card.md`.
+  Browser-side facts about `navigator.share` (where it exists, `files`, what
+  targets drop) are in `stack-docs`, flagged there as unverified.
   **The receipt page's "active" state cannot be rendered locally**: it asks
   Vipps about a real agreement, and the seeded `agr_seed_1` exists nowhere on
   apitest, so `status` stays `unknown` and the card section never renders. To
