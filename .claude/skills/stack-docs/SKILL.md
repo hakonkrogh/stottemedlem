@@ -855,7 +855,14 @@ lies, in the shape of a passing test.
 | Connect to a source | leave empty | it links exceptions to a logs/traces source, and there is no logs source in this account. Linkable later |
 | Platform | **Serverless**, Cloudflare Workers (else Server, Node.js). NOT the preselected React | React is for a browser frontend; this is server-side Worker code. The choice only picks which setup snippet is shown, and that snippet is not needed: the wiring already exists |
 
-The free tier is 100,000 exceptions a month in either region.
+**The free tier is US-only** (reported by the account owner 2026-09-22 from
+the real signup, correcting an earlier reading of the pricing page that said
+100,000 exceptions a month in either region). Europe is a PAID region. So the
+EU choice made for Sentry cannot simply be repeated here for nothing, and the
+production application was created in `us-west-2a` for that reason. What
+follows from that is a data question, not a billing one: see the personal-data
+rules in specs/concepts/operational-alerting.md, and note that "identifiers and
+counts" is pseudonymous, not anonymous.
 
 Afterwards the DSN is on the application's Ingest tab, and adopting it is two
 `wrangler secret put SENTRY_DSN` calls (one per environment) with NO code
