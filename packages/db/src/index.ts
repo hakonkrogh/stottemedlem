@@ -2396,3 +2396,112 @@ export async function getSupportingMember(
   const [row] = await db.select().from(supportingMembers).where(eq(supportingMembers.id, memberId));
   return row ?? null;
 }
+
+/**
+ * A member's card as it stood at the end of one period, for the organization
+ * to print (specs/use-cases/print-member-cards.md): who, and the hearts and
+ * recruits they had by then. Nothing else on a printed card differs from one
+ * member to the next.
+ */
+export interface MemberCardForPeriod {
+  member: SupportingMember;
+  hearts: number;
+  recruits: number;
+}
+
+/** One paid period, the way the card counting reads it. */
+export interface PaidPeriodRow {
+  memberId: string;
+  periodYear: number;
+}
+
+/**
+ * The counting itself, kept apart from the reading so it can be tested.
+ *
+ * A card for a past period says what it would have said that year: the hearts
+ * are the periods paid for up to and including it, and a recruit counts once
+ * the recruited member had paid for a period no later than it. A period nobody
+ * paid for yields no cards. A member whose details were erased has no card to
+ * print, exactly as they have none to share (specs/concepts/member-card.md).
+ * Sorted by name, the way a stack of cards is handed out, with the nameless
+ * last and the member number settling ties.
+ */
+export function memberCardsForPeriod(
+  members: SupportingMember[],
+  paidPeriods: PaidPeriodRow[],
+  periodYear: number,
+): MemberCardForPeriod[] {
+  const heartsByMember = new Map<string, number>();
+  const paidThisPeriod = new Set<string>();
+  const firstPeriodByMember = new Map<string, number>();
+  for (const row of paidPeriods) {
+    if (row.periodYear === periodYear) paidThisPeriod.add(row.memberId);
+    if (row.periodYear > periodYear) continue;
+    heartsByMember.set(row.memberId, (heartsByMember.get(row.memberId) ?? 0) + 1);
+    const first = firstPeriodByMember.get(row.memberId);
+    if (first === undefined || row.periodYear < first) {
+      firstPeriodByMember.set(row.memberId, row.periodYear);
+    }
+  }
+
+  const recruitsByMember = new Map<string, number>();
+  for (const member of members) {
+    if (!member.referredByMemberId) continue;
+    const first = firstPeriodByMember.get(member.id);
+    if (first === undefined || first > periodYear) continue;
+    recruitsByMember.set(
+      member.referredByMemberId,
+      (recruitsByMember.get(member.referredByMemberId) ?? 0) + 1,
+    );
+  }
+
+  return members
+    .filter((member) => paidThisPeriod.has(member.id) && !member.anonymizedAt)
+    .map((member) => ({
+      member,
+      hearts: heartsByMember.get(member.id) ?? 0,
+      recruits: recruitsByMember.get(member.id) ?? 0,
+    }))
+    .sort((a, b) => {
+      const nameA = a.member.name?.trim() ?? "";
+      const nameB = b.member.name?.trim() ?? "";
+      if (nameA && !nameB) return -1;
+      if (!nameA && nameB) return 1;
+      const byName = nameA.localeCompare(nameB, "nb");
+      if (byName !== 0) return byName;
+      return (a.member.memberNumber ?? 0) - (b.member.memberNumber ?? 0);
+    });
+}
+
+/**
+ * Every period the organization has been paid for, newest first: the periods
+ * an administrator can print cards for.
+ */
+export async function listPaidPeriods(db: Db, orgId: string): Promise<number[]> {
+  const rows = await db
+    .selectDistinct({ periodYear: memberships.periodYear })
+    .from(memberships)
+    .where(eq(memberships.orgId, orgId))
+    .orderBy(desc(memberships.periodYear));
+  return rows.map((row) => row.periodYear);
+}
+
+/**
+ * The organization's members for one period, each with the card they held at
+ * the end of it. Two reads: every member, and every paid period; the counting
+ * is `memberCardsForPeriod`.
+ */
+export async function listMemberCardsForPeriod(
+  db: Db,
+  orgId: string,
+  periodYear: number,
+): Promise<MemberCardForPeriod[]> {
+  const [members, paidPeriods] = await Promise.all([
+    db.select().from(supportingMembers).where(eq(supportingMembers.orgId, orgId)),
+    db
+      .select({ memberId: memberships.memberId, periodYear: memberships.periodYear })
+      .from(memberships)
+      .where(eq(memberships.orgId, orgId)),
+  ]);
+  return memberCardsForPeriod(members, paidPeriods, periodYear);
+}

@@ -95,6 +95,11 @@ From the organization's point of view:
     what it sees is exactly what the member holds and hands on. A supporter
     with no completed payment has no card to open, and neither does a member
     whose details were erased.
+11. From the list, the administrator can take the whole register away in two
+    forms: as a spreadsheet ([export the member list](export-member-list.md))
+    and as every member's card laid out on sheets to print, cut out and hand
+    over ([print the member cards](print-member-cards.md)). Both are offered
+    only once somebody is on the list.
 
 ## Acceptance criteria
 - [ ] The list shows every supporting member with their current standing and
@@ -127,6 +132,8 @@ From the organization's point of view:
 - [ ] Typing a member number finds that member and only that member.
 - [ ] A member who has paid offers a way to their card from their own page,
       and a member who never paid or was erased offers none.
+- [ ] A list with at least one member offers the printable cards beside the
+      export, and an empty list offers neither.
 
 ## Out of scope
 - Manually marking someone as paid/active without an actual payment (kept out to
@@ -135,7 +142,8 @@ From the organization's point of view:
 - Refunding itself, which is its own use case:
   [Refund a supporting member's payment](refund-a-payment.md).
 - Bulk import and external CRM sync. Exporting the list is in scope, as its
-  own use case: [Export the member list](export-member-list.md).
+  own use case: [Export the member list](export-member-list.md), and so is
+  printing the cards: [Print the member cards](print-member-cards.md).
 - Messaging/emailing members in bulk — deliberately not offered (see the
   retired [Keep supporting members in the loop](keep-supporters-in-the-loop.md));
   the export is how the organization reaches its members through its own

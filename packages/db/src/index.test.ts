@@ -7,9 +7,11 @@ import {
   hasAcceptedDpa,
   isCurrentMember,
   isProfileComplete,
+  type MemberCardForPeriod,
   type MemberFeeStanding,
   type MemberOverview,
   matchesMemberSearch,
+  memberCardsForPeriod,
   memberStanding,
   membershipStanding,
   membershipStatus,
@@ -23,7 +25,7 @@ import {
   type StatsPeriodRow,
   summarizeOrganization,
 } from "./index.js";
-import type { Organization } from "./schema.js";
+import type { Organization, SupportingMember } from "./schema.js";
 
 const base: Organization = {
   id: "00000000-0000-0000-0000-000000000001",
@@ -702,5 +704,71 @@ describe("the reconciliation rotation", () => {
     expect(rotationWaitedTooLong(rotation({ active: 0, longestWaitDays: null }), LIMITS)).toBe(
       false,
     );
+  });
+});
+
+describe("memberCardsForPeriod", () => {
+  const supporter = (
+    id: string,
+    name: string | null,
+    memberNumber: number,
+    extra: Partial<SupportingMember> = {},
+  ): SupportingMember => ({
+    id,
+    orgId: base.id,
+    name,
+    email: null,
+    phone: null,
+    memberNumber,
+    vippsSub: null,
+    cardToken: `kort-${id}`,
+    referredByMemberId: null,
+    messagesDeclinedAt: null,
+    anonymizedAt: null,
+    createdAt: "2024-01-01 00:00:00",
+    ...extra,
+  });
+  const paid = (memberId: string, ...years: number[]) =>
+    years.map((periodYear) => ({ memberId, periodYear }));
+  const names = (cards: MemberCardForPeriod[]) => cards.map((card) => card.member.name);
+
+  const kari = supporter("kari", "Kari Nordmann", 1);
+  const ola = supporter("ola", "Ola Nordmann", 2, { referredByMemberId: "kari" });
+  const anon = supporter("anon", null, 3);
+  const erased = supporter("erased", null, 4, { anonymizedAt: "2026-03-01 00:00:00" });
+
+  it("prints a card for everyone who paid for the period, by name, the nameless last", () => {
+    const cards = memberCardsForPeriod(
+      [anon, ola, kari],
+      [...paid("kari", 2026), ...paid("ola", 2026), ...paid("anon", 2026)],
+      2026,
+    );
+    expect(names(cards)).toEqual(["Kari Nordmann", "Ola Nordmann", null]);
+  });
+
+  it("leaves out whoever did not pay for that period, and whoever was erased", () => {
+    const cards = memberCardsForPeriod(
+      [kari, ola, erased],
+      [...paid("kari", 2025), ...paid("ola", 2025, 2026), ...paid("erased", 2026)],
+      2026,
+    );
+    expect(names(cards)).toEqual(["Ola Nordmann"]);
+  });
+
+  it("counts the hearts as they stood at the end of that period", () => {
+    const cards = memberCardsForPeriod([kari], paid("kari", 2024, 2025, 2026), 2025);
+    expect(cards[0]?.hearts).toBe(2);
+  });
+
+  it("counts a recruit once the recruit had paid, and not before", () => {
+    const rows = [...paid("kari", 2024, 2025, 2026), ...paid("ola", 2026)];
+    const before = memberCardsForPeriod([kari, ola], rows, 2025);
+    const after = memberCardsForPeriod([kari, ola], rows, 2026);
+    expect(before.find((card) => card.member.id === "kari")?.recruits).toBe(0);
+    expect(after.find((card) => card.member.id === "kari")?.recruits).toBe(1);
+  });
+
+  it("yields nothing for a period nobody paid for", () => {
+    expect(memberCardsForPeriod([kari], paid("kari", 2026), 2027)).toEqual([]);
   });
 });

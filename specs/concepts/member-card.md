@@ -346,6 +346,16 @@ surface the member happens to be looking at.
   ([curate the member list](../use-cases/curate-member-list.md)). There is
   nothing to lead to while there is no card: a supporter who has not paid, or
   a member whose details were erased.
+- **The organization can put the card on paper, and it is still the card.**
+  The back office lays every member's card out on A4 sheets for the
+  organization to print, cut out and hand over
+  ([print the member cards](../use-cases/print-member-cards.md)): a thank-you
+  a member can keep in a wallet or on a fridge, with the QR code and its
+  referral intact. The printed card is the same drawing as the one on the
+  phone, and it may be the card as it stood at the end of an earlier period,
+  so a stack for last year can be printed in January. Paper changes two
+  things and nothing else: the drawn shadow goes, because paper casts its
+  own, and cut marks stand a little outside each corner.
 - **The QR code carries the member's referral.** Scanning it goes by way of the
   card's scan address (above) and opens the organization's join page, and a
   join completed from that scan counts as a recruit for the member whose card
@@ -406,4 +416,5 @@ surface the member happens to be looking at.
 ## Referenced by
 - [Use case: Earn hearts and recruit new members](../use-cases/earn-hearts-and-recruit.md)
 - [Use case: Curate the member list](../use-cases/curate-member-list.md)
+- [Use case: Print the member cards](../use-cases/print-member-cards.md)
 - [Concept: Scorecard](scorecard.md)

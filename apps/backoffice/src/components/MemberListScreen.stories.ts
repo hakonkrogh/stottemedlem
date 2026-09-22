@@ -18,6 +18,7 @@ interface ScreenProps {
   filter?: string | null;
   membersPath: string;
   exportHref?: string;
+  printHref?: string;
   currentYear: number;
 }
 
@@ -31,6 +32,7 @@ const inFrame = (props: Partial<ScreenProps>) => ({
         members: everyone,
         membersPath: `${ORG_PATH}/medlemmer`,
         exportHref: `${ORG_PATH}/medlemmer/eksport.csv`,
+        printHref: `${ORG_PATH}/medlemmer/medlemsbevis`,
         currentYear: 2026,
         ...props,
       },

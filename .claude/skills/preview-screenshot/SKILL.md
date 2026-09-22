@@ -6,6 +6,18 @@ description: Render any local URL (marketing/backoffice dev or preview server) t
 
 `bash .claude/skills/preview-screenshot/shot.sh <url> <out.png> [width] [height]`
 
+**Print layouts are proved as PDF, not as PNG** (added 2026-09-22 for the
+member-card sheets):
+`node .claude/skills/preview-screenshot/print.mjs <url> <out.pdf> [--wait ms]`
+prints the page under print media with the page's own `@page` size and
+backgrounds on, and reports the page count. Then Read the PDF (the Read tool
+renders its pages). The count is the assertion a screenshot cannot make: 14
+cards at six a sheet must be 3 pages, and an off-by-a-millimetre sheet height
+shows up as a blank fourth page. Do not write a scratch playwright script for
+this: a script outside the repo cannot import playwright (it is not a
+workspace dependency; the drive-page pattern of reading it out of npm's `_npx`
+cache is what print.mjs does), and that cost a detour the first time.
+
 For Storybook, whose port is no longer fixed, start and address it with the
 companion script instead of hand-rolling the plumbing:
 `bash .claude/skills/preview-screenshot/story.sh start|port|ids [match]|url <story-id>|log|stop`

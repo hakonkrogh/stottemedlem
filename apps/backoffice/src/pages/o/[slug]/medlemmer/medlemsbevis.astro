@@ -1,0 +1,55 @@
+---
+import { periodLabel } from "@stottemedlem/core";
+import { listMemberCardsForPeriod, listPaidPeriods } from "@stottemedlem/db";
+import { memberCardSvg } from "@stottemedlem/qr";
+import MemberCardSheetsScreen from "../../../../components/MemberCardSheetsScreen.astro";
+import Shell from "../../../../layouts/Shell.astro";
+import { getDb } from "../../../../lib/db";
+import { printedMemberCardOptions } from "../../../../lib/memberCard";
+import { requireOrgAccess } from "../../../../lib/orgAccess";
+import { orgIdentity } from "../../../../lib/orgImages";
+import { periods } from "../../../../lib/periods";
+import { orgPath } from "../../../../lib/workos";
+
+// Every member's card for one period, laid out on A4 sheets for the
+// organization to print, cut out and hand over
+// (specs/use-cases/print-member-cards.md). The page IS the printout: what it
+// shows is what comes out of the printer, and the browser's own print dialog
+// is how it becomes paper or a PDF file.
+//
+// Deliberately outside the org chrome: a sheet of cards is a document, not a
+// screen, and the tabs would only be something to hide when printing.
+const org = await requireOrgAccess(Astro.locals.session, Astro.params.slug);
+if (!org) return Astro.redirect("/orgs");
+
+const db = getDb();
+const currentPeriod = periods.periodFor().year;
+const paidPeriods = await listPaidPeriods(db, org.id);
+// Any period the organization was ever paid for can be printed, and the one
+// running now can always be asked for, even before anyone has paid for it.
+const choices = [...new Set([currentPeriod, ...paidPeriods])].sort((a, b) => b - a);
+const requested = Number(Astro.url.searchParams.get("periode"));
+const periodYear = choices.includes(requested) ? requested : currentPeriod;
+
+const entries = await listMemberCardsForPeriod(db, org.id, periodYear);
+const logoUrl = orgIdentity(org).logoUrl;
+const cards = entries.map((entry) => ({
+  svg: memberCardSvg(printedMemberCardOptions(entry, org, periodYear, logoUrl)),
+}));
+
+const membersPath = `${orgPath(org.slug)}/medlemmer`;
+const periodChoices = choices.map((year) => ({
+  label: periodLabel(year),
+  href: `${membersPath}/medlemsbevis?periode=${year}`,
+  current: year === periodYear,
+}));
+---
+
+<Shell title={`Medlemsbevis ${periodLabel(periodYear)}: ${org.name}`} frame={false}>
+  <MemberCardSheetsScreen
+    cards={cards}
+    periodLabel={periodLabel(periodYear)}
+    periodChoices={periodChoices}
+    backHref={membersPath}
+  />
+</Shell>
