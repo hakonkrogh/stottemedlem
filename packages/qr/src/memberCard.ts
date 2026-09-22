@@ -23,8 +23,10 @@
  * The text sits on a scale of four sizes (2026-09-04): the member's name, a
  * title step for the organization, one middle step for the headline and the
  * year, and one small step for every caption. A line that does not fit steps
- * DOWN the scale rather than shrinking point by point, so a long name lands
- * on a size the card already uses instead of a twelfth one. The
+ * DOWN the scale rather than shrinking point by point, so it lands on a size
+ * the card already uses instead of a twelfth one. The member's name is the
+ * exception (2026-09-22): it never steps down, it wraps, so every member's
+ * name is the same size and a sheet of printed cards reads as one set. The
  * organization's name also BREAKS before it runs the width of the band: past
  * about twenty characters it sets as a block of two or three lines beside the
  * logo, which reads as a title where one long line read as a caption.
@@ -172,7 +174,7 @@ function estimateWidth(text: string, size: number): number {
  * sizes). The `title` step exists because the band answers "member of what?"
  * and was reading as a caption at the middle step (2026-09-04).
  */
-const TYPE = { name: 56, title: 32, middle: 24, small: 16 };
+const TYPE = { name: 40, title: 32, middle: 24, small: 16 };
 
 /**
  * The room between the years line and the recruit line under it. Both lines
@@ -203,6 +205,27 @@ function fitScaled(text: string, maxWidth: number, sizes: number[]) {
   const value = text.length > maxChars ? `${text.slice(0, Math.max(1, maxChars - 1))}…` : text;
   return { value, size };
 }
+
+/**
+ * The member's name, at ONE size on every card (2026-09-22). It used to step
+ * down the scale to fit, so a short name printed at 56 and a long one at 32,
+ * and a sheet of cards for one organization looked like names of different
+ * rank. Now a name too wide for one line wraps onto two at the same size,
+ * never mid-word; only a name that cannot be broken to fit is cut. The size
+ * sits between the old two steps: big enough to be the card's subject, small
+ * enough that most names still take one line.
+ */
+function fitMemberName(name: string, maxWidth: number): { lines: string[]; size: number } {
+  const size = TYPE.name;
+  const fits = (text: string) => estimateWidth(text, size) <= maxWidth;
+  if (fits(name)) return { lines: [name], size };
+  const lines = wrapEvenly(name.split(/\s+/).filter(Boolean), 2, fits);
+  if (lines) return { lines, size };
+  return { lines: [fitScaled(name, maxWidth, [size]).value], size };
+}
+
+/** The room from one line of the member's name to the next, when it wraps. */
+const NAME_LINE_GAP = 1.1;
 
 /**
  * How long the band's name may run before it breaks. Room is not the only
@@ -538,12 +561,9 @@ function memberBlock(
     "memberName" | "memberNumberLine" | "hearts" | "headline" | "recruitLine"
   >,
 ) {
-  const name = fitScaled(content.memberName, frame.columnWidth, [
-    TYPE.name,
-    TYPE.title,
-    TYPE.middle,
-  ]);
-  const nameAdvance = name.size * 0.92;
+  const name = fitMemberName(content.memberName, frame.columnWidth);
+  const nameLineGap = name.size * NAME_LINE_GAP;
+  const nameAdvance = name.size * 0.92 + (name.lines.length - 1) * nameLineGap;
   // The member's number rides under their name, inside the stack, so the block
   // still centres itself between the band and the rule.
   const numberAdvance = content.memberNumberLine ? NUMBER_GAP + TYPE.small : 0;
@@ -572,7 +592,7 @@ function memberBlock(
     name,
     nameAdvance,
     blockTop,
-    nameBaseline: blockTop + name.size * 0.74,
+    nameBaselines: name.lines.map((_, index) => blockTop + name.size * 0.74 + index * nameLineGap),
     numberBaseline: blockTop + nameAdvance + NUMBER_GAP + TYPE.small * 0.74,
     heartSize,
     heartTop,
@@ -597,7 +617,7 @@ function drawCard(content: CardContent): string {
 
   const {
     name,
-    nameBaseline,
+    nameBaselines,
     numberBaseline,
     heartSize,
     heartTop,
@@ -618,7 +638,16 @@ ${hasLogo ? `  ${logoCircle(left + logoSize / 2, bandCenter, logoSize, content.l
     .join("\n  ")}
   ${corner.markup}
 
-  ${textEl(center, nameBaseline, name.value, { size: name.size, weight: FONT_WEIGHT, fill: INK, anchor: "middle" })}
+  ${name.lines
+    .map((line, index) =>
+      textEl(center, nameBaselines[index] ?? 0, line, {
+        size: name.size,
+        weight: FONT_WEIGHT,
+        fill: INK,
+        anchor: "middle",
+      }),
+    )
+    .join("\n  ")}
 ${
   content.memberNumberLine
     ? `  ${textEl(center, numberBaseline, content.memberNumberLine, { size: TYPE.small, weight: FONT_WEIGHT, fill: MUTED, letterSpacing: 2.4, anchor: "middle" })}\n`

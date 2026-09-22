@@ -42,6 +42,21 @@ Examples:
     render.mjs --case LongNames --raster
     render.mjs --case WithLogo --set hearts=17 --set recruits=4 --raster
 
+## Several names (or any field) side by side
+
+`--set` takes one value per run, so a "do these names look like one set?"
+check (the printed sheet, 2026-09-22) is a loop, one `--out` per value, then
+one page of the rasters. No PIL here: shrink with `sips`.
+
+    S=$SCRATCH; i=0
+    for n in "Ola Li" "Håkon Martin Gullord Krogh" "Anne-Margrethe Wollertsen Bjørnstad"; do
+      i=$((i+1)); node .claude/skills/render-card/render.mjs --case WithLogo \
+        --set "memberName=$n" --raster --out $S/c$i $([ $i -gt 1 ] && echo --no-build)
+      sips -Z 500 $S/c$i/raster-card-WithLogo.png --out $S/s$i.png
+    done
+    echo "<body style='margin:0;display:flex;gap:10px'>$(for j in $(seq $i); do echo "<img src=s$j.png>"; done)" > $S/sheet.html
+    bash .claude/skills/preview-screenshot/shot.sh "file://$S/sheet.html" $S/sheet.png 1600 600
+
 ## The three columns, and what each one proves
 
 | column | what it is | what only it catches |
