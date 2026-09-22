@@ -1,6 +1,6 @@
 ---
 name: stack-docs
-description: Verified platform facts for the stottemedlem stack (Astro on Cloudflare Workers, WorkOS on Workers, Vipps MobilePay test environment, D1 platform limits and what Cloudflare will and will not alert on). Load before scaffolding or configuring apps/marketing or apps/backoffice, assuming how the Astro Cloudflare adapter / WorkOS SDK behave on Workers, quoting a D1 limit or quota, or starting Vipps API work.
+description: Verified platform facts for the stottemedlem stack (Astro on Cloudflare Workers, WorkOS on Workers, Vipps MobilePay test environment, D1 platform limits and what Cloudflare will and will not alert on), plus one explicitly UNVERIFIED section on the browser's Web Share API. Load before scaffolding or configuring apps/marketing or apps/backoffice, assuming how the Astro Cloudflare adapter / WorkOS SDK behave on Workers, quoting a D1 limit or quota, starting Vipps API work, or reaching for `navigator.share` or a Facebook share link.
 ---
 # Stack facts (verified 2026-07-03, in-repo)
 
@@ -51,7 +51,9 @@ file is gitignored, so a fresh worktree has no `WORKOS_API_KEY`,
 Real bindings from wrangler.jsonc (D1, KV, R2, Queues) are always there;
 secret-only vars are the tell. To typecheck a worktree without the real file:
 
-    cp .dev.vars.example .dev.vars && pnpm typecheck; rm .dev.vars
+    cd apps/backoffice && cp .dev.vars.example .dev.vars   # the example lives
+    cd - && pnpm --filter @stottemedlem/backoffice typecheck # in the APP, not
+    rm apps/backoffice/.dev.vars                             # at the repo root
 
 **Never read a check's result through a pipe.** `pnpm typecheck 2>&1 | tail -6`
 exits with *tail's* status, so a failing typecheck reports success — which is
@@ -945,6 +947,80 @@ is scoped to Workers Observability read; hitting
 A DIY capacity check needs either a new token with D1 read, or the OAuth session
 via `npx wrangler` above.
 
+## Web Share API (`navigator.share`): NOT verified in-repo, model knowledge 2026-09-22
+
+Written while designing the member card's sharing (branch `web-share-member-card`).
+Nothing here was measured on a device or against a live browser: treat every line as
+a claim to check before it decides anything. Canonical sources to re-fetch:
+https://developer.mozilla.org/en-US/docs/Web/API/Navigator/share ·
+https://caniuse.com/web-share · https://w3c.github.io/web-share/
+
+- **Where it exists at all.** iOS/iPadOS Safari and every iOS browser, Android
+  Chrome, Safari on macOS, Chrome/Edge on Windows. **Not** Firefox on desktop, and
+  **not** Chrome on macOS or Linux. So a hand-made chooser stays the desktop path;
+  the sheet is an enhancement, never the only way.
+- **It needs a secure context and transient user activation.** The call must happen
+  inside the click handler. Awaiting a fetch first (for a picture) spends the
+  activation on iOS and the call is rejected, so anything shared has to be in hand
+  before the press.
+- **`title` is ignored by most targets.** `text` and `url` are what travel. Many
+  targets concatenate them, which is why a `text` that already contains the address
+  sends the address twice. Put the address in exactly one of the two.
+- **`url` is canonicalized by the browser.** Expect an IDN host to arrive as
+  punycode in the receiving app. This repo deliberately hands people the ø spelling
+  (`readableShareableOrigin`, rule in `specs/concepts/member-card.md`), so if the
+  readable form must survive, it belongs in `text` with no `url` field. UNTESTED and
+  the first thing to check on a real phone.
+- **Sharing the card picture** is `files: [File]`, gated on
+  `navigator.canShare({files})` (feature-detect: `canShare` without `files` support
+  still returns true for other payloads). It is the only route into Instagram or
+  Snapchat. Reported cost: several targets drop `url` and `text` when a file is
+  present, which would lose the link the whole thing exists to spread. The card's own
+  QR code is the fallback way in when that happens.
+- **A picture is not a dead end for the link.** If a target keeps the file and
+  drops `url`, the card's QR code is still readable off the saved picture with no
+  camera: iOS Live Text in Photos (iOS 15+), Google Lens, and Circle to Search on
+  Android 14+ phones read a code straight off screen. It is a deliberate
+  long-press, not a tap, so the link should still travel wherever the target
+  allows it. UNTESTED here, and chat recompression is a separate unknown (see
+  `verify-qr`).
+- **Cancelling rejects with `AbortError`.** A bare `.catch(() => {})` therefore hides
+  both "user changed their mind" and "the call was refused"; only the latter should
+  fall back to the clipboard.
+
+Local proof: headless Chrome has no sheet, so drive the stubbed API with
+`drive-page`'s `--stub` (it already has worked examples for both share paths) and
+assert what the page ASKED for. Everything above about how a target renders the
+payload can only be settled on a device.
+
+## Facebook's share link needs a facebook.com WEB session (verified 2026-09-22)
+
+`https://www.facebook.com/sharer/sharer.php?u=<url>` is the only Facebook share
+entry available without a registered Facebook app id, and it answers **"Not
+Logged In. You are not logged in. Please login and try again."** to any browser
+without a facebook.com session. Verified twice: with curl (a logged-out request
+redirects to `m.facebook.com/login.php`) and in the user's own Chrome, which
+showed the bare "Not Logged In" page.
+
+What this means in practice:
+
+- **The Facebook app being signed in does not help.** The link opens a browser,
+  and most phone users have never signed in to Facebook there. This is why the
+  Facebook place in the card's share chooser looked dead.
+- **It is not the ø.** Both `støttemedlem.no` and its punycode spelling behave
+  identically in the `u` parameter. (We send punycode anyway: that parameter is
+  a machine reading the address, per `specs/concepts/member-card.md`.)
+- **There is no better link to switch to.** Facebook publishes no deep link
+  scheme for the web, and the official Share Dialog
+  (`facebook.com/dialog/share`) requires `app_id`, which this product does not
+  have. `sharer.php` also ignores any prefilled message.
+- **The fix is the device's own share sheet**, which hands the card to the
+  Facebook *app*. That is what the card's one share button does since
+  2026-09-22 wherever `navigator.share` exists (see `project-overview`).
+- A desktop share sheet (macOS Safari, Chrome on Windows) does **not** list
+  Facebook, so `sharer.php` stays the desktop path, where a logged-in web
+  session is normal.
+
 ## Forward references (not captured yet)
 
 | topic | where |
@@ -952,3 +1028,4 @@ via `npx wrangler` above.
 | Cloudflare product guidance (D1, Queues, Cron Triggers, static assets, wrangler) | global `cloudflare` / `wrangler` skills + https://developers.cloudflare.com/ |
 | Text/cards over the marketing collage — DECIDED 2026-07-07: localized top scrim + frosted-glass cards (implemented in apps/marketing); duotone brand tint is the fallback if photo colors prove too busy | smashingmagazine.com/2023/08/designing-accessible-text-over-images-part1/ (+part2) · ishadeed.com/article/handling-text-over-image-css/ · superdesign.dev/styles/glassmorphism · web.dev/learn/css/blend-modes |
 | Vipps Recurring API behaviour | `docs/research/vipps-recurring-payments.md` (canonical, cited) |
+| Web Share API (`files`, target behaviour, support table) | https://developer.mozilla.org/en-US/docs/Web/API/Navigator/share · https://caniuse.com/web-share |

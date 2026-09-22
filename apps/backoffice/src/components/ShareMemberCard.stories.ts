@@ -1,8 +1,12 @@
 // The invitation to share the card (specs/concepts/member-card.md), shown
 // under the card on the thank-you page and at the card's own address. What
 // needs reviewing is the closed button on its own, the opened row of places,
-// and the two voices the shared message speaks in. The "Andre apper" place
-// only appears on a device with a share sheet, so it is absent here.
+// and the two voices the shared message speaks in.
+//
+// What a story CANNOT show is the button's real behaviour on a phone: where
+// the device has a share sheet the button opens that instead of this row, and
+// these places are what a device without one falls back to. Drive the sheet
+// with drive-page's `--stub`, not with a story.
 import ShareMemberCard from "./ShareMemberCard.astro";
 
 /** Fictitious: a committed fixture must never carry a real organization. */
