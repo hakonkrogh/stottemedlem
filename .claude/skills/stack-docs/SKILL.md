@@ -1,6 +1,6 @@
 ---
 name: stack-docs
-description: Verified platform facts for the stottemedlem stack (Astro on Cloudflare Workers, WorkOS on Workers, Vipps MobilePay test environment, D1 platform limits and what Cloudflare will and will not alert on), plus one explicitly UNVERIFIED section on the browser's Web Share API. Load before scaffolding or configuring apps/marketing or apps/backoffice, assuming how the Astro Cloudflare adapter / WorkOS SDK behave on Workers, quoting a D1 limit or quota, starting Vipps API work, or reaching for `navigator.share`.
+description: Verified platform facts for the stottemedlem stack (Astro on Cloudflare Workers, WorkOS on Workers, Vipps MobilePay test environment, D1 platform limits and what Cloudflare will and will not alert on), plus one explicitly UNVERIFIED section on the browser's Web Share API. Load before scaffolding or configuring apps/marketing or apps/backoffice, assuming how the Astro Cloudflare adapter / WorkOS SDK behave on Workers, quoting a D1 limit or quota, starting Vipps API work, or reaching for `navigator.share` or a Facebook share link.
 ---
 # Stack facts (verified 2026-07-03, in-repo)
 
@@ -51,7 +51,9 @@ file is gitignored, so a fresh worktree has no `WORKOS_API_KEY`,
 Real bindings from wrangler.jsonc (D1, KV, R2, Queues) are always there;
 secret-only vars are the tell. To typecheck a worktree without the real file:
 
-    cp .dev.vars.example .dev.vars && pnpm typecheck; rm .dev.vars
+    cd apps/backoffice && cp .dev.vars.example .dev.vars   # the example lives
+    cd - && pnpm --filter @stottemedlem/backoffice typecheck # in the APP, not
+    rm apps/backoffice/.dev.vars                             # at the repo root
 
 **Never read a check's result through a pipe.** `pnpm typecheck 2>&1 | tail -6`
 exits with *tail's* status, so a failing typecheck reports success — which is
@@ -990,6 +992,34 @@ Local proof: headless Chrome has no sheet, so drive the stubbed API with
 `drive-page`'s `--stub` (it already has worked examples for both share paths) and
 assert what the page ASKED for. Everything above about how a target renders the
 payload can only be settled on a device.
+
+## Facebook's share link needs a facebook.com WEB session (verified 2026-09-22)
+
+`https://www.facebook.com/sharer/sharer.php?u=<url>` is the only Facebook share
+entry available without a registered Facebook app id, and it answers **"Not
+Logged In. You are not logged in. Please login and try again."** to any browser
+without a facebook.com session. Verified twice: with curl (a logged-out request
+redirects to `m.facebook.com/login.php`) and in the user's own Chrome, which
+showed the bare "Not Logged In" page.
+
+What this means in practice:
+
+- **The Facebook app being signed in does not help.** The link opens a browser,
+  and most phone users have never signed in to Facebook there. This is why the
+  Facebook place in the card's share chooser looked dead.
+- **It is not the ø.** Both `støttemedlem.no` and its punycode spelling behave
+  identically in the `u` parameter. (We send punycode anyway: that parameter is
+  a machine reading the address, per `specs/concepts/member-card.md`.)
+- **There is no better link to switch to.** Facebook publishes no deep link
+  scheme for the web, and the official Share Dialog
+  (`facebook.com/dialog/share`) requires `app_id`, which this product does not
+  have. `sharer.php` also ignores any prefilled message.
+- **The fix is the device's own share sheet**, which hands the card to the
+  Facebook *app*. That is what the card's one share button does since
+  2026-09-22 wherever `navigator.share` exists (see `project-overview`).
+- A desktop share sheet (macOS Safari, Chrome on Windows) does **not** list
+  Facebook, so `sharer.php` stays the desktop path, where a logged-in web
+  session is normal.
 
 ## Forward references (not captured yet)
 
