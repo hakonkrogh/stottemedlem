@@ -1,10 +1,15 @@
 ---
 import { periodLabel } from "@stottemedlem/core";
-import { listMemberCardsForPeriod, listPaidPeriods } from "@stottemedlem/db";
+import {
+  collectsPostalAddresses,
+  listMemberCardsForPeriod,
+  listPaidPeriods,
+} from "@stottemedlem/db";
 import { memberCardSvg } from "@stottemedlem/qr";
 import MemberCardSheetsScreen from "../../../../components/MemberCardSheetsScreen.astro";
 import Shell from "../../../../layouts/Shell.astro";
 import { getDb } from "../../../../lib/db";
+import { envelopeLines } from "../../../../lib/envelope";
 import { printedMemberCardOptions } from "../../../../lib/memberCard";
 import { requireOrgAccess } from "../../../../lib/orgAccess";
 import { orgIdentity } from "../../../../lib/orgImages";
@@ -33,8 +38,13 @@ const periodYear = choices.includes(requested) ? requested : currentPeriod;
 
 const entries = await listMemberCardsForPeriod(db, org.id, periodYear);
 const logoUrl = orgIdentity(org).logoUrl;
+// Under each card, what the envelope needs: the address where the
+// organization asks for one, and the phone number
+// (specs/use-cases/collect-postal-addresses.md).
+const postalAddresses = collectsPostalAddresses(org);
 const cards = entries.map((entry) => ({
   svg: memberCardSvg(printedMemberCardOptions(entry, org, periodYear, logoUrl)),
+  envelopeLines: envelopeLines(entry.member, postalAddresses),
 }));
 
 const membersPath = `${orgPath(org.slug)}/medlemmer`;

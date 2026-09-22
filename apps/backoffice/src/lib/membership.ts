@@ -14,6 +14,7 @@ import {
 import {
   activateAgreement,
   closeAgreement,
+  collectsPostalAddresses,
   type Db,
   findAgreementByVippsId,
   grantMembershipForCapturedCharge,
@@ -29,7 +30,14 @@ import {
   recordFeeChoice,
   revokeMembershipForRefundedCharge,
 } from "@stottemedlem/db";
-import type { Agreement, Charge, ChargeStatus, VippsClient } from "@stottemedlem/vipps";
+import {
+  type Agreement,
+  type Charge,
+  type ChargeStatus,
+  MEMBER_USERINFO_SCOPE,
+  MEMBER_USERINFO_SCOPE_WITH_ADDRESS,
+  type VippsClient,
+} from "@stottemedlem/vipps";
 import { logger } from "./log";
 import { periods } from "./periods";
 import { RefundNotPossible } from "./refunds";
@@ -150,8 +158,14 @@ export async function startJoin(
               transactionType: "DIRECT_CAPTURE" as const,
             },
           }),
-      // The minimum identity needed to list someone as a supporting member.
-      scope: "name email phoneNumber",
+      // The minimum identity needed to list someone as a supporting member,
+      // plus the postal address only where this organization has asked for
+      // it and said why (specs/use-cases/collect-postal-addresses.md):
+      // consent is all-or-nothing on Vipps' side, so asking is the
+      // organization's choice, never the product's.
+      scope: collectsPostalAddresses(org)
+        ? MEMBER_USERINFO_SCOPE_WITH_ADDRESS
+        : MEMBER_USERINFO_SCOPE,
       externalId,
     },
     // Vipps validates the Idempotency-Key as a UUID — our externalId (which
@@ -267,6 +281,18 @@ export async function syncAgreement(
       name: profile?.name ?? null,
       email: profile?.email ?? null,
       phone: profile?.phone_number ?? null,
+      // Present only when the agreement asked for it: an organization that
+      // does not ask for addresses never receives one.
+      address: profile?.address
+        ? {
+            streetAddress: profile.address.street_address ?? null,
+            postalCode: profile.address.postal_code ?? null,
+            // Vipps calls the place "region" (OIDC's word); on an envelope it
+            // is the postal town.
+            city: profile.address.region ?? null,
+            country: profile.address.country ?? null,
+          }
+        : null,
     });
     local = activated?.agreement ?? local;
   }

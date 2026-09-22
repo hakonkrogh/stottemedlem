@@ -445,6 +445,20 @@ real account. Source: developer.vippsmobilepay.com/docs/knowledge-base/test-envi
   `family_name`, `birthdate`, `address` — NOT the camelCase scope names.
   Reachable for **168 hours after consent only**, so identity must be
   persisted at signup (spec: `specs/concepts/supporting-member.md`).
+  **Postal address (verified against the docs' example body 2026-09-22):**
+  the scope word is `address` (so `"name email phoneNumber address"`,
+  `MEMBER_USERINFO_SCOPE_WITH_ADDRESS`), and the response carries
+  `address: { address_type: "home", country: "NO", formatted:
+  "Robert Levins gate 5, 0154\nOSLO\nNO", postal_code: "0154", region:
+  "OSLO", street_address: "Robert Levins gate 5" }` plus `other_addresses:
+  []`. `region` is the postal TOWN (uppercase), not a county; `country` is
+  the ISO code. The docs say nothing about the sales unit having to enable
+  the scope separately, and the research note (docs/research, finding 12)
+  says a scope outside the merchant's agreement is dropped SILENTLY, so treat
+  the address as usually-absent and never as proof the org asked for it.
+  Only requested where `collectsPostalAddresses(org)`
+  (specs/use-cases/collect-postal-addresses.md): Vipps consent is
+  all-or-nothing, so asking makes sharing a condition of joining.
   Source: developer.vippsmobilepay.com/docs/APIs/userinfo-api/userinfo-api-quick-start/
   (has a verbatim example body). Doc-URL gotcha: `/docs/developer-resources/…`
   paths 404 — the test-environment page lives under `/docs/knowledge-base/`.

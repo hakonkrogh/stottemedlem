@@ -248,6 +248,14 @@ export interface ListWebhooksResponse {
  */
 export const MEMBER_USERINFO_SCOPE = "name email phoneNumber" as const;
 
+/**
+ * The same, for an organization that asks its supporters for a postal address
+ * (specs/use-cases/collect-postal-addresses.md). Consent is all-or-nothing on
+ * Vipps' side, so this is only ever requested where the organization has
+ * chosen it and said why.
+ */
+export const MEMBER_USERINFO_SCOPE_WITH_ADDRESS = `${MEMBER_USERINFO_SCOPE} address` as const;
+
 export interface UserinfoAddress {
   address_type?: string;
   country?: string;

@@ -18,7 +18,7 @@ export interface ParsedProfileForm {
   values: ProfileFormValues;
   fieldErrors: ProfileFieldErrors;
   /** Present only when every field validated. */
-  profile?: OrganizationProfile;
+  profile?: Omit<OrganizationProfile, "postalAddressReason" | "postalAddressesDeclinedAt">;
 }
 
 export function parseProfileForm(form: FormData): ParsedProfileForm {
@@ -51,6 +51,66 @@ export function parseProfileForm(form: FormData): ParsedProfileForm {
       contactEmail: values.contactEmail,
       websiteUrl,
     },
+  };
+}
+
+// Whether the organization asks its supporters for a postal address, and in
+// which words (specs/use-cases/collect-postal-addresses.md). Every
+// organization asks unless it opts out, and reads the standard reason unless
+// it writes its own; its own form section, on the settings page only.
+
+export interface PostalAddressChoiceValues {
+  collectPostalAddress: boolean;
+  /** The organization's own reason; empty means the standard one stands. */
+  postalAddressReason: string;
+}
+
+export interface ParsedPostalAddressChoice {
+  values: PostalAddressChoiceValues;
+  error?: string;
+  /** Present only when the choice validated: what to store. */
+  choice?: { postalAddressReason: string | null; postalAddressesDeclinedAt: string | null };
+}
+
+export const POSTAL_ADDRESS_REASON_MAX_LENGTH = 200;
+
+/**
+ * Parse the choice. The moment an organization opted out is kept once made:
+ * saving the settings again with the box still unticked does not move it.
+ */
+export function parsePostalAddressChoice(
+  form: FormData,
+  org: { postalAddressesDeclinedAt: string | null },
+): ParsedPostalAddressChoice {
+  const values: PostalAddressChoiceValues = {
+    collectPostalAddress: form.get("collectPostalAddress") === "1",
+    postalAddressReason: String(form.get("postalAddressReason") ?? "").trim(),
+  };
+  if (values.postalAddressReason.length > POSTAL_ADDRESS_REASON_MAX_LENGTH) {
+    return {
+      values,
+      error: `Hold begrunnelsen under ${POSTAL_ADDRESS_REASON_MAX_LENGTH} tegn.`,
+    };
+  }
+  return {
+    values,
+    choice: {
+      postalAddressReason: values.postalAddressReason || null,
+      postalAddressesDeclinedAt: values.collectPostalAddress
+        ? null
+        : (org.postalAddressesDeclinedAt ?? new Date().toISOString()),
+    },
+  };
+}
+
+/** Prefill the address choice from a stored organization row. */
+export function postalAddressChoiceValues(org: {
+  postalAddressReason: string | null;
+  postalAddressesDeclinedAt: string | null;
+}): PostalAddressChoiceValues {
+  return {
+    collectPostalAddress: !org.postalAddressesDeclinedAt,
+    postalAddressReason: org.postalAddressReason ?? "",
   };
 }
 

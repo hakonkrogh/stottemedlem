@@ -30,7 +30,9 @@ register gets there.
    tools on Norwegian-locale machines — delimiters and character encoding are
    the product's problem, never the administrator's.
 3. Each member is one row carrying what the member list itself shows: their
-   [member number](../concepts/member-number.md), name, email, phone, derived
+   [member number](../concepts/member-number.md), name, email, phone, the
+   postal address as its parts unless the organization has opted out
+   ([collect postal addresses](collect-postal-addresses.md)), derived
    status, the membership (tier) and period last paid for, the amount actually
    paid, whether the arrangement renews automatically, and when the member was
    first registered. The number leads the row: it is the one column that never

@@ -7,9 +7,10 @@ A **supporting member** is a person from the community who backs an
 [organization](organization.md) by paying its [annual fee](annual-fee.md). They
 are the product's namesake (Norwegian: *støttemedlem*). A supporting member is
 identified by the smallest set of details that lets an organization list them
-and reach them — **name, e-mail address and phone number**, and nothing else
-(see [member data](member-data.md)) — and is not necessarily an active
-participant in the organization, just a supporter of it.
+and reach them — **name, e-mail address, phone number and postal address**,
+the last of these unless the organization has opted out of asking, and
+nothing else (see [member data](member-data.md)) — and is not necessarily an
+active participant in the organization, just a supporter of it.
 
 ## Why it exists
 The supporting member is the person the organization wants to see on its list and

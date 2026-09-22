@@ -1,6 +1,11 @@
 // Fictitious supporters for the member-list stories — never a real person's
 // details, since stories are committed and screenshotted.
-import type { MemberOverview, Membership, SupportingMember } from "@stottemedlem/db";
+import type {
+  MemberOverview,
+  MemberPostalAddress,
+  Membership,
+  SupportingMember,
+} from "@stottemedlem/db";
 import type { PaymentView } from "../lib/refunds";
 
 const ORG_ID = "org-1";
@@ -14,6 +19,9 @@ export function fixtureMember(
   // real state of a supporter whose first payment has not landed yet, so a
   // fixture is allowed to say so.
   memberNumber: number | null = null,
+  // A postal address, for an organization that asks for one
+  // (specs/use-cases/collect-postal-addresses.md); none by default.
+  address: Partial<MemberPostalAddress> = {},
 ): SupportingMember {
   return {
     id,
@@ -21,6 +29,10 @@ export function fixtureMember(
     name,
     email,
     phone,
+    streetAddress: address.streetAddress ?? null,
+    postalCode: address.postalCode ?? null,
+    city: address.city ?? null,
+    country: address.country ?? null,
     memberNumber,
     vippsSub: `sub-${id}`,
     cardToken: `kort-${id}`,
@@ -55,7 +67,12 @@ export function fixturePeriod(
 
 /** A supporter who joined, paid, and whose arrangement still runs. */
 export const continuing: MemberOverview = {
-  member: fixtureMember("m-1", "Ingrid Solheim", "ingrid@eksempel.example", "4711111111", 3),
+  member: fixtureMember("m-1", "Ingrid Solheim", "ingrid@eksempel.example", "4711111111", 3, {
+    streetAddress: "Bakvendtveien 12",
+    postalCode: "9999",
+    city: "Bakvendtland",
+    country: "NO",
+  }),
   latest: fixturePeriod("m-1", 2026, 300),
   status: "active",
   renewing: true,

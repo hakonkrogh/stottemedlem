@@ -9,6 +9,7 @@ import {
   daysInYear,
   daysRemainingInYear,
   formatOrganisasjonsnummer,
+  formatPhoneNumber,
   getPeriodScheme,
   isoWeekKey,
   isoWeekScheme,
@@ -32,7 +33,9 @@ import {
   normalizeWebsiteUrl,
   paymentState,
   periodLabel,
+  postalAddressLines,
   proratedJoinFeeNok,
+  quotedPostalAddressReason,
   REFUND_WINDOW_DAYS,
   redundantJoinAction,
   referredJoinPath,
@@ -618,5 +621,69 @@ describe("administratorRemovalRefusal", () => {
       "not-an-administrator",
     );
     expect(administratorRemovalRefusal("user-9", [])).toBe("not-an-administrator");
+  });
+});
+
+describe("postalAddressLines", () => {
+  it("writes the address the way it goes on an envelope", () => {
+    expect(
+      postalAddressLines({
+        streetAddress: "Robert Levins gate 5",
+        postalCode: "0154",
+        city: "OSLO",
+        country: "NO",
+      }),
+    ).toEqual(["Robert Levins gate 5", "0154 OSLO"]);
+  });
+
+  it("names the country only when it is not Norway", () => {
+    expect(
+      postalAddressLines({
+        streetAddress: "Storgatan 1",
+        postalCode: "111 22",
+        city: "Stockholm",
+        country: "Sverige",
+      }),
+    ).toEqual(["Storgatan 1", "111 22 Stockholm", "Sverige"]);
+    expect(
+      postalAddressLines({
+        streetAddress: "Vei 1",
+        postalCode: "1234",
+        city: "Sted",
+        country: "Norge",
+      }),
+    ).toEqual(["Vei 1", "1234 Sted"]);
+  });
+
+  it("leaves out the parts that are missing, and is nothing when all are", () => {
+    expect(
+      postalAddressLines({ streetAddress: null, postalCode: "1234", city: "Sted", country: null }),
+    ).toEqual(["1234 Sted"]);
+    expect(
+      postalAddressLines({ streetAddress: null, postalCode: null, city: null, country: null }),
+    ).toEqual([]);
+  });
+});
+
+describe("quotedPostalAddressReason", () => {
+  it("quotes the reason without a full stop of its own inside the marks", () => {
+    expect(quotedPostalAddressReason("Vi sender medlemsbeviset i posten.")).toBe(
+      "«Vi sender medlemsbeviset i posten»",
+    );
+    expect(quotedPostalAddressReason("  Takkekort før jul ")).toBe("«Takkekort før jul»");
+  });
+});
+
+describe("formatPhoneNumber", () => {
+  it("groups Norwegian numbers the way they are read, with or without the country code", () => {
+    expect(formatPhoneNumber("4791234567")).toBe("912 34 567");
+    expect(formatPhoneNumber("+4791234567")).toBe("912 34 567");
+    expect(formatPhoneNumber("91234567")).toBe("912 34 567");
+    expect(formatPhoneNumber("4722334455")).toBe("22 33 44 55");
+  });
+
+  it("leaves other numbers as they were written", () => {
+    expect(formatPhoneNumber("+46 70 123 45 67")).toBe("+46 70 123 45 67");
+    expect(formatPhoneNumber("12345")).toBe("12345");
   });
 });

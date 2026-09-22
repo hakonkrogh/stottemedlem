@@ -29,11 +29,16 @@ From the supporter's point of view:
    name, e-mail address and phone number, and what the organization does with
    them — and links the organization's full privacy notice, which is public and
    readable without joining (see [member data](../concepts/member-data.md)).
+   Unless the organization has opted out of postal addresses, the page also
+   says the address is asked for, and quotes the reason: the standard one, or
+   the organization's own words
+   ([collect postal addresses](collect-postal-addresses.md)).
    The payment app's own consent screen comes later and belongs to the payment
    provider; it is not where the organization explains itself.
 3. That identity — the minimum needed to be listed as a
    [supporting member](../concepts/supporting-member.md), and no more than
-   name, e-mail address and phone number — comes from the supporter's Vipps
+   name, e-mail address, phone number and, unless the organization has opted
+   out, postal address — comes from the supporter's Vipps
    profile, with their consent; the supporter only types it in themselves if
    Vipps cannot provide it.
 4. The supporter approves the payment in Vipps. Joining mid-year costs only

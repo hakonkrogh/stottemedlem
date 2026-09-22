@@ -29,8 +29,8 @@ sheets, ready to print.
 ## Behaviour
 1. From the [member list](curate-member-list.md), the administrator opens the
    printout: every member of one [annual period](../concepts/annual-period.md),
-   each as their own card, laid out on A4 sheets, six to a sheet in two
-   columns of three.
+   each as their own card, laid out on A4 sheets lying sideways, six to a
+   sheet in three columns of two.
 2. The period is the one running now unless the administrator chooses
    another, and any period the organization has ever been paid for can be
    chosen. The cards for a past period say what they said at the end of that
@@ -52,14 +52,28 @@ sheets, ready to print.
 5. A card is printed at the height of a bank card and a little wider than
    one, so it fits most wallets, reads on a fridge from across a kitchen,
    and its QR code scans.
-6. What the page shows is exactly what the printer gets: the sheets, at
+6. **Under each card, in the margin that is cut away, stand the member's
+   postal address and phone number**: the address as it goes on an envelope,
+   street on one line, postal code and place on the next, with the phone
+   number beside them. A card on its way into an envelope then has its
+   address right there, and nobody has to look eighty members up one at a
+   time in another window. It belongs to the sheet, not to the card: cutting
+   along the marks leaves it on the paper that goes in the bin, so what the
+   member receives is the card and only the card. Where a member has no
+   address, the sheet says so in the same place, so the person stuffing
+   envelopes learns it there and not from an empty spot. An organization that
+   has opted out of addresses
+   ([collect postal addresses](collect-postal-addresses.md)) gets no such
+   note: the phone number, and an address only where one is still held from
+   before.
+7. What the page shows is exactly what the printer gets: the sheets, at
    their printed size, and nothing else. Printing, and saving as a PDF file,
    is the browser's own print dialog. The product makes no file of its own:
    the cards then print as drawings rather than as pictures of drawings, the
    product draws no second card to keep in step with the first, and a
    register of any size prints without the product doing the work of
    drawing every card itself.
-7. The printout is available to administrators only, behind the same access
+8. The printout is available to administrators only, behind the same access
    as the rest of the back office.
 
 ## Acceptance criteria
@@ -71,8 +85,11 @@ sheets, ready to print.
       one and count only the hearts and recruits earned by then.
 - [ ] The current period can always be chosen, even before anyone has paid
       for it, and then says so instead of showing an empty sheet.
-- [ ] Six cards fill an A4 sheet, each at a bank card's height, with cut marks
-      outside every corner and no drawn shadow.
+- [ ] Six cards fill an A4 sheet lying sideways, each at a bank card's
+      height, with cut marks outside every corner and no drawn shadow.
+- [ ] Under every card stand that member's postal address and phone number,
+      outside the cut marks, and a member without an address is marked as
+      such there unless the organization has opted out of addresses.
 - [ ] A card's QR code, printed and scanned, opens the organization's join
       page with that member's referral on it.
 - [ ] The browser's print dialog prints the sheets and only the sheets: no
@@ -87,6 +104,9 @@ sheets, ready to print.
 - Anything the organization writes on the card itself: the card is the
   member's, and it says what it says ([member card](../concepts/member-card.md)).
 - The product mailing the cards, as paper or as a file.
+- Address labels, or printing the address on anything the member keeps: the
+  address is a help for the person doing the posting, and it goes in the bin
+  with the margin.
 
 ## Related
 - [Concept: Member card](../concepts/member-card.md): the thing being printed,
@@ -95,6 +115,8 @@ sheets, ready to print.
   printout is offered
 - [Use case: Export the member list](export-member-list.md): the other way the
   register leaves the product
+- [Use case: Collect postal addresses](collect-postal-addresses.md): where the
+  addresses under the cards come from
 - [Concept: Annual period](../concepts/annual-period.md): what a chosen period
   is
 - [Concept: Scorecard](../concepts/scorecard.md): the hearts and recruits a

@@ -5,10 +5,11 @@
 ## Definition
 **Member data** is everything the product holds about a
 [supporting member](supporting-member.md) as a person: their name, e-mail
-address and phone number. It is deliberately the smallest set that lets an
-organization keep a list and reach the people on it — and it is separate from
-what they *paid*, which is the [membership](membership.md) and its money, and
-which outlives the person in the record.
+address and phone number, and their postal address unless the organization
+has chosen not to ask for it. It is deliberately the smallest set that
+lets an organization keep a list and reach the people on it — and it is
+separate from what they *paid*, which is the [membership](membership.md) and
+its money, and which outlives the person in the record.
 
 The distinction matters because the two are governed differently. The person is
 kept only as long as there is a reason to keep them. The money is kept because
@@ -28,15 +29,32 @@ decision instead.
 ## Rules & invariants
 
 ### What is collected
-- The collected set is exactly **name, e-mail address, phone number** — nothing
-  else about the person. Adding a field is a change to this spec first.
+- The collected set is **name, e-mail address, phone number and postal
+  address** — nothing else about the person. Adding any other field is a
+  change to this spec first.
 - It comes from the payment provider's profile, with the supporter's consent,
   **once, at the moment of joining**, and is never re-fetched — the provider
   only offers it for a short window after consent
   (see [supporting member](supporting-member.md)).
-- The product never asks for a national identity number, a postal address, or a
-  date of birth, and never enriches a member from any other source.
-- An administrator may correct any of the three by hand; correcting them never
+- **The postal address is asked for by default, and the organization can
+  opt out.** Every organization gets a printed [member card](member-card.md)
+  to hand out or post, so the address has a use from the first day, and the
+  supporter is told what that use is: a standard reason, which the
+  organization may replace with one in its own words. Whichever it is, it is
+  shown to every supporter on the [join page](join-page.md) and in the privacy
+  notice before they share anything. An organization that has opted out never
+  receives an address, and its supporters are never asked for one
+  ([collect postal addresses](../use-cases/collect-postal-addresses.md)).
+- The address comes the same way as the other three: from the payment
+  provider's profile, at joining, as a structured address (street, postal
+  code, place, country), not as a line of text, and like them it is never
+  fetched again. A member who joined before the product asked, or whose
+  profile held no address, simply has none: the product does not go back for
+  it and offers no button to. An administrator may type or correct one, as
+  with any other detail.
+- The product never asks for a national identity number or a date of birth,
+  and never enriches a member from any other source.
+- An administrator may correct any of these by hand; correcting them never
   touches payment history (see [curate the member list](../use-cases/curate-member-list.md)).
 
 ### Who is responsible
@@ -59,9 +77,11 @@ decision instead.
   name, reachable without joining and without a login — the same standing as
   the sales terms. It states: who is answerable, what is collected, why, who
   can see it, how long it is kept, and how to have it erased.
-- The notice is one standard text for every organization. The product collects
-  the same three details from every supporter, so there is nothing per-org to
-  configure — and therefore nothing an administrator can get wrong.
+- The notice is one standard text for every organization, with a single
+  per-organization line: whether this organization asks for a postal address,
+  and the reason shown for it. Everything else is the same for every supporter
+  of every organization, so there is nothing else to configure — and nothing
+  an administrator can get wrong.
 
 ### How long it is kept
 - A member's details are kept while they are a member, and afterwards **for as
@@ -75,9 +95,9 @@ decision instead.
 
 ### Erasure
 - Erasing a member removes the **person**, not the record: name, contact
-  details, the payment provider's identifier for them, and every personal
-  address they hold (their own membership page, their member card) all go. What
-  each period cost and when it was paid stays.
+  details, postal address, the payment provider's identifier for them, and
+  every personal address they hold (their own membership page, their member
+  card) all go. What each period cost and when it was paid stays.
 - Erasure is available to the member themselves and to the organization, and is
   the same operation either way (see
   [erase a member's personal data](../use-cases/erase-member-data.md)).
@@ -93,28 +113,34 @@ decision instead.
 
 ### More fields from the payment provider
 The provider can also share a **postal address** and a **date of birth**, and
-the question of pulling them was researched (2026-08-31). The product does not,
-and the reasons are worth keeping:
+the question of pulling them was researched (2026-08-31). The reasons the
+product did not, at first, are worth keeping, because they still shape how
+the address is collected now that it is:
 
-- **Nothing in the product needs them.** The job is a list and an annual fee.
-  A field with no use has no justification, however easy it is to fetch.
+- **Nothing in the product needed them.** The job was a list and an annual
+  fee. That changed when the product started laying out
+  [member cards](../use-cases/print-member-cards.md) for organizations to
+  post to their members (2026-09-22): a stack of cards with nowhere to send
+  them is the real need the earlier research said to wait for, and it is a
+  need every organization has from the day it exists, which is why the
+  address is asked for by default rather than switched on one organization
+  at a time. The research's other prescription stands: the reason is always
+  stated to the supporter, and an organization that has nothing to post can
+  opt out.
 - **Consent is all-or-nothing.** The provider's consent screen cannot be
   answered field by field: a supporter accepts every requested detail or none.
-  Asking for an address would therefore make sharing an address a *condition of
-  joining*, and a supporter who declines does not become a member at all. That
-  is a worse outcome for the organization than not having addresses.
+  Asking for an address therefore makes sharing an address a *condition of
+  joining*. The product accepts that trade for the sake of a card that can be
+  posted, says so to the supporter, and leaves the organization the choice
+  of not asking at all.
 - **Asking does not mean receiving.** A supporter with no registered address
   yields an empty one, and a detail outside the organization's own agreement
-  with the provider is dropped silently rather than reported — so any such
-  field would have to be treated as usually-absent.
-- A national identity number is out of the question: Norwegian law allows it
-  only where there is an objective need for certain identification, which a
-  list of supporters is not.
-
-If an organization ever has a real need — posting something physical, or a
-membership priced by age — the shape to revisit is a **per-organization
-choice with a stated reason shown on the join page**, never a product-wide
-default. Until then this stays research.
+  with the provider is dropped silently rather than reported. So the address
+  is treated as sometimes-absent everywhere it is shown.
+- A **date of birth** is still not collected: nothing in the product is
+  priced by age. A national identity number is out of the question: Norwegian
+  law allows it only where there is an objective need for certain
+  identification, which a list of supporters is not.
 
 ## Relationships
 - Governed by the [data processing agreement](data-processing-agreement.md)
@@ -125,10 +151,14 @@ default. Until then this stays research.
 - Told to the supporter through the [join page](join-page.md) and acted on
   through the [member self-service page](member-self-service.md).
 - Erased through [erase a member's personal data](../use-cases/erase-member-data.md).
+- The postal address is turned on through
+  [collect postal addresses](../use-cases/collect-postal-addresses.md) and
+  put to use by [print the member cards](../use-cases/print-member-cards.md).
 
 ## Referenced by
 - [Use case: Join as a supporting member](../use-cases/join-as-supporting-member.md)
 - [Use case: Erase a member's personal data](../use-cases/erase-member-data.md)
 - [Use case: Curate the member list](../use-cases/curate-member-list.md)
 - [Use case: Export the member list](../use-cases/export-member-list.md)
+- [Use case: Collect postal addresses](../use-cases/collect-postal-addresses.md)
 - [Concept: Supporting member](supporting-member.md)

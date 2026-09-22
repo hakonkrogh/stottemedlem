@@ -1,9 +1,10 @@
 ---
 // The member cards on A4 sheets (specs/use-cases/print-member-cards.md): six
-// to a sheet, each the height of a bank card, with cut marks in the corners.
-// What is on screen is exactly what the printer gets; everything that is not
-// a sheet (the way back, the period choice, the print button) is for the
-// screen only and leaves the page when it prints.
+// to a sheet lying sideways, each the height of a bank card, with cut marks in
+// the corners and, in the margin under each card, the member's address and
+// phone number for the envelope. What is on screen is exactly what the printer
+// gets; everything that is not a sheet (the way back, the period choice, the
+// print button) is for the screen only and leaves the page when it prints.
 import BackLink from "@stottemedlem/ui/components/BackLink.astro";
 import Button from "@stottemedlem/ui/components/Button.astro";
 import Heading from "@stottemedlem/ui/components/Heading.astro";
@@ -13,6 +14,12 @@ import Text from "@stottemedlem/ui/components/Text.astro";
 export interface PrintedCard {
   /** The card, drawn: the same SVG the member is shown, saying what it said that period. */
   svg: string;
+  /**
+   * What stands under the card, for the person putting it in an envelope: the
+   * postal address and phone number, at most two lines. Cut away with the
+   * margin, so the member gets the card and only the card.
+   */
+  envelopeLines: string[];
 }
 
 export interface PeriodChoice {
@@ -31,9 +38,9 @@ interface Props {
 }
 const { cards, periodLabel, periodChoices, backHref } = Astro.props;
 
-// Two columns of three: at a bank card's height the card is a little wider
-// than a bank card, and two of them with room for the cut marks is what an A4
-// sheet's width holds.
+// Three columns of two on a sheet lying sideways: at a bank card's height the
+// card is a little wider than a bank card, and with the address under each
+// one, two rows is what an A4 sheet's short side holds.
 const CARDS_PER_SHEET = 6;
 const sheets: PrintedCard[][] = [];
 for (let i = 0; i < cards.length; i += CARDS_PER_SHEET) {
@@ -43,7 +50,7 @@ for (let i = 0; i < cards.length; i += CARDS_PER_SHEET) {
 const summary =
   cards.length === 0
     ? `Ingen medlemskap er betalt for ${periodLabel}, så det er ingen medlemsbevis å skrive ut.`
-    : `${cards.length} medlemsbevis for ${periodLabel} på ${sheets.length} A4-ark, seks på hvert.`;
+    : `${cards.length} medlemsbevis for ${periodLabel} på ${sheets.length} liggende A4-ark, seks på hvert.`;
 
 // The card's own canvas keeps a margin for its shadow; the card's edge sits
 // 20 of 760 units in from it. The marks point at that edge from outside, with
@@ -98,7 +105,8 @@ const marks = corners.flatMap(({ x, y, dx, dy }) => [
           </span>
           <Text variant="muted">
             Velg «Lagre som PDF» i utskriftsvinduet hvis du heller vil ha en fil. Kortene er like
-            høye som et bankkort. Klipp langs merkene i hjørnene.
+            høye som et bankkort. Klipp langs merkene i hjørnene. Adressen og telefonnummeret
+            under hvert kort er til konvolutten og klippes bort.
           </Text>
         </div>
       )
@@ -119,6 +127,13 @@ const marks = corners.flatMap(({ x, y, dx, dy }) => [
                   <line x1={mark.x1} y1={mark.y1} x2={mark.x2} y2={mark.y2} />
                 ))}
               </svg>
+              {card.envelopeLines.length > 0 && (
+                <p class="envelope">
+                  {card.envelopeLines.map((line) => (
+                    <span>{line}</span>
+                  ))}
+                </p>
+              )}
             </div>
           ))}
         </section>
@@ -142,7 +157,7 @@ const marks = corners.flatMap(({ x, y, dx, dy }) => [
 
 <style is:global>
   @page {
-    size: A4;
+    size: A4 landscape;
     margin: 0;
   }
   @media print {
@@ -211,18 +226,21 @@ const marks = corners.flatMap(({ x, y, dx, dy }) => [
   }
   .sheet {
     /* The card's edge is 820 of its 860 units tall, and it prints at a bank
-       card's height (85.6 mm): everything else follows from that. */
+       card's height (85.6 mm): everything else follows from that. Under each
+       card, the margin the address stands in; two rows of card and margin is
+       what the sheet's short side holds. */
     --slot-w: calc(85.6mm * 760 / 820);
     --slot-h: calc(85.6mm * 860 / 820);
+    --envelope-h: 8mm;
     box-sizing: border-box;
-    width: 210mm;
-    height: 297mm;
-    padding: 8mm;
+    width: 297mm;
+    height: 210mm;
+    padding: 5mm 8mm;
     flex-shrink: 0;
     display: grid;
-    grid-template-columns: repeat(2, var(--slot-w));
-    grid-auto-rows: var(--slot-h);
-    gap: 4.5mm 8mm;
+    grid-template-columns: repeat(3, var(--slot-w));
+    grid-auto-rows: calc(var(--slot-h) + var(--envelope-h));
+    gap: 4mm 10mm;
     justify-content: center;
     /* Rows fill from the top, so a last sheet with two cards on it is not two
        cards floating in the middle of the paper. */
@@ -235,14 +253,43 @@ const marks = corners.flatMap(({ x, y, dx, dy }) => [
   .slot {
     position: relative;
     width: var(--slot-w);
-    height: var(--slot-h);
+    height: calc(var(--slot-h) + var(--envelope-h));
   }
   .slot :global(svg) {
     position: absolute;
-    inset: 0;
+    top: 0;
+    left: 0;
     display: block;
     width: 100%;
-    height: 100%;
+    height: var(--slot-h);
+  }
+  /* The address for the envelope, under the card and between the corner
+     marks: inset past the marks, kept off the line they draw, and never
+     allowed to grow the slot, so a long address is cut short rather than
+     pushing the sheet off the paper. */
+  .envelope {
+    position: absolute;
+    top: var(--slot-h);
+    left: 4mm;
+    right: 4mm;
+    height: var(--envelope-h);
+    box-sizing: border-box;
+    margin: 0;
+    padding-top: 1.6mm;
+    display: grid;
+    align-content: start;
+    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+    font-size: 7pt;
+    line-height: 1.2;
+    color: #4a453f;
+    text-align: center;
+    overflow: hidden;
+  }
+  .envelope span {
+    display: block;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
   /* Paper casts its own shadow: the drawn one would print as a grey smear
      around every card. */

@@ -53,6 +53,18 @@ export const organizations = sqliteTable("organizations", {
    */
   dpaAcceptedAt: text("dpa_accepted_at"),
   dpaVersion: text("dpa_version"),
+  /**
+   * Why this organization asks its supporters for a postal address, in its
+   * own words, shown on the join page before they share anything
+   * (specs/use-cases/collect-postal-addresses.md). Null means the standard
+   * reason stands: the member card can be sent in the post.
+   */
+  postalAddressReason: text("postal_address_reason"),
+  /**
+   * When the organization opted out of asking for postal addresses. Null
+   * while it asks, which is every organization until it decides otherwise.
+   */
+  postalAddressesDeclinedAt: text("postal_addresses_declined_at"),
   createdAt: text("created_at").notNull().default(sql`(datetime('now'))`),
 });
 
@@ -103,6 +115,17 @@ export const supportingMembers = sqliteTable("supporting_members", {
   name: text("name"),
   email: text("email"),
   phone: text("phone"),
+  /**
+   * Postal address as its parts (specs/use-cases/collect-postal-addresses.md):
+   * from the payment provider's profile at joining, once, and never fetched
+   * again; null for a member who joined before the product asked. An
+   * administrator may correct it like any other detail. Country is the
+   * provider's code ("NO") or whatever was typed.
+   */
+  streetAddress: text("street_address"),
+  postalCode: text("postal_code"),
+  city: text("city"),
+  country: text("country"),
   /**
    * Which place this supporter holds in the order people started backing this
    * organization (specs/concepts/member-number.md). Unique per org, handed

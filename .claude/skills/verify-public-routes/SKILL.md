@@ -540,6 +540,15 @@ you cannot see first. So a wrong `UPDATE … SELECT` and a write helper whose
 emitted SQL does not do what you meant both ship green. Both are provable
 locally in about two minutes.
 
+**0. Edited an UNSHIPPED migration after applying it locally? The local D1
+will not pick the edit up (cost a 500 on 2026-09-22).** `d1_migrations`
+records the file NAME as applied, so re-running `migrations apply` skips it
+and the page fails on the column the edit added. Either add the new
+statement by hand (`d1.sh "ALTER TABLE organizations ADD COLUMN x TEXT"`), or
+`d1.sh "DELETE FROM d1_migrations WHERE name='00NN_x.sql'"` and re-apply,
+which re-runs the WHOLE file and fails on columns that already exist. Only
+staging/production, which never saw the first version, get the file whole.
+
 **1. Apply, then re-run the backfill against rows you control.** Migrations
 are additive and the apply is one-shot, so seed a throwaway org AFTER applying
 and re-run just the backfill statement on it:

@@ -1,12 +1,14 @@
 ---
 import {
   anonymizeMember,
+  collectsPostalAddresses,
   ensureMemberCardToken,
   findChargeByVippsId,
   getMembershipAgreement,
   getOrganizationMember,
   listChargesForMember,
   updateMemberContactDetails,
+  updateMemberPostalAddress,
 } from "@stottemedlem/db";
 import { VippsApiError } from "@stottemedlem/vipps";
 import MemberDetailScreen from "../../../../components/MemberDetailScreen.astro";
@@ -16,8 +18,11 @@ import { getDb } from "../../../../lib/db";
 import { memberCardUrl } from "../../../../lib/memberCard";
 import {
   type MemberContactFieldErrors,
+  type MemberPostalAddressFieldErrors,
   memberContactFormValues,
+  memberPostalAddressFormValues,
   parseMemberContactForm,
+  parseMemberPostalAddressForm,
 } from "../../../../lib/memberContact";
 import { type RefundResult, refundMembershipPayment } from "../../../../lib/membership";
 import { orgIdentity } from "../../../../lib/orgImages";
@@ -53,6 +58,11 @@ const memberPath = `${membersPath}/${entry.member.id}`;
 
 let values = memberContactFormValues(entry.member);
 let fieldErrors: MemberContactFieldErrors = {};
+// The postal address is part of the details only where the organization asks
+// for one (specs/use-cases/collect-postal-addresses.md).
+const postalAddresses = collectsPostalAddresses(org);
+let addressValues = postalAddresses ? memberPostalAddressFormValues(entry.member) : null;
+let addressErrors: MemberPostalAddressFieldErrors = {};
 let refunded: RefundResult | null = null;
 let refundError: string | null = null;
 let eraseError: string | null = null;
@@ -83,8 +93,16 @@ if (Astro.request.method === "POST") {
     const parsed = parseMemberContactForm(form);
     values = parsed.values;
     fieldErrors = parsed.fieldErrors;
-    if (parsed.details) {
+    const parsedAddress = postalAddresses ? parseMemberPostalAddressForm(form) : null;
+    if (parsedAddress) {
+      addressValues = parsedAddress.values;
+      addressErrors = parsedAddress.fieldErrors;
+    }
+    if (parsed.details && (!parsedAddress || parsedAddress.address)) {
       await updateMemberContactDetails(db, org.id, entry.member.id, parsed.details);
+      if (parsedAddress?.address) {
+        await updateMemberPostalAddress(db, org.id, entry.member.id, parsedAddress.address);
+      }
       return done({ lagret: "1" });
     }
   }
@@ -94,7 +112,10 @@ if (Astro.request.method === "POST") {
   entry =
     (await getOrganizationMember(db, org.id, entry.member.id, periods.periodFor().year)) ?? entry;
   // A rejected save keeps what was typed; the other actions show what is stored.
-  if (refundChargeId || form.get("slett")) values = memberContactFormValues(entry.member);
+  if (refundChargeId || form.get("slett")) {
+    values = memberContactFormValues(entry.member);
+    if (postalAddresses) addressValues = memberPostalAddressFormValues(entry.member);
+  }
 }
 
 const flags = Astro.url.searchParams;
@@ -160,7 +181,10 @@ async function refundPayment(vippsChargeId: string): Promise<string | null> {
 const payments = paymentViews(await listChargesForMember(db, entry.member.id));
 const displayName = entry.member.name || entry.member.email || entry.member.phone || "Uten navn";
 // A save closes the form again; anything still wrong keeps it open.
-const editing = Object.keys(fieldErrors).length > 0 || flags.has("rediger");
+const editing =
+  Object.keys(fieldErrors).length > 0 ||
+  Object.keys(addressErrors).length > 0 ||
+  flags.has("rediger");
 // Money leaving is deliberate: the button asks, and only this confirmation
 // screen can send the refund.
 const confirming = refunded
@@ -189,6 +213,8 @@ const sought = flags.get(PAYMENT_PARAM);
       entry={entry}
       values={values}
       fieldErrors={fieldErrors}
+      addressValues={addressValues}
+      addressErrors={addressErrors}
       saved={saved}
       editing={editing}
       payments={payments}

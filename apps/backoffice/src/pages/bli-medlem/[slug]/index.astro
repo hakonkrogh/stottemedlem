@@ -5,8 +5,14 @@ import {
   joinPagePrivacyPath,
   joinPageTermsPath,
   periodLabel,
+  quotedPostalAddressReason,
 } from "@stottemedlem/core";
-import { getOrganizationBySlug, listMembershipTiers } from "@stottemedlem/db";
+import {
+  collectsPostalAddresses,
+  getOrganizationBySlug,
+  listMembershipTiers,
+  postalAddressReason,
+} from "@stottemedlem/db";
 import Alert from "@stottemedlem/ui/components/Alert.astro";
 import Button from "@stottemedlem/ui/components/Button.astro";
 import Heading from "@stottemedlem/ui/components/Heading.astro";
@@ -146,7 +152,10 @@ const referral = Astro.url.searchParams.get(JOIN_REFERRAL_PARAM)?.trim() || null
         tiers.length > 0 && (
           <Text variant="muted">
             Du deler navn, e-postadresse og telefonnummer fra Vipps-profilen din, slik at {org.name}{" "}
-            kan føre deg opp som støttemedlem og sende deg kvittering. Ikke noe mer — se{" "}
+            kan føre deg opp som støttemedlem og sende deg kvittering.{" "}
+            {collectsPostalAddresses(org)
+              ? `${org.name} ber også om postadressen din: ${quotedPostalAddressReason(postalAddressReason(org))}. Se `
+              : "Ikke noe mer — se "}
             <TextLink href={joinPagePrivacyPath(org.slug)}>personvern</TextLink>.
           </Text>
         )

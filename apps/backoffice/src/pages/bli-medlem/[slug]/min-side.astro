@@ -8,6 +8,7 @@ import {
 import {
   anonymizeMember,
   closeAgreement,
+  collectsPostalAddresses,
   findAgreementByManageToken,
   getMembershipTier,
   getOrganizationBySlug,
@@ -248,6 +249,12 @@ const otherTiers =
 const card =
   agreement.memberId && !erased ? await loadMemberCardForMemberId(db, agreement.memberId) : null;
 const cardToken = card?.member.cardToken ?? null;
+// What erasure takes with it, said the way the organization collects it
+// (specs/use-cases/collect-postal-addresses.md).
+const postalAddresses = collectsPostalAddresses(org);
+const personalDetails = postalAddresses
+  ? "navn, e-postadresse, telefonnummer og postadresse"
+  : "navn, e-postadresse og telefonnummer";
 const cardAlt = card
   ? `Medlemsbevis for ${card.member.name?.trim() || "deg"} i ${org.name}, med ${card.hearts} hjerter.`
   : "";
@@ -293,7 +300,10 @@ const title = `Ditt støttemedlemskap — ${org.name}`;
         <Stack gap="sm">
           <Heading>Opplysningene dine er slettet</Heading>
           <Alert variant="success">
-            Navn, e-postadresse og telefonnummer er fjernet fra medlemsregisteret til {org.name}.
+            {postalAddresses
+              ? "Navn, e-postadresse, telefonnummer og postadresse"
+              : "Navn, e-postadresse og telefonnummer"}{" "}
+            er fjernet fra medlemsregisteret til {org.name}.
           </Alert>
         </Stack>
         <Text>
@@ -420,9 +430,8 @@ const title = `Ditt støttemedlemskap — ${org.name}`;
         <Stack gap="sm">
           <Heading level={2}>Slett opplysningene dine</Heading>
           <Text>
-            Du kan få navn, e-postadresse og telefonnummer fjernet fra medlemsregisteret til{" "}
-            {org.name}. Betalingene du har gjort blir liggende i regnskapet uten navn, slik loven
-            krever.
+            Du kan få {personalDetails} fjernet fra medlemsregisteret til {org.name}. Betalingene
+            du har gjort blir liggende i regnskapet uten navn, slik loven krever.
           </Text>
           <form method="post" data-confirm="Slette opplysningene dine? Denne siden slutter å virke, og hjertene dine forsvinner.">
             <input type="hidden" name="handling" value="slett" />

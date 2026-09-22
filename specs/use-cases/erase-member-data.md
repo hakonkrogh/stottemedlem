@@ -29,9 +29,9 @@ organization's numbers for a year it has already counted do not move.
    name, the page stops working, their hearts are gone, and re-joining later
    means starting as a new member.
 2. Choosing it asks once more, then removes the person: name, e-mail address,
-   phone number, the payment provider's identifier for them, and every personal
-   address they hold — their membership page and their member card both stop
-   resolving.
+   phone number, postal address, the payment provider's identifier for them,
+   and every personal address they hold — their membership page and their
+   member card both stop resolving.
 3. The member is told it is done, on the spot. That confirmation is the last
    thing that address ever shows: the link died with the data, so the answer
    cannot be delivered by sending them somewhere.
@@ -58,8 +58,8 @@ organization's numbers for a year it has already counted do not move.
       page, and sees a confirmation on that same response.
 - [ ] After erasure, the member's own page and their member card both stop
       resolving, and no other member's page or card is affected.
-- [ ] After erasure the member holds no name, e-mail, phone, provider
-      identifier or personal address anywhere in the product.
+- [ ] After erasure the member holds no name, e-mail, phone, postal address,
+      provider identifier or personal address anywhere in the product.
 - [ ] The periods they paid for, and the amounts, are unchanged by erasure —
       the organization's total for each year is the same before and after.
 - [ ] Erasing a member whose arrangement is still running is refused, and the

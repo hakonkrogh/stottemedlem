@@ -7,6 +7,7 @@ import {
   FIXTURE_LOGO_URL,
   JOIN_URL,
   ORG,
+  ORG_OPTED_OUT_OF_ADDRESSES,
   ORG_PATH,
   ORG_WITH_IMAGES,
   STORED_KEYS,
@@ -49,6 +50,7 @@ const settings = (props: Record<string, unknown> = {}, warnings: OrgWarning[] = 
             websiteUrl: ORG.websiteUrl ?? "",
           },
           name: ORG.name,
+          postalAddress: { collectPostalAddress: true, postalAddressReason: "" },
           vippsKeys: storedKeys,
           paymentEventsConnected: true,
           warnings,
@@ -83,6 +85,32 @@ export const BannerFocalPoint = {
 
 /** Nothing uploaded yet: the preview says so, and shows the name alone. */
 export const NoImages = { args: settings({ org: ORG }) };
+
+/**
+ * An organization that opted out of postal addresses
+ * (specs/use-cases/collect-postal-addresses.md): its supporters share the
+ * three details and nothing more.
+ */
+export const OptedOutOfAddresses = {
+  args: settings({
+    org: ORG_OPTED_OUT_OF_ADDRESSES,
+    postalAddress: { collectPostalAddress: false, postalAddressReason: "" },
+  }),
+};
+
+/** An organization that put its own words in place of the standard reason. */
+export const OwnAddressReason = {
+  args: settings({
+    org: {
+      ...ORG_WITH_IMAGES,
+      postalAddressReason: "Vi sender takkekort og medlemsbevis før jul.",
+    },
+    postalAddress: {
+      collectPostalAddress: true,
+      postalAddressReason: "Vi sender takkekort og medlemsbevis før jul.",
+    },
+  }),
+};
 
 /** The one edit action, opened — with the banner's focal-point picker. */
 export const Editing = { args: settings({ editing: true }) };

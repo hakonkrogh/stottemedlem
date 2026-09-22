@@ -8,7 +8,7 @@
 // The recorded details are PRESENTED; correcting them and refunding are
 // deliberate actions behind a button, so looking someone up never means facing
 // a form — and never means being one slip away from moving money.
-import { memberNumberLabel, periodLabel } from "@stottemedlem/core";
+import { memberNumberLabel, periodLabel, postalAddressLines } from "@stottemedlem/core";
 import { type MemberOverview, type Membership, memberStanding } from "@stottemedlem/db";
 import Alert from "@stottemedlem/ui/components/Alert.astro";
 import Button from "@stottemedlem/ui/components/Button.astro";
@@ -18,7 +18,12 @@ import Stack from "@stottemedlem/ui/components/Stack.astro";
 import Text from "@stottemedlem/ui/components/Text.astro";
 import TextField from "@stottemedlem/ui/components/TextField.astro";
 import TextLink from "@stottemedlem/ui/components/TextLink.astro";
-import type { MemberContactFieldErrors, MemberContactFormValues } from "../lib/memberContact";
+import type {
+  MemberContactFieldErrors,
+  MemberContactFormValues,
+  MemberPostalAddressFieldErrors,
+  MemberPostalAddressFormValues,
+} from "../lib/memberContact";
 import { standingLabel } from "../lib/memberStanding";
 import type { RefundResult } from "../lib/membership";
 import { type PaymentView, paymentAnchor, type RefundRefusal } from "../lib/refunds";
@@ -29,6 +34,13 @@ interface Props {
   entry: MemberOverview & { history: Membership[] };
   values: MemberContactFormValues;
   fieldErrors?: MemberContactFieldErrors;
+  /**
+   * The member's postal address, offered only where the organization asks
+   * for one (specs/use-cases/collect-postal-addresses.md): null when it does
+   * not, and the address is neither shown nor asked for.
+   */
+  addressValues?: MemberPostalAddressFormValues | null;
+  addressErrors?: MemberPostalAddressFieldErrors;
   saved?: boolean;
   /** Open the contact form instead of presenting what is recorded. */
   editing?: boolean;
@@ -67,6 +79,8 @@ const {
   entry,
   values,
   fieldErrors = {},
+  addressValues = null,
+  addressErrors = {},
   saved = false,
   editing = false,
   payments = [],
@@ -117,6 +131,14 @@ const lead = [standingText, continuation].filter(Boolean).join(" ");
 // keeps the place it earned. It sits under the name, where it belongs to the
 // member rather than to how their membership is doing.
 const numberLabel = member.memberNumber === null ? null : memberNumberLabel(member.memberNumber);
+// The address the way it goes on an envelope, as one line here; shown where
+// the organization asks for addresses, and also for a member who has one from
+// before the organization stopped asking, so it is never held unseen.
+const postalAddress = postalAddressLines(member).join(", ") || null;
+const showsAddress = addressValues !== null || postalAddress !== null;
+const detailsErased = addressValues
+  ? "Navn, e-postadresse, telefonnummer og postadresse"
+  : "Navn, e-postadresse og telefonnummer";
 const totalPaid = history.reduce((sum, period) => sum + period.paidNok, 0);
 
 // What became of each payment, and — where it cannot be given back — why not.
@@ -207,8 +229,8 @@ const periodSurvives =
       <section class="confirm">
         <Heading level={3}>Slette opplysningene om {displayName}?</Heading>
         <Text>
-          Navn, e-postadresse og telefonnummer fjernes fra registeret. Betalingene blir liggende —
-          hvor mye, når og for hvilket år — men uten navn, så tallene for året endrer seg ikke.
+          {detailsErased} fjernes fra registeret. Betalingene blir liggende — hvor mye, når og for
+          hvilket år — men uten navn, så tallene for året endrer seg ikke.
         </Text>
         <Text variant="small">
           Dette kan ikke angres. Medlemssiden og medlemsbeviset slutter å virke, hjertene
@@ -315,6 +337,36 @@ const periodSurvives =
                 value={values.phone}
                 error={fieldErrors.phone}
               />
+              {addressValues && (
+                <>
+                  <TextField
+                    label="Gateadresse"
+                    name="streetAddress"
+                    value={addressValues.streetAddress}
+                    error={addressErrors.streetAddress}
+                  />
+                  <div class="place">
+                    <TextField
+                      label="Postnummer"
+                      name="postalCode"
+                      value={addressValues.postalCode}
+                      error={addressErrors.postalCode}
+                    />
+                    <TextField
+                      label="Poststed"
+                      name="city"
+                      value={addressValues.city}
+                      error={addressErrors.city}
+                    />
+                  </div>
+                  <TextField
+                    label="Land (hvis ikke Norge)"
+                    name="country"
+                    value={addressValues.country}
+                    error={addressErrors.country}
+                  />
+                </>
+              )}
               <Button busy="Lagrer …" block>
                 Lagre
               </Button>
@@ -329,6 +381,7 @@ const periodSurvives =
               { label: "Navn", value: member.name },
               { label: "E-post", value: member.email },
               { label: "Telefon", value: member.phone },
+              ...(showsAddress ? [{ label: "Postadresse", value: postalAddress }] : []),
             ]}
           />
         )
@@ -491,6 +544,12 @@ const periodSurvives =
     flex-wrap: wrap;
     align-items: center;
     justify-content: space-between;
+    gap: var(--sm-space-sm);
+  }
+  /* Postal code and place share a line, the way they do on an envelope. */
+  .place {
+    display: grid;
+    grid-template-columns: minmax(6rem, 1fr) 2fr;
     gap: var(--sm-space-sm);
   }
   .history,

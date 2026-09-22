@@ -75,7 +75,10 @@ From the organization's point of view:
    a contact detail but no name is still listed, by something a person can
    recognize — never by an internal id.
 7. The administrator can correct a member's recorded identity/contact details,
-   including clearing one: a wrong address is worse than none. Looking someone
+   including clearing one: a wrong address is worse than none. Where the
+   organization has not opted out of postal addresses, the member's postal
+   address is one of those details, presented and corrected in the same place
+   ([collect postal addresses](collect-postal-addresses.md)). Looking someone
    up never means facing a form: the list and the member's own page **present**
    what is recorded, and correcting it is a separate action the administrator
    asks for ([presenting and editing](../concepts/presenting-and-editing.md)).

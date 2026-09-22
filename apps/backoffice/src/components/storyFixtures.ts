@@ -33,7 +33,17 @@ export const ORG: Organization = {
   // (specs/concepts/data-processing-agreement.md).
   dpaAcceptedAt: "2026-01-04T09:00:00.000Z",
   dpaVersion: DPA_VERSION,
+  // Asks for postal addresses with the standard reason, as every
+  // organization does until it opts out (specs/use-cases/collect-postal-addresses.md).
+  postalAddressReason: null,
+  postalAddressesDeclinedAt: null,
   createdAt: "2026-01-04",
+};
+
+/** The same organization, having opted out of postal addresses. */
+export const ORG_OPTED_OUT_OF_ADDRESSES: Organization = {
+  ...ORG,
+  postalAddressesDeclinedAt: "2026-09-22T09:00:00.000Z",
 };
 
 /**
