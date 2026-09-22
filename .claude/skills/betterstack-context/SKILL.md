@@ -1,6 +1,6 @@
 ---
 name: betterstack-context
-description: Ask Better Stack whether the nightly runs actually beat, from the CLI - list the heartbeats that watch the cron jobs, read one in full, or create one. Needs BETTERSTACK_API_TOKEN (the user's to give). Use when checking that a nightly run reported in, or that a deployed environment is watched at all, instead of asking the user to open the dashboard.
+description: Ask Better Stack whether the nightly runs actually beat, from the CLI - list the heartbeats that watch the cron jobs, read one in full, create one, or `check` that each heartbeat expects a beat on the cadence its cron actually keeps (`--dry` needs no account). Needs BETTERSTACK_API_TOKEN (the user's to give). Use when checking that a nightly run reported in or that a deployed environment is watched at all, and ALWAYS after changing triggers.crons or a heartbeat, instead of asking the user to open the dashboard.
 ---
 
 # Better Stack (the nightly runs' watchdog)
