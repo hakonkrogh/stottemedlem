@@ -172,5 +172,44 @@ plan/onboarding change, not just a code change.
     Norway): https://developer.vippsmobilepay.com/docs/APIs/login-api/api-guide/user-info.md
 - Datatilsynet on fødselsnummer:
   https://www.datatilsynet.no/rettigheter-og-plikter/personopplysninger/fodselsnummer/
+## Swapping or adding a vendor: the protocol (mapped 2026-09-22)
+
+Every third party that touches member data is NAMED in the public
+databehandleravtale, so changing one is never only a code change. Found while
+moving error monitoring off Sentry; it applies equally to Resend, WorkOS,
+Cloudflare or anything new.
+
+1. **The list is in `apps/backoffice/src/pages/databehandleravtale.astro`,
+   section 4** ("Hvem andre er involvert"). Cloudflare, Vipps MobilePay,
+   WorkOS, Resend and Sentry are each named with what they do. Edit the line.
+2. **Bump `DPA_VERSION` in `packages/core/src/index.ts`** (a date string,
+   `2026-08-31` at time of writing). `hasAcceptedDpa(org, DPA_VERSION)` checks
+   the org accepted the CURRENT version, so a substantive change makes every
+   organization count as not having accepted until it accepts again, which the
+   back office surfaces as an outstanding item. That is the spec's rule, not an
+   implementation detail: `specs/concepts/data-processing-agreement.md` says a
+   change in substance means every organization is asked again.
+3. **Announce it first.** The agreement's own closing line promises
+   "Bytter vi ut eller legger til en underleverandør, sier vi fra på forhånd",
+   and that the organization may terminate if it does not accept. The spec
+   repeats it: subprocessors are named, not alluded to, and a change is
+   announced BEFORE it happens. So the order is notice, then change, then
+   acceptance.
+4. **Reconcile the spec**, as with any product-behaviour change.
+
+**Outside the EEA is allowed, on a condition.** Section 4 says subprocessors
+process the data only on our instructions "og innenfor EU/EØS eller på et
+gyldig overføringsgrunnlag" (within the EEA, or on a valid transfer basis). So
+a US vendor is not barred by our own text; what is required is the transfer
+basis, meaning that vendor's own DPA with SCCs or a Data Privacy Framework
+certification. Obtain and keep it, because the sentence above is a promise to
+the organization that one exists.
+
+**The member-facing privacy notice**
+(`apps/backoffice/src/pages/bli-medlem/[slug]/personvern.astro`) names NO
+vendor except Vipps MobilePay, so a vendor swap usually leaves it alone. Read
+it anyway: the members are the data subjects, and the organization accepting
+the agreement may be the operator's own.
+
 - Neighbours in this skill: `phone-number-privacy.md` (displaying/masking member
   phone numbers), `norwegian-receipt-law.md` (receipt/bookkeeping duties).
