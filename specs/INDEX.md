@@ -42,7 +42,7 @@ The one message the product itself sends a member is the necessary
 | [Collecting annual support is manual and leaky](problems/collecting-annual-support.md) | Draft | [Join as a supporting member](use-cases/join-as-supporting-member.md) |
 | [Keeping an accurate list of who has paid](problems/keeping-an-accurate-member-list.md) | Draft | [Curate the member list](use-cases/curate-member-list.md), [Renew annual membership](use-cases/renew-annual-membership.md) |
 | [Supporters never hear back from the organization](problems/supporters-never-hear-back.md) | Retired (out of scope) | [Export the member list](use-cases/export-member-list.md) — through the organization's own channels |
-| [Loyalty is invisible and word of mouth goes untracked](problems/invisible-loyalty-and-word-of-mouth.md) | Draft | [Earn hearts and recruit new members](use-cases/earn-hearts-and-recruit.md) |
+| [Loyalty is invisible and word of mouth goes untracked](problems/invisible-loyalty-and-word-of-mouth.md) | Draft | [Earn hearts and recruit new members](use-cases/earn-hearts-and-recruit.md), [Print the member cards](use-cases/print-member-cards.md) |
 | [A payment that should never have happened cannot be undone](problems/honouring-a-refund-request.md) | Draft | [Refund a supporting member's payment](use-cases/refund-a-payment.md) |
 
 ## Use cases — *what the product does*
@@ -63,6 +63,7 @@ The one message the product itself sends a member is the necessary
 | [Promote membership with a QR code card](use-cases/promote-with-qr-card.md) | Draft | [Collecting annual support](problems/collecting-annual-support.md) |
 | [Keep supporting members in the loop](use-cases/keep-supporters-in-the-loop.md) | Retired | [Supporters never hear back](problems/supporters-never-hear-back.md) |
 | [Earn hearts and recruit new members](use-cases/earn-hearts-and-recruit.md) | Draft | [Invisible loyalty and word of mouth](problems/invisible-loyalty-and-word-of-mouth.md) |
+| [Print the member cards](use-cases/print-member-cards.md) | Draft | [Invisible loyalty and word of mouth](problems/invisible-loyalty-and-word-of-mouth.md) |
 | [Erase a member's personal data](use-cases/erase-member-data.md) | Draft | [Keeping an accurate list](problems/keeping-an-accurate-member-list.md) |
 
 ## Concepts — *shared vocabulary*

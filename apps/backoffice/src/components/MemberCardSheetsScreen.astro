@@ -1,0 +1,278 @@
+---
+// The member cards on A4 sheets (specs/use-cases/print-member-cards.md): six
+// to a sheet, each the height of a bank card, with cut marks in the corners.
+// What is on screen is exactly what the printer gets; everything that is not
+// a sheet (the way back, the period choice, the print button) is for the
+// screen only and leaves the page when it prints.
+import BackLink from "@stottemedlem/ui/components/BackLink.astro";
+import Button from "@stottemedlem/ui/components/Button.astro";
+import Heading from "@stottemedlem/ui/components/Heading.astro";
+import Stack from "@stottemedlem/ui/components/Stack.astro";
+import Text from "@stottemedlem/ui/components/Text.astro";
+
+export interface PrintedCard {
+  /** The card, drawn: the same SVG the member is shown, saying what it said that period. */
+  svg: string;
+}
+
+export interface PeriodChoice {
+  label: string;
+  href: string;
+  current: boolean;
+}
+
+interface Props {
+  cards: PrintedCard[];
+  /** The period the cards are for, as people read it: "2026". */
+  periodLabel: string;
+  /** Every period cards can be printed for, newest first. */
+  periodChoices: PeriodChoice[];
+  backHref: string;
+}
+const { cards, periodLabel, periodChoices, backHref } = Astro.props;
+
+// Two columns of three: at a bank card's height the card is a little wider
+// than a bank card, and two of them with room for the cut marks is what an A4
+// sheet's width holds.
+const CARDS_PER_SHEET = 6;
+const sheets: PrintedCard[][] = [];
+for (let i = 0; i < cards.length; i += CARDS_PER_SHEET) {
+  sheets.push(cards.slice(i, i + CARDS_PER_SHEET));
+}
+
+const summary =
+  cards.length === 0
+    ? `Ingen medlemskap er betalt for ${periodLabel}, så det er ingen medlemsbevis å skrive ut.`
+    : `${cards.length} medlemsbevis for ${periodLabel} på ${sheets.length} A4-ark, seks på hvert.`;
+
+// The card's own canvas keeps a margin for its shadow; the card's edge sits
+// 20 of 760 units in from it. The marks point at that edge from outside, with
+// a little air between them and the card, so a cut along them is a cut along
+// the card. Drawn in the card's own units so they scale with it.
+const EDGE = 20;
+const AIR = 8;
+const LENGTH = 28;
+const W = 760;
+const H = 860;
+const corners: Array<{ x: number; y: number; dx: number; dy: number }> = [
+  { x: EDGE, y: EDGE, dx: -1, dy: -1 },
+  { x: W - EDGE, y: EDGE, dx: 1, dy: -1 },
+  { x: EDGE, y: H - EDGE, dx: -1, dy: 1 },
+  { x: W - EDGE, y: H - EDGE, dx: 1, dy: 1 },
+];
+const marks = corners.flatMap(({ x, y, dx, dy }) => [
+  { x1: x + dx * AIR, y1: y, x2: x + dx * (AIR + LENGTH), y2: y },
+  { x1: x, y1: y + dy * AIR, x2: x, y2: y + dy * (AIR + LENGTH) },
+]);
+---
+
+<div class="screen-only">
+  <Stack gap="lg">
+    <BackLink href={backHref}>Tilbake til medlemslisten</BackLink>
+    <Stack gap="sm">
+      <Heading level={1}>Medlemsbevis til utskrift</Heading>
+      <Text variant="lead">{summary}</Text>
+    </Stack>
+
+    {
+      periodChoices.length > 1 && (
+        <nav class="periods" aria-label="Velg periode">
+          {periodChoices.map((choice) => (
+            <a
+              class:list={["period", { current: choice.current }]}
+              href={choice.href}
+              aria-current={choice.current ? "true" : undefined}
+            >
+              {choice.label}
+            </a>
+          ))}
+        </nav>
+      )
+    }
+
+    {
+      cards.length > 0 && (
+        <div class="actions">
+          <span data-print>
+            <Button type="button">Skriv ut</Button>
+          </span>
+          <Text variant="muted">
+            Velg «Lagre som PDF» i utskriftsvinduet hvis du heller vil ha en fil. Kortene er like
+            høye som et bankkort. Klipp langs merkene i hjørnene.
+          </Text>
+        </div>
+      )
+    }
+  </Stack>
+</div>
+
+{
+  sheets.length > 0 && (
+    <div class="sheets">
+      {sheets.map((sheet) => (
+        <section class="sheet">
+          {sheet.map((card) => (
+            <div class="slot">
+              <Fragment set:html={card.svg} />
+              <svg class="marks" viewBox={`0 0 ${W} ${H}`} aria-hidden="true">
+                {marks.map((mark) => (
+                  <line x1={mark.x1} y1={mark.y1} x2={mark.x2} y2={mark.y2} />
+                ))}
+              </svg>
+            </div>
+          ))}
+        </section>
+      ))}
+    </div>
+  )
+}
+
+<div class="screen-only foot">
+  <BackLink href={backHref}>Tilbake til medlemslisten</BackLink>
+</div>
+
+<script>
+  // Plain JS on purpose: Storybook serves this script untranspiled.
+  document.addEventListener("click", (event) => {
+    const target = event.target;
+    if (!(target instanceof Element) || !target.closest("[data-print]")) return;
+    window.print();
+  });
+</script>
+
+<style is:global>
+  @page {
+    size: A4;
+    margin: 0;
+  }
+  @media print {
+    /* The layout's air around a screen is not wanted around a sheet. */
+    body {
+      display: block !important;
+      padding: 0 !important;
+      background: #fff !important;
+    }
+  }
+</style>
+
+<style>
+  .screen-only {
+    width: 100%;
+    max-width: 64rem;
+    margin: 0 auto;
+  }
+  .foot {
+    margin-top: var(--sm-space-lg);
+  }
+  /* Choosing a period is a row of links, each an address to reload and share. */
+  .periods {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--sm-space-sm);
+  }
+  .period {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.3rem 0.75rem;
+    font-size: 0.85rem;
+    font-weight: 600;
+    border-radius: 999px;
+    border: 1px solid var(--sm-border-strong);
+    background: var(--sm-surface);
+    color: var(--sm-ink);
+    text-decoration: none;
+  }
+  .period:hover {
+    border-color: var(--sm-accent);
+  }
+  .period:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px var(--sm-focus-ring);
+  }
+  .period.current {
+    background: var(--sm-accent-soft);
+    border-color: var(--sm-accent);
+    color: var(--sm-accent-deep);
+  }
+  .actions {
+    display: grid;
+    gap: var(--sm-space-sm);
+    justify-items: start;
+  }
+
+  /* The sheets, shown at their printed size, lying on the page. */
+  .sheets {
+    display: grid;
+    gap: 1.5rem;
+    justify-items: center;
+    max-width: 100%;
+    margin-top: var(--sm-space-lg);
+    overflow-x: auto;
+  }
+  .sheet {
+    /* The card's edge is 820 of its 860 units tall, and it prints at a bank
+       card's height (85.6 mm): everything else follows from that. */
+    --slot-w: calc(85.6mm * 760 / 820);
+    --slot-h: calc(85.6mm * 860 / 820);
+    box-sizing: border-box;
+    width: 210mm;
+    height: 297mm;
+    padding: 8mm;
+    flex-shrink: 0;
+    display: grid;
+    grid-template-columns: repeat(2, var(--slot-w));
+    grid-auto-rows: var(--slot-h);
+    gap: 4.5mm 8mm;
+    justify-content: center;
+    /* Rows fill from the top, so a last sheet with two cards on it is not two
+       cards floating in the middle of the paper. */
+    align-content: start;
+    background: #fff;
+    box-shadow: 0 2px 14px rgba(60, 45, 20, 0.14);
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+  .slot {
+    position: relative;
+    width: var(--slot-w);
+    height: var(--slot-h);
+  }
+  .slot :global(svg) {
+    position: absolute;
+    inset: 0;
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+  /* Paper casts its own shadow: the drawn one would print as a grey smear
+     around every card. */
+  .slot :global([filter]) {
+    filter: none;
+  }
+  .marks {
+    overflow: visible;
+    pointer-events: none;
+  }
+  .marks line {
+    stroke: #9a9186;
+    stroke-width: 1.5;
+  }
+
+  @media print {
+    .screen-only {
+      display: none;
+    }
+    .sheets {
+      display: block;
+      margin: 0;
+      overflow: visible;
+    }
+    .sheet {
+      box-shadow: none;
+      break-after: page;
+    }
+    .sheet:last-child {
+      break-after: auto;
+    }
+  }
+</style>

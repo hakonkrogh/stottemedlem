@@ -231,6 +231,7 @@ const STORY_ROUTES: Record<string, string> = {
   [`${ORG_PATH}/vipps`]: "backoffice-vipps--stored-keys",
   [`${ORG_PATH}/vipps?rediger=1`]: "backoffice-vipps--replacing-keys",
   [`${ORG_PATH}/medlemmer`]: "backoffice-medlemsliste--default",
+  [`${ORG_PATH}/medlemmer/medlemsbevis`]: "backoffice-medlemsbevis-til-utskrift--this-year",
   [`${ORG_PATH}/medlemmer/m-1`]: "backoffice-medlem--continuing",
   [`${ORG_PATH}/medlemmer/m-1?rediger=1`]: "backoffice-medlem--editing",
   [`${ORG_PATH}/medlemmer/m-1?refunder=chr-2026`]: "backoffice-medlem--confirming-refund",

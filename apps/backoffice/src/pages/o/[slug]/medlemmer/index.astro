@@ -26,6 +26,7 @@ const members = await listOrganizationMembers(getDb(), org.id, currentPeriod);
       filter={Astro.url.searchParams.get("status")}
       membersPath={`${orgPath(org.slug)}/medlemmer`}
       exportHref={`${orgPath(org.slug)}/medlemmer/eksport.csv`}
+      printHref={`${orgPath(org.slug)}/medlemmer/medlemsbevis`}
       currentYear={currentPeriod}
     />
   </OrgScreen>

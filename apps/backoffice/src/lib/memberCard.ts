@@ -10,6 +10,8 @@ import {
   ensureMemberCardToken,
   findMemberCardByToken,
   type MemberCard,
+  type MemberCardForPeriod,
+  type Organization,
 } from "@stottemedlem/db";
 import { type MemberCardOptions, memberCardSvg } from "@stottemedlem/qr";
 import { orgLogoDataUri } from "./cardImage";
@@ -193,4 +195,34 @@ export async function loadMemberCardForMemberId(
 ): Promise<MemberCard | null> {
   const token = await ensureMemberCardToken(db, memberId);
   return token ? loadMemberCard(db, token) : null;
+}
+
+/**
+ * The card as the organization prints it for one period
+ * (specs/use-cases/print-member-cards.md): the same drawing, saying what it
+ * said at the end of that period, so a stack printed in January for last year
+ * is last year's cards. The logo goes in as its public address rather than as
+ * bytes: a page holding a hundred cards must not carry the logo a hundred
+ * times over, and the browser doing the printing can fetch it.
+ */
+export function printedMemberCardOptions(
+  entry: MemberCardForPeriod,
+  organization: Pick<Organization, "name" | "slug">,
+  periodYear: number,
+  logoUrl: string | null,
+): MemberCardOptions {
+  const cardToken = entry.member.cardToken;
+  return {
+    memberName: entry.member.name,
+    memberNumber: entry.member.memberNumber,
+    organizationName: organization.name,
+    hearts: entry.hearts,
+    recruits: entry.recruits,
+    lapsed: false,
+    periodText: periodLabel(periodYear),
+    joinUrl: cardToken
+      ? cardScanUrl(organization.slug, cardToken)
+      : `${shareableOrigin()}/bli-medlem/${organization.slug}`,
+    logoDataUri: logoUrl,
+  };
 }

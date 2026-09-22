@@ -39,9 +39,23 @@ interface Props {
    * them into whatever tool they manage members in.
    */
   exportHref?: string;
+  /**
+   * The printable member cards (specs/use-cases/print-member-cards.md): the
+   * whole register as cards on A4 sheets, for the organization to cut out and
+   * hand to its members.
+   */
+  printHref?: string;
   currentYear: number;
 }
-const { members, search = "", filter = null, membersPath, exportHref, currentYear } = Astro.props;
+const {
+  members,
+  search = "",
+  filter = null,
+  membersPath,
+  exportHref,
+  printHref,
+  currentYear,
+} = Astro.props;
 
 const counts = countMemberStandings(members);
 const selected = memberFilterFor(filter);
@@ -100,10 +114,19 @@ const memberHref = (entry: MemberOverview) => {
       <Text variant="lead">{summary}</Text>
     </Stack>
     {
-      exportHref && members.length > 0 && (
-        <Button variant="secondary" href={exportHref}>
-          Last ned som regneark (CSV)
-        </Button>
+      members.length > 0 && (exportHref || printHref) && (
+        <div class="actions">
+          {printHref && (
+            <Button variant="secondary" href={printHref}>
+              Skriv ut medlemsbevis
+            </Button>
+          )}
+          {exportHref && (
+            <Button variant="secondary" href={exportHref}>
+              Last ned som regneark (CSV)
+            </Button>
+          )}
+        </div>
       )
     }
   </div>
@@ -182,6 +205,11 @@ const memberHref = (entry: MemberOverview) => {
     align-items: end;
     justify-content: space-between;
     gap: var(--sm-space-sm) var(--sm-space-md);
+  }
+  .actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--sm-space-sm);
   }
   /* The search field carries its own button (TextField's action slot). */
   .search {
