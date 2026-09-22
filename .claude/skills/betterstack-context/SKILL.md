@@ -16,8 +16,15 @@ export BETTERSTACK_API_TOKEN=...   # Better Stack, API tokens, team-scoped Uptim
 node .claude/skills/betterstack-context/bs.mjs heartbeats
 node .claude/skills/betterstack-context/bs.mjs heartbeat <id>
 node .claude/skills/betterstack-context/bs.mjs create "reconcile production" 86400 3600
+node .claude/skills/betterstack-context/bs.mjs check
+node .claude/skills/betterstack-context/bs.mjs check --dry   # no account needed
 node .claude/skills/betterstack-context/bs.mjs raw /api/v2/monitors
 ```
+
+`check` is the one worth running after ANY change to `triggers.crons` or to a
+heartbeat. It reads the crons out of `wrangler.jsonc`, works out how often each
+job therefore beats, and compares that against what each heartbeat actually
+expects. `--dry` does the repo half alone, so it runs with no token at all.
 
 `heartbeats` is the one to reach for: it prints each heartbeat's status, how
 often a beat is expected, its grace, and its name, which is the whole picture of
@@ -41,8 +48,14 @@ what is being watched.
 
 ## What the numbers should be
 
-Periods have to match `apps/backoffice/wrangler.jsonc` `triggers.crons` by
-hand, because nothing derives one from the other:
+Nothing derives one from the other, so `check` is what keeps them honest.
+**This went wrong on the very first setup (found 2026-09-22):** all four
+heartbeats were created expecting a beat every 1 day, staging included, while
+staging beats hourly. Staging was being read against production's clock, which
+`specs/concepts/operational-alerting.md` forbids in as many words, and nothing
+looked broken: all four sat green, because beating more often than expected is
+never an error. What it cost was the alarm, not the beat. A day of staging
+silence is roughly a year of membership time on its accelerated calendar.
 
 | heartbeat | cron | period | grace |
 |-----------|------|--------|-------|
