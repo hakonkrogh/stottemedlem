@@ -517,8 +517,14 @@ also documents the variants and why the rule exists.
   but it is the odd one out now). `ShareMemberCard`'s `voice` prop picks whose
   words the shared message uses: the default `member` speaks as them
   ("medlemsbeviset mitt", the kvittering page), `anyone` claims nothing about
-  the sender, which `/medlemsbevis` passes because whoever was handed the card
-  can share on from there.
+  who is sending it, which `/medlemsbevis` passes because whoever was handed
+  the card can share on from there. **`anyone` still names a person since
+  2026-09-22**: the page passes `memberName` and the invitation reads
+  "<name> er støttemedlem i <org> ❤️ Vil du også bli med? ..." instead of the
+  old impersonal "til en som støtter". The page keeps the name it SENDS
+  (`namedMember`, undefined when the card carries none) apart from the
+  `memberName` stand-in ("Et støttemedlem") its own prose falls back to, so a
+  nameless card sends an unnamed invitation rather than the stand-in.
   **The one button opens the DEVICE's share sheet since 2026-09-22** (branch
   `web-share-member-card`, rules in `concepts/member-card.md`). Where
   `navigator.share` exists the script marks the `<details>` `data-share-direct`,
@@ -533,10 +539,16 @@ also documents the variants and why the rule exists.
   keeps it in a WeakMap, so the press has it in hand (an `await` inside the
   handler would spend the user activation and iOS would refuse). A press before
   the fetch lands correctly shares the link alone.
-  **The address appears exactly once**: with the picture the payload is
-  `{title, text: <invitation + address>, files}` and NO `url` (targets that take
-  a file commonly drop the url field); without it, `{title, text: <invitation>,
-  url}`. The sms/mailto bodies keep the address inline as before.
+  **The address appears exactly once, and NEVER as a `url` field** (rewritten
+  2026-09-22 after a device report). Both payloads are now the same shape:
+  `{title, text: <invitation + address>}`, plus `files` where the picture is in
+  hand. The earlier link-only payload set `url`, and an iPhone sharing to
+  Messages swallowed it into a link preview and sent a body with no address in
+  it, so the member's own message read as though the link fell off. Writing it
+  into `text` also keeps the ø spelling a browser would punycode.
+  `data-share-text` and `data-share-url` are gone from the markup;
+  `data-share-message` is the one string the sheet sends, and the sms/mailto
+  bodies use it too.
   **Facebook's `u=` parameter now gets the punycode origin.** Verified
   2026-09-22 that `sharer.php` shows "Not Logged In" to anyone without a
   facebook.com WEB session (both spellings behave identically), which is what
@@ -1571,9 +1583,11 @@ also documents the variants and why the rule exists.
   you just introduced, isn't. Restart via `devlog.sh start` and re-verify.
   **`pnpm lint` (Biome) is GREEN as of 2026-08-27 and is enforced in CI** — this
   REPLACES the long-standing "lint is red even on a clean tree" (true
-  2026-08-12 → 2026-08-27). It exits 0 with **0 errors and ~380 warnings**
-  (~296 on 2026-08-27, ~383 on 2026-08-31 — the count grows with every new
-  `.astro` file, so treat it as noise, never as a regression):
+  2026-08-12 → 2026-08-27). It exits 0 with **0 errors and several hundred warnings**
+  (~296 on 2026-08-27, ~383 on 2026-08-31, ~550 on 2026-09-22: the count grows
+  with every new `.astro` file and with every prop added to one, so treat it as
+  noise, never as a regression, and never stash your work to compare counts
+  against a clean-tree baseline):
   `biome check` fails on errors only, and the warnings are the known false
   positives — Biome parses only `.astro` frontmatter, so imports/props used
   solely in the template trip noUnusedImports/noUnusedVariables (Shell,

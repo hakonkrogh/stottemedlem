@@ -295,27 +295,37 @@ surface the member happens to be looking at.
   same offer because they render the same one thing, card and offer together,
   rather than each assembling it.
 - **What is sent along is an invitation, in the voice of whoever can be
-  sending it.** It names the organization, asks the reader whether they want
-  to join too, and says the link is where the card and the way in are. It
-  never says anything else about the member. On the member's own pages it
-  speaks as them, because only they can be standing there: *my* card. At the
-  card's public address it claims nothing about the sender, because whoever
+  sending it, and it names a person.** It names the organization, names the
+  member who already supports it, asks the reader whether they want to join
+  too, and says the link is where the card and the way in are. It never says
+  anything else about the member. On the member's own pages it speaks as
+  them, because only they can be standing there: *my* card. At the card's
+  public address it claims nothing about who is sending it, because whoever
   was handed the card can pass it on from there, and a message in the
-  member's voice in a stranger's hands would be a small lie. (A first version
-  only captioned the link, "se medlemsbeviset mitt", and read as odd in a
-  text message: the reader was handed a card with no word about why.)
-- **The address travels exactly once, and the card travels with it where it
-  can.** A message that carries the address and a share that also hands over
-  the address separately arrive as the same link twice, which reads as a
-  mistake in the member's own outgoing message. So the address sits in the
-  written invitation where the place has nowhere else to put it (a text
-  message, an email), and stands on its own where the sheet has a field for
-  it. Where the device can carry a file, the card itself goes along with the
-  invitation and not only a link to it: the reader sees the card in the
-  conversation, and the ones who never open a link still meet a member's
-  card, with its QR code on it. That is also why the address is written into
-  the message in that case: a place that accepts the picture often drops a
-  bare link, and the link is the half of this that recruits.
+  member's voice in a stranger's hands would be a small lie; instead it names
+  the member in the third person, which is true whoever presses the button.
+  A card that carries no name names nobody, and the invitation stands on the
+  organization alone. (Two earlier versions were weaker: one only captioned
+  the link, "se medlemsbeviset mitt", and read as odd in a text message,
+  because the reader was handed a card with no word about why; the next said
+  the card belonged to "en som støtter", which reads as an advertisement.
+  What makes this an invitation is that somebody the reader may know is
+  already a member, so that person is named.)
+- **The address travels exactly once, written into the invitation, and the
+  card travels with it where it can.** The address is part of the sentence
+  the member sends, in every place and on every device. It is never handed to
+  the device's share sheet as an address of its own beside the message: an
+  iPhone sharing to its messages app swallows such an address into a link
+  preview and sends a body with no address in it at all, so the member's own
+  message reads as though the link fell off (seen on a device). Written into
+  the invitation it is visible wherever the message lands, it survives a
+  place that keeps only the text, and it keeps the ø spelling of
+  støttemedlem.no that a browser would otherwise turn into punycode. It also
+  cannot arrive twice, which is what a message carrying the address beside a
+  separate address field would do. Where the device can carry a file, the
+  card itself goes along with the invitation and not only a link to it: the
+  reader sees the card in the conversation, and the ones who never open a
+  link still meet a member's card, with its QR code on it.
 - **Anyone may look; only the member can change it.** The card page offers no
   actions on the membership. A visitor who is not the member sees exactly what
   the member sees.

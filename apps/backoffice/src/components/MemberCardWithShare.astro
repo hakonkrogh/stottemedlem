@@ -38,8 +38,14 @@ interface Props {
    * leave it at the default.
    */
   voice?: "member" | "anyone";
+  /**
+   * The member whose card this is, named in what is sent on from the card's
+   * public address (see ShareMemberCard). Unused in the member's own voice.
+   */
+  memberName?: string;
 }
-const { cardToken, version, alt, words, surface, cardUrl, orgName, voice } = Astro.props;
+const { cardToken, version, alt, words, surface, cardUrl, orgName, voice, memberName } =
+  Astro.props;
 
 // The card as a picture, for a device whose share sheet can carry a file: the
 // same drawing, at the same version, that the page itself is showing
@@ -55,4 +61,10 @@ const cardImageUrl = `${memberCardImagePath(cardToken, "png")}?v=${version}`;
   words={words}
   surface={surface}
 />
-<ShareMemberCard cardUrl={cardUrl} orgName={orgName} voice={voice} cardImageUrl={cardImageUrl} />
+<ShareMemberCard
+  cardUrl={cardUrl}
+  orgName={orgName}
+  voice={voice}
+  memberName={memberName}
+  cardImageUrl={cardImageUrl}
+/>

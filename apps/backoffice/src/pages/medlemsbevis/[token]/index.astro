@@ -30,7 +30,11 @@ const card = await loadMemberCard(getDb(), token);
 if (!card) return new Response("Fant ikke medlemsbeviset", { status: 404 });
 
 const cardToken = card.member.cardToken ?? token;
-const memberName = card.member.name?.trim() || "Et støttemedlem";
+// The name as the card itself carries it, and a stand-in for the page's own
+// prose where there is none. What is SENT on names a person or nobody, never
+// the stand-in, so the two are kept apart.
+const namedMember = card.member.name?.trim();
+const memberName = namedMember || "Et støttemedlem";
 const org = card.organization;
 const period = periodLabel(card.latest?.periodYear ?? 0);
 // Relative on purpose: a visitor who arrived on one origin stays on it.
@@ -61,7 +65,8 @@ const alt = `Medlemsbevis for ${memberName} i ${org.name}, med ${card.hearts} hj
         is the address the receipt email sends the member to when they want to
         show the card, so passing it on belongs here too
         (specs/concepts/member-card.md). Anybody may be looking, so what is
-        sent on from here claims nothing about who sent it. */}
+        sent on from here claims nothing about who is sending it: it names the
+        member whose card this is, in the third person. */}
     <MemberCardWithShare
       cardToken={cardToken}
       version={memberCardVersion(card)}
@@ -71,6 +76,7 @@ const alt = `Medlemsbevis for ${memberName} i ${org.name}, med ${card.hearts} hj
       cardUrl={memberCardShareUrl(cardToken)}
       orgName={org.name}
       voice="anyone"
+      memberName={namedMember}
     />
 
     <Stack gap="sm">
