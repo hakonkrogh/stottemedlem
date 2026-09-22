@@ -738,9 +738,13 @@ excludes local/staging by construction since secrets never reach a local
 machine. Being a secret it is also absent from the generated `Env` — both
 readers, `lib/log.ts` and `worker.ts`, use the widening pattern above. Local
 opt-in: paste a personal test project's DSN in `.dev.vars`). Prod DSN set
-2026-08-26, EU-region project, ingest.de.sentry.io; staging deliberately has
-none — a later staging project should be its OWN Sentry project so prod keeps
-the free 5k errors/mo. Sentry project layout (settled
+2026-08-26, EU-region project, ingest.de.sentry.io. **CORRECTED 2026-09-22:
+this said "staging deliberately has none", and that was true for exactly one
+day.** Staging got its own DSN secret on 2026-08-27, pointing at the SAME
+project, and the spec was changed the same day to say both deployed
+environments report. `SENTRY_ENVIRONMENT` is what tells them apart, and is the
+reason one project is enough. Read wrangler.jsonc, not this line, if they ever
+disagree again. Sentry project layout (settled
 2026-08-26): ONE project, slug `backoffice-server` (renamed from
 `javascript-astro`; rename is DSN-safe — DSNs key on project id, not slug —
 id 4511977082519632); add staging/browser
@@ -748,12 +752,20 @@ projects only when those surfaces get wired; no project for marketing
 (assets-only, no code). Still pending: the
 Healthchecks.io pings. Verified in workerd via
 `wrangler dev --test-scheduled` → `/cdn-cgi/handler/scheduled`.
-A DSN can be verified headlessly, no SDK involved — POST one envelope
+A DSN can be verified headlessly, no SDK involved: POST one envelope
 (three newline-separated JSON lines: `{event_id,sent_at,dsn}`,
 `{"type":"event"}`, `{event_id,timestamp,platform,level,message}`; event_id =
 32 lowercase hex) to `https://<host>/api/<projectId>/envelope/` with
-content-type `application/x-sentry-envelope`; HTTP 200 + `{"id":…}` = the
-project accepted it and an issue appears.
+content-type `application/x-sentry-envelope`. Sentry answers HTTP 200 +
+`{"id":…}`.
+**CORRECTED 2026-09-22 against a real Better Stack DSN:** the envelope's own
+`dsn` header field is NOT accepted as authentication there. Without an
+`X-Sentry-Auth` header the ingest host answers `401 {"detail":"Unauthorized"}`,
+which reads exactly like a bad DSN and is not. Send
+`X-Sentry-Auth: Sentry sentry_version=7, sentry_key=<KEY>, sentry_client=<any>`
+and it answers `200 {}`, an empty object rather than Sentry's `{"id":…}`. So
+judge the check by the STATUS, not the body.
+`.claude/skills/betterstack-context/dsn-check.mjs <dsn>` does all of this.
 ### The nightly runs' watchdog (Better Stack heartbeats)
 
 **SWITCHED 2026-09-16, from Sentry Crons to Better Stack heartbeats.** PR #110
@@ -831,6 +843,32 @@ abandoned heartbeat implementation. Always
 `pnpm turbo run build --filter=@stottemedlem/backoffice` FIRST, the way
 `.claude/skills/vipps-test-rig/cron.sh` does. A stale `dist` does not fail: it
 lies, in the shape of a passing test.
+
+### Creating the Better Stack Errors application (the form, 2026-09-22)
+
+"Connect application" asks four things and gets two of them wrong by default:
+
+| field | what this repo wants | why |
+|-------|----------------------|-----|
+| Data region | **Europe**, NOT the defaulted United States | matches the deliberate EU choice already made for Sentry, and costs $0.000050 per exception against the US $0.000075. Almost certainly not changeable after creation |
+| Application name | ONE application for both environments, e.g. `backoffice-server` | production and staging both report and are told apart by `SENTRY_ENVIRONMENT`, exactly as they are in Sentry today. Two applications would mean two DSNs and two secrets for nothing |
+| Connect to a source | leave empty | it links exceptions to a logs/traces source, and there is no logs source in this account. Linkable later |
+| Platform | **Serverless**, Cloudflare Workers (else Server, Node.js). NOT the preselected React | React is for a browser frontend; this is server-side Worker code. The choice only picks which setup snippet is shown, and that snippet is not needed: the wiring already exists |
+
+**The free tier is US-only** (reported by the account owner 2026-09-22 from
+the real signup, correcting an earlier reading of the pricing page that said
+100,000 exceptions a month in either region). Europe is a PAID region. So the
+EU choice made for Sentry cannot simply be repeated here for nothing, and the
+production application was created in `us-west-2a` for that reason. What
+follows from that is a data question, not a billing one: see the personal-data
+rules in specs/concepts/operational-alerting.md, and note that "identifiers and
+counts" is pseudonymous, not anonymous.
+
+Afterwards the DSN is on the application's Ingest tab, and adopting it is two
+`wrangler secret put SENTRY_DSN` calls (one per environment) with NO code
+change. Verify it BEFORE trusting it, with the headless envelope POST described
+above, and check the application's notifications are e-mail only. Better
+Stack's defaults are not, which is the same trap the heartbeats set.
 
 ### Could Better Stack take the ERROR channel too? (researched 2026-09-18)
 

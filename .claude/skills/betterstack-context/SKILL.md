@@ -23,6 +23,22 @@ node .claude/skills/betterstack-context/bs.mjs raw /api/v2/monitors
 often a beat is expected, its grace, and its name, which is the whole picture of
 what is being watched.
 
+## Prove a new DSN before trusting it
+
+```sh
+node .claude/skills/betterstack-context/dsn-check.mjs "https://KEY@HOST/APP_ID"
+```
+
+Sends one Sentry envelope by hand, no SDK, so a DSN is known good BEFORE it
+becomes a Worker secret. Judge it by the STATUS. `200` means the host accepted
+the event, and the body is an empty object rather than Sentry's `{"id":…}`. A
+`401 {"detail":"Unauthorized"}` means the `X-Sentry-Auth` header was missing,
+NOT that the DSN is bad: the envelope's own `dsn` field is not accepted as
+authentication here. The script sends the header.
+
+It files one real event into the application, labelled as a check and safe to
+resolve.
+
 ## Rules
 
 - **Read-only by default.** `create` is the only write and it is explicit.
