@@ -135,8 +135,12 @@ surface the member happens to be looking at.
   half and its lines are read across a room beside a heart that fills it. The
   recruit line and the valid year share a middle size; every caption in the
   band and the footer shares a small one. Text that does not fit steps down to
-  the next size rather than shrinking a little at a time, so a long name lands
-  on a size the card already uses. The card does not label itself
+  the next size rather than shrinking a little at a time, so it lands on a
+  size the card already uses. The member's name is the exception: it is the
+  same size on every card, and a name too wide for one line wraps onto two
+  lines at that size instead of shrinking. Names used to step down to fit, so
+  a sheet of printed cards showed short names large and long names small, as
+  if the members were of different rank (changed 2026-09-22). The card does not label itself
   "støttemedlem" above the name: the QR caption says it, and the card is one.
 - **The card as a picture is drawn once per version of itself.** A card is
   looked at, previewed by every feed it is pasted into, and attached to

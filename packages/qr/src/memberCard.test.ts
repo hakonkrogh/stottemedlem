@@ -82,10 +82,20 @@ describe("memberCardSvg", () => {
     expect(memberCardSvg({ ...base, memberName: null })).toContain("Støttemedlem");
   });
 
-  it("steps a long name down the scale rather than cutting it straight away", () => {
+  it("sets every member's name at the same size, whatever its length", () => {
+    const nameSizes = (memberName: string) =>
+      [...memberCardSvg({ ...base, memberName }).matchAll(/font-size="([\d.]+)"[^>]*>([^<]*)</g)]
+        .filter((m) => memberName.includes(m[2] ?? "\u0000"))
+        .map((m) => m[1]);
+    for (const name of ["Ola Li", "Kari Nordmann", "Håkon Martin Gullord Krogh"]) {
+      expect(nameSizes(name)).toEqual(["40"]);
+    }
+  });
+
+  it("wraps a long name onto two lines at that size rather than shrinking it", () => {
     const long = memberCardSvg({ ...base, memberName: "Anne-Margrethe Wollertsen Bjørnstad" });
-    expect(long).toContain(">Anne-Margrethe Wollertsen Bjørnstad</text>");
-    expect(long).toMatch(/font-size="32"[^>]*>Anne-Margrethe/);
+    expect(long).toMatch(/font-size="40"[^>]*>Anne-Margrethe<\/text>/);
+    expect(long).toMatch(/font-size="40"[^>]*>Wollertsen Bjørnstad<\/text>/);
   });
 
   it("sets its text at four sizes and no others, whatever the names are", () => {
@@ -106,9 +116,9 @@ describe("memberCardSvg", () => {
         .map((m) => m[1])
         .filter((size) => size !== digit);
       expect(new Set(sizes.map(Number))).toEqual(
-        new Set([56, 32, 24, 16].filter((size) => sizes.includes(String(size)))),
+        new Set([40, 32, 24, 16].filter((size) => sizes.includes(String(size)))),
       );
-      expect(sizes.every((size) => ["56", "32", "24", "16"].includes(size))).toBe(true);
+      expect(sizes.every((size) => ["40", "32", "24", "16"].includes(size))).toBe(true);
     }
   });
 
@@ -316,11 +326,13 @@ describe("memberCardNameBand", () => {
       const band = memberCardNameBand(options);
       const top = band.top * MEMBER_CARD_HEIGHT;
       const bottom = band.bottom * MEMBER_CARD_HEIGHT;
-      const inside = baselines(memberCardSvg(options)).filter((y) => y > top && y <= bottom);
-      // Exactly one line of the card lives in the strip: the member's name. If
+      const svg = memberCardSvg(options);
+      const nameLines = [...svg.matchAll(/font-size="40"/g)].length;
+      const inside = baselines(svg).filter((y) => y > top && y <= bottom);
+      // Only the member's name lives in the strip, every line of it. If
       // the layout moves and the band does not, a blank-card check would be
       // measuring the wrong paper (specs/concepts/member-card.md).
-      expect(inside).toHaveLength(1);
+      expect(inside).toHaveLength(nameLines);
     }
   });
 
