@@ -126,7 +126,8 @@ locally (see `project-overview`, receipts).
       --stub 'window.__shared=null;Object.defineProperty(navigator,"share",{value:(d)=>{window.__shared={text:d.text,url:d.url||null,files:(d.files||[]).map(f=>[f.name,f.type,f.size])};return Promise.resolve()},configurable:true});Object.defineProperty(navigator,"canShare",{value:()=>true,configurable:true})' \
       sleep=2500 click=summary sleep=300 eval='window.__shared' \
       eval='document.querySelector("[data-share-card]").open'
-    # a sheet that will not take files: url field set, message without the link
+    # a sheet that will not take files: the SAME message, link and all, with
+    # no url field (the address is never a field of its own, see member-card)
     #   ... same, with canShare stubbed to (d)=>!(d&&d.files)
     # cancelled (AbortError) must leave the details CLOSED; a refusal
     # (NotAllowedError) must open it and put the role back

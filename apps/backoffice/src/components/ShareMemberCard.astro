@@ -29,10 +29,16 @@ interface Props {
    * Who is doing the sharing, which decides whose voice the message speaks
    * in. The member's own surfaces (the thank-you page) know it is them, so
    * the card is "mitt". The card's public address can be opened by whoever
-   * was handed it, so from there the message claims nothing about the sender
-   * and is the invitation alone.
+   * was handed it, so from there the message names the member in the third
+   * person instead of claiming to be them.
    */
   voice?: "member" | "anyone";
+  /**
+   * The member whose card this is, named in what is sent from the card's
+   * public address. Left out where the card carries no name, and ignored in
+   * the member's own voice, which already says "jeg".
+   */
+  memberName?: string;
   /**
    * The card as a picture, so a device that can carry a file sends the card
    * itself along with the invitation and not only a link to it. Same origin,
@@ -40,23 +46,33 @@ interface Props {
    */
   cardImageUrl?: string;
 }
-const { cardUrl, orgName, voice = "member", cardImageUrl } = Astro.props;
+const { cardUrl, orgName, voice = "member", memberName, cardImageUrl } = Astro.props;
 
 // What goes with the link is an invitation, not a caption: the reader is
 // asked to join, and told the link is how. "Se medlemsbeviset mitt" alone
 // read as odd in a text message, since it said nothing about why the reader
 // was being sent it (2026-09-21).
+//
+// A person, not "en som støtter". The invitation says who already supports
+// the organization, because that is what makes it an invitation from somebody
+// rather than an advertisement: the member's own pages say "jeg", and the
+// card's public address names the member whose card is being passed on
+// (2026-09-22).
 const subject = `Vil du også bli støttemedlem i ${orgName}?`;
+const sharer = memberName?.trim();
 const invitation =
   voice === "member"
     ? `Jeg er støttemedlem i ${orgName} ❤️ Vil du også bli med? Her er medlemsbeviset mitt, og hvordan du blir støttemedlem:`
-    : `Vil du bli støttemedlem i ${orgName}? ❤️ Her er medlemsbeviset til en som støtter, og veien inn:`;
-// The address belongs in exactly ONE place in anything sent. A message that
-// carries it and a share payload that also sets `url` arrive as the same link
-// twice in every app that appends the one to the other, so the body with the
-// address in it is for the places that have nowhere else to put it (a text
-// message, an email), and the share sheet gets the invitation bare beside its
-// own url field.
+    : sharer
+      ? `${sharer} er støttemedlem i ${orgName} ❤️ Vil du også bli med? Her er medlemsbeviset, og hvordan du blir støttemedlem:`
+      : `Vil du også bli støttemedlem i ${orgName}? ❤️ Her er medlemsbeviset, og hvordan du blir støttemedlem:`;
+// The address is written INTO the invitation everywhere, and is never handed
+// over as a payload field of its own. An iPhone sharing to Messages swallows
+// a `url` field into a link preview and sends a body with no address in it at
+// all, so the member's own message reads as though the link fell off
+// (observed on a device, 2026-09-22). Written into the text it is visible in
+// every place, it survives an app that drops the field, and it keeps the ø
+// spelling a browser would punycode away.
 const message = `${invitation} ${cardUrl}`;
 
 // Facebook reads the address out of a query parameter: a machine, so it gets
@@ -76,9 +92,7 @@ const email = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURICo
 <details
   class="share"
   data-share-card
-  data-share-url={cardUrl}
   data-share-title={subject}
-  data-share-text={invitation}
   data-share-message={message}
   data-share-image={cardImageUrl}
 >
@@ -194,20 +208,15 @@ const email = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURICo
       };
 
       const picture = pictures.get(offer);
-      // With the card itself along, the address goes INSIDE the message: a
-      // target that takes a file commonly drops the url field, and the link is
-      // the half of this that recruits. Without the card, the address is the
-      // url field alone and the message does not repeat it.
-      const withCard = picture
-        ? { title: offer.dataset.shareTitle, text: offer.dataset.shareMessage, files: [picture] }
-        : null;
-      const linkOnly = {
-        title: offer.dataset.shareTitle,
-        text: offer.dataset.shareText,
-        url: offer.dataset.shareUrl,
-      };
+      // The address rides in the message, never in a `url` field: a target
+      // that takes a file commonly drops that field, and an iPhone sharing to
+      // Messages hides it in a link preview and sends a body with no address
+      // in it. The link is the half of this that recruits, so it goes where
+      // every target shows it.
+      const message = { title: offer.dataset.shareTitle, text: offer.dataset.shareMessage };
+      const withCard = picture ? { ...message, files: [picture] } : null;
       const payload =
-        withCard && (!navigator.canShare || navigator.canShare(withCard)) ? withCard : linkOnly;
+        withCard && (!navigator.canShare || navigator.canShare(withCard)) ? withCard : message;
       try {
         navigator.share(payload).catch((error) => {
           // Changing your mind is not a failure, and must not throw the member

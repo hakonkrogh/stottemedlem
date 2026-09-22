@@ -23,8 +23,16 @@ export default {
 /** As the member's own pages show it: closed, one clear action. */
 export const Closed = { args: base };
 
-/** At the card's public address, where anybody may be the one sharing. */
-export const SharedByAnyone = { args: { ...base, voice: "anyone" } };
+/**
+ * At the card's public address, where anybody may be the one sharing: the
+ * invitation names the member whose card it is rather than "en som støtter".
+ */
+export const SharedByAnyone = {
+  args: { ...base, voice: "anyone", memberName: "Kari Bakvendt" },
+};
+
+/** The same address for a card that carries no name: nobody is named. */
+export const SharedByAnyoneUnnamed = { args: { ...base, voice: "anyone" } };
 
 /** A long organization name in what the member sends along. */
 export const LongOrgName = {

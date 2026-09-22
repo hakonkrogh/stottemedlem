@@ -950,8 +950,9 @@ via `npx wrangler` above.
 ## Web Share API (`navigator.share`): NOT verified in-repo, model knowledge 2026-09-22
 
 Written while designing the member card's sharing (branch `web-share-member-card`).
-Nothing here was measured on a device or against a live browser: treat every line as
-a claim to check before it decides anything. Canonical sources to re-fetch:
+Treat every line as a claim to check before it decides anything, EXCEPT the ones
+marked "seen on a device": those were reported from a real iPhone and are now what
+the code does. Canonical sources to re-fetch:
 https://developer.mozilla.org/en-US/docs/Web/API/Navigator/share ·
 https://caniuse.com/web-share · https://w3c.github.io/web-share/
 
@@ -969,8 +970,12 @@ https://caniuse.com/web-share · https://w3c.github.io/web-share/
 - **`url` is canonicalized by the browser.** Expect an IDN host to arrive as
   punycode in the receiving app. This repo deliberately hands people the ø spelling
   (`readableShareableOrigin`, rule in `specs/concepts/member-card.md`), so if the
-  readable form must survive, it belongs in `text` with no `url` field. UNTESTED and
-  the first thing to check on a real phone.
+  readable form must survive, it belongs in `text` with no `url` field.
+- **A `url` field can vanish from the message entirely (seen on a device,
+  2026-09-22).** Sharing `{text, url}` from iOS Safari into Messages puts the
+  address in a link preview bubble and leaves the typed body with no address in
+  it, so the sender's own message looks as though the link fell off. The card's
+  share therefore writes the address into `text` and never sets `url` at all.
 - **Sharing the card picture** is `files: [File]`, gated on
   `navigator.canShare({files})` (feature-detect: `canShare` without `files` support
   still returns true for other payloads). It is the only route into Instagram or
