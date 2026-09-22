@@ -1032,6 +1032,33 @@ also documents the variants and why the rule exists.
   `cardUrlFor`. It is an ABSOLUTE href, which `StoryScreen`'s route rewriting
   leaves alone, so `drive-page` can assert it verbatim on the story
   (`assert=a[href="https://xn--stttemedlem-hgb.no/medlemsbevis/kort-m-1"]`).
+  **The member cards print as A4 sheets since 2026-09-22** (branch
+  `hk/member-cards-pdf`, spec `specs/use-cases/print-member-cards.md` NEW):
+  `/o/[slug]/medlemmer/medlemsbevis?periode=<key>` renders every member of a
+  period as their card, six per sheet (2x3, the card's edge at a bank card's
+  85.6 mm height), cut marks outside each corner, no shadow. **It is the
+  browser's print dialog, not a server-made PDF**, decided with the user: one
+  rasterization costs ~1 s of Worker CPU, so a real .pdf for a big org would
+  hit the CPU limit; the print page is vector, free, and any size. Past
+  periods are derivable with NO schema change: `listMemberCardsForPeriod` +
+  the pure, tested `memberCardsForPeriod` in `@stottemedlem/db` count hearts
+  and recruits as they stood at the end of that period (a recruit counts once
+  their first paid period is <= the chosen one); erased and never-paid
+  members get no card. `printedMemberCardOptions` in `lib/memberCard.ts`
+  passes the logo as its public URL, not base64, so 100 cards do not carry
+  the logo 100 times. Things that bit: (1) the page deliberately renders
+  OUTSIDE `OrgScreen` (a sheet is a document; the chrome would only be
+  something to hide in print), with `is:global` print rules resetting the
+  Shell's body padding; (2) inline SVG via `set:html` gets NO Astro scope
+  class, so its selectors need `:global(svg)`, and the card's drawn shadow
+  is dropped with CSS `filter: none` on `[filter]`, which overrides the SVG
+  presentation attribute; (3) `Button.astro` spreads no extra attributes, so
+  `data-print` sits on a wrapping `<span>` and the click is delegated on
+  `document`; (4) the page's `<title>` uses a colon, not the spaced dash the
+  other pages use, because the writing-rules check reads template strings too.
+  Review loop: stories `backoffice-medlemsbevis-til-utskrift--*` + the new
+  `preview-screenshot/print.mjs` (page count is the assertion), and the print
+  button is proved with `drive-page --stub 'window.print = ...'`.
   **The MEMBER NUMBER is the one member fact that is STORED, not derived**
   (added 2026-09-11, branch add-member-number, spec
   `specs/concepts/member-number.md` NEW, migration `0015_member_number.sql`):
