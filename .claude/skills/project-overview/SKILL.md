@@ -502,9 +502,11 @@ also documents the variants and why the rule exists.
   `components/ShareMemberCard.astro` is one full-width "Dette vil jeg dele"
   `<details>` button under the card, opening Facebook / Meldinger (sms:) /
   E-post (mailto:) / Kopier lenken as plain links with the card's address in
-  them, plus "Andre apper" (navigator.share) un-hidden by script only where a
-  sheet exists. Its script is plain JS because it has a story
-  (`backoffice-del-medlemsbeviset`).
+  them. Its script is plain JS because it has a story
+  (`backoffice-del-medlemsbeviset`), but `astro check` still reads the block as
+  TypeScript, so nothing in it may take an unannotated parameter: narrow every
+  element where you find it instead of passing it to a helper (JSDoc `@param`
+  does NOT help, it is ignored outside a real .js file).
   **Card + chooser is ONE component, `components/MemberCardWithShare.astro`**
   (same day, second branch share-on-card-page): the kvittering page AND
   `/medlemsbevis/[token]` both render it, so the offer cannot drift between
@@ -517,17 +519,37 @@ also documents the variants and why the rule exists.
   ("medlemsbeviset mitt", the kvittering page), `anyone` claims nothing about
   the sender, which `/medlemsbevis` passes because whoever was handed the card
   can share on from there.
-  **What the two share paths actually put in the `navigator.share` payload**
-  (read 2026-09-22 on branch `web-share-member-card`, no code changed yet):
-  the chooser's "Andre apper" button sends `{title, text, url}` where `text`
-  ALREADY ends with the card address, so the address travels twice in any
-  target that appends `url` after `text`; that address is the readable ø form
-  (`memberCardShareUrl`). The min-side pill sends `{title, url}` with no text
-  at all, and its url is `memberCardUrl` (punycode origin) read back off the
-  anchor's `.href` PROPERTY, which is exactly the normalization
-  `ShareMemberCard`'s copy path avoids by reading `getAttribute("href")`. So
-  the one surface that hands a member a bare address hands them the garbled
-  spelling, against the readable-address rule in `concepts/member-card.md`.
+  **The one button opens the DEVICE's share sheet since 2026-09-22** (branch
+  `web-share-member-card`, rules in `concepts/member-card.md`). Where
+  `navigator.share` exists the script marks the `<details>` `data-share-direct`,
+  gives the summary `role="button"`, and the press calls `navigator.share`
+  instead of opening anything; the named places stay in the markup for every
+  browser without a sheet (Firefox desktop, Chrome on macOS/Linux, script off)
+  and are opened as the way out only when a share REFUSES. A cancelled share
+  (`AbortError`) is not a refusal and must leave the chooser shut.
+  **The card picture travels with it.** `MemberCardWithShare` passes
+  `cardImageUrl` (`kort.png?v=<version>`, same origin); where
+  `navigator.canShare({files})` is true the script fetches that PNG on idle and
+  keeps it in a WeakMap, so the press has it in hand (an `await` inside the
+  handler would spend the user activation and iOS would refuse). A press before
+  the fetch lands correctly shares the link alone.
+  **The address appears exactly once**: with the picture the payload is
+  `{title, text: <invitation + address>, files}` and NO `url` (targets that take
+  a file commonly drop the url field); without it, `{title, text: <invitation>,
+  url}`. The sms/mailto bodies keep the address inline as before.
+  **Facebook's `u=` parameter now gets the punycode origin.** Verified
+  2026-09-22 that `sharer.php` shows "Not Logged In" to anyone without a
+  facebook.com WEB session (both spellings behave identically), which is what
+  "the Facebook button does nothing" was: the app being logged in does not help,
+  since the link opens a browser. Sheet-first is the real fix on phones; the
+  punycode spelling is the rule for any machine reading the address
+  (`concepts/member-card.md`), and the sms / mailto / copy paths still hand a
+  PERSON the ø form.
+  **min-side's pill is now the odd one out twice over**: it sends
+  `{title, url}` with no invitation and no picture, and its url is
+  `memberCardUrl` (punycode) read off the anchor's `.href` property. Left
+  deliberately unchanged on 2026-09-22; fold it into `MemberCardWithShare` if
+  that gap ever matters.
   Browser-side facts about `navigator.share` (where it exists, `files`, what
   targets drop) are in `stack-docs`, flagged there as unverified.
   **The receipt page's "active" state cannot be rendered locally**: it asks

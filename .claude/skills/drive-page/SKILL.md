@@ -101,27 +101,46 @@ drew, which is exactly what no healthy server will hand you (2026-09-10):
 Drop the stub and the whole chain runs for real: `dev-logs` then shows
 `[error] [cards] a member card was drawn without its words`.
 
-## Worked example: the receipt's share chooser (2026-09-21)
+## Worked example: the card's share offer (rewritten 2026-09-22)
 
-`ShareMemberCard.astro` is a `<details>` whose places are links, plus a
-hidden "Andre apper" button the script shows only where `navigator.share`
-exists. The receipt page cannot reach its "active" state locally (see
-`project-overview`, receipts), so drive a scratch route that composes the
-same components with the seeded card token, then delete it:
+`ShareMemberCard.astro` is a `<details>` whose places are plain links, and a
+script that turns the same button into the DEVICE's share sheet wherever
+`navigator.share` exists (the places then only appear if the sheet refuses).
+`/medlemsbevis/<seeded token>` renders it, so no scratch route is needed for
+this one; the receipt page's own copy still cannot reach its "active" state
+locally (see `project-overview`, receipts).
 
-    U="http://localhost:$PORT/bli-medlem/<scratch>?kort=5eed0001-0000-4000-8000-000000000001"
-    # no sheet: "Andre apper" stays hidden, every place has its href
+    U="http://localhost:$PORT/medlemsbevis/5eed0001-0000-4000-8000-000000000001"
+    # no sheet: the button opens the named places, Facebook gets punycode,
+    # the places a PERSON reads keep the ø
     node .claude/skills/drive-page/drive.mjs "$U" --mobile \
       --stub 'Object.defineProperty(navigator,"share",{value:undefined,configurable:true})' \
-      click=summary eval='Array.from(document.querySelectorAll("[data-share-to]")).map(e=>[e.dataset.shareTo,e.hidden,e.getAttribute("href")])'
+      click=summary eval='Array.from(document.querySelectorAll("[data-share-to]")).map(e=>[e.dataset.shareTo,e.getAttribute("href")])'
     # copy lands the card address, and says so
     node .claude/skills/drive-page/drive.mjs "$U" --permissions clipboard-read,clipboard-write \
       click=summary click='[data-share-copy]' sleep=300 \
       eval='navigator.clipboard.readText()' assert='[data-share-copy-label]::Lenke kopiert'
-    # a phone with a sheet: the button appears and the sheet gets title+text+url
+    # a phone whose sheet takes files: sleep PAST the idle prefetch, then the
+    # press must hand over the card picture and NOT open the details
     node .claude/skills/drive-page/drive.mjs "$U" --mobile \
-      --stub 'window.__shared=null; Object.defineProperty(navigator,"share",{value:d=>{window.__shared=d;return Promise.resolve()},configurable:true})' \
-      click=summary click='[data-share-sheet]' sleep=200 eval='window.__shared' url=
+      --stub 'window.__shared=null;Object.defineProperty(navigator,"share",{value:(d)=>{window.__shared={text:d.text,url:d.url||null,files:(d.files||[]).map(f=>[f.name,f.type,f.size])};return Promise.resolve()},configurable:true});Object.defineProperty(navigator,"canShare",{value:()=>true,configurable:true})' \
+      sleep=2500 click=summary sleep=300 eval='window.__shared' \
+      eval='document.querySelector("[data-share-card]").open'
+    # a sheet that will not take files: url field set, message without the link
+    #   ... same, with canShare stubbed to (d)=>!(d&&d.files)
+    # cancelled (AbortError) must leave the details CLOSED; a refusal
+    # (NotAllowedError) must open it and put the role back
+    node .claude/skills/drive-page/drive.mjs "$U" --mobile \
+      --stub 'Object.defineProperty(navigator,"share",{value:()=>Promise.reject(Object.assign(new Error("x"),{name:"NotAllowedError"})),configurable:true});Object.defineProperty(navigator,"canShare",{value:()=>false,configurable:true})' \
+      sleep=800 click=summary sleep=300 \
+      eval='({open:document.querySelector("[data-share-card]").open,direct:document.querySelector("[data-share-card]").dataset.shareDirect||null})'
+
+**The two things this example exists to teach.** A file share needs a `sleep`
+before the click, because the picture is fetched on idle and a press that comes
+first correctly shares the link alone: without the sleep you prove the fallback
+and think you proved the card. And a stubbed `navigator.share` must be paired
+with a stubbed `navigator.canShare`, or the real one vetoes the payload and the
+page silently sends the other one.
 
 ## Worked example: the member card's share action
 

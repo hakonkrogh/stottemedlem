@@ -1,4 +1,5 @@
 ---
+import { memberCardImagePath } from "@stottemedlem/core";
 import type { MemberCardWords } from "../lib/memberCard";
 // The card, and under it the way to share it
 // (specs/concepts/member-card.md).
@@ -39,6 +40,12 @@ interface Props {
   voice?: "member" | "anyone";
 }
 const { cardToken, version, alt, words, surface, cardUrl, orgName, voice } = Astro.props;
+
+// The card as a picture, for a device whose share sheet can carry a file: the
+// same drawing, at the same version, that the page itself is showing
+// (specs/concepts/member-card.md). Relative, so it is the page's own origin in
+// every environment and the fetch needs nobody's permission.
+const cardImageUrl = `${memberCardImagePath(cardToken, "png")}?v=${version}`;
 ---
 
 <MemberCardFigure
@@ -48,4 +55,4 @@ const { cardToken, version, alt, words, surface, cardUrl, orgName, voice } = Ast
   words={words}
   surface={surface}
 />
-<ShareMemberCard cardUrl={cardUrl} orgName={orgName} voice={voice} />
+<ShareMemberCard cardUrl={cardUrl} orgName={orgName} voice={voice} cardImageUrl={cardImageUrl} />

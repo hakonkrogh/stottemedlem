@@ -175,7 +175,8 @@ surface the member happens to be looking at.
   encoded spelling reads as a garbled domain rather than as the product's
   name, which is the opposite of what a shared card is for. Everything a
   machine reads keeps the ASCII form, and that is not in tension with this:
-  a QR payload, an embed snippet and a link written into an email all go to
+  a QR payload, an embed snippet, a link written into an email and the address
+  handed to another site as a parameter of its own share page all go to
   readers that break on the ø ([brand attribution](brand-attribution.md)).
 - **A shared card previews as the card.** When the address is pasted into a
   chat or a social feed, the card itself is what appears — an image of the
@@ -274,13 +275,21 @@ surface the member happens to be looking at.
   receipt email sends a member who wants to look at their card and hand it
   on. Neither leaves the offer to a small pill in the card's corner: under
   the card stands one plain button that says what it is for, in the member's
-  own words ("Dette vil jeg dele"). Pressing it shares nothing yet. It opens
-  the places the card can go, named one by one: Facebook, the phone's
-  messages, email, copying the link, and, only on a device that has one, the
-  device's own share sheet. A member handed a bare address is left to work
-  out what to do with it; a member shown "Facebook" and "Meldinger" is being
-  asked where. Every place works with no scripting at all, because each is a
-  link into that place with the card's address already in it. A card shown
+  own words ("Dette vil jeg dele").
+  **What the button does is the device's own answer, not the product's.** A
+  phone, and any other device with a share sheet of its own, opens that sheet:
+  it names the places too, and it names the ones the member actually has
+  (their chat app, their feed, the person they talk to most), which is a
+  better list than any this product could keep. One press, and the member is
+  where they were going. Where there is no sheet, which is a desktop browser
+  and any browser with the script off, the button opens the places this page
+  names itself: Facebook, the phone's messages, email, copying the link. A
+  member handed a bare address is left to work out what to do with it; a
+  member shown "Facebook" and "Meldinger" is being asked where, and so is a
+  member shown their own sheet. Every named place works with no scripting at
+  all, because each is a link into that place with the card's address already
+  in it, and they stay in the page as the way out when a sheet refuses. A card
+  shown
   with this offer carries no pill of its own: one page, one way to share, so
   the two cannot disagree about what sharing means. The two pages show the
   same offer because they render the same one thing, card and offer together,
@@ -295,6 +304,18 @@ surface the member happens to be looking at.
   member's voice in a stranger's hands would be a small lie. (A first version
   only captioned the link, "se medlemsbeviset mitt", and read as odd in a
   text message: the reader was handed a card with no word about why.)
+- **The address travels exactly once, and the card travels with it where it
+  can.** A message that carries the address and a share that also hands over
+  the address separately arrive as the same link twice, which reads as a
+  mistake in the member's own outgoing message. So the address sits in the
+  written invitation where the place has nowhere else to put it (a text
+  message, an email), and stands on its own where the sheet has a field for
+  it. Where the device can carry a file, the card itself goes along with the
+  invitation and not only a link to it: the reader sees the card in the
+  conversation, and the ones who never open a link still meet a member's
+  card, with its QR code on it. That is also why the address is written into
+  the message in that case: a place that accepts the picture often drops a
+  bare link, and the link is the half of this that recruits.
 - **Anyone may look; only the member can change it.** The card page offers no
   actions on the membership. A visitor who is not the member sees exactly what
   the member sees.

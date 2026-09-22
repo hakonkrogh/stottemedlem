@@ -1,24 +1,27 @@
 ---
+import { CANONICAL_ORIGIN, CANONICAL_ORIGIN_DISPLAY } from "@stottemedlem/core";
+
 // The invitation to share the card, where the member has just earned it
 // (specs/concepts/member-card.md, specs/concepts/payment-receipt.md).
 //
 // On the thank-you page the wish to share is at its strongest and the
 // member has never seen a card before, so the offer is a plain button that
-// says what it is for, not a pill in the card's corner. Pressing it does not
-// share anything yet: it opens the places the card can go, named one by one,
-// so the member picks where rather than being handed a bare address and left
-// to work out what to do with it.
+// says what it is for, not a pill in the card's corner.
 //
-// The places are links, so every one of them works with no scripting at all:
+// What the one button DOES depends on the device. Where the device has a
+// share sheet of its own, the button opens it: that sheet names the places
+// too, with the member's own apps in it, and it is one press instead of two.
+// Where there is no sheet (Firefox on a desktop, Chrome on macOS and Linux,
+// and any browser with the script off) the button opens the places this page
+// names itself, each one a plain link that works with no scripting at all:
 // Facebook's own share page, the phone's messages app, the mail app, and the
-// card's own page. The script adds two things on top: "copy the link", and,
-// only on a device that has one, the device's own share sheet.
+// card's own address. The script adds "copy the link" on top.
 //
 // Only ever the CARD's address is offered here. The member's self-service
 // address can end the membership and must never be shared
 // (specs/concepts/member-self-service.md).
 interface Props {
-  /** The card's own public address (memberCardUrl). */
+  /** The card's own public address (memberCardUrl), spelled for a person. */
   cardUrl: string;
   /** Whose supporter the member now is. Named in what they send along. */
   orgName: string;
@@ -30,26 +33,55 @@ interface Props {
    * and is the invitation alone.
    */
   voice?: "member" | "anyone";
+  /**
+   * The card as a picture, so a device that can carry a file sends the card
+   * itself along with the invitation and not only a link to it. Same origin,
+   * so the page may simply fetch it. Leaving it out shares the link alone.
+   */
+  cardImageUrl?: string;
 }
-const { cardUrl, orgName, voice = "member" } = Astro.props;
+const { cardUrl, orgName, voice = "member", cardImageUrl } = Astro.props;
 
 // What goes with the link is an invitation, not a caption: the reader is
 // asked to join, and told the link is how. "Se medlemsbeviset mitt" alone
 // read as odd in a text message, since it said nothing about why the reader
 // was being sent it (2026-09-21).
 const subject = `Vil du også bli støttemedlem i ${orgName}?`;
-const message =
+const invitation =
   voice === "member"
-    ? `Jeg er støttemedlem i ${orgName} ❤️ Vil du også bli med? Her er medlemsbeviset mitt, og hvordan du blir støttemedlem: ${cardUrl}`
-    : `Vil du bli støttemedlem i ${orgName}? ❤️ Her er medlemsbeviset til en som støtter, og veien inn: ${cardUrl}`;
-const facebook = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(cardUrl)}`;
+    ? `Jeg er støttemedlem i ${orgName} ❤️ Vil du også bli med? Her er medlemsbeviset mitt, og hvordan du blir støttemedlem:`
+    : `Vil du bli støttemedlem i ${orgName}? ❤️ Her er medlemsbeviset til en som støtter, og veien inn:`;
+// The address belongs in exactly ONE place in anything sent. A message that
+// carries it and a share payload that also sets `url` arrive as the same link
+// twice in every app that appends the one to the other, so the body with the
+// address in it is for the places that have nowhere else to put it (a text
+// message, an email), and the share sheet gets the invitation bare beside its
+// own url field.
+const message = `${invitation} ${cardUrl}`;
+
+// Facebook reads the address out of a query parameter: a machine, so it gets
+// the punycode spelling, like every other machine reader
+// (specs/concepts/member-card.md). What a PERSON is handed keeps its ø.
+const machineUrl = cardUrl.startsWith(CANONICAL_ORIGIN_DISPLAY)
+  ? `${CANONICAL_ORIGIN}${cardUrl.slice(CANONICAL_ORIGIN_DISPLAY.length)}`
+  : cardUrl;
+
+const facebook = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(machineUrl)}`;
 // `?&` is the one spelling both iPhones and Android phones read as "no
 // recipient, this body".
 const messages = `sms:?&body=${encodeURIComponent(message)}`;
 const email = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(message)}`;
 ---
 
-<details class="share" data-share-card>
+<details
+  class="share"
+  data-share-card
+  data-share-url={cardUrl}
+  data-share-title={subject}
+  data-share-text={invitation}
+  data-share-message={message}
+  data-share-image={cardImageUrl}
+>
   <summary class="share__open">
     <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
       <path
@@ -72,49 +104,120 @@ const email = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURICo
     <a class="share__to" href={cardUrl} data-share-to="kopier" data-share-copy>
       <span data-share-copy-label>Kopier lenken</span>
     </a>
-    <button
-      class="share__to"
-      type="button"
-      hidden
-      data-share-to="andre"
-      data-share-sheet
-      data-share-url={cardUrl}
-      data-share-title={subject}
-      data-share-text={message}
-    >
-      Andre apper …
-    </button>
   </div>
 </details>
 
 <script>
   // Plain JS on purpose: this component has a story, and Storybook serves a
-  // component script without stripping TypeScript.
+  // component script without stripping TypeScript. `astro check` reads this
+  // block as TypeScript all the same, so nothing here takes a parameter it
+  // would have to annotate: every element is narrowed where it is found.
 
-  // A device with its own share sheet gets one more place to send the card.
-  // Hidden in the markup so a device without one never shows a dead button.
-  function offerShareSheet() {
+  // The card's picture, once it has been fetched and the device has said it
+  // can carry a file. Keyed by the offer it belongs to, since a page may show
+  // more than one.
+  const pictures = new WeakMap();
+
+  // Whether this device shares files at all, asked with a throwaway file
+  // rather than the card: the answer decides whether fetching the card is
+  // worth doing in the first place.
+  function sharesFiles() {
+    if (!navigator.canShare) return false;
+    try {
+      const probe = new File([new Blob(["1"], { type: "image/png" })], "probe.png", {
+        type: "image/png",
+      });
+      return navigator.canShare({ files: [probe] });
+    } catch {
+      return false;
+    }
+  }
+
+  // A device with its own share sheet gets that sheet, straight off the one
+  // button: it names the places too, with the member's own apps in it, and it
+  // is one press instead of two. The places this page names itself stay in the
+  // markup for a device without a sheet, and as the way out if the sheet
+  // refuses.
+  function offerTheSheet() {
     if (!navigator.share) return;
-    document.querySelectorAll("[data-share-sheet]").forEach((button) => {
-      if (button instanceof HTMLElement) button.hidden = false;
+    document.querySelectorAll("[data-share-card]").forEach((offer) => {
+      if (!(offer instanceof HTMLDetailsElement) || offer.dataset.shareDirect) return;
+      offer.dataset.shareDirect = "on";
+      // The button no longer opens anything, whatever element it is made of.
+      const summary = offer.querySelector("summary");
+      if (summary) summary.setAttribute("role", "button");
+
+      // The card has to be IN HAND when the button is pressed: a share asked
+      // for after an await has spent the press it was granted, and iOS refuses
+      // it. So the picture is fetched while the page is idle, and a press that
+      // comes before it lands simply shares the link. Idle, because the page is
+      // fetching the card the reader is actually looking at at the same time.
+      const src = offer.dataset.shareImage;
+      if (!src || !sharesFiles()) return;
+      const fetchCard = () => {
+        fetch(src)
+          .then((response) => (response.ok ? response.blob() : null))
+          .then((blob) => {
+            if (!blob) return;
+            const file = new File([blob], "medlemsbevis.png", {
+              type: blob.type || "image/png",
+            });
+            if (!navigator.canShare({ files: [file] })) return;
+            pictures.set(offer, file);
+          })
+          .catch(() => {});
+      };
+      if (window.requestIdleCallback) window.requestIdleCallback(fetchCard);
+      else setTimeout(fetchCard, 500);
     });
   }
-  offerShareSheet();
+  offerTheSheet();
   // A page LiveForms swaps in after a form answer gets the same offer.
-  document.addEventListener("sm:page", offerShareSheet);
+  document.addEventListener("sm:page", offerTheSheet);
 
-  // Bound on the document rather than on the links, for the same reason.
+  // Bound on the document rather than on the elements, for the same reason.
   document.addEventListener("click", (event) => {
     const target = event.target instanceof Element ? event.target : null;
     if (!target) return;
 
-    const sheet = target.closest("button[data-share-sheet]");
-    if (sheet instanceof HTMLButtonElement) {
-      if (!navigator.share) return;
-      const { shareUrl, shareTitle, shareText } = sheet.dataset;
-      navigator
-        .share({ title: shareTitle, text: shareText, url: shareUrl })
-        .catch(() => {});
+    const summary = target.closest("summary");
+    const offer = summary ? summary.parentElement : null;
+    if (offer instanceof HTMLDetailsElement && offer.dataset.shareDirect) {
+      // The press opens the device's own sheet instead of this list.
+      event.preventDefault();
+
+      // The sheet is gone for this offer: back to the places named here.
+      const namePlacesInstead = () => {
+        delete offer.dataset.shareDirect;
+        if (summary) summary.removeAttribute("role");
+        offer.open = true;
+      };
+
+      const picture = pictures.get(offer);
+      // With the card itself along, the address goes INSIDE the message: a
+      // target that takes a file commonly drops the url field, and the link is
+      // the half of this that recruits. Without the card, the address is the
+      // url field alone and the message does not repeat it.
+      const withCard = picture
+        ? { title: offer.dataset.shareTitle, text: offer.dataset.shareMessage, files: [picture] }
+        : null;
+      const linkOnly = {
+        title: offer.dataset.shareTitle,
+        text: offer.dataset.shareText,
+        url: offer.dataset.shareUrl,
+      };
+      const payload =
+        withCard && (!navigator.canShare || navigator.canShare(withCard)) ? withCard : linkOnly;
+      try {
+        navigator.share(payload).catch((error) => {
+          // Changing your mind is not a failure, and must not throw the member
+          // into a second chooser they did not ask for.
+          if (error && error.name === "AbortError") return;
+          namePlacesInstead();
+        });
+      } catch {
+        namePlacesInstead();
+      }
       return;
     }
 
