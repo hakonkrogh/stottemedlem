@@ -79,14 +79,24 @@ also documents the variants and why the rule exists.
   `level={2}` — account links, and tabs with warning-count badges from
   `lib/orgNav.ts` + `lib/orgWarnings.ts`). Vipps keys sit under the
   Innstillinger tab.
-  **The org's LOGO stands before that name since 2026-09-10** (spec rule in
-  `concepts/back-office.md`, `concepts/organization.md` states it too): every
-  one of the NINE pages rendering `<OrgScreen>` passes
-  `logoUrl={orgIdentity(org).logoUrl}` beside `orgName={org.name}`. Add it to
-  any new one, or that screen loses the logo while its neighbours keep it. It
-  is PASSED, not looked up inside the chrome, on purpose: `innstillinger.astro`
-  reassigns its own `org` after an upload, so `view.org` there is one save
-  behind, exactly as with `org.name`.
+  **The chrome opens with the PUBLIC identity header since 2026-09-23**
+  (branch unify-back-office-header, spec rules in `concepts/back-office.md`,
+  `concepts/organization.md` and `join-page.md`'s "one thing shown in every
+  place" list): `OrgScreen` renders `@stottemedlem/ui`'s `OrgIdentityHeader`
+  (banner backdrop, circled logo, name) with `as="h1"` and `href={orgPath}`,
+  and a "Se den offentlige siden" link right under it, before the tabs. This
+  REPLACED the small logo-before-the-name row (2026-09-10 to 2026-09-23) AND
+  the settings screen's "Slik vises dere på den offentlige siden" preview,
+  which is gone. Every one of the NINE pages rendering `<OrgScreen>` passes
+  `identity={orgIdentity(org)}` and `publicUrl={shareableJoinUrl(org.slug)}`
+  (there is no `orgName`/`logoUrl` prop any more). Add both to any new one.
+  The identity is PASSED, not looked up inside the chrome, on purpose:
+  `innstillinger.astro` reassigns its own `org` after an upload, so
+  `view.org` there is one save behind.
+  **The public LINKS moved to Innstillinger the same day**: "Offentlige
+  lenker" (join page + salgsvilkår, readable form) is a section of
+  `OrgSettingsScreen` (props `joinUrl` + `termsUrl`), and the front page is
+  Nøkkeltall + warnings + the QR card, nothing else.
   **Administrators sit there too, since 2026-09-10** (branch
   workos-user-invites, spec `specs/use-cases/manage-administrators.md` NEW;
   it retired that use case's line in `access-the-back-office.md`'s Out of
@@ -130,8 +140,9 @@ also documents the variants and why the rule exists.
   **The front page IS the org's FIGURES since 2026-09-10** (branch
   membership-overview-stats, spec `specs/concepts/organization-figures.md` NEW;
   it rewrote back-office.md's old "the members are not a section here" rule AND
-  removed the membership cards from that page, so the front page is now
-  Nøkkeltall + Offentlige lenker + warnings, nothing else):
+  removed the membership cards from that page, so the front page became
+  Nøkkeltall + Offentlige lenker + warnings; the links moved to Innstillinger
+  on 2026-09-23, see the chrome note above):
   `organizationStats(db, orgId, {key, start, end})` in `@stottemedlem/db` is two
   queries (every `memberships` row for the org, plus EVERY agreement joined to
   its tier) reduced by the pure, unit-tested `summarizeOrganization`. It is
@@ -166,18 +177,19 @@ also documents the variants and why the rule exists.
   imagery needs no story-only props; give it `ORG_WITH_IMAGES` from
   `storyFixtures.ts` and the pictures appear.
   **That rewriting reaches the SLOT only, never the chrome** (2026-09-10): it
-  runs over `Astro.slots.render("default")`, so a picture `OrgScreen` itself
-  draws (the org logo beside the name) is untouched by it and
-  `ORG_WITH_IMAGES` does nothing for it. Such a picture needs a real prop on
-  `StoryScreen`, handed the fixture (`FIXTURE_LOGO_URL`, re-exported from
-  `storyFixtures.ts`). The logo is the worked example, and its default is ON:
-  `StoryScreen`'s `logoUrl` falls back to that fixture, so ALL NINE screen
-  stories wear the mark and the clickable back office reads as a set-up
-  organization's. A story about an org WITHOUT one passes `logoUrl: null`
-  (Oversikt's `--needs-setup`), and `OrgSettingsScreen.stories.ts` derives it
-  from the org it renders, so the chrome cannot contradict the identity
-  preview inside the screen. Copy that derivation for any future story whose
-  screen shows the organization's own imagery.
+  runs over `Astro.slots.render("default")`, so the pictures `OrgScreen` itself
+  draws (the identity header's logo and banner) are untouched by it and
+  `ORG_WITH_IMAGES` does nothing for them. They need a real prop on
+  `StoryScreen`: `identity`, an `OrgIdentity` built by `storyIdentity(org)` in
+  `storyFixtures.ts` the way `orgIdentity` builds one, off the drawn fixtures.
+  Its default is ON (`ORG_IDENTITY` = `storyIdentity(ORG_WITH_IMAGES)`, logo
+  AND banner), so ALL NINE screen stories wear the set-up organization's
+  header. A story about an org WITHOUT imagery passes
+  `identity: storyIdentity(ORG)` (Oversikt's `--needs-setup`), and
+  `OrgSettingsScreen.stories.ts` derives it from the org it renders, which is
+  where the chrome's four shapes (name alone, logo only, banner only, both +
+  focal point) are reviewed. Copy that derivation for any future story whose
+  org differs from the fixture.
   **A screen UNDER a tab (a member, a tier form, the Vipps keys, a message)
   wraps its content in `components/Subpage.astro`** (`backHref` + `backLabel`)
   instead of a `<Stack gap="lg">` root: that renders `@stottemedlem/ui`'s
@@ -351,7 +363,7 @@ also documents the variants and why the rule exists.
   `joinPageUrl`, `joinPageTermsUrl` — CANONICAL-origin-only, for marketing +
   fallback). **Shareable addresses are env-aware since 2026-08-27** (branch
   staging-membership-links; staging used to show PRODUCTION links): backoffice
-  code showing/encoding the shareable address (dashboard "Offentlige lenker",
+  code showing/encoding the shareable address (Innstillinger's "Offentlige lenker",
   `/bli-medlem/[slug]/qr` payloads) must use `shareableJoinUrl`/`shareableJoinTermsUrl`
   from `src/lib/joinLinks.ts` — `JOIN_PAGE_ORIGIN` wrangler var (set on staging
   only) falling back to `CANONICAL_ORIGIN`; note this is NOT `PUBLIC_ORIGIN`,
@@ -415,7 +427,7 @@ also documents the variants and why the rule exists.
   the identity Facebook-style (restyled 2026-08-12, branch logo-banner-styling):
   banner as a 12:5 backdrop (max 15rem tall), logo ALWAYS in a circle with a
   subtle outline (white disc + `object-fit: contain` — the circle rule applies
-  everywhere a logo is shown, incl. the settings preview), name beside the logo
+  everywhere a logo is shown, incl. the back-office chrome), name beside the logo
   which overlaps the banner's bottom edge. Banner focal point:
   `banner_focus_x/y` columns (migration `0003_banner_focus.sql`,
   object-position percentages, NULL = center) chosen via a drag-the-visible-
@@ -1279,7 +1291,8 @@ also documents the variants and why the rule exists.
   page, the receipt, the member card's public page (`/medlemsbevis/<token>`,
   since 2026-09-21: it is the "Se og del medlemsbeviset ditt" link in the
   receipt email, NOT min-side, which is the manage link and still has no
-  header) AND the back office's settings preview all render it, fed
+  header) AND the back office's own chrome (`OrgScreen`, above every screen,
+  since 2026-09-23) all render it, fed
   by `apps/backoffice/src/lib/orgImages.ts`'s `orgIdentity(org)` — never
   re-draw a logo/banner by hand elsewhere. Adding it to a page is one import +
   `<OrgIdentityHeader {...orgIdentity(org)} />` above the content, and the
