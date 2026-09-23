@@ -69,6 +69,9 @@ JOIN_PAGE_ORIGIN=""
 # domain must be verified with Resend first.
 RESEND_API_KEY=""
 EMAIL_FROM_ADDRESS="varsel@xn--stttemedlem-hgb.no"
+# Where the product's own people are told that an organization signed up.
+# Production only; leave empty so test organizations only leave a log line.
+SIGNUP_NOTICE_EMAIL=""
 
 # ── Operational alerting (Sentry) ───────────────────────────────────────
 # Leave empty: local errors are logged to the console, never reported. The

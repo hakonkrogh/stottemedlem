@@ -228,12 +228,13 @@ also documents the variants and why the rule exists.
   `warn` and raised BACKOFFICE-SERVER-6 on staging for a supporter who
   cancelled and re-joined — the refund working exactly as specified. Now
   `info`; the "could not give back" catch stays `error`.)
-  **There is no "something happened" notification anywhere.** Good news
-  (a new org signing up, `[organizations] an organization signed up` in
-  `pages/orgs/new.astro`) is `info`, so it reaches NO ONE, and local dev has no
-  SENTRY_DSN, so nothing local reaches anyone at all. The spec says so
-  ("quiet success is recorded, not announced"). A user expecting a ping for
-  an event wants a new feature plus a spec change, not a bug fix (2026-09-23).
+  **Good news is `info` and reaches NO ONE, with one exception.** Local dev
+  has no SENTRY_DSN, so nothing local reaches anyone at all. The exception
+  (2026-09-23): a new org signing up mails the operator from
+  `lib/signupNotice.ts`, gated on the PRODUCTION-ONLY secret
+  SIGNUP_NOTICE_EMAIL (plus RESEND_API_KEY). No address = no mail, so staging
+  and local are silent by construction. A user expecting a ping for any
+  OTHER event wants a new feature plus a spec change, not a bug fix.
   **Alerting coverage (gap analysis 2026-09-15).** Every alert used to fire
   from INSIDE `scheduled()`, so the only covered shape was "a job ran and
   reported failures". Two of the silent shapes are now covered; the rest are

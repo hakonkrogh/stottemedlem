@@ -91,6 +91,12 @@
     // domain must be verified with Resend; the RESEND_API_KEY secret is set
     // out of band (`wrangler secret put RESEND_API_KEY [--env staging]`).
     // Without that secret notices are logged instead of sent.
+    // The product's own people are mailed when an organization signs up, at
+    // the address in a PRODUCTION-ONLY secret (never staging, and never a var,
+    // which local dev would inherit):
+    //   wrangler secret put SIGNUP_NOTICE_EMAIL
+    // Absent = the sign-up is only logged
+    // (specs/use-cases/sign-up-for-early-access.md).
     "EMAIL_FROM_ADDRESS": "noreply@xn--stttemedlem-hgb.no",
     // Production counts memberships in calendar years. Staging runs the
     // accelerated ISO-week calendar instead (see its own vars below).
