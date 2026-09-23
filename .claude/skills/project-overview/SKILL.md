@@ -232,7 +232,8 @@ also documents the variants and why the rule exists.
   has no SENTRY_DSN, so nothing local reaches anyone at all. The exception
   (2026-09-23): a new org signing up mails the operator from
   `lib/signupNotice.ts`, gated on the PRODUCTION-ONLY secret
-  SIGNUP_NOTICE_EMAIL (plus RESEND_API_KEY). No address = no mail, so staging
+  SIGNUP_NOTICE_EMAIL (plus RESEND_API_KEY; set 2026-09-23 to
+  dev@xn--stttemedlem-hgb.no). No address = no mail, so staging
   and local are silent by construction. A user expecting a ping for any
   OTHER event wants a new feature plus a spec change, not a bug fix.
   **Alerting coverage (gap analysis 2026-09-15).** Every alert used to fire
