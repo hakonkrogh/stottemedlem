@@ -4,6 +4,13 @@
 // are, and the four places an organization is — Oversikt, Innstillinger,
 // Medlemmer, Medlemskap.
 //
+// Who you are looking at is shown the way a supporter sees it: the very
+// identity header the public join page opens with (banner backdrop, circled
+// logo, name), followed by the way to that page
+// (specs/concepts/back-office.md). So an administrator never has to open the
+// public page to know how the organization looks there, and the settings need
+// no preview of their own.
+//
 // The tabs are chrome, not a widget: each one is an ordinary link to an
 // ordinary page, so a tab can be bookmarked, opened in a new window and
 // reloaded. A tab wears a badge for the things that are not in order and that
@@ -15,18 +22,22 @@
 // The panel is as wide as the display allows: one column on a phone, and the
 // screens inside spread into the room a larger screen offers.
 import Card from "@stottemedlem/ui/components/Card.astro";
+import OrgIdentityHeader from "@stottemedlem/ui/components/OrgIdentityHeader.astro";
 import TextLink from "@stottemedlem/ui/components/TextLink.astro";
+import type { OrgIdentity } from "../lib/orgImages";
 import { type OrgTab, type OrgTabId, orgTabs } from "../lib/orgNav";
 import type { OrgWarning } from "../lib/orgWarnings";
 
 interface Props {
-  orgName: string;
   /**
-   * The organization's own logo, when it has uploaded one: it stands before
-   * the name so an administrator of several organizations sees at a glance
-   * which one they are in (specs/concepts/back-office.md).
+   * The organization as the public page presents it: name, and its logo,
+   * banner and focal point when uploaded. Passed in rather than looked up
+   * here, because a page that has just saved new details holds a fresher
+   * organization than the view it loaded.
    */
-  logoUrl?: string | null;
+  identity: OrgIdentity;
+  /** The organization's public join page, offered right under the header. */
+  publicUrl: string;
   orgPath: string;
   active: OrgTabId;
   warnings?: OrgWarning[];
@@ -40,8 +51,8 @@ interface Props {
   tabs?: OrgTab[];
 }
 const {
-  orgName,
-  logoUrl = null,
+  identity,
+  publicUrl,
   orgPath,
   active,
   warnings = [],
@@ -75,12 +86,10 @@ const TAB_ICONS: Record<OrgTabId, string> = {
       {canSwitch && <TextLink href="/orgs">Bytt organisasjon</TextLink>}
       <TextLink href="/logout">Logg ut</TextLink>
     </div>
-    <h1 class="org-name">
-      <a href={orgPath}>
-        {logoUrl && <img class="logo" src={logoUrl} alt="" />}
-        <span class="name">{orgName}</span>
-      </a>
-    </h1>
+    <OrgIdentityHeader {...identity} as="h1" href={orgPath} />
+    <p class="public-link">
+      <TextLink href={publicUrl}>Se den offentlige siden</TextLink>
+    </p>
     <nav class="tabs" aria-label="Organisasjonen">
       {
         tabs.map((tab) => (
@@ -143,49 +152,11 @@ const TAB_ICONS: Record<OrgTabId, string> = {
     font-size: 0.85rem;
     color: var(--sm-muted);
   }
-  .org-name {
+  /* The way to the public page sits right under the organization's own
+     presentation, quietly: it is a door, not a heading. */
+  .public-link {
     margin: 0;
-    font-family: var(--sm-font-display);
-    font-weight: var(--sm-font-display-weight, 600);
-    font-variation-settings: var(--sm-font-display-variation, normal);
-    font-size: 1.6rem;
-    line-height: 1.2;
-    letter-spacing: -0.01em;
-    overflow-wrap: anywhere;
-  }
-  /* A long name wraps beside the logo rather than stretching the row. */
-  .name {
-    min-width: 0;
-  }
-  .org-name a {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.55rem;
-    color: inherit;
-    text-decoration: none;
-    border-radius: var(--sm-radius-sm);
-  }
-  .org-name a:hover .name {
-    text-decoration: underline;
-    text-underline-offset: 3px;
-  }
-  /* A logo is always framed in a circle with a subtle outline, the same mark
-     supporters meet on the join page. Sized in em, so it keeps its proportion
-     to the name it stands before at every screen width. */
-  .logo {
-    display: block;
-    flex: none;
-    width: 2.5em;
-    height: 2.5em;
-    object-fit: contain;
-    padding: 0.15em;
-    background: var(--sm-surface);
-    border-radius: 50%;
-    box-shadow: 0 0 0 1px var(--sm-border);
-  }
-  .org-name a:focus-visible {
-    outline: none;
-    box-shadow: 0 0 0 3px var(--sm-focus-ring);
+    font-size: 0.9rem;
   }
   .who {
     overflow-wrap: anywhere;

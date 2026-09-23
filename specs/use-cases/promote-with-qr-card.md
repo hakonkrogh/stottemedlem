@@ -49,7 +49,7 @@ browsing the organization's own site can join in seconds.
    organization's [join flow](join-as-supporting-member.md) with no page in
    between, no typing, no searching.
 4. The **back office shows the card itself** on the organization's front page,
-   beside the public addresses it belongs with. The card is a thing an
+   after the organization's figures. The card is a thing an
    organization prints and hangs up, and an address on its own says nothing
    about what will come out of the printer, so the administrator sees the very
    picture the product serves.

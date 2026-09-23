@@ -13,6 +13,7 @@ import {
 } from "@stottemedlem/ui/components/OrgIdentityHeader.fixtures.ts";
 import type { AdministratorEntry, PendingInviteEntry } from "../lib/administrators";
 import { withEmbeddedCardFont } from "../lib/cardFont";
+import type { OrgIdentity } from "../lib/orgImages";
 import type { OrgWarning } from "../lib/orgWarnings";
 import { orgWarnings } from "../lib/orgWarnings";
 
@@ -60,6 +61,26 @@ export const ORG_WITH_IMAGES: Organization = {
 // The drawn logo an organization that has uploaded one is shown with, in the
 // public identity header and in the back office's own chrome alike.
 export { FIXTURE_LOGO_URL };
+
+/**
+ * The organization as the chrome presents it, built the way `orgIdentity`
+ * builds it but off the drawn fixtures: a story about an org with no banner
+ * shows the name alone above its screen, exactly as the app would.
+ */
+export function storyIdentity(org: Organization): OrgIdentity {
+  return {
+    name: org.name,
+    logoUrl: org.logoKey ? FIXTURE_LOGO_URL : null,
+    bannerUrl: org.bannerKey ? FIXTURE_BANNER_URL : null,
+    bannerFocus:
+      org.bannerFocusX !== null && org.bannerFocusY !== null
+        ? { x: org.bannerFocusX, y: org.bannerFocusY }
+        : null,
+  };
+}
+
+/** The set-up organization every screen story wears by default. */
+export const ORG_IDENTITY: OrgIdentity = storyIdentity(ORG_WITH_IMAGES);
 
 export const ORG_PATH = `/o/${ORG.slug}`;
 // Written with the ø, as the back office shows it to an administrator.

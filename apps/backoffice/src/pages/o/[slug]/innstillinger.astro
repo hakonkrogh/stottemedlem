@@ -11,7 +11,7 @@ import OrgScreen from "../../../components/OrgScreen.astro";
 import OrgSettingsScreen from "../../../components/OrgSettingsScreen.astro";
 import Shell from "../../../layouts/Shell.astro";
 import { getDb } from "../../../lib/db";
-import { readableJoinUrl } from "../../../lib/joinLinks";
+import { readableJoinTermsUrl, readableJoinUrl, shareableJoinUrl } from "../../../lib/joinLinks";
 import { applyImageField, orgIdentity } from "../../../lib/orgImages";
 import {
   type ProfileFieldErrors,
@@ -25,9 +25,10 @@ import { purgeOrgPublicPages } from "../../../lib/publicPageCache";
 import { getWorkOS, orgPath } from "../../../lib/workos";
 
 // Org settings — the org's public details: the profile fields the join page
-// and salgsvilkår show (specs/concepts/join-page.md), the name, and the
-// optional visual identity (logo + banner image). What is stored is shown as
-// information; `?rediger=1` opens the one form that changes it.
+// and salgsvilkår show (specs/concepts/join-page.md), the name, the optional
+// visual identity (logo + banner image), and the two public addresses the
+// organization pastes into forms. What is stored is shown as information;
+// `?rediger=1` opens the one form that changes it.
 /** Parse a focal-point percentage from the form; null when absent/invalid. */
 function parseFocusPercent(value: FormDataEntryValue | null): number | null {
   if (typeof value !== "string" || value.trim() === "") return null;
@@ -140,8 +141,8 @@ const editing = hasErrors || Astro.url.searchParams.has("rediger");
 
 <Shell title={`Innstillinger — ${org.name}`} frame={false}>
   <OrgScreen
-    orgName={org.name}
-    logoUrl={orgIdentity(org).logoUrl}
+    identity={orgIdentity(org)}
+    publicUrl={shareableJoinUrl(org.slug)}
     orgPath={orgPath(org.slug)}
     active="innstillinger"
     warnings={view.warnings}
@@ -151,6 +152,7 @@ const editing = hasErrors || Astro.url.searchParams.has("rediger");
       org={org}
       orgPath={orgPath(org.slug)}
       joinUrl={readableJoinUrl(org.slug)}
+      termsUrl={readableJoinTermsUrl(org.slug)}
       editing={editing}
       values={values}
       fieldErrors={fieldErrors}

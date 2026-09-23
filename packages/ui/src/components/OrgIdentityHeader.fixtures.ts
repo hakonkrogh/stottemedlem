@@ -2,7 +2,7 @@
 // and a drawn banner, inlined as data URIs so no story ever needs a server (or
 // a real organization's pictures, since stories are committed and
 // screenshotted). Shared with the back-office screen stories, which show the
-// same header inside the settings preview.
+// same header at the top of every screen.
 
 const svgDataUrl = (svg: string): string =>
   `data:image/svg+xml,${encodeURIComponent(svg.replace(/\s+/g, " ").trim())}`;

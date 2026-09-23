@@ -126,15 +126,24 @@ parts around a draggable visible-area frame. Both images are optional, can
 be replaced or removed at any time, and changes show on the public page
 immediately. A name change never changes the slug or the public addresses.
 
-The settings also **show the organization as the public page presents it**:
-the same identity header a supporter sees at the top of the
+The back office **shows the organization as the public page presents it** at
+the top of every screen ([back office](../concepts/back-office.md)): the same
+identity header a supporter sees at the top of the
 [join page](../concepts/join-page.md) (banner backdrop, logo in its circle,
-name), drawn inside the public page's own column and on its own background,
-with a way straight to the live page. It is not an approximation: it is the
-very same presentation, fed the same stored images and focal point, so the
-administrator never has to open the public page to know how the organization
-looks there. With nothing uploaded it shows the name alone and says so; with
-imagery it shows the banner cropped exactly as the page crops it.
+name), with a way straight to the live page right under it. It is not an
+approximation: it is the very same presentation, fed the same stored images
+and focal point, so the administrator never has to open the public page to
+know how the organization looks there, and the settings carry no preview of
+their own. With nothing uploaded it shows the name alone; with imagery it
+shows the banner cropped exactly as the page crops it, and a save shows the
+new imagery above the settings the moment the form closes.
+
+The settings also **hold the organization's public addresses**: the join
+page and its sales-terms page, written out in full so they can be copied,
+each with a word on where it is pasted. They are what the payment provider's
+order form asks for and what the organization puts on its own site, and they
+sit here with the rest of what the organization has been given rather than on
+the front page.
 
 ## Acceptance criteria
 - [ ] An administrator can create the organization with its public name,
@@ -215,9 +224,12 @@ imagery it shows the banner cropped exactly as the page crops it.
 - [ ] An administrator can choose the banner's focal point by dragging the
       visible-area frame in the settings preview; the join page crops the
       banner around that point.
-- [ ] The settings show the organization exactly as the join page presents it
-      (name alone, logo only, banner only, or both, cropped around the chosen
-      focal point), and link to the live page.
+- [ ] Every back-office screen shows the organization exactly as the join
+      page presents it (name alone, logo only, banner only, or both, cropped
+      around the chosen focal point), with a link to the live page under it;
+      the settings carry no second preview.
+- [ ] The settings show the join-page and sales-terms addresses written out,
+      each with where it is pasted; the front page does not list them.
 
 ## Out of scope
 - Variable or pay-what-you-want pricing (every tier has one fixed annual fee).

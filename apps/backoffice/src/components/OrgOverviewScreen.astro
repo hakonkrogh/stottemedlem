@@ -1,9 +1,13 @@
 ---
-// The front tab of an organization's back office: how it is doing, the public
-// addresses it shares (including the QR code card, shown as the picture it is
-// rather than as an address), plus anything that is not yet in order, each
-// with the one place it is put right
-// (specs/use-cases/set-up-supporting-membership.md).
+// The front tab of an organization's back office: how it is doing, the QR
+// code card it shares (shown as the picture it is rather than as an address),
+// plus anything that is not yet in order, each with the one place it is put
+// right (specs/use-cases/set-up-supporting-membership.md).
+//
+// The public addresses themselves (the join page and the sales terms) are NOT
+// listed here any more: the way to the public page sits in the chrome above
+// every screen, and the addresses to paste into a form live under
+// Innstillinger with the rest of what the organization has been given.
 //
 // The numbers come first (specs/concepts/organization-figures.md): what a year
 // of support is worth, who stands behind it, and what this period did to both.
@@ -15,9 +19,7 @@
 // room its figures need. Nothing is edited here either.
 import type { OrganizationStats } from "@stottemedlem/db";
 import Alert from "@stottemedlem/ui/components/Alert.astro";
-import Heading from "@stottemedlem/ui/components/Heading.astro";
 import Stack from "@stottemedlem/ui/components/Stack.astro";
-import Text from "@stottemedlem/ui/components/Text.astro";
 import TextLink from "@stottemedlem/ui/components/TextLink.astro";
 import type { OrgWarning } from "../lib/orgWarnings";
 import OrgQrCard from "./OrgQrCard.astro";
@@ -28,8 +30,6 @@ interface Props {
   orgPath: string;
   /** The organization's own name, for the QR card's alt text. */
   orgName: string;
-  joinUrl: string;
-  termsUrl: string;
   qrCardUrl: string;
   /** What the QR card picture loads; see OrgQrCard. Stories pass it inline. */
   qrCardPreviewSrc?: string;
@@ -44,8 +44,6 @@ interface Props {
 const {
   orgPath,
   orgName,
-  joinUrl,
-  termsUrl,
   qrCardUrl,
   qrCardPreviewSrc,
   warnings = [],
@@ -53,19 +51,6 @@ const {
   periodLabel,
   feeNotice,
 } = Astro.props;
-
-const links = [
-  {
-    label: "Innmeldingslenke",
-    url: joinUrl,
-    hint: "Del denne. Den er «nettsted» i Vipps-bestillingen.",
-  },
-  {
-    label: "Salgsvilkår",
-    url: termsUrl,
-    hint: "Denne limer du inn som «salgsvilkår» i Vipps-bestillingen.",
-  },
-];
 ---
 
 <Stack gap="lg">
@@ -90,52 +75,5 @@ const links = [
 
   <OrgStats stats={stats} periodLabel={periodLabel} />
 
-  <Stack gap="sm">
-    <Heading level={2}>Offentlige lenker</Heading>
-    <Text variant="small">
-      Innmeldingslenken er organisasjonens ene offentlige adresse — den du deler, og den QR-koden
-      peker på.
-    </Text>
-    <div class="links">
-      {
-        links.map((link) => (
-          <div class="link">
-            <span class="label">{link.label}</span>
-            <TextLink href={link.url}>{link.url}</TextLink>
-            <span class="hint">{link.hint}</span>
-          </div>
-        ))
-      }
-    </div>
-  </Stack>
-
   <OrgQrCard cardUrl={qrCardUrl} previewSrc={qrCardPreviewSrc} orgName={orgName} />
 </Stack>
-
-<style>
-  /* One column on a phone; side by side as soon as there is room for it. */
-  .links {
-    display: grid;
-    gap: var(--sm-space-md);
-    grid-template-columns: repeat(auto-fit, minmax(17rem, 1fr));
-  }
-  .link {
-    display: grid;
-    gap: 0.15rem;
-    align-content: start;
-    min-width: 0;
-  }
-  .link :global(a) {
-    overflow-wrap: anywhere;
-    font-size: 0.9rem;
-  }
-  .label {
-    font-size: 0.8rem;
-    font-weight: 600;
-    color: var(--sm-muted);
-  }
-  .hint {
-    font-size: 0.85rem;
-    color: var(--sm-muted);
-  }
-</style>

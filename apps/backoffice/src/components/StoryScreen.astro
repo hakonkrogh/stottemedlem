@@ -4,14 +4,15 @@
 // tabbed back office can be reviewed by clicking through Storybook — tabs, edit
 // buttons and back links included — without running the app, its login or its
 // database. Nothing in the app imports it.
+import type { OrgIdentity } from "../lib/orgImages";
 import { type OrgTabId, orgTabs } from "../lib/orgNav";
 import type { OrgWarning } from "../lib/orgWarnings";
 import OrgScreen from "./OrgScreen.astro";
 import {
   ACTIVE_MEMBERS,
   ADMIN_NAME,
-  FIXTURE_LOGO_URL,
-  ORG,
+  JOIN_URL,
+  ORG_IDENTITY,
   ORG_PATH,
   storyHref,
   storyImageSrc,
@@ -22,17 +23,18 @@ interface Props {
   warnings?: OrgWarning[];
   activeMembers?: number;
   /**
-   * The organization's logo, shown by default: an organization that has been
-   * set up has one, and the chrome is reviewed as such an organization sees
-   * it. Pass null for the stories about one that has not uploaded a logo.
+   * The organization as the chrome presents it, with logo and banner by
+   * default: an organization that has been set up has both, and the chrome
+   * is reviewed as such an organization sees it. Stories about one that has
+   * uploaded nothing pass `storyIdentity(ORG)`.
    */
-  logoUrl?: string | null;
+  identity?: OrgIdentity;
 }
 const {
   active,
   warnings = [],
   activeMembers = ACTIVE_MEMBERS,
-  logoUrl = FIXTURE_LOGO_URL,
+  identity = ORG_IDENTITY,
 } = Astro.props;
 
 const tabs = orgTabs(ORG_PATH, warnings, activeMembers).map((tab) => ({
@@ -49,8 +51,8 @@ const content = (await Astro.slots.render("default"))
 ---
 
 <OrgScreen
-  orgName={ORG.name}
-  logoUrl={logoUrl}
+  identity={identity}
+  publicUrl={JOIN_URL}
   orgPath={storyHref(ORG_PATH)}
   active={active}
   warnings={warnings}
