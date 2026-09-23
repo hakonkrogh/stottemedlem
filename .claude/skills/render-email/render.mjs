@@ -12,6 +12,7 @@ const REPO = resolve(dirname(fileURLToPath(import.meta.url)), "../../..");
 const SRC = `${REPO}/packages/email/src`;
 const { membershipReceipt } = await import(`${SRC}/membershipReceipt.ts`);
 const { feeChangeNotice } = await import(`${SRC}/feeChangeNotice.ts`);
+const { orgSignupNotice } = await import(`${SRC}/orgSignupNotice.ts`);
 
 /** A member and an org that are obviously fictional (never real org data). */
 const ORG = {
@@ -37,7 +38,16 @@ const RECEIPT = {
   cardPngBase64: "aGVsbG8=",
 };
 
+const SIGNUP = {
+  to: "drift@bakvendtland.example",
+  orgName: "Bakvendtland Skolekorps",
+  orgnr: "123456785",
+  slug: "bakvendtland-skolekorps",
+  joinUrl: "https://xn--stttemedlem-hgb.no/bli-medlem/bakvendtland-skolekorps",
+};
+
 const FIXTURES = {
+  "org-signup": () => orgSignupNotice(SIGNUP),
   "receipt-join": () => membershipReceipt(RECEIPT),
   "receipt-renewal": () =>
     membershipReceipt({
@@ -105,10 +115,16 @@ let message = FIXTURES[name]();
 if (Object.keys(overrides).length > 0) {
   // Re-run the builder with the overrides applied, by rebuilding the fixture
   // input: the builders are pure, so this is the whole story.
-  const build = name.startsWith("receipt") ? membershipReceipt : feeChangeNotice;
+  const build = name.startsWith("receipt")
+    ? membershipReceipt
+    : name === "org-signup"
+      ? orgSignupNotice
+      : feeChangeNotice;
   const base = name.startsWith("receipt")
     ? { ...RECEIPT, ...(name === "receipt-renewal" ? { kind: "renewal" } : {}) }
-    : { ...ORG, previousFeeNok: 240, newFeeNok: 300, effectivePeriod: "2027" };
+    : name === "org-signup"
+      ? SIGNUP
+      : { ...ORG, previousFeeNok: 240, newFeeNok: 300, effectivePeriod: "2027" };
   message = build({ ...base, ...overrides });
 }
 

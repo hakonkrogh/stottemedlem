@@ -62,9 +62,18 @@ first payment.
 8. **Every back-office screen quietly says "early access"**, with a way to ask
    the product's own people for help, so the promise made at sign-up stays in
    view and help is always one press away.
-9. **The product's own people learn that an organization has signed up**, from
-   the product's operational log, without anyone having to tell them. The line
-   names the organization by its identifiers only.
+9. **The product's own people learn that an organization has signed up**,
+   without anyone having to tell them. Every environment leaves one line in the
+   operational log, naming the organization by its identifiers only.
+   **Production also emails them** (decided 2026-09-23): nobody writes to us
+   first any more, and a log line is only read when someone goes looking, so
+   an organization that may want a hand would otherwise wait unseen. The email
+   names the organization (its name, organization number, short name and join
+   page) and nothing about the person who created it. Staging and a
+   developer's machine never send it, by construction rather than by
+   convention: they have no address to send it to, so test organizations
+   cannot fill the operator's inbox. A notice that fails to send never undoes
+   or blocks the sign-up; the failure is reported to the operator instead.
 
 ## Acceptance criteria
 - [ ] The front page nowhere claims the product is merely coming soon.
@@ -83,6 +92,10 @@ first payment.
 - [ ] Every back-office screen of an organization shows that the product is in
       early access, with a way to contact the product's own people.
 - [ ] Each new organization leaves one line in the operational log.
+- [ ] In production, each new organization sends one email to the product's
+      own people, naming the organization and not its administrator.
+- [ ] Creating an organization on staging or locally sends no such email.
+- [ ] A failed email still lands the administrator on their new organization.
 
 ## Out of scope
 - A waitlist, invite codes, or any limit on how many organizations can sign up.
@@ -91,7 +104,6 @@ first payment.
   condition of creating the organization, so the organization existing is the
   record.
 - Pricing after the test phase, and moving an organization out of it.
-- Mailing the product's own people about each new organization.
 
 ## Related
 - [Use case: Access the back office](access-the-back-office.md): signing in,

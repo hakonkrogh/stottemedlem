@@ -50,6 +50,12 @@ interface Env {
    */
   RESEND_API_KEY?: string;
   /**
+   * Where the product's own people are told that an organization signed up
+   * (secret, production ONLY, so neither staging nor a developer's machine
+   * mails them). Absent = the sign-up is only logged (src/lib/signupNotice.ts).
+   */
+  SIGNUP_NOTICE_EMAIL?: string;
+  /**
    * Sentry DSN, set as a secret (`wrangler secret put SENTRY_DSN`) on
    * production ONLY — kept out of wrangler.jsonc `vars` so local dev can
    * never inherit it and report a developer's machine into production

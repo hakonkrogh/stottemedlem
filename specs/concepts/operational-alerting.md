@@ -73,7 +73,12 @@ renewing.
   payment, or a nightly job. The alerting path also must not depend on what it
   reports on — in particular, not on the product's own member-email sending.
 - **Quiet success is recorded, not announced.** Normal work leaves a log
-  trail (and context for the next alert), never an email.
+  trail (and context for the next alert), never an email. The one exception is
+  a new organization signing up in production, which the product's own people
+  are mailed about because they may need to help it
+  ([Sign up for early access](../use-cases/sign-up-for-early-access.md)). That
+  is news, not an alert: it goes through the product's email sending, and
+  only its failure to send is an alert.
 - **A night that never happened is as loud as a night that failed.** Every
   other report here is made by the product while it works, so the shape it can
   describe is work that ran and went wrong. Work that never started describes

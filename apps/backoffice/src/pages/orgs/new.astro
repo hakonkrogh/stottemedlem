@@ -11,6 +11,7 @@ import { getDb } from "../../lib/db";
 import { logger } from "../../lib/log";
 import { parseAnnualFee } from "../../lib/membershipTiers";
 import { type ProfileFieldErrors, parseProfileForm } from "../../lib/orgProfile";
+import { notifyOrgSignup } from "../../lib/signupNotice";
 import { env, getWorkOS, orgPath, SESSION_COOKIE, sessionCookieOptions } from "../../lib/workos";
 
 // Create-organization page — shown when a signed-in admin has no organization
@@ -85,10 +86,12 @@ if (Astro.request.method === "POST") {
       description: null,
       annualFeeNok: parsedFee.fee,
     });
-    // Organizations sign themselves up now, so this line is how the
-    // product's own people learn that one has arrived and may want a hand
-    // (specs/use-cases/sign-up-for-early-access.md). Identifiers only.
+    // Organizations sign themselves up now, so this is how the product's own
+    // people learn that one has arrived and may want a hand: a log line
+    // everywhere, and an email in production
+    // (specs/use-cases/sign-up-for-early-access.md).
     log.info("an organization signed up", { orgId: row.id, slug: row.slug });
+    await notifyOrgSignup(row);
 
     const sealed = Astro.cookies.get(SESSION_COOKIE)?.value;
     if (sealed) {

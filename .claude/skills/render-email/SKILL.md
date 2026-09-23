@@ -8,7 +8,8 @@ description: Render any member notice email (payment receipt, fee change) from r
 
 Notices: `receipt-join`, `receipt-renewal`, `receipt-no-card` (no card PNG could
 be drawn), `receipt-bare-org` (no orgnr, no contact address, no member name),
-`fee-change-up`, `fee-change-down`. `--list` prints them.
+`fee-change-up`, `fee-change-down`, `org-signup` (the operator's "new
+organization" mail, not a member notice). `--list` prints them.
 
 | flag | does |
 |------|------|
