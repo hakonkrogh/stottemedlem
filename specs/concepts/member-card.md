@@ -409,6 +409,9 @@ surface the member happens to be looking at.
   [scorecard](scorecard.md) — hearts, and recruits once there are any.
 - Appears on the [member self-service page](member-self-service.md) and in the
   [payment receipt](payment-receipt.md).
+- Shown on the marketing front page as an example, for an invented member, so
+  a prospective organization sees what its members would get
+  ([Ask for early access](../use-cases/ask-for-early-access.md)).
 - Its QR code leads into the [join page](join-page.md).
 - Carries [brand attribution](brand-attribution.md) and the
   [brand mark](brand-mark.md).
@@ -422,3 +425,4 @@ surface the member happens to be looking at.
 - [Use case: Curate the member list](../use-cases/curate-member-list.md)
 - [Use case: Print the member cards](../use-cases/print-member-cards.md)
 - [Concept: Scorecard](scorecard.md)
+- [Use case: Ask for early access](../use-cases/ask-for-early-access.md)

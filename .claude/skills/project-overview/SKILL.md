@@ -863,9 +863,15 @@ also documents the variants and why the rule exists.
   `components/HeartRows.astro` as a game-HUD buildup, ten ❤️ per row, no empty
   placeholders, count-form "❤️ 12" where space is tight (MemberRow, CSV
   export's "Hjerter" column). Surfaces: member detail history, member list,
-  export, marketing perks row — plus the member card, which is how hearts now
+  export — plus the member card, which is how hearts now
   reach min-side and the receipts (the standalone "Dine hjerter" section on
-  min-side was REMOVED 2026-08-31, see the card note below).
+  min-side was REMOVED 2026-08-31, see the card note below). The marketing
+  front page's emoji-hearts "perks" row was replaced 2026-09-23 by a real
+  `memberCardSvg` for an invented member, drawn at build time next to the QR
+  card showcase (spec `use-cases/ask-for-early-access.md` step 6). Gotcha in
+  that page's CSS: `section p { margin: 0 }` outranks a bare `.class` rule, so
+  style a paragraph there as `section p.<class>`. Biome's noUnused warnings
+  on its frontmatter consts are false positives (Astro template use).
   **Member card + referrals** (added 2026-08-31, branch member-validity-card,
   spec `concepts/member-card.md` NEW; this REPLACES the old note that recruit
   counts / referrals / printable proof were unbuilt — they are built): the card

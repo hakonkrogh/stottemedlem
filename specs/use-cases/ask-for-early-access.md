@@ -46,6 +46,15 @@ a time rather than letting anyone sign up on their own.
    [QR card](promote-with-qr-card.md) so a prospective organization can see
    what it would get. The invitation is the page's conclusion, not its
    substitute.
+6. **The page shows what the organization's members get: a real
+   [member card](../concepts/member-card.md)**, drawn the same way a member's
+   own card is, for an invented member of the invented organization, with a
+   few lines on what it means (a heart for each year, a card that recruits and
+   credits the member who showed it, the year it is good for). An
+   organization buys a membership its members will like having, and one real
+   card says that better than a row of hearts and a description of a card
+   the reader cannot see. Its QR code leads back to the front page, like the
+   QR card's.
 
 ## Acceptance criteria
 - [ ] The front page nowhere claims the product is merely coming soon.
@@ -57,6 +66,8 @@ a time rather than letting anyone sign up on their own.
 - [ ] The address in the link is the same readable address the page shows, with
       the ø, not an encoded form of it.
 - [ ] The page tells the reader that a person will answer and help them start.
+- [ ] The page shows a real member card for an invented member, next to a
+      short explanation of what the card gives a member.
 
 ## Out of scope
 - Signing up an organization from the marketing site. Creating an organization
