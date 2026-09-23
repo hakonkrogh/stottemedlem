@@ -21,16 +21,19 @@ import type { OrganizationStats } from "@stottemedlem/db";
 import Alert from "@stottemedlem/ui/components/Alert.astro";
 import Stack from "@stottemedlem/ui/components/Stack.astro";
 import TextLink from "@stottemedlem/ui/components/TextLink.astro";
-import type { OrgWarning } from "../lib/orgWarnings";
+import { type OrgWarning, readyForMembers, setupSteps } from "../lib/orgWarnings";
 import OrgQrCard from "./OrgQrCard.astro";
 import OrgStats from "./OrgStats.astro";
 import OrgWarnings from "./OrgWarnings.astro";
+import SetupGuide from "./SetupGuide.astro";
 
 interface Props {
   orgPath: string;
   /** The organization's own name, for the QR card's alt text. */
   orgName: string;
   qrCardUrl: string;
+  /** The organization's public join page, which a ready organization shares. */
+  joinUrl: string;
   /** What the QR card picture loads; see OrgQrCard. Stories pass it inline. */
   qrCardPreviewSrc?: string;
   warnings?: OrgWarning[];
@@ -45,12 +48,20 @@ const {
   orgPath,
   orgName,
   qrCardUrl,
+  joinUrl,
   qrCardPreviewSrc,
   warnings = [],
   stats,
   periodLabel,
   feeNotice,
 } = Astro.props;
+
+// A new organization is guided step by step until supporters can join and pay
+// (specs/use-cases/set-up-supporting-membership.md). Then the guide gives way
+// to the plain warnings, and to one line saying it is ready, which stays until
+// the first supporter arrives.
+const ready = readyForMembers(warnings);
+const nobodyYet = stats.activeMembers === 0 && stats.lapsedMembers === 0;
 ---
 
 <Stack gap="lg">
@@ -71,7 +82,22 @@ const {
     )
   }
 
-  <OrgWarnings warnings={warnings} />
+  {
+    ready ? (
+      <>
+        {nobodyYet && (
+          <Alert variant="success">
+            Alt er klart: støttemedlemmer kan melde seg inn og betale med Vipps. Del{" "}
+            <TextLink href={joinUrl}>innmeldingssiden</TextLink> og QR-kortet under, så er dere i
+            gang.
+          </Alert>
+        )}
+        <OrgWarnings warnings={warnings} />
+      </>
+    ) : (
+      <SetupGuide steps={setupSteps(warnings)} orgPath={orgPath} />
+    )
+  }
 
   <OrgStats stats={stats} periodLabel={periodLabel} />
 

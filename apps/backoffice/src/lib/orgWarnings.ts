@@ -106,3 +106,47 @@ export function orgWarnings(input: OrgWarningInput): OrgWarning[] {
 export function warningsForTab(warnings: OrgWarning[], tab: OrgWarningTab): OrgWarning[] {
   return warnings.filter((warning) => warning.tab === tab);
 }
+
+/** One step on the way from a new organization to its first supporter. */
+export interface SetupStep {
+  id: "created" | "dpa" | "profile" | "tiers" | "vipps";
+  title: string;
+  done: boolean;
+  /** Why the step matters and where to do it, while it is not done. */
+  warning?: OrgWarning;
+}
+
+/**
+ * The setup guide a new organization follows
+ * (specs/use-cases/set-up-supporting-membership.md). Derived from the same
+ * warnings as everything else, so the guide and the badges cannot disagree:
+ * a step is done when nothing it owns is still warned about. The first step is
+ * the one already taken, so a new organization starts with something ticked.
+ */
+export function setupSteps(warnings: OrgWarning[]): SetupStep[] {
+  const find = (...ids: OrgWarning["id"][]) => warnings.find((w) => ids.includes(w.id));
+  const step = (
+    id: SetupStep["id"],
+    title: string,
+    warning: OrgWarning | undefined,
+  ): SetupStep => ({ id, title, done: warning === undefined, warning });
+  return [
+    { id: "created", title: "Opprett organisasjonen", done: true },
+    step("dpa", "Godta databehandleravtalen", find("dpa")),
+    step("profile", "Fyll inn organisasjonsnummer og kontakt-e-post", find("profile")),
+    step("tiers", "Sett opp minst ett medlemskap med pris", find("no-tiers")),
+    step("vipps", "Koble til Vipps", find("no-vipps-keys", "payment-events")),
+  ];
+}
+
+/**
+ * Can supporters join and pay yet? Only what STOPS a payment counts here: a
+ * public page Vipps will accept (profile), something to buy (a membership),
+ * and a way to be paid (Vipps keys). Until then the front page shows the
+ * setup guide in place of the plain warnings.
+ */
+export function readyForMembers(warnings: OrgWarning[]): boolean {
+  return !warnings.some(
+    (w) => w.id === "profile" || w.id === "no-tiers" || w.id === "no-vipps-keys",
+  );
+}

@@ -137,6 +137,26 @@ also documents the variants and why the rule exists.
   files and any `orgWarnings` caller**: `components/storyFixtures.ts` (the
   `ORG` literal + each `orgWarnings({...})` input) and
   `components/memberFixtures.ts`. Typecheck names them, but expect the cycle.
+  **Organizations sign themselves up since 2026-09-23** (branch
+  self-serve-org-creation, spec `specs/use-cases/sign-up-for-early-access.md`,
+  which REPLACED `ask-for-early-access.md`): the marketing page's CTA is
+  "Opprett organisasjon" → `SIGN_UP_URL` in `@stottemedlem/core`
+  (`BACKOFFICE_ORIGIN` + `SIGN_UP_PATH` = `/registrer`, a public route that
+  calls AuthKit with `screenHint: "sign-up"`, or sends a signed-in person to
+  `/orgs/new`). The mailto "Be om tidlig tilgang" is gone. The create form
+  has a SECOND required tick, `godtarTidligTilgang` (free while testing, real
+  payments), checked server-side like the DPA tick and NOT stored. A new org
+  logs `info` "an organization signed up" (area `organizations`), which is
+  how the operator learns of it. `OrgScreen`'s account row says "Tidlig
+  tilgang · Spør oss" on every screen. Until an org can take payments
+  (`readyForMembers` in `lib/orgWarnings.ts`: no profile/no-tiers/no-vipps-keys
+  warning), Oversikt shows `SetupGuide.astro` built by `setupSteps(warnings)`
+  INSTEAD of `OrgWarnings`; the steps are derived from the warnings, so a new
+  warning id needs a step there too. Once ready with nobody ever joined, a
+  success line points at the join page (`joinUrl` prop). Stories:
+  `backoffice-oversikt--just-signed-up`, `--needs-setup`,
+  `backoffice-opprett-organisasjon--early-access-not-confirmed`. Production
+  WorkOS must have sign-up enabled for `/registrer` to open that screen.
   **The front page IS the org's FIGURES since 2026-09-10** (branch
   membership-overview-stats, spec `specs/concepts/organization-figures.md` NEW;
   it rewrote back-office.md's old "the members are not a section here" rule AND
@@ -868,7 +888,7 @@ also documents the variants and why the rule exists.
   min-side was REMOVED 2026-08-31, see the card note below). The marketing
   front page's emoji-hearts "perks" row was replaced 2026-09-23 by a real
   `memberCardSvg` for an invented member, drawn at build time next to the QR
-  card showcase (spec `use-cases/ask-for-early-access.md` step 6). Gotcha in
+  card showcase (spec `use-cases/sign-up-for-early-access.md` step 4). Gotcha in
   that page's CSS: `section p { margin: 0 }` outranks a bare `.class` rule, so
   style a paragraph there as `section p.<class>`. Biome's noUnused warnings
   on its frontmatter consts are false positives (Astro template use).

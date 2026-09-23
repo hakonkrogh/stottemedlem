@@ -131,6 +131,23 @@ export const CANONICAL_ORIGIN = "https://xn--stttemedlem-hgb.no";
 /** Display form of the canonical origin, for UI copy only. */
 export const CANONICAL_ORIGIN_DISPLAY = "https://støttemedlem.no";
 
+/**
+ * The production back office's origin (app.støttemedlem.no in punycode). The
+ * marketing site links here, and it has no environment of its own to read it
+ * from.
+ */
+export const BACKOFFICE_ORIGIN = "https://app.xn--stttemedlem-hgb.no";
+
+/**
+ * Where an organization signs itself up during early access
+ * (specs/use-cases/sign-up-for-early-access.md): the sign-in, opened on its
+ * "create an account" side.
+ */
+export const SIGN_UP_PATH = "/registrer";
+
+/** The sign-up address in full, for the marketing site. */
+export const SIGN_UP_URL = `${BACKOFFICE_ORIGIN}${SIGN_UP_PATH}`;
+
 /** URL-safe slug from Norwegian text: lowercase ASCII words joined by hyphens. */
 function slugify(text: string): string {
   return text

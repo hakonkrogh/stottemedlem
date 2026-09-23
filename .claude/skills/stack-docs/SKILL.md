@@ -272,6 +272,19 @@ Verified 2026-07-08 (backoffice AuthKit login, scaffolding step 3):
   `api.workos.com/user_management/authorize?...` URL our /login redirects to —
   a Location on `error.workos.com` means registration mismatch; an
   `authkit.workos.com` URL means the pair is valid.
+- **Self-service sign-up is a per-ENVIRONMENT dashboard switch, not code**
+  (read from the docs 2026-09-23, dashboard state NOT checked): `/registrer`
+  passes `screenHint: "sign-up"`, which only opens the account-creation form
+  if the environment allows it. Two settings under Authentication → Features
+  (dashboard.workos.com/environment/authentication/features) decide it: the
+  "Sign up" toggle must be ON, and the "Waitlist" must be OFF, because an
+  enabled waitlist supersedes sign-up and swaps the form for an email-only
+  waitlist form (invited users still get through). Set both for staging and
+  production separately. The user confirmed 2026-09-23 that sign-up is on and
+  the waitlist off (environment not named). `/registrer` itself needs NO
+  registration in WorkOS: it is our route, and the only address WorkOS checks
+  is the redirect URI `/callback`, already registered for sign-in. Sources:
+  workos.com/docs/authkit/invite-only-signup.md, workos.com/docs/authkit/waitlist.md.
 
 ### Administrators and invitations (verified against SDK v10.7.0's types, 2026-09-10)
 

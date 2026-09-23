@@ -436,7 +436,23 @@ in its own first lines of output; `devlog.sh port` reads it back.
   (width/height/font on the input, font-weight/size on the label); see
   `.audience-choice input` in `ComposeMessageScreen.astro`. Corollary: don't
   *rely* on another component's leaked styles looking right in a story.
-- **Debugging a story that only looks wrong:** `chrome --dump-dom` races the
+  **The leak also runs the other way, into the PRIMITIVES' class names**
+  (hit 2026-09-23): `Text` renders `<p class="text body">` (its default
+  variant is `body`; others are `lead`, `muted`, `small`), so a screen's own
+  `.body { display: grid }` turned every `<Text>` in the story into a grid
+  and broke a sentence at each inline link. Never name a screen class after a
+  primitive's (`text`, `body`, `lead`, `muted`, `small`, `stack`, `card`,
+  `alert`, `heading`): prefix it with the component's own noun
+  (`.step-body`, `.step-title`), as `SetupGuide.astro` does.
+- **Debugging a story that only looks wrong:** the quickest route is
+  `drive-page`'s `eval=` (it already resolves playwright; a scratch script in
+  `packages/ui` cannot): `node .claude/skills/drive-page/drive.mjs "<story
+  iframe url>" "wait=.your-class" "eval=(()=>{const r=[];for(let
+  e=document.querySelector('.your-class a');e&&e!==document.body;e=e.parentElement)
+  r.push(e.tagName+'.'+e.className+' '+getComputedStyle(e).display);return r})()"`
+  walks up from an element printing each ancestor's classes and display.
+  Without the `wait=` the story has not rendered and `eval` prints `[]`.
+  The older route: `chrome --dump-dom` races the
   async story render (returns the skeleton even with `--virtual-time-budget`).
   `npm i puppeteer-core` in the scratchpad and drive the installed Chrome
   (`executablePath: "/Applications/Google Chrome.app/Contents/MacOS/Google

@@ -8,6 +8,7 @@ import {
 import CreateOrgScreen from "../../components/CreateOrgScreen.astro";
 import Shell from "../../layouts/Shell.astro";
 import { getDb } from "../../lib/db";
+import { logger } from "../../lib/log";
 import { parseAnnualFee } from "../../lib/membershipTiers";
 import { type ProfileFieldErrors, parseProfileForm } from "../../lib/orgProfile";
 import { env, getWorkOS, orgPath, SESSION_COOKIE, sessionCookieOptions } from "../../lib/workos";
@@ -21,6 +22,7 @@ import { env, getWorkOS, orgPath, SESSION_COOKIE, sessionCookieOptions } from ".
 // POST: create the WorkOS organization, add the user as a member, persist the
 // org row (stable slug + profile) with its first tier, scope the session,
 // land on it.
+const log = logger("organizations");
 const session = Astro.locals.session;
 if (!session) return Astro.redirect("/login");
 
@@ -28,10 +30,12 @@ let name = "";
 let values = { orgnr: "", contactEmail: "", websiteUrl: "" };
 let annualFee = "";
 let acceptedDpa = false;
+let acceptedEarlyAccess = false;
 let fieldErrors: ProfileFieldErrors & {
   name?: string;
   annualFee?: string;
   godtarAvtale?: string;
+  godtarTidligTilgang?: string;
 } = {};
 
 if (Astro.request.method === "POST") {
@@ -52,6 +56,13 @@ if (Astro.request.method === "POST") {
   acceptedDpa = form.get("godtarAvtale") !== null;
   if (!acceptedDpa) {
     fieldErrors.godtarAvtale = "Du må godta databehandleravtalen for å opprette organisasjonen.";
+  }
+  // Early access is the same kind of condition, checked the same way
+  // (specs/use-cases/sign-up-for-early-access.md).
+  acceptedEarlyAccess = form.get("godtarTidligTilgang") !== null;
+  if (!acceptedEarlyAccess) {
+    fieldErrors.godtarTidligTilgang =
+      "Du må bekrefte at du vet at tjenesten er i tidlig tilgang for å opprette organisasjonen.";
   }
 
   if (Object.keys(fieldErrors).length === 0 && parsed.profile && "fee" in parsedFee) {
@@ -74,6 +85,10 @@ if (Astro.request.method === "POST") {
       description: null,
       annualFeeNok: parsedFee.fee,
     });
+    // Organizations sign themselves up now, so this line is how the
+    // product's own people learn that one has arrived and may want a hand
+    // (specs/use-cases/sign-up-for-early-access.md). Identifiers only.
+    log.info("an organization signed up", { orgId: row.id, slug: row.slug });
 
     const sealed = Astro.cookies.get(SESSION_COOKIE)?.value;
     if (sealed) {
@@ -101,6 +116,7 @@ if (Astro.request.method === "POST") {
     values={values}
     annualFee={annualFee}
     acceptedDpa={acceptedDpa}
+    acceptedEarlyAccess={acceptedEarlyAccess}
     fieldErrors={fieldErrors}
   />
 </Shell>

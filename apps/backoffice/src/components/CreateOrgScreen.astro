@@ -29,9 +29,12 @@ interface Props {
     name?: string;
     annualFee?: string;
     godtarAvtale?: string;
+    godtarTidligTilgang?: string;
   };
   /** Keep the tick when a rejected submission re-renders the form. */
   acceptedDpa?: boolean;
+  /** Keep the early-access tick the same way. */
+  acceptedEarlyAccess?: boolean;
   error?: string | null;
 }
 const {
@@ -40,6 +43,7 @@ const {
   annualFee = "",
   fieldErrors = {},
   acceptedDpa = false,
+  acceptedEarlyAccess = false,
   error = null,
 } = Astro.props;
 ---
@@ -52,6 +56,15 @@ const {
       offentlige side sammen med navnet — den trenger Vipps for å godkjenne betalinger.
     </Text>
   </Stack>
+  {/* Said before anything is filled in, not after: an organization should
+      know what it is signing up for before it spends time on the form
+      (specs/use-cases/sign-up-for-early-access.md). */}
+  <Alert variant="info">
+    <strong>støttemedlem.no er i tidlig tilgang.</strong> Det er gratis så lenge testfasen varer,
+    og medlemmene betaler med ekte penger gjennom organisasjonens egen Vipps-avtale. Tjenesten er
+    ny og endrer seg fortsatt, og noe kan svikte. Vi følger med og hjelper dere gjerne:{" "}
+    <TextLink href="mailto:hei@xn--stttemedlem-hgb.no">hei@støttemedlem.no</TextLink>.
+  </Alert>
   {error && <Alert variant="error">{error}</Alert>}
   <form method="post">
     <Stack gap="lg">
@@ -87,6 +100,20 @@ const {
         Jeg godtar <TextLink href={DPA_PATH}>databehandleravtalen</TextLink>: organisasjonen eier
         medlemsregisteret sitt, og støttemedlem.no behandler opplysningene bare på organisasjonens
         vegne.
+      </Checkbox>
+      {/* The second condition, ticked the same way: an organization joining
+          a test phase should have noticed that it is one, since its own
+          members will pay through it
+          (specs/use-cases/sign-up-for-early-access.md). */}
+      <Checkbox
+        name="godtarTidligTilgang"
+        checked={acceptedEarlyAccess}
+        required
+        error={fieldErrors.godtarTidligTilgang}
+      >
+        Jeg forstår at støttemedlem.no er i en testfase med tidlig tilgang: tjenesten er gratis
+        foreløpig, den kan endre seg, og organisasjonen tar imot ekte betalinger gjennom sin egen
+        Vipps-avtale.
       </Checkbox>
       <Button busy="Oppretter organisasjonen …" block>
         Opprett og fortsett
