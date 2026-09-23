@@ -7,7 +7,6 @@ import StoryScreen from "./StoryScreen.astro";
 import {
   ACTIVE_MEMBERS,
   ALL_WARNINGS,
-  JOIN_URL,
   NO_STATS,
   ORG,
   ORG_PATH,
@@ -15,7 +14,7 @@ import {
   PERIOD_LABEL,
   QR_CARD_PREVIEW_SRC,
   QR_CARD_URL,
-  TERMS_URL,
+  storyIdentity,
 } from "./storyFixtures";
 
 export default {
@@ -37,8 +36,6 @@ const overview = (
       props: {
         orgPath: ORG_PATH,
         orgName: ORG.name,
-        joinUrl: JOIN_URL,
-        termsUrl: TERMS_URL,
         qrCardUrl: QR_CARD_URL,
         qrCardPreviewSrc: QR_CARD_PREVIEW_SRC,
         stats: ORG_STATS,
@@ -49,16 +46,16 @@ const overview = (
   },
 });
 
-/** An organization in order: nothing to fix, just the addresses it shares. */
+/** An organization in order: nothing to fix, its figures and its QR card. */
 export const Default = { args: overview() };
 
 /** Everything a half-finished organization still owes, each with its way in.
  *  Nobody has joined it, so it carries no figures at all, and it has uploaded
- *  no logo either: the chrome then shows its name alone. */
+ *  no logo or banner either: the chrome then shows its name alone. */
 export const NeedsSetup = {
   args: {
     ...overview({ warnings: ALL_WARNINGS, stats: NO_STATS }, ALL_WARNINGS, 0),
-    logoUrl: null,
+    identity: storyIdentity(ORG),
   },
 };
 

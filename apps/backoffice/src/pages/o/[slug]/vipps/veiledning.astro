@@ -2,7 +2,7 @@
 import OrgScreen from "../../../../components/OrgScreen.astro";
 import VippsGuideScreen from "../../../../components/VippsGuideScreen.astro";
 import Shell from "../../../../layouts/Shell.astro";
-import { readableJoinTermsUrl, readableJoinUrl } from "../../../../lib/joinLinks";
+import { readableJoinTermsUrl, readableJoinUrl, shareableJoinUrl } from "../../../../lib/joinLinks";
 import { orgIdentity } from "../../../../lib/orgImages";
 import { requireOrgView } from "../../../../lib/orgView";
 import { orgPath } from "../../../../lib/workos";
@@ -18,8 +18,8 @@ const org = view.org;
 
 <Shell title={`Slik kobler dere Vipps til støttemedlem (${org.name})`} frame={false}>
   <OrgScreen
-    orgName={org.name}
-    logoUrl={orgIdentity(org).logoUrl}
+    identity={orgIdentity(org)}
+    publicUrl={shareableJoinUrl(org.slug)}
     orgPath={orgPath(org.slug)}
     active="innstillinger"
     warnings={view.warnings}

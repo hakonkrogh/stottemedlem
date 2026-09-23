@@ -3,9 +3,10 @@
 // with the circular logo overlapping its bottom edge and the org name beside
 // it (specs/concepts/join-page.md). This is THE one presentation of an
 // organization: the public join page and the receipt show it to supporters,
-// and the back office shows the very same component to the administrator as
-// the preview of how their organization is presented. Sharing it is what makes
-// that preview the truth, not an approximation.
+// and the back office opens every one of its screens with the very same
+// component, so an administrator sees their organization exactly as a
+// supporter does without ever opening the public page. Sharing it is what
+// makes that true, not an approximation.
 //
 // The banner stays bounded in height so the page's real content is never
 // pushed far down. Either image is simply omitted when the org has none: the
@@ -19,9 +20,25 @@ interface Props {
    * percentages (0-100) chosen by the organization; centered when unset.
    */
   bannerFocus?: { x: number; y: number } | null;
+  /**
+   * What the name is, structurally. On the public pages it is an identity
+   * mark (a paragraph: the page's own headline comes below). In the back
+   * office the organization IS the page's subject, so the chrome renders it
+   * as the one h1 and the screens inside start at level 2.
+   */
+  as?: "p" | "h1";
+  /** Where the name and logo lead when pressed; nowhere by default. */
+  href?: string;
 }
 
-const { name, logoUrl = null, bannerUrl = null, bannerFocus = null } = Astro.props;
+const {
+  name,
+  logoUrl = null,
+  bannerUrl = null,
+  bannerFocus = null,
+  as: Name = "p",
+  href,
+} = Astro.props;
 const bannerPosition = `${bannerFocus?.x ?? 50}% ${bannerFocus?.y ?? 50}%`;
 ---
 
@@ -29,10 +46,19 @@ const bannerPosition = `${bannerFocus?.x ?? 50}% ${bannerFocus?.y ?? 50}%`;
   {bannerUrl && (
     <img class="banner" src={bannerUrl} alt="" style={`object-position: ${bannerPosition}`} />
   )}
-  <div class="head">
-    {logoUrl && <img class="logo" src={logoUrl} alt="" />}
-    <p class="org-name">{name}</p>
-  </div>
+  {
+    href ? (
+      <a class="head linked" href={href}>
+        {logoUrl && <img class="logo" src={logoUrl} alt="" />}
+        <Name class="org-name">{name}</Name>
+      </a>
+    ) : (
+      <div class="head">
+        {logoUrl && <img class="logo" src={logoUrl} alt="" />}
+        <Name class="org-name">{name}</Name>
+      </div>
+    )
+  }
 </header>
 
 <style>
@@ -53,6 +79,21 @@ const bannerPosition = `${bannerFocus?.x ?? 50}% ${bannerFocus?.y ?? 50}%`;
     display: flex;
     align-items: flex-end;
     gap: 1.1rem;
+  }
+  /* Linked, the row still reads as the identity mark, not as a link: the name
+     underlines on hover, and the ring shows where the keyboard is. */
+  .linked {
+    color: inherit;
+    text-decoration: none;
+    border-radius: var(--sm-radius-sm);
+  }
+  .linked:hover .org-name {
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+  .linked:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px var(--sm-focus-ring);
   }
   /* The org name is the identity mark beside the logo, not the page headline:
      the h1 is the page's own invitation or confirmation below. Styled like a

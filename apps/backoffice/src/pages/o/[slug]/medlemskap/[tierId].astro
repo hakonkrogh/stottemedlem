@@ -10,6 +10,7 @@ import OrgScreen from "../../../../components/OrgScreen.astro";
 import Shell from "../../../../layouts/Shell.astro";
 import { getDb } from "../../../../lib/db";
 import { getEmailSender } from "../../../../lib/email";
+import { shareableJoinUrl } from "../../../../lib/joinLinks";
 import {
   getTierTemplate,
   parseTierForm,
@@ -156,8 +157,8 @@ const title = isNew ? "Legg til medlemskap" : `Endre ${tier?.name}`;
 
 <Shell title={`${title} — ${org.name}`} frame={false}>
   <OrgScreen
-    orgName={org.name}
-    logoUrl={orgIdentity(org).logoUrl}
+    identity={orgIdentity(org)}
+    publicUrl={shareableJoinUrl(org.slug)}
     orgPath={orgPath(org.slug)}
     active="medlemskap"
     warnings={warnings}

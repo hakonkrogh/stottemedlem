@@ -2,6 +2,7 @@
 import OrgScreen from "../../../components/OrgScreen.astro";
 import VippsKeysScreen from "../../../components/VippsKeysScreen.astro";
 import Shell from "../../../layouts/Shell.astro";
+import { shareableJoinUrl } from "../../../lib/joinLinks";
 import { orgIdentity } from "../../../lib/orgImages";
 import { requireOrgView } from "../../../lib/orgView";
 import { getVippsForOrg } from "../../../lib/vipps";
@@ -139,8 +140,8 @@ const editing = formRejected || flags.has("rediger");
 
 <Shell title={`Vipps-nøkler — ${org.name}`} frame={false}>
   <OrgScreen
-    orgName={org.name}
-    logoUrl={orgIdentity(org).logoUrl}
+    identity={orgIdentity(org)}
+    publicUrl={shareableJoinUrl(org.slug)}
     orgPath={orgPath(org.slug)}
     active="innstillinger"
     warnings={view.warnings}

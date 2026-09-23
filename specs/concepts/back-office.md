@@ -10,10 +10,10 @@ administrator do sits in one of them.
 
 | Place | What it is for |
 |-------|----------------|
-| **Oversikt** | The front page: how the organization is doing, and the addresses it shares |
+| **Oversikt** | The front page: how the organization is doing, and its [QR code card](../use-cases/promote-with-qr-card.md) |
 | **Medlemmer** | The [member list](../use-cases/curate-member-list.md), one member at a time, and writing to them |
 | **Medlemskap** | The [membership](membership-tier.md) offer supporters are shown |
-| **Innstillinger** | The organization's own details — profile, visual identity, its [Vipps API keys](vipps-api-keys.md), and who may act for it |
+| **Innstillinger** | The organization's own details — profile, visual identity, the public addresses it has been given, its [Vipps API keys](vipps-api-keys.md), and who may act for it |
 
 They are presented in that order, and **settings comes last**: it is where an
 administrator goes when something has to be changed, not where the recurring
@@ -54,9 +54,17 @@ one visit and never has to be re-learned.
   [organization's figures](organization-figures.md): what a year of support is
   worth, how many people stand behind it, and what this period has added and
   taken away. That is the question they came back with, and it is not one any
-  other place answers. After the figures, the addresses the organization
-  shares: the [join page](join-page.md), its sales terms and its
-  [QR code card](../use-cases/promote-with-qr-card.md).
+  other place answers. After the figures, the
+  [QR code card](../use-cases/promote-with-qr-card.md) the organization hangs
+  up and shares.
+- **The public addresses live under Innstillinger, not on the front page.**
+  The [join page](join-page.md) address and its sales-terms address are
+  things an organization is given once and pastes into a form now and then
+  (the payment provider's order form, its own website); they are not what an
+  administrator comes back to look at, and the way to the public page is
+  already offered at the top of every screen. So they sit with the rest of
+  what the organization has been given, written out in full so they can be
+  copied, each with a word on where it is pasted.
 - **The membership offer is not repeated on the front page.** Every place is
   one click away from every screen, so showing the
   [memberships](membership-tier.md) here would be a second copy of a place that
@@ -106,13 +114,21 @@ one visit and never has to be re-learned.
   account — the person, switching organization, signing out — is a quiet line
   at the very top of every screen; below it, with room to breathe, comes the
   organization's own name, which is what the page is actually about.
-- **An organization that has a logo is shown it, before its name.** The logo is
-  the mark its own people recognise, and an administrator who acts for more
-  than one organization should never have to read a name to know which back
-  office they are in. It is the same mark supporters meet on the
-  [join page](join-page.md), framed in the same circle, and small: the name
-  remains what the row says. An organization that has uploaded no logo simply
-  shows its name, and nothing stands in the empty place.
+- **Every screen opens with the organization as the public page presents
+  it.** Below the account line stands the very same identity header a
+  supporter meets at the top of the [join page](join-page.md): the banner as
+  a backdrop, the logo in its circle overlapping the banner's edge, the name
+  beside it; and with nothing uploaded, the name alone. It is one thing shown
+  in every place an organization is presented, so what the administrator sees
+  above their work is exactly what a supporter sees, and the back office needs
+  no separate preview of the public page. It also does the work a mark does:
+  an administrator who acts for more than one organization never has to read
+  a name to know which back office they are in. The name is the page's
+  heading and leads back to the front page.
+- **Right under that header, the way to the public page.** One quiet link,
+  "see the public page", on every screen: the public page is the thing every
+  setting here ends up on, so reaching it never depends on which place the
+  administrator is in.
 - Editable information follows [Presenting and editing](presenting-and-editing.md):
   presented by default, changed only when asked.
 - Every button that does something is answered the moment it is pressed and

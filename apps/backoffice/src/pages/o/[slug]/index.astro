@@ -5,7 +5,7 @@ import OrgOverviewScreen from "../../../components/OrgOverviewScreen.astro";
 import OrgScreen from "../../../components/OrgScreen.astro";
 import Shell from "../../../layouts/Shell.astro";
 import { getDb } from "../../../lib/db";
-import { readableJoinTermsUrl, readableJoinUrl, readableQrCardUrl } from "../../../lib/joinLinks";
+import { readableQrCardUrl, shareableJoinUrl } from "../../../lib/joinLinks";
 import { orgIdentity } from "../../../lib/orgImages";
 import { orgView } from "../../../lib/orgView";
 import { periods } from "../../../lib/periods";
@@ -20,8 +20,8 @@ import {
 
 // The front tab of the org's back office. Resolves the persisted slug to the
 // org row (backfilling rows for orgs that predate persisted slugs), verifies
-// the signed-in user is a member, and shows the org's public URLs — the join
-// page, salgsvilkår and QR card — plus everything that is not yet in order.
+// the signed-in user is a member, and shows the org's figures and its QR
+// card, plus everything that is not yet in order.
 const session = Astro.locals.session;
 if (!session) return Astro.redirect("/login");
 const slug = Astro.params.slug;
@@ -84,8 +84,8 @@ const feeNotice = Astro.url.searchParams.has("varslet") ? { told, unreached } : 
 
 <Shell title={org.name} frame={false}>
   <OrgScreen
-    orgName={org.name}
-    logoUrl={orgIdentity(org).logoUrl}
+    identity={orgIdentity(org)}
+    publicUrl={shareableJoinUrl(org.slug)}
     orgPath={orgPath(org.slug)}
     active="oversikt"
     warnings={view.warnings}
@@ -96,8 +96,6 @@ const feeNotice = Astro.url.searchParams.has("varslet") ? { told, unreached } : 
     <OrgOverviewScreen
       orgPath={orgPath(org.slug)}
       orgName={org.name}
-      joinUrl={readableJoinUrl(org.slug)}
-      termsUrl={readableJoinTermsUrl(org.slug)}
       qrCardUrl={readableQrCardUrl(org.slug)}
       warnings={view.warnings}
       stats={view.stats}

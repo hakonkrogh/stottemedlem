@@ -128,15 +128,17 @@ export async function serveOrgImage(media: R2Bucket, key: string | null): Promis
 /**
  * What the shared identity header needs, resolved from the stored keys: the
  * name, the public image addresses, and the banner's chosen focal point. Every
- * surface that presents an organization (join page, receipt, and the back
- * office's own preview of them) maps through here, so they cannot drift.
+ * surface that presents an organization (join page, receipt, and the top of
+ * every back-office screen) maps through here, so they cannot drift.
  */
-export function orgIdentity(org: OrganizationImages & { name: string; slug: string }): {
+export interface OrgIdentity {
   name: string;
   logoUrl: string | null;
   bannerUrl: string | null;
   bannerFocus: { x: number; y: number } | null;
-} {
+}
+
+export function orgIdentity(org: OrganizationImages & { name: string; slug: string }): OrgIdentity {
   return {
     name: org.name,
     logoUrl: org.logoKey ? orgImageUrl(org.slug, "logo", org.logoKey) : null,

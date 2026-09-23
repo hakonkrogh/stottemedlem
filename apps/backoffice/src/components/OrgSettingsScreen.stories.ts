@@ -4,13 +4,14 @@ import OrgSettingsScreen from "./OrgSettingsScreen.astro";
 import StoryScreen from "./StoryScreen.astro";
 import {
   ALL_WARNINGS,
-  FIXTURE_LOGO_URL,
   JOIN_URL,
   ORG,
   ORG_OPTED_OUT_OF_ADDRESSES,
   ORG_PATH,
   ORG_WITH_IMAGES,
   STORED_KEYS,
+  storyIdentity,
+  TERMS_URL,
   WEBHOOK_URL,
 } from "./storyFixtures";
 
@@ -28,15 +29,16 @@ const storedKeys = {
   webhook: { id: "wh-1", secret: "s", url: WEBHOOK_URL, registeredAt: "2026-08-27T09:00:00.000Z" },
 };
 
-// The chrome's own logo is read off the organization the story renders, so the
-// mark above the screen and the preview inside it can never contradict each
-// other: a story about an org with no logo shows none in either place.
+// The chrome's identity is read off the organization the story renders, so
+// what stands above the screen is what that organization has uploaded: these
+// stories are where the chrome's four shapes (name alone, logo only, banner
+// only, both) are reviewed, since the settings are where the imagery is set.
 const settings = (props: Record<string, unknown> = {}, warnings: OrgWarning[] = []) => {
   const org = (props.org as Organization | undefined) ?? ORG_WITH_IMAGES;
   return {
     active: "innstillinger",
     warnings,
-    logoUrl: org.logoKey ? FIXTURE_LOGO_URL : null,
+    identity: storyIdentity(org),
     slots: {
       default: {
         component: OrgSettingsScreen,
@@ -44,6 +46,7 @@ const settings = (props: Record<string, unknown> = {}, warnings: OrgWarning[] = 
           org,
           orgPath: ORG_PATH,
           joinUrl: JOIN_URL,
+          termsUrl: TERMS_URL,
           values: {
             orgnr: ORG.orgnr ?? "",
             contactEmail: ORG.contactEmail ?? "",
@@ -62,13 +65,13 @@ const settings = (props: Record<string, unknown> = {}, warnings: OrgWarning[] = 
 };
 
 /**
- * What is stored, presented — the form only opens when asked for. The
- * organization is shown as the public page shows it: the very same identity
- * header, inside the public page's own column.
+ * What is stored, presented — the form only opens when asked for. Above it
+ * the chrome shows the organization as the public page shows it, with the
+ * two public addresses written out among the details.
  */
 export const Default = { args: settings() };
 
-/** Only a logo uploaded: it sits in its circle beside the name. */
+/** Only a logo uploaded: the chrome shows it in its circle beside the name. */
 export const LogoOnly = {
   args: settings({ org: { ...ORG_WITH_IMAGES, bannerKey: null } }),
 };
@@ -83,7 +86,7 @@ export const BannerFocalPoint = {
   args: settings({ org: { ...ORG_WITH_IMAGES, bannerFocusX: 50, bannerFocusY: 0 } }),
 };
 
-/** Nothing uploaded yet: the preview says so, and shows the name alone. */
+/** Nothing uploaded yet: the chrome shows the name alone. */
 export const NoImages = { args: settings({ org: ORG }) };
 
 /**
