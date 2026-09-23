@@ -37,19 +37,31 @@ export function readableShareableOrigin(): string {
   return origin === CANONICAL_ORIGIN ? CANONICAL_ORIGIN_DISPLAY : origin;
 }
 
-/** The organization's shareable join-page address on this environment. */
+/**
+ * The organization's shareable join-page address on this environment, in the
+ * ASCII form a machine reads: this is what the QR code encodes.
+ */
 export function shareableJoinUrl(slug: string): string {
   return `${shareableOrigin()}${joinPagePath(slug)}`;
 }
 
-/** The organization's sales-terms address on this environment. */
-export function shareableJoinTermsUrl(slug: string): string {
-  return `${shareableOrigin()}${joinPageTermsPath(slug)}`;
+/**
+ * The same join-page address the way a person reads it (with the ø). This is
+ * what the back office shows an administrator to copy and pass on.
+ */
+export function readableJoinUrl(slug: string): string {
+  return `${readableShareableOrigin()}${joinPagePath(slug)}`;
 }
 
-/** The organization's QR code card address — the image posters and other
- *  websites embed (specs/use-cases/promote-with-qr-card.md). It sits beneath
- *  the join page, so it is routed and public wherever the page is. */
-export function shareableQrCardUrl(slug: string): string {
-  return `${shareableOrigin()}${joinPageQrPath(slug)}`;
+/** The organization's sales-terms address, the way a person reads it. */
+export function readableJoinTermsUrl(slug: string): string {
+  return `${readableShareableOrigin()}${joinPageTermsPath(slug)}`;
+}
+
+/** The organization's QR code card address, the way a person reads it. This
+ *  is the image posters and other websites embed
+ *  (specs/use-cases/promote-with-qr-card.md). It sits beneath the join page,
+ *  so it is routed and public wherever the page is. */
+export function readableQrCardUrl(slug: string): string {
+  return `${readableShareableOrigin()}${joinPageQrPath(slug)}`;
 }

@@ -2,7 +2,7 @@
 import OrgScreen from "../../../../components/OrgScreen.astro";
 import VippsGuideScreen from "../../../../components/VippsGuideScreen.astro";
 import Shell from "../../../../layouts/Shell.astro";
-import { shareableJoinTermsUrl, shareableJoinUrl } from "../../../../lib/joinLinks";
+import { readableJoinTermsUrl, readableJoinUrl } from "../../../../lib/joinLinks";
 import { orgIdentity } from "../../../../lib/orgImages";
 import { requireOrgView } from "../../../../lib/orgView";
 import { orgPath } from "../../../../lib/workos";
@@ -28,8 +28,8 @@ const org = view.org;
     <VippsGuideScreen
       orgName={org.name}
       orgPath={orgPath(org.slug)}
-      joinUrl={shareableJoinUrl(org.slug)}
-      termsUrl={shareableJoinTermsUrl(org.slug)}
+      joinUrl={readableJoinUrl(org.slug)}
+      termsUrl={readableJoinTermsUrl(org.slug)}
       keysStored={view.vippsKeys !== null}
     />
   </OrgScreen>
