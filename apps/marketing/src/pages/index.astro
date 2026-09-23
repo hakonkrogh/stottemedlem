@@ -6,7 +6,7 @@
 // specs/use-cases/ask-for-early-access.md).
 import "@fontsource-variable/fraunces";
 import { CANONICAL_ORIGIN } from "@stottemedlem/core";
-import { qrCardSvg } from "@stottemedlem/qr";
+import { memberCardSvg, qrCardSvg } from "@stottemedlem/qr";
 import HeroBackdrop from "../components/HeroBackdrop.astro";
 
 // A static QR-card preview so prospective organizations see what they get
@@ -17,6 +17,19 @@ import HeroBackdrop from "../components/HeroBackdrop.astro";
 const previewCardSvg = qrCardSvg({
   joinUrl: CANONICAL_ORIGIN,
   organizationName: "Bakvendtland Skolekorps",
+});
+
+// A static member card, so an organization sees what its members get (see
+// specs/concepts/member-card.md). The member is invented, and the code leads
+// back here like the QR card's does.
+const previewMemberCardSvg = memberCardSvg({
+  memberName: "Kari Eksempel",
+  memberNumber: 42,
+  organizationName: "Bakvendtland Skolekorps",
+  hearts: 8,
+  recruits: 3,
+  periodText: String(new Date().getFullYear()),
+  joinUrl: CANONICAL_ORIGIN,
 });
 ---
 
@@ -79,37 +92,35 @@ const previewCardSvg = qrCardSvg({
           styr.
         </p>
       </section>
-      <section class="perks">
-        <h2>Medlemmene får noe å samle på — og vise fram</h2>
-        <p class="hearts" aria-hidden="true">❤️ ❤️ ❤️ ❤️ ❤️ ❤️ ❤️ ❤️</p>
-        <div class="perk-grid">
-          <div>
-            <h3>Ett hjerte for hvert år</h3>
-            <p>
-              Hvert år som støttemedlem gir et nytt hjerte. Åtte års støtte er åtte hjerter —
-              lojalitet som synes, år for år.
-            </p>
-          </div>
-          <div>
-            <h3>Støttebevis med QR-kode</h3>
-            <p>
-              Medlemmet kan skrive ut et bevis på støtten sin, med hjertene og en personlig
-              QR-kode. Den som skanner koden, melder seg inn — og vervingen krediteres
-              medlemmet.
-            </p>
-          </div>
-          <div>
-            <h3>Vervetelleren</h3>
-            <p>
-              Medlemmene ser hvor mange nye støttemedlemmer de selv har vervet. Poeng for år,
-              poeng for verving — litt vennskapelig konkurranse har aldri skadet et korps.
-            </p>
-          </div>
+      <section class="member-showcase">
+        <div class="member-copy">
+          <h2>Hvert medlem får sitt eget medlemsbevis</h2>
+          <p>
+            Et kort med medlemmets navn, medlemsnummer og organisasjonens logo. Det ligger på
+            medlemmets egen side, følger med hver kvittering og kan deles med hvem som helst.
+          </p>
+          <ul>
+            <li>
+              <strong>Ett hjerte for hvert år.</strong> Tallet i hjertet er hvor mange år
+              medlemmet har støttet dere. Lojalitet som synes.
+            </li>
+            <li>
+              <strong>Et kort som verver.</strong> Den som skanner koden, blir medlem, og
+              vervingen krediteres den som viste kortet. Kortet viser hvor mange hver enkelt har
+              vervet.
+            </li>
+            <li>
+              <strong>Gyldig i år.</strong> Kortet sier hvilket år det gjelder, så medlemmet ser
+              med en gang at alt er i orden.
+            </li>
+          </ul>
+          <p class="member-pitch">
+            Medlemmer som blir sett, blir værende, og verver flere. Det er gevinsten for
+            organisasjonen.
+          </p>
+          <p class="member-note">Slik ser kortet ut. Medlemmet er oppdiktet.</p>
         </div>
-        <p class="perks-pitch">
-          Medlemmer som blir sett, blir værende — og verver flere. Det er gevinsten for
-          organisasjonen.
-        </p>
+        <figure class="member-card" set:html={previewMemberCardSvg} aria-label="Eksempel på et medlemsbevis"></figure>
       </section>
       <section class="qr-showcase">
         <div class="qr-copy">
@@ -291,10 +302,10 @@ const previewCardSvg = qrCardSvg({
     transform: translateY(-3px);
     box-shadow: 0 16px 40px rgb(0 0 0 / 0.28);
   }
-  section:not(.perks):not(.qr-showcase) {
+  section:not(.member-showcase):not(.qr-showcase) {
     counter-increment: card;
   }
-  section:not(.perks):not(.qr-showcase) h2::before {
+  section:not(.member-showcase):not(.qr-showcase) h2::before {
     content: "0" counter(card);
     display: block;
     font-size: 0.85rem;
@@ -319,55 +330,68 @@ const previewCardSvg = qrCardSvg({
     margin: 0;
     color: #4c4338;
   }
-  .perks {
+  .member-showcase {
     grid-column: 1 / -1;
+    display: grid;
+    gap: 2.5rem;
+    align-items: center;
+    padding: 3rem 2rem;
     background: rgb(243 246 239 / 0.82);
     border-color: rgb(207 220 201 / 0.5);
-    text-align: center;
-    padding: 3rem 2rem;
   }
   @supports not (backdrop-filter: blur(1px)) {
-    .perks {
+    .member-showcase {
       background: #f3f6ef;
     }
   }
-  .hearts {
-    font-size: 1.3rem;
-    letter-spacing: 0.2rem;
-    margin: 0.25rem 0 1.25rem;
-  }
-  @media (max-width: 40rem) {
-    /* Keep all eight hearts on one line on phones. */
-    .hearts {
-      font-size: 0.95rem;
-      letter-spacing: 0.1rem;
-    }
-    section {
-      padding: 1.5rem;
-    }
-    .perks {
-      padding: 2.5rem 1.5rem;
-    }
-  }
-  .perk-grid {
-    display: grid;
-    gap: 2rem;
-    text-align: left;
-  }
   @media (min-width: 40rem) {
-    .perk-grid {
-      grid-template-columns: 1fr 1fr 1fr;
+    .member-showcase {
+      grid-template-columns: 0.95fr 1.05fr;
+    }
+    /* Copy first on phones, like the QR card below; card on the left when
+       there is room, so the two showcases mirror each other. */
+    .member-card {
+      order: -1;
     }
   }
-  h3 {
-    font-size: 1.1rem;
-    font-weight: 600;
-    margin: 0 0 0.35rem;
+  .member-copy h2 {
+    margin-bottom: 0.85rem;
   }
-  .perks-pitch {
-    margin-top: 1.5rem;
+  .member-copy ul {
+    margin: 1.25rem 0 0;
+    padding: 0;
+    list-style: none;
+    display: grid;
+    gap: 0.85rem;
+    color: #4c4338;
+  }
+  .member-copy strong {
+    color: #1f1a14;
+  }
+  section p.member-pitch {
+    margin-top: 1.25rem;
     font-weight: 600;
     color: #1f1a14;
+  }
+  section p.member-note {
+    margin-top: 1rem;
+    font-size: 0.95rem;
+    color: #6e6353;
+  }
+  .member-card {
+    margin: 0;
+    text-align: center;
+  }
+  .member-card :global(svg) {
+    width: 100%;
+    max-width: 22rem;
+    height: auto;
+    filter: drop-shadow(0 14px 34px rgb(0 0 0 / 0.3));
+  }
+  @media (max-width: 40rem) {
+    .member-showcase {
+      padding: 2rem 1.5rem;
+    }
   }
   .qr-showcase {
     grid-column: 1 / -1;
