@@ -17,7 +17,10 @@ that organization first if they don't have one yet.
 ## Behaviour
 From the administrator's point of view:
 
-1. The administrator signs in with their own identity.
+1. The administrator signs in with their own identity. A new organization
+   arrives from the front page's sign-up, which opens the same sign-in on its
+   "create an account" side
+   ([Sign up for early access](sign-up-for-early-access.md)).
 2. The product routes them based on the organizations they administer:
    - **None yet** → they are invited to create an organization by giving it a
      public-facing name, and land in it as its first administrator.

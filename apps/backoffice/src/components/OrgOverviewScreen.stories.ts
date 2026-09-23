@@ -7,6 +7,8 @@ import StoryScreen from "./StoryScreen.astro";
 import {
   ACTIVE_MEMBERS,
   ALL_WARNINGS,
+  JOIN_URL,
+  NEW_ORG_WARNINGS,
   NO_STATS,
   ORG,
   ORG_PATH,
@@ -37,6 +39,7 @@ const overview = (
         orgPath: ORG_PATH,
         orgName: ORG.name,
         qrCardUrl: QR_CARD_URL,
+        joinUrl: JOIN_URL,
         qrCardPreviewSrc: QR_CARD_PREVIEW_SRC,
         stats: ORG_STATS,
         periodLabel: PERIOD_LABEL,
@@ -49,7 +52,8 @@ const overview = (
 /** An organization in order: nothing to fix, its figures and its QR card. */
 export const Default = { args: overview() };
 
-/** Everything a half-finished organization still owes, each with its way in.
+/** Everything a half-finished organization still owes, as the setup guide:
+ *  the first step (creating it) ticked, the next one with its button.
  *  Nobody has joined it, so it carries no figures at all, and it has uploaded
  *  no logo or banner either: the chrome then shows its name alone. */
 export const NeedsSetup = {
@@ -59,8 +63,17 @@ export const NeedsSetup = {
   },
 };
 
+/** Just signed up: the agreement was accepted and a membership stated on the
+ *  create form, so the guide opens two steps in with Vipps as what is next. */
+export const JustSignedUp = {
+  args: {
+    ...overview({ warnings: NEW_ORG_WARNINGS, stats: NO_STATS }, NEW_ORG_WARNINGS, 0),
+    identity: storyIdentity(ORG),
+  },
+};
+
 /** Set up and waiting for its first supporter: every figure is a nothing, and
- *  the front page is the same front page it will be once they arrive. */
+ *  one line says it is ready and where to start sharing. */
 export const NobodyHasJoinedYet = {
   args: overview({ stats: NO_STATS }, [], 0),
 };

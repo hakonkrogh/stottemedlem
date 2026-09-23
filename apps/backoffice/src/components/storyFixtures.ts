@@ -239,6 +239,19 @@ export const ALL_WARNINGS: OrgWarning[] = orgWarnings({
   dpaAccepted: false,
 });
 
+/** What an organization owes the moment it has signed up: the create form
+ *  took its profile, its first membership and the agreement, so only Vipps
+ *  is left. */
+export const NEW_ORG_WARNINGS: OrgWarning[] = orgWarnings({
+  orgPath: ORG_PATH,
+  orgnr: ORG.orgnr,
+  contactEmail: ORG.contactEmail,
+  tierCount: 1,
+  vippsKeys: null,
+  webhookUrl: WEBHOOK_URL,
+  dpaAccepted: true,
+});
+
 /** Just the one warning a connected-but-unreachable payment setup produces. */
 export const PAYMENT_EVENT_WARNING: OrgWarning[] = orgWarnings({
   orgPath: ORG_PATH,

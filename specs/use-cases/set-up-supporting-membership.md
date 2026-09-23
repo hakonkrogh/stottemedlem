@@ -31,7 +31,10 @@ From the organization's point of view:
    provider evaluates the public page against a real, priced product; the
    creation step keeps it to a single amount so it doesn't stall getting
    started, and everything about it can be changed later.
-3. **The administrator ticks a box accepting the
+3. **The create form explains early access and asks the administrator to
+   confirm it** with a tick box of its own, the same way as the agreement
+   below ([Sign up for early access](sign-up-for-early-access.md)).
+   **The administrator also ticks a box accepting the
    [data processing agreement](../concepts/data-processing-agreement.md)**
    before the organization can be created. The box is empty until they tick it,
    sits above the create button, and links the agreement, which is readable
@@ -105,6 +108,29 @@ From the organization's point of view:
    offers is the way to the key form.
 8. Once configured, the organization is ready to receive supporting members; no
    further setup is required to take the first payment.
+9. **Until then, the front page is a setup guide.** A new organization,
+   usually one that has just [signed itself up](sign-up-for-early-access.md),
+   lands on a list of the steps from sign-up to its first supporter, in
+   order: create the organization, accept the data processing agreement, give
+   the organization number and contact address, state at least one membership
+   with a price, and connect Vipps. The guide is derived from the same facts as
+   the prompts below, so it and the tab badges can never disagree.
+   - **Every step is shown, done or not**, so the administrator sees how far
+     they have come and how far is left. Creating the organization is already
+     ticked, so nobody starts at zero.
+   - **Only the next step carries a button.** One clear thing to do now,
+     rather than several links competing for the first press. When the next
+     step is connecting Vipps, the button opens the Vipps guide (step 7), with
+     the key form one link beside it for an administrator who already has keys.
+   - It says where to ask for help if they get stuck.
+   - **The guide stays until supporters can join and pay**: a public page Vipps
+     will accept (organization number and contact address), something to buy (a
+     membership), and a way to be paid (Vipps keys). After that the front page
+     shows only what is still not in order, the same way it does for any
+     organization.
+   - **Then it says so.** Until the first supporter arrives, the front page
+     opens with one line saying everything is ready, pointing at the join page
+     and the QR card to share.
 
 An organization created before a profile field was required (or before this
 behaviour existed) is **prompted in the back office** to complete the missing
@@ -161,6 +187,14 @@ the front page.
       included.
 - [ ] A created organization records which version of the agreement was
       accepted, and when.
+- [ ] Until supporters can join and pay, the front page is a setup guide:
+      every step shown with whether it is done, creating the organization
+      already ticked, and a button on the next step only.
+- [ ] When the next step is connecting Vipps, its button opens the Vipps
+      guide.
+- [ ] Once the organization is ready, the guide gives way to the usual
+      warnings, and until the first supporter arrives a line says it is ready
+      and points at the join page and QR card.
 - [ ] An organization that has not accepted the current agreement — because a
       new version was written — is told so in its back office and can accept it
       there.

@@ -29,7 +29,7 @@ competing with the organization's own identity, which always comes first.
   addresses only: an **e-mail address we invite people to write to is written
   with the ø**, in the link as well as on the page, so a reader and their mail
   program see the one address they were given. See
-  [Ask for early access](../use-cases/ask-for-early-access.md).)
+  [Sign up for early access](../use-cases/sign-up-for-early-access.md).)
 - **An address a person sees is written with the ø, everywhere.** The ASCII
   (punycode) spelling "xn--stttemedlem-hgb.no" reads as a garbled domain, so
   no screen shows it: not the public pages, and not the back office either,

@@ -97,6 +97,7 @@ const feeNotice = Astro.url.searchParams.has("varslet") ? { told, unreached } : 
       orgPath={orgPath(org.slug)}
       orgName={org.name}
       qrCardUrl={readableQrCardUrl(org.slug)}
+      joinUrl={shareableJoinUrl(org.slug)}
       warnings={view.warnings}
       stats={view.stats}
       periodLabel={periodLabel(periods.periodFor().year)}

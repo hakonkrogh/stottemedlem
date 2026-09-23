@@ -56,7 +56,10 @@ one visit and never has to be re-learned.
   taken away. That is the question they came back with, and it is not one any
   other place answers. After the figures, the
   [QR code card](../use-cases/promote-with-qr-card.md) the organization hangs
-  up and shares.
+  up and shares. **The one exception is an organization that cannot take
+  payments yet**: its front page opens with the setup guide instead of the
+  plain warnings
+  ([Set up a supporting membership](../use-cases/set-up-supporting-membership.md)).
 - **The public addresses live under Innstillinger, not on the front page.**
   The [join page](join-page.md) address and its sales-terms address are
   things an organization is given once and pastes into a form now and then
@@ -112,7 +115,10 @@ one visit and never has to be re-learned.
   requires a narrow one.
 - **Who you are signed in as sits above the organization, not beside it.** The
   account — the person, switching organization, signing out — is a quiet line
-  at the very top of every screen; below it, with room to breathe, comes the
+  at the very top of every screen. While the product is in early access the
+  same line says so, with a way to ask the product's own people for help
+  ([Sign up for early access](../use-cases/sign-up-for-early-access.md)).
+  Below it, with room to breathe, comes the
   organization's own name, which is what the page is actually about.
 - **Every screen opens with the organization as the public page presents
   it.** Below the account line stands the very same identity header a

@@ -82,6 +82,14 @@ const TAB_ICONS: Record<OrgTabId, string> = {
 <div class="org-screen">
   <header class="chrome">
     <div class="account">
+      {/* The product is in early access, and an organization agreed to that
+          when it signed up. Saying so quietly on every screen keeps the
+          promise visible, and puts the way to ask for help where it is found
+          (specs/use-cases/sign-up-for-early-access.md). */}
+      <span class="early">
+        Tidlig tilgang ·{" "}
+        <TextLink href="mailto:hei@xn--stttemedlem-hgb.no">Spør oss</TextLink>
+      </span>
       {displayName && <span class="who">{displayName}</span>}
       {canSwitch && <TextLink href="/orgs">Bytt organisasjon</TextLink>}
       <TextLink href="/logout">Logg ut</TextLink>
@@ -160,6 +168,10 @@ const TAB_ICONS: Record<OrgTabId, string> = {
   }
   .who {
     overflow-wrap: anywhere;
+  }
+  /* Pushed to the far side of the row, away from who is signed in. */
+  .early {
+    margin-right: auto;
   }
   /* Narrow screens scroll the tabs sideways rather than wrapping them into a
      second row that pushes the panel down. */

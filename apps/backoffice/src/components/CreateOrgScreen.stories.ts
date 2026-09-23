@@ -13,8 +13,18 @@ interface ScreenProps {
   values?: { orgnr: string; contactEmail: string; websiteUrl: string };
   annualFee?: string;
   acceptedDpa?: boolean;
+  acceptedEarlyAccess?: boolean;
   fieldErrors?: Partial<
-    Record<"name" | "orgnr" | "contactEmail" | "websiteUrl" | "annualFee" | "godtarAvtale", string>
+    Record<
+      | "name"
+      | "orgnr"
+      | "contactEmail"
+      | "websiteUrl"
+      | "annualFee"
+      | "godtarAvtale"
+      | "godtarTidligTilgang",
+      string
+    >
   >;
   error?: string;
 }
@@ -35,6 +45,7 @@ export const Filled = {
     },
     annualFee: "300",
     acceptedDpa: true,
+    acceptedEarlyAccess: true,
   }),
 };
 
@@ -53,6 +64,28 @@ export const AgreementNotAccepted = {
     annualFee: "300",
     fieldErrors: {
       godtarAvtale: "Du må godta databehandleravtalen for å opprette organisasjonen.",
+    },
+  }),
+};
+
+/**
+ * Everything filled in and the agreement ticked, but early access not
+ * confirmed: that stops creation on its own too
+ * (specs/use-cases/sign-up-for-early-access.md).
+ */
+export const EarlyAccessNotConfirmed = {
+  args: inFrame({
+    name: "Bakvendtland Skolekorps",
+    values: {
+      orgnr: "923 609 016",
+      contactEmail: "post@bakvendtland.example",
+      websiteUrl: "bakvendtland.example",
+    },
+    annualFee: "300",
+    acceptedDpa: true,
+    fieldErrors: {
+      godtarTidligTilgang:
+        "Du må bekrefte at du vet at tjenesten er i tidlig tilgang for å opprette organisasjonen.",
     },
   }),
 };

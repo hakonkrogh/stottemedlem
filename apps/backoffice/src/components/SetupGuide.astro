@@ -1,0 +1,150 @@
+---
+// The way from a new organization to its first supporter, as a list of steps
+// (specs/use-cases/set-up-supporting-membership.md). Shown on the front page
+// until supporters can join and pay; after that the front page goes back to
+// the plain warnings.
+//
+// Every step is shown, done or not, so an administrator sees how far they have
+// come and how far is left. Only the NEXT step carries a button: one clear
+// thing to do now, rather than five links competing for the first press.
+import Button from "@stottemedlem/ui/components/Button.astro";
+import Heading from "@stottemedlem/ui/components/Heading.astro";
+import Stack from "@stottemedlem/ui/components/Stack.astro";
+import Text from "@stottemedlem/ui/components/Text.astro";
+import TextLink from "@stottemedlem/ui/components/TextLink.astro";
+import type { SetupStep } from "../lib/orgWarnings";
+
+interface Props {
+  steps: SetupStep[];
+  orgPath: string;
+}
+const { steps, orgPath } = Astro.props;
+
+const doneCount = steps.filter((step) => step.done).length;
+const nextId = steps.find((step) => !step.done)?.id;
+const progress = `${doneCount} av ${steps.length} steg er gjort.`;
+---
+
+<section class="setup" aria-label="Kom i gang">
+  <Stack gap="sm">
+    <Heading level={2}>Kom i gang</Heading>
+    <Text>
+      {progress} Når stegene under er gjort, kan støttemedlemmene melde seg inn og betale med Vipps.
+      Står dere fast, skriv til{" "}
+      <TextLink href="mailto:hei@xn--stttemedlem-hgb.no">hei@støttemedlem.no</TextLink>, så hjelper
+      vi dere.
+    </Text>
+  </Stack>
+  <ol class="steps">
+    {
+      steps.map((step) => (
+        <li class:list={["step", { done: step.done, next: step.id === nextId }]}>
+          <span class="step-mark" aria-hidden="true">
+            {step.done ? "✓" : ""}
+          </span>
+          <div class="step-body">
+            <span class="step-title">
+              {step.title}
+              {step.done && <span class="sr-only"> (gjort)</span>}
+            </span>
+            {!step.done && step.warning && (
+              <Stack gap="sm">
+                <Text variant="small">{step.warning.message}</Text>
+                {step.id === nextId && step.warning.id === "no-vipps-keys" ? (
+                  <p class="step-actions">
+                    <Button href={`${orgPath}/vipps/veiledning`}>Følg Vipps-veiledningen</Button>
+                    <TextLink href={step.warning.href}>Har dere nøklene? Legg dem inn</TextLink>
+                  </p>
+                ) : step.id === nextId ? (
+                  <p class="step-actions">
+                    <Button href={step.warning.href}>{step.warning.actionLabel}</Button>
+                  </p>
+                ) : (
+                  <TextLink href={step.warning.href}>{step.warning.actionLabel}</TextLink>
+                )}
+              </Stack>
+            )}
+          </div>
+        </li>
+      ))
+    }
+  </ol>
+</section>
+
+<style>
+  .setup {
+    display: grid;
+    gap: var(--sm-space-md);
+  }
+  .steps {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: var(--sm-space-sm);
+  }
+  .step {
+    display: grid;
+    grid-template-columns: 1.6rem 1fr;
+    gap: 0.75rem;
+    align-items: start;
+    padding: 0.75rem 0.85rem;
+    border: 1px solid var(--sm-border);
+    border-radius: var(--sm-radius-md);
+    background: var(--sm-surface);
+  }
+  /* The step to take now stands out; the rest stay quiet. */
+  .step.next {
+    border-color: var(--sm-accent);
+    box-shadow: 0 0 0 1px var(--sm-accent);
+  }
+  .step.done {
+    background: transparent;
+  }
+  .step.done .step-title {
+    color: var(--sm-muted);
+  }
+  .step-mark {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.6rem;
+    height: 1.6rem;
+    border-radius: 999px;
+    border: 1.5px solid var(--sm-border);
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: var(--sm-accent-ink);
+  }
+  .step.done .step-mark {
+    background: var(--sm-accent);
+    border-color: var(--sm-accent);
+  }
+  .step.next .step-mark {
+    border-color: var(--sm-accent);
+  }
+  .step-body {
+    display: grid;
+    gap: 0.35rem;
+    min-width: 0;
+  }
+  .step-title {
+    font-weight: 600;
+    line-height: 1.6rem;
+  }
+  .step-actions {
+    margin: 0;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem 1rem;
+  }
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+</style>

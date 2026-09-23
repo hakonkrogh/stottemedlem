@@ -4,6 +4,7 @@ import {
   JOIN_PAGE_PATH_SEGMENT,
   MEMBER_CARD_PATH_SEGMENT,
   MEMBER_SCAN_PATH_SEGMENT,
+  SIGN_UP_PATH,
 } from "@stottemedlem/core";
 import { env, getWorkOS, SESSION_COOKIE, sessionCookieOptions, toSessionInfo } from "./lib/workos";
 
@@ -16,6 +17,8 @@ import { env, getWorkOS, SESSION_COOKIE, sessionCookieOptions, toSessionInfo } f
 // organization wants to show it to (specs/concepts/data-processing-agreement.md).
 const PUBLIC_EXACT = new Set([
   "/login",
+  // The front page's way in for a new organization (early access).
+  SIGN_UP_PATH,
   "/callback",
   "/logout",
   "/healthz",

@@ -2,10 +2,10 @@
 // Landing page. Messaging (see specs/): register over støttemedlemmer +
 // innkreving av årskontingent som kjerne, kontakt med medlemmene, Vipps som
 // betalingsleverandør med enkel inn-/utmelding. The one thing the page asks
-// for is a message about early access (see
-// specs/use-cases/ask-for-early-access.md).
+// for is that an organization signs itself up for early access (see
+// specs/use-cases/sign-up-for-early-access.md).
 import "@fontsource-variable/fraunces";
-import { CANONICAL_ORIGIN } from "@stottemedlem/core";
+import { CANONICAL_ORIGIN, SIGN_UP_URL } from "@stottemedlem/core";
 import { memberCardSvg, qrCardSvg } from "@stottemedlem/qr";
 import HeroBackdrop from "../components/HeroBackdrop.astro";
 
@@ -55,11 +55,10 @@ const previewMemberCardSvg = memberCardSvg({
           etter år.
         </p>
         <p class="hero-cta">
-          <a class="primary" href="mailto:hei@støttemedlem.no?subject=Tidlig%20tilgang"
-            >Be om tidlig tilgang</a
-          >
+          <a class="primary" href={SIGN_UP_URL}>Opprett organisasjon</a>
           <a class="secondary" href="#innhold">Se hvordan det virker</a>
         </p>
+        <p class="hero-note">Gratis så lenge testfasen varer.</p>
       </header>
       <main id="innhold">
       <section>
@@ -140,14 +139,15 @@ const previewMemberCardSvg = memberCardSvg({
       </main>
       <footer>
         <p class="cta">
-          <a href="mailto:hei@støttemedlem.no?subject=Tidlig%20tilgang"
-            >Be om tidlig tilgang</a
-          >
+          <a href={SIGN_UP_URL}>Opprett organisasjon</a>
         </p>
         <p class="contact">
-          Vi tar inn noen få organisasjoner om gangen. Skriv til <a
-            href="mailto:hei@støttemedlem.no">hei@støttemedlem.no</a
-          >, så tar vi kontakt og hjelper dere i gang.
+          støttemedlem.no er i tidlig tilgang: tjenesten er ny, gratis mens vi tester, og
+          medlemmene betaler med ekte penger gjennom organisasjonens egen Vipps-avtale. Dere
+          oppretter organisasjonen selv, og vi viser dere steg for steg hvordan dere kobler til
+          Vipps. Står dere fast, skriv til <a href="mailto:hei@støttemedlem.no"
+            >hei@støttemedlem.no</a
+          >, så hjelper vi dere.
         </p>
       </footer>
     </HeroBackdrop>
@@ -204,7 +204,15 @@ const previewMemberCardSvg = memberCardSvg({
     justify-content: center;
     gap: 1rem 1.75rem;
   }
-  /* The one action the page asks for: get in touch. Same button in the hero
+  /* Says what early access costs, right under the button that starts it. */
+  .hero-note {
+    margin: 0.9rem 0 0;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #f3efe6;
+    text-shadow: 0 1px 8px rgb(0 0 0 / 0.7);
+  }
+  /* The one action the page asks for: sign up. Same button in the hero
      and in the footer. */
   .hero-cta a.primary,
   .cta a {
