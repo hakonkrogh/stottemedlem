@@ -4,7 +4,7 @@
 // The stories are also how this back office is reviewed: every link a screen
 // renders is mapped to the story that shows where it leads, so the whole tabbed
 // back office can be clicked through in Storybook without running the app.
-import { CANONICAL_ORIGIN, DPA_VERSION } from "@stottemedlem/core";
+import { CANONICAL_ORIGIN, CANONICAL_ORIGIN_DISPLAY, DPA_VERSION } from "@stottemedlem/core";
 import type { MembershipTier, Organization, OrganizationStats } from "@stottemedlem/db";
 import { qrCardSvg } from "@stottemedlem/qr";
 import {
@@ -62,7 +62,8 @@ export const ORG_WITH_IMAGES: Organization = {
 export { FIXTURE_LOGO_URL };
 
 export const ORG_PATH = `/o/${ORG.slug}`;
-export const JOIN_URL = `${CANONICAL_ORIGIN}/bli-medlem/${ORG.slug}`;
+// Written with the ø, as the back office shows it to an administrator.
+export const JOIN_URL = `${CANONICAL_ORIGIN_DISPLAY}/bli-medlem/${ORG.slug}`;
 export const TERMS_URL = `${JOIN_URL}/vilkar`;
 export const QR_CARD_URL = `${JOIN_URL}/qr`;
 /**
@@ -75,7 +76,12 @@ export const QR_CARD_URL = `${JOIN_URL}/qr`;
  * card in Georgia while every real surface shows Fraunces.
  */
 export const QR_CARD_PREVIEW_SRC = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(
-  withEmbeddedCardFont(qrCardSvg({ joinUrl: JOIN_URL, organizationName: ORG.name })),
+  withEmbeddedCardFont(
+    qrCardSvg({
+      joinUrl: `${CANONICAL_ORIGIN}/bli-medlem/${ORG.slug}`,
+      organizationName: ORG.name,
+    }),
+  ),
 )}`;
 export const WEBHOOK_URL = `${CANONICAL_ORIGIN}/api/vipps/${ORG.slug}`;
 export const ADMIN_NAME = "Kari Nordmann";

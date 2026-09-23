@@ -67,7 +67,9 @@ resolve to.
   (staging) hands out its own addresses everywhere the product presents the
   address — the links the back office shows an administrator, and what the QR
   code encodes — so a rehearsal on staging stays on staging and never sends a
-  test supporter to production. Navigation between the public pages themselves
+  test supporter to production. The back office shows production's address
+  with the ø ([brand attribution](brand-attribution.md)); only the QR code
+  carries the ASCII form. Navigation between the public pages themselves
   keeps the visitor on whatever origin they arrived at.
 - There is **one** address per organization, never one per
   [membership tier](membership-tier.md). The product does not offer a

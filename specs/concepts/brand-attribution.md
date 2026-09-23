@@ -30,6 +30,13 @@ competing with the organization's own identity, which always comes first.
   with the ø**, in the link as well as on the page, so a reader and their mail
   program see the one address they were given. See
   [Ask for early access](../use-cases/ask-for-early-access.md).)
+- **An address a person sees is written with the ø, everywhere.** The ASCII
+  (punycode) spelling "xn--stttemedlem-hgb.no" reads as a garbled domain, so
+  no screen shows it: not the public pages, and not the back office either,
+  where an administrator copies the join page, sales terms and QR card
+  addresses to pass on. The ASCII form is kept only where a machine reads the
+  address and could break on the ø: what a QR code encodes, links written into
+  e-mails, and an address handed to another site as a parameter.
 - **Carries the [brand mark](brand-mark.md)**: the red heart precedes the
   wordmark in visible text ("❤️ støttemedlem.no").
 - **Subtle, never dominant.** It is an attribution (footer line, small print),
