@@ -170,7 +170,7 @@ export const DPA_PATH = "/databehandleravtale";
  * written. Change this when the agreement changes in substance, and every
  * organization is asked to accept the new one; leave it alone for typos.
  */
-export const DPA_VERSION = "2026-09-22.2";
+export const DPA_VERSION = "2026-09-23";
 
 /** The join page's path on the canonical origin, e.g. `/bli-medlem/<slug>`. */
 export function joinPagePath(slug: string): string {

@@ -181,9 +181,9 @@ Cloudflare or anything new.
 
 1. **The list is in `apps/backoffice/src/pages/databehandleravtale.astro`,
    section 4** ("Hvem andre er involvert"). Cloudflare, Vipps MobilePay,
-   WorkOS, Resend and Sentry are each named with what they do. Edit the line.
+   WorkOS, Resend and Better Stack are each named with what they do. Edit the line.
 2. **Bump `DPA_VERSION` in `packages/core/src/index.ts`** (a date string,
-   `2026-08-31` at time of writing). `hasAcceptedDpa(org, DPA_VERSION)` checks
+   `2026-09-23` at time of writing). `hasAcceptedDpa(org, DPA_VERSION)` checks
    the org accepted the CURRENT version, so a substantive change makes every
    organization count as not having accepted until it accepts again, which the
    back office surfaces as an outstanding item. That is the spec's rule, not an
@@ -196,6 +196,16 @@ Cloudflare or anything new.
    announced BEFORE it happens. So the order is notice, then change, then
    acceptance.
 4. **Reconcile the spec**, as with any product-behaviour change.
+
+**Removing a vendor follows the same steps.** Dropping Sentry (2026-09-23)
+removed its line and still bumped `DPA_VERSION`: who touches the register is
+substance, so the orgs accept again. No advance notice is needed for a removal,
+since nothing new gets the data.
+
+**"Sentry" in code is not Sentry the vendor.** Better Stack takes error reports
+over the Sentry protocol, so `@sentry/cloudflare`, `sentrySink` and `SENTRY_DSN`
+stay as the transport after the vendor is gone. Judge the agreement text by
+where the DSN points, not by grepping for "sentry".
 
 **Outside the EEA is allowed, on a condition.** Section 4 says subprocessors
 process the data only on our instructions "og innenfor EU/EØS eller på et
