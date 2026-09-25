@@ -92,6 +92,26 @@ describe("getAccessToken", () => {
     expect(entry?.ttlSeconds).toBe(3300);
   });
 
+  it("never shares a cached token with other keys on the same MSN", async () => {
+    const { cache, store } = memoryCache();
+    await client(fakeFetch([tokenResponse(3600)]).impl, cache).getAccessToken();
+
+    const other = fakeFetch([tokenResponse(3600)]);
+    await createVippsClient({
+      baseUrl: VIPPS_TEST_BASE_URL,
+      clientId: "someone-elses-client-id",
+      clientSecret: "someone-elses-secret",
+      subscriptionKey: "subscription-key",
+      merchantSerialNumber: "123456",
+      tokenCache: cache,
+      fetch: other.impl,
+    }).getAccessToken();
+
+    expect(other.requests).toHaveLength(1);
+    expect(store.size).toBe(2);
+    for (const key of store.keys()) expect(key).not.toContain("secret");
+  });
+
   it("skips caching tokens too short-lived for KV's 60 s minimum TTL", async () => {
     const { impl } = fakeFetch([tokenResponse(300)]);
     const { cache, store } = memoryCache();

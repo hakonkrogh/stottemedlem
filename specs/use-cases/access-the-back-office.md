@@ -40,6 +40,10 @@ From the administrator's point of view:
 
 ## Acceptance criteria
 - [ ] A person can sign in with their own identity.
+- [ ] A sign-in only completes in the browser that started it. A sign-in
+      finished from anywhere else (a link someone sent, an accepted
+      invitation) starts over, so nobody can be signed in to an account
+      that is not their own.
 - [ ] An administrator with no organization is prompted to create one and lands in
       it as its administrator.
 - [ ] An administrator with exactly one organization is taken directly into it.

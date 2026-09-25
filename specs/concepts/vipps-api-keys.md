@@ -65,6 +65,10 @@ money.
   masked. Stored keys are **presented, not offered as a form**
   ([presenting and editing](presenting-and-editing.md)); replacing them is a
   deliberate action and means pasting a full new set.
+- **One organization's keys never lend their access to another.** Whatever
+  the product keeps from a call to Vipps on an organization's behalf is used
+  again only by a caller holding that very same set of keys, never by one
+  that merely names the same sales unit (a sales unit's number is public).
 - The product records when the keys last passed the live proof, and an
   administrator can re-run it at any time.
 - **Payment events connect themselves.** For memberships to update on their
