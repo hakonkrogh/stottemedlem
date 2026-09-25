@@ -70,15 +70,35 @@ const MIN_CACHE_TTL_SECONDS = 60;
 export type VippsClient = ReturnType<typeof createVippsClient>;
 
 /**
+ * Where a sales unit's token is cached. It is keyed on a hash of ALL the keys
+ * that fetched it, not on the MSN alone: an MSN is public (the Vipps app shows
+ * it), so an MSN-only key would let any organization that saves another's MSN
+ * next to its own client id share that organization's token. A cache hit now
+ * proves the caller holds the very same keys.
+ */
+async function cacheKeyFor(config: VippsConfig): Promise<string> {
+  const material = [
+    config.baseUrl,
+    config.merchantSerialNumber,
+    config.clientId,
+    config.clientSecret,
+    config.subscriptionKey,
+  ].join("\n");
+  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(material));
+  const hex = [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, "0")).join("");
+  return `vipps-token:${hex}`;
+}
+
+/**
  * Typed client for the Vipps MobilePay APIs stottemedlem uses (Access Token,
  * Recurring v3, Webhooks v1). One instance per sales unit; point `baseUrl` at
  * the test or production environment.
  */
 export function createVippsClient(config: VippsConfig) {
   const fetchImpl = config.fetch ?? fetch;
-  const tokenCacheKey = `vipps-token:${config.baseUrl}:${config.merchantSerialNumber}`;
 
   async function getAccessToken(): Promise<string> {
+    const tokenCacheKey = await cacheKeyFor(config);
     const cached = await config.tokenCache?.get(tokenCacheKey);
     if (cached) return cached;
 

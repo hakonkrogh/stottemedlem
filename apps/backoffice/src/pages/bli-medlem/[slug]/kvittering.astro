@@ -54,14 +54,14 @@ if (!org) return new Response("Fant ikke organisasjonen", { status: 404 });
 
 // Vipps appends NOTHING to the redirect, so the return address carries our
 // own reference: the same unguessable manage token that addresses the
-// member's own page (specs/concepts/member-self-service.md). An explicit
-// agreementId is still honored — it is how an operator or an older
-// registered redirect can point the page at a specific arrangement. With
-// neither there is nothing to confirm and the visitor is simply sent back
-// to the join page.
+// member's own page (specs/concepts/member-self-service.md). The token is
+// the ONLY way in: the page shows the member's name, email and card, and a
+// Vipps agreement id is no secret, so it is never accepted in its place.
+// Without a token there is nothing to confirm and the visitor is simply
+// sent back to the join page.
 const token = Astro.url.searchParams.get(MEMBER_SELF_SERVICE_TOKEN_PARAM);
 const tokenAgreement = token ? await findAgreementByManageToken(db, token) : null;
-const agreementId = tokenAgreement?.vippsAgreementId ?? Astro.url.searchParams.get("agreementId");
+const agreementId = tokenAgreement?.vippsAgreementId;
 if (!agreementId) return Astro.redirect(`/bli-medlem/${org.slug}`);
 
 let status: "active" | "already-a-member" | "pending" | "stopped" | "unknown" = "unknown";

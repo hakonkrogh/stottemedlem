@@ -2,6 +2,7 @@ import { env } from "cloudflare:workers";
 import { slugifyOrganizationName } from "@stottemedlem/core";
 import { type Db, ensureOrganization } from "@stottemedlem/db";
 import { WorkOS } from "@workos-inc/node";
+import type { AstroCookies } from "astro";
 
 /** Name of the httpOnly cookie holding the WorkOS sealed session. */
 export const SESSION_COOKIE = "wos-session";
@@ -44,6 +45,54 @@ export function sessionCookieOptions(url: URL) {
     // Long-lived; the refresh flow keeps the sealed contents fresh on each request.
     maxAge: 60 * 60 * 24 * 400,
   };
+}
+
+/**
+ * HttpOnly cookie holding the random `state` of the sign-in this browser
+ * started. /callback only accepts a code that comes back with the same value,
+ * so nobody can finish a sign-in in someone else's browser and log them into
+ * the attacker's account (login CSRF).
+ */
+const SIGN_IN_STATE_COOKIE = "wos-sign-in-state";
+const SIGN_IN_STATE_MAX_AGE_SECONDS = 60 * 15;
+
+/**
+ * Start a sign-in at AuthKit from this browser: remember a fresh random
+ * `state` and return the address to send the browser to.
+ */
+export function beginSignIn(
+  url: URL,
+  cookies: AstroCookies,
+  screenHint?: "sign-up" | "sign-in",
+): string {
+  const state = crypto.randomUUID();
+  cookies.set(SIGN_IN_STATE_COOKIE, state, {
+    httpOnly: true,
+    secure: url.protocol === "https:",
+    // AuthKit's redirect back to /callback is a top-level GET from another
+    // site, which is exactly what `lax` still sends the cookie on.
+    sameSite: "lax",
+    path: "/callback",
+    maxAge: SIGN_IN_STATE_MAX_AGE_SECONDS,
+  });
+  return getWorkOS().userManagement.getAuthorizationUrl({
+    provider: "authkit",
+    clientId: env.WORKOS_CLIENT_ID,
+    redirectUri: env.WORKOS_REDIRECT_URI,
+    state,
+    ...(screenHint ? { screenHint } : {}),
+  });
+}
+
+/**
+ * Whether the `state` AuthKit sent back belongs to a sign-in this browser
+ * started. Always forgets the remembered state, so one start finishes once.
+ */
+export function finishSignIn(url: URL, cookies: AstroCookies): boolean {
+  const expected = cookies.get(SIGN_IN_STATE_COOKIE)?.value;
+  cookies.delete(SIGN_IN_STATE_COOKIE, { path: "/callback" });
+  const returned = url.searchParams.get("state");
+  return Boolean(expected && returned && expected === returned);
 }
 
 /**

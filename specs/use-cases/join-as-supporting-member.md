@@ -69,7 +69,10 @@ From the supporter's point of view:
    appends nothing to it (learned 2026-08-27, when supporters bounced back to
    the join page instead of a receipt) — and the product reuses the same
    unguessable token that addresses the member's
-   [own page](../concepts/member-self-service.md) for this.
+   [own page](../concepts/member-self-service.md) for this. That token is the
+   only way to open the confirmation page: it shows the member's name, email
+   address and card, and the payment provider's own id for the arrangement is
+   no secret, so it is never accepted in the token's place.
 7. **Joining twice inside one period costs nothing extra.** A supporter may
    arrive on the join page already holding the current
    [annual period](../concepts/annual-period.md) — most often because they

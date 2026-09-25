@@ -88,17 +88,29 @@ only an id do NOT (`anonymizeMember`, `getSupportingMember`,
 org-scoped or token-scoped read first; an audit is "for each id-only helper,
 trace where the id came from" (all callers checked clean 2026-09-11).
 
-## Known open items from the 2026-09-11 review
+## Known open items (reviews of 2026-09-11 and 2026-09-25)
 
-- `/login` sends no OAuth `state` and `/callback` verifies none: login CSRF
-  (an attacker can log a victim's browser into the attacker's account). Low
-  impact on its own; fix is a random `state` in a short-lived cookie.
-- `kvittering.astro`: `?agreementId=` substitutes for the manage token `?n=`
-  (documented as an operator/legacy convenience). A Vipps agreement id
-  (`agr_…`, 7 base62 chars, visible in the portal and the member's app) is
-  not a secret, so whoever knows one reads that member's name, email,
-  receipt and card link, and triggers Vipps syncs under the org's keys.
-  Medium. Fix: require `?n=`, or bind `agreementId` to the token.
+Fixed 2026-09-25: login CSRF (`beginSignIn`/`finishSignIn` in
+`lib/workos.ts`: a random `state` in the `wos-sign-in-state` cookie, path
+`/callback`; a code without a matching state is sent back to `/login`, which
+is also the path an accepted WorkOS invitation now takes, one extra hop
+through AuthKit), `kvittering` opening on a bare `?agreementId=` (now only
+`?n=`), and the Vipps token cache key (now a SHA-256 of base URL, MSN and all
+three credentials, `cacheKeyFor` in `packages/vipps/src/client.ts`).
+
+Still open on 2026-09-25, from both reviews:
+
+- `client.ts` builds every path as `/recurring/v3/agreements/${agreementId}`
+  with no `encodeURIComponent`. No public route passes a raw id in since
+  `kvittering` stopped taking `?agreementId=` (2026-09-25), so this is
+  defence in depth only. Low.
+- `vipps.astro`: any admin can replace all four Vipps keys (new joins then
+  pay the new merchant) with no audit record and no notice to the other
+  admins. The spec allows the replace; the notice is what is missing. Medium.
+- `renewals.ts`: a double charge is possible if `recordCharge` fails after
+  `createCharge` succeeds and Vipps has forgotten the idempotency key by
+  the next run (`reconcile.ts` visits at most 250 agreements per run).
+  Unverified; `recurring-test.mjs` has an `idempotency` probe. Low.
 - `medlemsbevis/[token]/kort.png.ts` + `lib/cardImage.ts`: every distinct
   `?bredde=` from 600 to 2400 is a fresh resvg rasterization and a new R2
   object that is never deleted, with no rate limit. Medium (cost/abuse).

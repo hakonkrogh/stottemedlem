@@ -2,6 +2,7 @@ import type { APIRoute } from "astro";
 import { getDb } from "../lib/db";
 import {
   env,
+  finishSignIn,
   getWorkOS,
   resolveLanding,
   SESSION_COOKIE,
@@ -14,6 +15,12 @@ import {
 export const GET: APIRoute = async ({ url, cookies, redirect }) => {
   const code = url.searchParams.get("code");
   if (!code) return redirect("/login");
+  // A code this browser did not ask for is never exchanged: that is how an
+  // attacker would sign a victim into the attacker's own account. The person
+  // simply starts over from /login, which is also where an accepted
+  // invitation (it arrives from AuthKit without our state) goes: AuthKit
+  // still knows them, so the second pass comes straight back.
+  if (!finishSignIn(url, cookies)) return redirect("/login");
 
   const workos = getWorkOS();
   let auth: Awaited<ReturnType<typeof workos.userManagement.authenticateWithCode>>;

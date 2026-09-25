@@ -1,5 +1,5 @@
 import type { APIRoute } from "astro";
-import { env, getWorkOS } from "../lib/workos";
+import { beginSignIn } from "../lib/workos";
 
 // The way in from the front page during early access
 // (specs/use-cases/sign-up-for-early-access.md): the same hosted sign-in as
@@ -10,14 +10,7 @@ import { env, getWorkOS } from "../lib/workos";
 //
 // Someone already signed in has an account, so they go straight to creating
 // an organization.
-export const GET: APIRoute = ({ locals, redirect }) => {
+export const GET: APIRoute = ({ url, cookies, locals, redirect }) => {
   if (locals.session) return redirect("/orgs/new");
-  const workos = getWorkOS();
-  const authorizationUrl = workos.userManagement.getAuthorizationUrl({
-    provider: "authkit",
-    clientId: env.WORKOS_CLIENT_ID,
-    redirectUri: env.WORKOS_REDIRECT_URI,
-    screenHint: "sign-up",
-  });
-  return redirect(authorizationUrl);
+  return redirect(beginSignIn(url, cookies, "sign-up"));
 };
