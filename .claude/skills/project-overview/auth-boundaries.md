@@ -90,6 +90,29 @@ trace where the id came from" (all callers checked clean 2026-09-11).
 
 ## Known open items from the 2026-09-11 review
 
+Re-checked 2026-09-25: every item below was still open. That review added:
+
+- `packages/vipps/src/client.ts:79`: the access-token KV cache key is
+  `vipps-token:${baseUrl}:${MSN}`, with no client id, and a cached token is
+  returned before any credential is used. An MSN is public (shown in the
+  Vipps app), and anyone can create an org and save keys. So an org that
+  saves its own client id with another org's MSN shares that org's cache
+  entry. The only barrier is `validateVippsKeys` (`lib/vippsKeys.ts`, runs
+  uncached), which holds only if Vipps rejects a client id/MSN mismatch.
+  Not proven; test with `vipps-test-rig` and two test sales units.
+  Medium. Fix: put `clientId` in the key.
+- `client.ts` builds every path as `/recurring/v3/agreements/${agreementId}`
+  with no `encodeURIComponent`. With the `kvittering` `?agreementId=` item
+  below, `../` in the id makes the Worker send authenticated GETs to other
+  Vipps endpoints (nothing returned to the caller). Low.
+- `vipps.astro`: any admin can replace all four Vipps keys (new joins then
+  pay the new merchant) with no audit record and no notice to the other
+  admins. The spec allows the replace; the notice is what is missing. Medium.
+- `renewals.ts`: a double charge is possible if `recordCharge` fails after
+  `createCharge` succeeds and Vipps has forgotten the idempotency key by
+  the next run (`reconcile.ts` visits at most 250 agreements per run).
+  Unverified; `recurring-test.mjs` has an `idempotency` probe. Low.
+
 - `/login` sends no OAuth `state` and `/callback` verifies none: login CSRF
   (an attacker can log a victim's browser into the attacker's account). Low
   impact on its own; fix is a random `state` in a short-lived cookie.
