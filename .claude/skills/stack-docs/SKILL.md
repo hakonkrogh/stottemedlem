@@ -729,6 +729,8 @@ from `apps/backoffice` (works off the local OAuth session, no token needed).
   `xn--stttemedlem-hgb.no.xn--stttemedlem-hgb.no` and verification failed.
 - The ASCII `stottemedlem.no` is a SEPARATE domain on other nameservers
   (`ns1-3.hyp.net`, apex TXT only `v=spf1 -all`); records there do nothing for the ø domain.
+  As of 2026-10-13 it does NOT redirect to the site (http shows a 200 page that is
+  not ours, https does not answer); fixing that is a registrar setting, not code.
 - Check: `dig +short TXT xn--stttemedlem-hgb.no @elsa.ns.cloudflare.com`. Derive
   the punycode (`python3 -c "print('støttemedlem.no'.encode('idna'))"`), never guess it.
 
