@@ -21,6 +21,13 @@ also documents the variants and why the rule exists.
 
 ## Where things live
 - `apps/marketing/` — Astro static landing page → Cloudflare Worker (assets only).
+  Search and sharing (added 2026-10-13): `public/robots.txt` + `public/sitemap.xml`,
+  canonical + og/twitter tags in `index.astro`, and `src/pages/delingsbilde.png.ts`,
+  a static endpoint that draws the 1200x630 og:image at BUILD time from the
+  real cards through resvg-wasm in Node (font from `@stottemedlem/qr/fonts/Fraunces.ttf`,
+  shared with the backoffice since that date). The www host is NOT redirected:
+  an assets-only Worker cannot redirect by host, so that is a Cloudflare
+  Redirect Rule in the dashboard (the canonical tag covers search meanwhile).
   Visual identity (decided 2026-07-07): masonry photo-collage backdrop
   (`src/components/HeroBackdrop.astro` + `src/assets/backdrop/`), localized top
   scrim + frosted-glass cards, headings in Fraunces (`@fontsource-variable/fraunces`,

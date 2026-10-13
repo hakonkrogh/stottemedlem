@@ -1,4 +1,4 @@
-import fraunces from "../assets/fonts/Fraunces.ttf?inline";
+import fraunces from "@stottemedlem/qr/fonts/Fraunces.ttf?inline";
 
 /**
  * The typeface both cards are set in, as bytes that travel with the drawing.

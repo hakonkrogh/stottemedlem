@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@fontsource-variable/fraunces": "catalog:",
+    "@resvg/resvg-wasm": "catalog:",
     "@stottemedlem/core": "workspace:*",
     "@stottemedlem/qr": "workspace:*",
     "astro": "catalog:"

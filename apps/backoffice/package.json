@@ -14,7 +14,7 @@
   },
   "dependencies": {
     "@astrojs/cloudflare": "catalog:",
-    "@resvg/resvg-wasm": "^2.6.2",
+    "@resvg/resvg-wasm": "catalog:",
     "@sentry/cloudflare": "^10.70.0",
     "@stottemedlem/core": "workspace:*",
     "@stottemedlem/db": "workspace:*",

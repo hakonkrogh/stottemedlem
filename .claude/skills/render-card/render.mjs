@@ -19,7 +19,7 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "../../..");
 const QR_DIST = resolve(ROOT, "packages/qr/dist/index.js");
-export const FONT = resolve(ROOT, "apps/backoffice/src/assets/fonts/Fraunces.ttf");
+export const FONT = resolve(ROOT, "packages/qr/fonts/Fraunces.ttf");
 
 /**
  * Fictitious throughout — a rendered card may end up in a screenshot or a doc,

@@ -30,6 +30,9 @@ import {
   r,
 } from "./brand.js";
 
+/** The brand mark as a shape, for other pictures drawn in the cards' hand. */
+export { HEART, heartPath } from "./brand.js";
+
 /** The member's own card — a different owner from the organization's card below. */
 export {
   MEMBER_CARD_HEIGHT,

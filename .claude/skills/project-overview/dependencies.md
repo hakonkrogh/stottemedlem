@@ -8,7 +8,7 @@ different bug.
 
 Cross-package versions (`astro`, `typescript`, `vitest`, `wrangler`,
 `@types/node`, `@cloudflare/workers-types`, `drizzle-orm`, `@astrojs/*`,
-`@workos-inc/node`, `tsx`, `@fontsource-variable/fraunces`) are declared once
+`@workos-inc/node`, `tsx`, `@fontsource-variable/fraunces`, `@resvg/resvg-wasm`) are declared once
 under `catalog:` in `pnpm-workspace.yaml`; manifests reference them as
 `"astro": "catalog:"`. To bump a shared dep, edit the catalog entry — NOT the
 package.json, which carries no version to edit. A dep used by only one package
