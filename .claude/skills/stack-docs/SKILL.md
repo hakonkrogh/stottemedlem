@@ -720,6 +720,18 @@ done
 Which environments hold the API key: `wrangler secret list [--env staging]`
 from `apps/backoffice` (works off the local OAuth session, no token needed).
 
+## Other apex DNS records, e.g. Google Search Console (verified 2026-10-13)
+
+- The Search Console property "støttemedlem.no" checks the TXT on the apex
+  `xn--stttemedlem-hgb.no`, the Cloudflare zone above (NS `elsa`/`major.ns.cloudflare.com`).
+- **Name must be `@`.** Typing the domain as the name hits the same
+  doubling gotcha as `send` above: the record landed at
+  `xn--stttemedlem-hgb.no.xn--stttemedlem-hgb.no` and verification failed.
+- The ASCII `stottemedlem.no` is a SEPARATE domain on other nameservers
+  (`ns1-3.hyp.net`, apex TXT only `v=spf1 -all`); records there do nothing for the ø domain.
+- Check: `dig +short TXT xn--stttemedlem-hgb.no @elsa.ns.cloudflare.com`. Derive
+  the punycode (`python3 -c "print('støttemedlem.no'.encode('idna'))"`), never guess it.
+
 ## Alerting channels — free-tier facts (verified 2026-08-25 against vendor pricing pages)
 
 Checked while choosing a monitoring setup. Re-verify before relying on
