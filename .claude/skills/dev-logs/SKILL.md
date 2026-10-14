@@ -65,6 +65,10 @@ literally. Treat that as "the backoffice dev server", not as a number.
   for package "@stottemedlem/core"` = the workspace packages have no `dist`
   yet. Fix from the repo root: `pnpm exec turbo run build --filter='./packages/*'`
   (seconds), then `start` again.
+- **A function you just added to a package is "not a function" (500)** (hit
+  2026-10-14, `listSlugsOf… is not a function` from `@stottemedlem/db`): the
+  apps import each package's built `dist`, which `start` does not rebuild. Run
+  the same turbo build for that package, then `stop` + `start`.
 - **Don't start the server with a bare `astro dev`** (hit 2026-08-31): without
   `--port` the backoffice daemonizes on 4321 — marketing's port, not 4322 — and
   the CLI exits 0 while the daemon keeps running, so a "completed" command +
