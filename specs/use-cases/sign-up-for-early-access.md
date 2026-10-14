@@ -74,6 +74,16 @@ first payment.
    convention: they have no address to send it to, so test organizations
    cannot fill the operator's inbox. A notice that fails to send never undoes
    or blocks the sign-up; the failure is reported to the operator instead.
+10. **The front page can be found, and it shares well** (added 2026-10-13).
+   Nobody reaches the page without a search or a shared link, so both must
+   work. Search engines are told the page exists and are given one address
+   for it, the canonical one, so the www host and any other spelling count as
+   the same page instead of competing copies. A link to the page, pasted into
+   a chat or a social feed, previews with the page's title, a one-line
+   description, and a picture: the wordmark with the heart, what the product
+   does, and the same QR card and member card the page shows. The preview is
+   a public surface, so it carries the
+   [brand attribution](../concepts/brand-attribution.md) like any other.
 
 ## Acceptance criteria
 - [ ] The front page nowhere claims the product is merely coming soon.
@@ -96,6 +106,10 @@ first payment.
       own people, naming the organization and not its administrator.
 - [ ] Creating an organization on staging or locally sends no such email.
 - [ ] A failed email still lands the administrator on their new organization.
+- [ ] Search engines find the front page through a sitemap, and the page
+      names its one canonical address.
+- [ ] A shared link to the front page previews with its title, description and
+      a picture of the two cards under "❤️ støttemedlem.no".
 
 ## Out of scope
 - A waitlist, invite codes, or any limit on how many organizations can sign up.

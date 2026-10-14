@@ -31,6 +31,17 @@ const previewMemberCardSvg = memberCardSvg({
   periodText: String(new Date().getFullYear()),
   joinUrl: CANONICAL_ORIGIN,
 });
+
+// What search engines and link previews read. Addresses are absolute and on
+// the canonical (punycode) origin, so the www host and any other spelling all
+// point back to the one front page.
+const title = "støttemedlem: register og årskontingent for støttemedlemmer";
+const description =
+  "Register over støttemedlemmene dine og innkreving av årskontingent med Vipps. For korps, kor, lag og foreninger.";
+const pageUrl = `${CANONICAL_ORIGIN}/`;
+const previewImageUrl = `${CANONICAL_ORIGIN}/delingsbilde.png`;
+const previewImageAlt =
+  "❤️ støttemedlem.no: et QR-kort og et medlemskort for Bakvendtland Skolekorps.";
 ---
 
 <html lang="no">
@@ -38,11 +49,21 @@ const previewMemberCardSvg = memberCardSvg({
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
-    <title>støttemedlem — register og årskontingent for støttemedlemmer</title>
-    <meta
-      name="description"
-      content="Register over støttemedlemmene dine og innkreving av årskontingent med Vipps — for korps, kor, lag og foreninger."
-    />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={pageUrl} />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="støttemedlem.no" />
+    <meta property="og:locale" content="nb_NO" />
+    <meta property="og:url" content={pageUrl} />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:image" content={previewImageUrl} />
+    <meta property="og:image:type" content="image/png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content={previewImageAlt} />
+    <meta name="twitter:card" content="summary_large_image" />
   </head>
   <body>
     <HeroBackdrop>

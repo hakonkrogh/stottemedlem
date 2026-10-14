@@ -21,6 +21,15 @@ also documents the variants and why the rule exists.
 
 ## Where things live
 - `apps/marketing/` — Astro static landing page → Cloudflare Worker (assets only).
+  Search and sharing (added 2026-10-13): `public/robots.txt` + `public/sitemap.xml`,
+  canonical + og/twitter tags in `index.astro`, and `src/pages/delingsbilde.png.ts`,
+  a static endpoint that draws the 1200x630 og:image at BUILD time from the
+  real cards through resvg-wasm in Node (font from `@stottemedlem/qr/fonts/Fraunces.ttf`,
+  shared with the backoffice since that date). www → apex is a Cloudflare
+  Redirect Rule in the dashboard (live 2026-10-14, 301, keeps path + query): an
+  assets-only Worker cannot redirect by host. http → https is also set in the
+  dashboard (same day), so every spelling ends on the https apex.
+  Check: `curl -sIL http://www.xn--stttemedlem-hgb.no/`.
   Visual identity (decided 2026-07-07): masonry photo-collage backdrop
   (`src/components/HeroBackdrop.astro` + `src/assets/backdrop/`), localized top
   scrim + frosted-glass cards, headings in Fraunces (`@fontsource-variable/fraunces`,

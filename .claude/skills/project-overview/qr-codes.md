@@ -116,7 +116,7 @@ Distinct from the *member's personal referral* QR (`specs/use-cases/earn-hearts-
   `tsconfig.worker.json` must include or the worker typecheck fails while
   `astro check` stays green);
   (2) a Worker has NO system fonts, and text in a font resvg does not hold
-  renders as NOTHING — so `src/assets/fonts/Fraunces.ttf` (OFL, committed with
+  renders as NOTHING — so `packages/qr/fonts/Fraunces.ttf` (OFL, committed with
   its licence) is inlined by Vite (`?inline` → base64 data URI) and passed as
   `fontBuffers`. Since 2026-09-01 that file is a STATIC instance of Fraunces
   at the website's brand cut (wght 650, SOFT 50, opsz 36, WONK 1 — matching

@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://xn--stttemedlem-hgb.no/sitemap.xml

@@ -17,7 +17,8 @@
         "types": "./dist/browser.d.ts",
         "default": "./dist/browser.js"
       }
-    }
+    },
+    "./fonts/Fraunces.ttf": "./fonts/Fraunces.ttf"
   },
   "scripts": {
     "build": "tsc",

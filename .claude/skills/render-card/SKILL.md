@@ -108,7 +108,7 @@ resvg likewise ignores `font-variant-numeric` and `font-feature-settings`
 toggled at all — and a browser WOULD honor them, so such attributes silently
 split Storybook from the shipped PNG. Solve glyph-placement problems with
 geometry (the embedded Fraunces' digit ink spans ~0 to 0.72 em; measure real
-extents with opentype.js against apps/backoffice/src/assets/fonts/Fraunces.ttf,
+extents with opentype.js against packages/qr/fonts/Fraunces.ttf,
 or measure rendered pixels with pngjs), never with font features.
 
 ## `paint-check.mjs`: does the card still have its WORDS at first paint?
