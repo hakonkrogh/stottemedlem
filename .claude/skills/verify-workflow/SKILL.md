@@ -37,6 +37,14 @@ as its own step, so anything biome formats can fail a PR that every other
 local check passed. The replay costs one command; a red PR costs a
 round-trip.
 
+## Before pushing to an EXISTING PR's branch, check it is still open
+
+    gh pr view <n> --json state --jq .state   # MERGED = start a new branch from origin/main
+
+The user merges between turns. On 2026-10-14 two commits went to #142's branch
+after it was merged and reached nobody; they had to be cherry-picked onto a
+fresh branch as #143.
+
 ## It also catches lockfile drift
 
 The job's first step is `pnpm install --frozen-lockfile`, so this replays the

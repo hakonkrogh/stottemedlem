@@ -84,6 +84,10 @@ first payment.
    does, and the same QR card and member card the page shows. The preview is
    a public surface, so it carries the
    [brand attribution](../concepts/brand-attribution.md) like any other.
+   The same listing that names the front page also names every
+   organization's [join page](../concepts/join-page.md) once it has a
+   member, so the product's own search presence leads on to the
+   organizations using it.
 
 ## Acceptance criteria
 - [ ] The front page nowhere claims the product is merely coming soon.
@@ -108,6 +112,8 @@ first payment.
 - [ ] A failed email still lands the administrator on their new organization.
 - [ ] Search engines find the front page through a sitemap, and the page
       names its one canonical address.
+- [ ] The sitemap also lists the join page of every organization with at
+      least one supporting member, and no other organization's.
 - [ ] A shared link to the front page previews with its title, description and
       a picture of the two cards under "❤️ støttemedlem.no".
 

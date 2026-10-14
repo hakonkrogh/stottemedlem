@@ -11,7 +11,21 @@ import {
   membershipTierKey,
   slugifyOrganizationName,
 } from "@stottemedlem/core";
-import { and, asc, desc, eq, gte, inArray, isNull, like, lt, lte, ne, sql } from "drizzle-orm";
+import {
+  and,
+  asc,
+  desc,
+  eq,
+  gte,
+  inArray,
+  isNotNull,
+  isNull,
+  like,
+  lt,
+  lte,
+  ne,
+  sql,
+} from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import {
   type AgreementStatus,
@@ -866,6 +880,23 @@ export async function listUnappliedCaptures(
 /** Every organization, for the scheduled jobs that must visit them all. */
 export async function listOrganizations(db: Db): Promise<Organization[]> {
   return db.select().from(organizations).orderBy(asc(organizations.createdAt));
+}
+
+/**
+ * The short names of organizations that have at least one supporting member,
+ * alphabetically: the join pages search engines are told about
+ * (specs/use-cases/sign-up-for-early-access.md). A member is someone whose
+ * first payment landed (they hold a member number), so every page listed has
+ * shown it works, and test or unfinished organizations stay out.
+ */
+export async function listSlugsOfOrganizationsWithMembers(db: Db): Promise<string[]> {
+  const rows = await db
+    .selectDistinct({ slug: organizations.slug })
+    .from(organizations)
+    .innerJoin(supportingMembers, eq(supportingMembers.orgId, organizations.id))
+    .where(isNotNull(supportingMembers.memberNumber))
+    .orderBy(asc(organizations.slug));
+  return rows.map((row) => row.slug);
 }
 
 /**
