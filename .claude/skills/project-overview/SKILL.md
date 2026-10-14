@@ -27,9 +27,9 @@ also documents the variants and why the rule exists.
   real cards through resvg-wasm in Node (font from `@stottemedlem/qr/fonts/Fraunces.ttf`,
   shared with the backoffice since that date). www → apex is a Cloudflare
   Redirect Rule in the dashboard (live 2026-10-14, 301, keeps path + query): an
-  assets-only Worker cannot redirect by host. It matches https only; plain http
-  served 200 on both hosts that day because "Always Use HTTPS" was disabled.
-  Check: `curl -sI http://www.xn--stttemedlem-hgb.no/`.
+  assets-only Worker cannot redirect by host. http → https is also set in the
+  dashboard (same day), so every spelling ends on the https apex.
+  Check: `curl -sIL http://www.xn--stttemedlem-hgb.no/`.
   Visual identity (decided 2026-07-07): masonry photo-collage backdrop
   (`src/components/HeroBackdrop.astro` + `src/assets/backdrop/`), localized top
   scrim + frosted-glass cards, headings in Fraunces (`@fontsource-variable/fraunces`,
