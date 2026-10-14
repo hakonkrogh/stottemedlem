@@ -21,7 +21,11 @@ also documents the variants and why the rule exists.
 
 ## Where things live
 - `apps/marketing/` — Astro static landing page → Cloudflare Worker (assets only).
-  Search and sharing (added 2026-10-13): `public/robots.txt` + `public/sitemap.xml`,
+  Search and sharing (added 2026-10-13): `public/robots.txt`; `public/sitemap.xml`
+  is a sitemap INDEX naming `sitemap-forside.xml` (static) and
+  `/bli-medlem/sitemap.xml`, which the BACKOFFICE serves from D1 (orgs with a
+  numbered member only; rides the existing `/bli-medlem/*` apex route; a slug
+  never holds a dot, so it cannot shadow an org). Also
   canonical + og/twitter tags in `index.astro`, and `src/pages/delingsbilde.png.ts`,
   a static endpoint that draws the 1200x630 og:image at BUILD time from the
   real cards through resvg-wasm in Node (font from `@stottemedlem/qr/fonts/Fraunces.ttf`,

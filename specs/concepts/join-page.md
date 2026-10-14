@@ -144,6 +144,12 @@ resolve to.
   authority). Organizations do not write their own terms.
 - Both pages carry the [brand attribution](brand-attribution.md) and must be
   indexable (payment-provider verification must be able to read them).
+- **Search engines are told about a join page once the organization has its
+  first supporting member** (added 2026-10-14), so someone who searches for
+  støttemedlem and the organization's name finds it. Waiting for a member
+  keeps test organizations and pages that cannot yet take a payment out of
+  search results. A page that is not listed is still reachable and indexable
+  through any link to it.
 - The pages are usually **arrived at from another app** (a link in an email, a
   chat message, or the hand-back from Vipps) and open however the visitor's
   browser opens them, with generous air at both ends so they read even when a

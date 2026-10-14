@@ -1,6 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <url>
-    <loc>https://xn--stttemedlem-hgb.no/</loc>
-  </url>
-</urlset>
+<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <sitemap>
+    <loc>https://xn--stttemedlem-hgb.no/sitemap-forside.xml</loc>
+  </sitemap>
+  <sitemap>
+    <loc>https://xn--stttemedlem-hgb.no/bli-medlem/sitemap.xml</loc>
+  </sitemap>
+</sitemapindex>
