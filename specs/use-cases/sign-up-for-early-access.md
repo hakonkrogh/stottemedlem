@@ -88,6 +88,25 @@ first payment.
    organization's [join page](../concepts/join-page.md) once it has a
    member, so the product's own search presence leads on to the
    organizations using it.
+   What the page says to searchers is that it is **for any organization**
+   with supporting members (decided 2026-10-15). The title, the description
+   and the opening line name "alle lag og foreninger", never a list of kinds
+   such as bands or choirs: a list made search summaries describe the product
+   as being for those kinds only. Examples of kinds may appear further down
+   the page, but never as the definition of who it is for.
+   The slogan leads with how easy it is: "Støttemedlemmer på Vipps. Ingen
+   app, ingen styr." (chosen 2026-10-15). Members join with the Vipps they
+   already have, and the organization has little to manage afterwards. The
+   front page and its preview picture carry the same slogan.
+   The page also says the product **works alongside any other system** the
+   organization already uses (added 2026-10-15): it stands on its own and
+   replaces nothing, and the whole register is easy to take out
+   ([Export the member list](export-member-list.md)). The page does not name
+   specific systems or say how they connect. It never says the organization
+   can message its members through the product. The only messages a member
+   gets are the automatic [member notices](../concepts/member-notice.md): a
+   receipt after paying and a notice when the fee changes. Anything else the
+   organization wants to say goes through its own channels.
 
 ## Acceptance criteria
 - [ ] The front page nowhere claims the product is merely coming soon.
@@ -114,6 +133,12 @@ first payment.
       names its one canonical address.
 - [ ] The sitemap also lists the join page of every organization with at
       least one supporting member, and no other organization's.
+- [ ] The front page's title, description, opening line and preview picture
+      say the product is for all organizations, without listing kinds.
+- [ ] The front page says the product works with the organization's other
+      systems and that the register is easy to take out.
+- [ ] The front page never says the organization can message members through
+      the product.
 - [ ] A shared link to the front page previews with its title, description and
       a picture of the two cards under "❤️ støttemedlem.no".
 
