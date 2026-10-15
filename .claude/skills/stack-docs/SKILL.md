@@ -1,8 +1,12 @@
 ---
 name: stack-docs
-description: Verified platform facts for the stottemedlem stack (Astro on Cloudflare Workers, WorkOS on Workers, Vipps MobilePay test environment, D1 platform limits and what Cloudflare will and will not alert on), plus one explicitly UNVERIFIED section on the browser's Web Share API. Load before scaffolding or configuring apps/marketing or apps/backoffice, assuming how the Astro Cloudflare adapter / WorkOS SDK behave on Workers, quoting a D1 limit or quota, starting Vipps API work, or reaching for `navigator.share` or a Facebook share link.
+description: Verified platform facts for the stottemedlem stack (Astro on Cloudflare Workers, WorkOS on Workers, Vipps MobilePay test environment, D1 platform limits and what Cloudflare will and will not alert on), plus one explicitly UNVERIFIED section on the browser's Web Share API. Load before scaffolding or configuring apps/marketing or apps/backoffice, assuming how the Astro Cloudflare adapter / WorkOS SDK behave on Workers, quoting a D1 limit or quota, starting Vipps API work, or reaching for `navigator.share` or a Facebook share link. Also indexes agent-discovery standards (agents.txt, llms.txt, Content Signals): see agent-discovery.md.
 ---
 # Stack facts (verified 2026-07-03, in-repo)
+
+| doc | covers |
+|-----|--------|
+| agent-discovery.md | agents.txt vs llms.txt vs Content Signals vs Markdown for Agents: status Oct 2026 and verdict for this site |
 
 The chosen architecture is in `docs/architecture/overview.md` (canonical). These facts
 were verified against vendor docs and then **confirmed by the actual scaffold** in
