@@ -69,11 +69,10 @@ function previewSvg(): string {
   ${heartPath(72, 150, 64, HEART)}
   <text x="150" y="203" font-family="Fraunces" font-size="60" fill="${CREAM}">støttemedlem.no</text>
   <text font-family="Fraunces" font-size="34" fill="${CREAM}">
-    <tspan x="76" y="290">Register og årskontingent</tspan>
-    <tspan x="76" y="334">for støttemedlemmer,</tspan>
-    <tspan x="76" y="378">med Vipps.</tspan>
+    <tspan x="76" y="290">Støttemedlemmer på Vipps.</tspan>
+    <tspan x="76" y="334">Ingen app, ingen styr.</tspan>
   </text>
-  <text x="76" y="460" font-family="Fraunces" font-size="24" fill="${SOFT_CREAM}">For korps, kor, lag og foreninger.</text>
+  <text x="76" y="460" font-family="Fraunces" font-size="24" fill="${SOFT_CREAM}">For alle lag og foreninger.</text>
   ${nested(qrCard, qrCardSize, 676, 190, 320, -6)}
   ${nested(memberCard, memberCardSize, 762, 95, 440, 4)}
 </svg>`;

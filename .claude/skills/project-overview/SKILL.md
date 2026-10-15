@@ -34,6 +34,15 @@ also documents the variants and why the rule exists.
   assets-only Worker cannot redirect by host. http → https is also set in the
   dashboard (same day), so every spelling ends on the https apex.
   Check: `curl -sIL http://www.xn--stttemedlem-hgb.no/`.
+  Audience copy (title, meta description, hero intro, the og:image tagline in
+  `delingsbilde.png.ts`) says "alle lag og foreninger", never a list of kinds
+  (korps, kor...): Google's AI summary copied the list as the product's scope
+  (rule in `specs/use-cases/sign-up-for-early-access.md`, 2026-10-15). See the
+  built picture with no server: `pnpm --filter ./apps/marketing build`, then
+  Read `apps/marketing/dist/delingsbilde.png`.
+  Front page copy can drift from the specs: until 2026-10-15 it still sold
+  messaging members, a retired feature. Check every claim you touch against
+  the use-case status in `specs/INDEX.md`.
   Visual identity (decided 2026-07-07): masonry photo-collage backdrop
   (`src/components/HeroBackdrop.astro` + `src/assets/backdrop/`), localized top
   scrim + frosted-glass cards, headings in Fraunces (`@fontsource-variable/fraunces`,
