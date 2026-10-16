@@ -96,6 +96,7 @@ The one message the product itself sends a member is the necessary
 | [Operational alerting](concepts/operational-alerting.md) | Draft |
 | [Vipps API keys](concepts/vipps-api-keys.md) | Draft |
 | [Brand attribution](concepts/brand-attribution.md) | Active |
+| [Agent discovery](concepts/agent-discovery.md) | Draft |
 | [Brand mark (the heart)](concepts/brand-mark.md) | Active |
 | [Brand palette](concepts/brand-palette.md) | Active |
 | [Scorecard](concepts/scorecard.md) | Draft |

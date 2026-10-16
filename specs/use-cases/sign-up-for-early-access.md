@@ -133,6 +133,9 @@ first payment.
       names its one canonical address.
 - [ ] The sitemap also lists the join page of every organization with at
       least one supporting member, and no other organization's.
+- [ ] An AI agent reading `/llms.txt` learns what the product is and finds
+      the front page, sign-up, the data processing agreement and the sitemap
+      (see [agent discovery](../concepts/agent-discovery.md)).
 - [ ] The front page's title, description, opening line and preview picture
       say the product is for all organizations, without listing kinds.
 - [ ] The front page says the product works with the organization's other
