@@ -32,9 +32,18 @@ first payment.
    and a reader who needed the whole page should not have to scroll back.
 3. **The page says what early access means, in plain words, before anyone
    signs up:** the product is new and still changing, it is free while the
-   test phase lasts, members pay with real money through the organization's own
-   Vipps agreement, and the organization sets itself up with a step-by-step
-   guide. It also gives the product's own address for anyone who gets stuck,
+   test phase lasts, it then costs **499 kr a year per organization, VAT included**,
+   members pay with real money through the organization's own Vipps agreement, and the organization sets itself up with a step-by-step
+   guide. The price is stated up front (decided 2026-10-16) so an organization
+   knows what it signs up to pay later, not only what it pays today. It is
+   the organization's own cost: it is never added to what members pay, and it
+   is paid by **invoice**, not through Vipps, so it never mixes with the
+   members' payments. The page also promises that organizations **are told
+   in good time before the test phase ends**, so nobody is billed by
+   surprise. It also says the price **may be adjusted once a year**, in line
+   with inflation and the cost of running the service, and that every
+   adjustment is announced in good time too: the price is honest about the
+   first year without pretending it is fixed forever. It also gives the product's own address for anyone who gets stuck,
    written the way it is read, ø and all.
 4. **The page still explains the product before it asks for anything.** It
    shows a real [QR card](promote-with-qr-card.md) so a prospective
@@ -54,7 +63,9 @@ first payment.
    is filled in, and **asks the administrator to confirm it with a tick box**:
    empty until they tick it, next to the data processing agreement's box, and
    checked by the product as well as the browser. Leaving it unticked stops the
-   creation and says why. An organization whose own members will pay through a
+   creation and says why. The form names the price after the test phase,
+   that it is invoiced, and the promise of notice in good time; the tick box
+   names the price and the invoice. An organization whose own members will pay through a
    test-phase product should have noticed that it is one.
 7. **After creating the organization, the administrator is guided to the
    finished setup** by the front page's setup guide
@@ -114,7 +125,13 @@ first payment.
       without scrolling and without reading further.
 - [ ] The same action appears again at the end of the page.
 - [ ] The front page says the product is in early access, that it is free while
-      the test phase lasts, and that payments are real.
+      the test phase lasts, that it then costs 499 kr a year per
+      organization including VAT, paid by invoice, that organizations are
+      told in good time before the test phase ends, that the price may be
+      adjusted yearly with notice, and that payments are real.
+- [ ] The create form says the same about price, invoice, notice and yearly
+      adjustment; its
+      early-access box names the price and the invoice.
 - [ ] The page shows a real member card for an invented member, next to a
       short explanation of what the card gives a member.
 - [ ] The action opens the sign-up side of the sign-in; a signed-in visitor
@@ -148,7 +165,10 @@ first payment.
 - Keeping a separate record of when the early-access box was ticked. It is a
   condition of creating the organization, so the organization existing is the
   record.
-- Pricing after the test phase, and moving an organization out of it.
+- When the test phase ends, how much notice "in good time" is, sending the
+  notice and the invoices, and moving an organization out of the test phase.
+  The price, VAT included, paying by invoice, and a yearly adjustment with
+  notice are decided. How big an adjustment is, is decided each year.
 
 ## Related
 - [Use case: Access the back office](access-the-back-office.md): signing in,

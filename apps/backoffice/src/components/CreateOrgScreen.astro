@@ -61,8 +61,12 @@ const {
       (specs/use-cases/sign-up-for-early-access.md). */}
   <Alert variant="info">
     <strong>støttemedlem.no er i tidlig tilgang.</strong> Det er gratis så lenge testfasen varer,
-    og medlemmene betaler med ekte penger gjennom organisasjonens egen Vipps-avtale. Tjenesten er
-    ny og endrer seg fortsatt, og noe kan svikte. Vi følger med og hjelper dere gjerne:{" "}
+    deretter koster det 499 kr i året per organisasjon, inkludert mva. Det betales mot faktura,
+    ikke med Vipps, og vi sier fra i god tid før testfasen slutter. Prisen kan justeres én gang i
+    året etter prisvekst og hva det koster å drive tjenesten, og det varsler vi også i god tid.
+    Medlemmene betaler med ekte
+    penger gjennom organisasjonens egen Vipps-avtale. Tjenesten er ny og endrer seg fortsatt, og
+    noe kan svikte. Vi følger med og hjelper dere gjerne:{" "}
     <TextLink href="mailto:hei@xn--stttemedlem-hgb.no">hei@støttemedlem.no</TextLink>.
   </Alert>
   {error && <Alert variant="error">{error}</Alert>}
@@ -112,8 +116,8 @@ const {
         error={fieldErrors.godtarTidligTilgang}
       >
         Jeg forstår at støttemedlem.no er i en testfase med tidlig tilgang: tjenesten er gratis
-        foreløpig, den kan endre seg, og organisasjonen tar imot ekte betalinger gjennom sin egen
-        Vipps-avtale.
+        foreløpig og koster 499 kr i året inkludert mva. etter testfasen, betalt mot faktura. Den
+        kan endre seg, og organisasjonen tar imot ekte betalinger gjennom sin egen Vipps-avtale.
       </Checkbox>
       <Button busy="Oppretter organisasjonen …" block>
         Opprett og fortsett
