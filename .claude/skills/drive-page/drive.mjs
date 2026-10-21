@@ -224,6 +224,22 @@ for (const step of steps) {
         if (!ok) failures++;
         break;
       }
+      case "fold": {
+        // On the first screen, before any scroll: the element's bottom edge
+        // sits inside the viewport when the page is at the top.
+        const bottom = await page.evaluate((sel) => {
+          window.scrollTo(0, 0);
+          const el = document.querySelector(sel);
+          return el ? el.getBoundingClientRect().bottom : null;
+        }, a);
+        const ok = bottom !== null && bottom <= viewport.height;
+        console.log(
+          `${ok ? "PASS" : "FAIL"} ${a} above the fold at ${viewport.width}x${viewport.height}` +
+            (ok ? "" : ` — ${bottom === null ? "no such element" : `bottom at ${Math.round(bottom)}px`}`),
+        );
+        if (!ok) failures++;
+        break;
+      }
       case "eval":
         console.log(JSON.stringify(await page.evaluate(a)));
         break;

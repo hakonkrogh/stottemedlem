@@ -20,6 +20,7 @@ and seed local D1 first (`verify-public-routes/seed.sh`).
 | `wait=<sel>` · `sleep=<ms>` | wait for a selector / a delay |
 | `read=<sel>` · `attr=<sel>::<name>` · `count=<sel>` | print text / attribute / match count |
 | `assert=<sel>::<text>` | substring match; PASS/FAIL and the exit code |
+| `fold=<sel>` | PASS when the element is fully on the first screen at the top of the page (e.g. the join page's price and Vipps button; run once per `--viewport`, short screens like 320x568 and 844x390 are where it fails) |
 | `eval=<js>` | run in the page, print the result as JSON |
 | `shot=<path>` · `url=` | full-page PNG / current URL |
 
