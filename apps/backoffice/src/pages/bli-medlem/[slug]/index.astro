@@ -16,7 +16,6 @@ import {
 import Alert from "@stottemedlem/ui/components/Alert.astro";
 import Button from "@stottemedlem/ui/components/Button.astro";
 import Heading from "@stottemedlem/ui/components/Heading.astro";
-import OrgIdentityHeader from "@stottemedlem/ui/components/OrgIdentityHeader.astro";
 import Stack from "@stottemedlem/ui/components/Stack.astro";
 import Text from "@stottemedlem/ui/components/Text.astro";
 import TextLink from "@stottemedlem/ui/components/TextLink.astro";
@@ -86,10 +85,9 @@ const joinError = Astro.url.searchParams.get("feil");
 const referral = Astro.url.searchParams.get(JOIN_REFERRAL_PARAM)?.trim() || null;
 ---
 
-<PublicShell title={title} description={description}>
+<PublicShell title={title} description={description} org={orgIdentity(org)}>
   <Stack gap="xl">
     <Stack gap="md">
-      <OrgIdentityHeader {...orgIdentity(org)} />
       {
         joinError && (
           <Alert variant="error">
@@ -102,7 +100,9 @@ const referral = Astro.url.searchParams.get(JOIN_REFERRAL_PARAM)?.trim() || null
         )
       }
       <Stack gap="sm">
-        <Heading>Bli støttemedlem</Heading>
+        <div class="invitation">
+          <Heading>Bli støttemedlem</Heading>
+        </div>
         <Text variant="lead">{subheadIntro}</Text>
         <Text variant="lead">{subheadPromise}</Text>
       </Stack>
@@ -129,7 +129,7 @@ const referral = Astro.url.searchParams.get(JOIN_REFERRAL_PARAM)?.trim() || null
           <form method="post" action={`/bli-medlem/${org.slug}/start`} data-submit="native">
             <input type="hidden" name="medlemskap" value={tier.key} />
             {referral && <input type="hidden" name={JOIN_REFERRAL_PARAM} value={referral} />}
-            <Button type="submit" busy="Åpner Vipps …" block>
+            <Button type="submit" busy="Åpner Vipps …" block size="lg">
               Bli støttemedlem med Vipps
             </Button>
           </form>
@@ -207,6 +207,11 @@ const referral = Astro.url.searchParams.get(JOIN_REFERRAL_PARAM)?.trim() || null
 </PublicShell>
 
 <style>
+  /* The invitation is the page's headline and grows with the screen. */
+  .invitation :global(h1) {
+    font-size: clamp(1.875rem, 1.6vw + 1.5rem, 2.625rem);
+    line-height: 1.08;
+  }
   dl {
     margin: 0;
     display: grid;

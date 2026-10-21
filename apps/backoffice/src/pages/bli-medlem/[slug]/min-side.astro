@@ -33,6 +33,7 @@ import {
   memberCardWords,
 } from "../../../lib/memberCard";
 import { changeTier, publicOrigin, startJoin } from "../../../lib/membership";
+import { orgIdentity } from "../../../lib/orgImages";
 import { periods } from "../../../lib/periods";
 import { getVippsForOrg } from "../../../lib/vipps";
 import { getWorkOS } from "../../../lib/workos";
@@ -289,7 +290,12 @@ const numberLine =
 const title = `Ditt støttemedlemskap — ${org.name}`;
 ---
 
-<PublicShell title={title} description={`Administrer støttemedlemskapet ditt i ${org.name}.`} noindex>
+<PublicShell
+  title={title}
+  description={`Administrer støttemedlemskapet ditt i ${org.name}.`}
+  noindex
+  org={orgIdentity(org)}
+>
   {
     /* Erased: the address that opened this page is void from now on, so this
        render is the member's last look at it. It says what happened and what

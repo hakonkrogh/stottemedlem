@@ -116,25 +116,47 @@ resolve to.
   obvious where it leads before it is followed. An organization without a
   website simply has no such link: that is the common case, and the reason the
   product hosts this page at all.
-- The page presents the organization's **visual identity** when uploaded, in
-  the familiar social-page arrangement (as Facebook pages do): the banner image
-  as a wide **backdrop** at the top, with the logo overlapping the banner's
-  bottom edge and the organization's name beside it. The logo is always framed
-  in a **circle with a subtle outline** — everywhere the product shows a logo,
-  it shows it in that circle, so differently shaped logos still read as one
-  consistent mark. The banner is decoration, not a hero — it stays bounded in
-  height so the membership offer remains near the top of the page. Because the
-  backdrop crops the banner, the organization can choose the banner's **focal
-  point** — which part of the image stays in view — with a picker that fades
-  the cropped-away parts and lets the visible-area frame be dragged; unset
-  means centered. Either image is optional and simply omitted when absent (logo
-  alone sits beside the name; no reserved empty space). The organization's
-  imagery never displaces the verification-required profile fields. This
-  identity presentation is **one thing shown in every place** an organization
-  is presented: the join page, the receipt a new supporter lands on, the
-  public page of a member's [card](member-card.md), and the top of every
-  screen of the [back office](back-office.md), so what an administrator sees
-  above their work is what a supporter sees.
+- The page presents the organization's **visual identity** when uploaded, as
+  a **stage** (decided 2026-10-21, replacing a bounded banner that left the
+  page "too white and non-engaging"): the banner runs edge to edge across the
+  top of the page, darkening towards its foot, and the logo and the
+  organization's name stand on that dark foot in white. The page itself is a
+  white sheet that rises over the bottom of the photograph, across the whole
+  screen on a phone and at the reading column's width on a wider screen. The
+  darkening is what makes the stage work for **any** organization's colours:
+  a pale, busy or dark photograph all carry white text the same way, and the
+  product never has to pick a colour from the images. The logo is always
+  framed in a **circle with a subtle outline**, everywhere the product shows
+  a logo, so differently shaped logos still read as one consistent mark.
+- **The stage is sized from the screen, so the offer stays near the top.** On
+  a tall phone the photograph is close to square; on a short or wide screen it
+  is a band; it never grows past a fixed height. On a phone of ordinary size,
+  with the browser's own bars showing, a visitor sees the invitation and the
+  price without scrolling, and the join button is a short scroll below; on a
+  computer the button is in view too. On the smallest phones and on a phone
+  turned sideways the stage still takes its share, and the offer is one
+  scroll away. Because the stage
+  crops the banner differently on every screen, the organization's chosen
+  **focal point** (which part of the image stays in view) matters more than
+  anywhere: the crop keeps that point in view at every width; unset means
+  centered.
+- An organization with **only a logo** gets the same stage on a plain dark
+  ground, its logo and name on it. An organization with **neither image**
+  gets no stage: its name opens the page alone, on white, with no empty space
+  reserved. The organization's imagery never displaces the
+  verification-required profile fields. The stage has a known height from the
+  first paint, so nothing moves when the photograph arrives
+  ([Opening a page](opening-a-page.md)); the photograph is the air at the top
+  of the page.
+- **One identity, two arrangements.** Every public page that presents the
+  organization (the join page, the receipt a new supporter lands on, a
+  member's own page, and the public page of a member's [card](member-card.md))
+  opens with the stage. The top of every screen of the
+  [back office](back-office.md) shows the same images, focal point and name
+  in a compact arrangement: the banner as a bounded backdrop with the circled
+  logo overlapping its edge and the name beside it, so the administrator's
+  work stays at the top of the screen. Both are one component fed the same
+  stored identity, so they cannot drift apart.
 - The sales-terms page is **one standard template for every organization**,
   populated with the organization's profile, and lives beneath the same
   address. It covers at minimum: payment (Vipps, charged on joining and renewed

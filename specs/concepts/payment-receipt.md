@@ -25,6 +25,10 @@ every payment, so neither the member nor the organization ever has to
 reconstruct one.
 
 ## Rules & invariants
+- **The confirmation page opens with the organization**: the same stage of
+  banner, circled logo and name the supporter just saw on the
+  [join page](join-page.md), so the page confirms whom they now support
+  before it confirms the payment.
 - **The [member card](member-card.md) comes first, the paperwork after it.**
   A receipt is a thank-you before it is a document, and the card is the
   thank-you, so the card is offered before the receipt says anything about

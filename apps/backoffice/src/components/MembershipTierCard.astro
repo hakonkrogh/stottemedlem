@@ -23,6 +23,7 @@ const { name, annualFeeNok, description, headingLevel = 2 } = Astro.props;
 const price = annualFeeNok.toLocaleString("nb-NO").replace(/\s/g, "\u00A0");
 ---
 
+<div class="tier-card">
 <Card>
   <Stack gap="md">
     <Heading level={headingLevel}>{name}</Heading>
@@ -39,15 +40,24 @@ const price = annualFeeNok.toLocaleString("nb-NO").replace(/\s/g, "\u00A0");
     <slot />
   </Stack>
 </Card>
+</div>
 
 <style>
+  /* An ink outline with a hard offset shadow: the offer reads as the thing
+     to act on, on the white public pages and the cream back office alike,
+     and it never borrows the action green or the heart's red
+     (specs/concepts/brand-palette.md). */
+  .tier-card :global(.card) {
+    border: 1.5px solid var(--sm-ink);
+    box-shadow: 6px 6px 0 var(--sm-ink);
+  }
   .price {
     margin: 0;
     font-family: var(--sm-font-display);
     font-weight: var(--sm-font-display-weight, 600);
     font-variation-settings: var(--sm-font-display-variation, normal);
-    font-size: 2rem;
-    line-height: 1.1;
+    font-size: 2.5rem;
+    line-height: 1.05;
   }
   .price .per {
     font-family: var(--sm-font-sans);

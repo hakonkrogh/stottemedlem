@@ -16,7 +16,6 @@ import {
 } from "@stottemedlem/db";
 import Heading from "@stottemedlem/ui/components/Heading.astro";
 import InfoList from "@stottemedlem/ui/components/InfoList.astro";
-import OrgIdentityHeader from "@stottemedlem/ui/components/OrgIdentityHeader.astro";
 import Stack from "@stottemedlem/ui/components/Stack.astro";
 import Text from "@stottemedlem/ui/components/Text.astro";
 import TextLink from "@stottemedlem/ui/components/TextLink.astro";
@@ -213,12 +212,16 @@ const title =
     : `Takk for støtten — ${org.name}`;
 ---
 
-<PublicShell title={title} description={`Kvittering for støttemedlemskap i ${org.name}.`} noindex>
+{/* Opens on the same identity the supporter just joined under on the join
+    page (specs/concepts/join-page.md): the receipt confirms WHO you now
+    support, not just that a payment happened. */}
+<PublicShell
+  title={title}
+  description={`Kvittering for støttemedlemskap i ${org.name}.`}
+  noindex
+  org={orgIdentity(org)}
+>
   <Stack gap="lg">
-    {/* The same identity the supporter just joined under on the join page
-        (specs/concepts/join-page.md) — the receipt confirms WHO you now
-        support, not just that a payment happened. */}
-    <OrgIdentityHeader {...orgIdentity(org)} />
     {
       status === "active" && (
         <Stack gap="sm">

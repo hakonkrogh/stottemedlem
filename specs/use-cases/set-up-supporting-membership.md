@@ -154,15 +154,15 @@ immediately. A name change never changes the slug or the public addresses.
 
 The back office **shows the organization as the public page presents it** at
 the top of every screen ([back office](../concepts/back-office.md)): the same
-identity header a supporter sees at the top of the
-[join page](../concepts/join-page.md) (banner backdrop, logo in its circle,
-name), with a way straight to the live page right under it. It is not an
-approximation: it is the very same presentation, fed the same stored images
-and focal point, so the administrator never has to open the public page to
-know how the organization looks there, and the settings carry no preview of
-their own. With nothing uploaded it shows the name alone; with imagery it
-shows the banner cropped exactly as the page crops it, and a save shows the
-new imagery above the settings the moment the form closes.
+identity a supporter sees at the top of the
+[join page](../concepts/join-page.md) (banner, logo in its circle, name),
+with a way straight to the live page right under it. The public pages show it
+as a full-width stage and the back office in a compact arrangement, but it is
+one presentation fed the same stored images and focal point, so the
+administrator never has to open the public page to know which images and
+which part of the banner supporters see, and the settings carry no preview
+of their own. With nothing uploaded it shows the name alone, and a save shows
+the new imagery above the settings the moment the form closes.
 
 The settings also **hold the organization's public addresses**: the join
 page and its sales-terms page, written out in full so they can be copied,
@@ -258,10 +258,14 @@ the front page.
 - [ ] An administrator can choose the banner's focal point by dragging the
       visible-area frame in the settings preview; the join page crops the
       banner around that point.
-- [ ] Every back-office screen shows the organization exactly as the join
-      page presents it (name alone, logo only, banner only, or both, cropped
-      around the chosen focal point), with a link to the live page under it;
-      the settings carry no second preview.
+- [ ] Every back-office screen shows the organization with the same images,
+      focal point and name as the join page (name alone, logo only, banner
+      only, or both), in the compact arrangement, with a link to the live
+      page under it; the settings carry no second preview.
+- [ ] The join page, receipt, member's own page and card page open with the
+      organization's stage when it has a banner or a logo; on an ordinary
+      phone the join page shows the invitation and the price without
+      scrolling.
 - [ ] The settings show the join-page and sales-terms addresses written out,
       each with where it is pasted; the front page does not list them.
 
