@@ -72,6 +72,12 @@ also documents the variants and why the rule exists.
   otherwise touch. Read it before editing colours, and prove the removal by
   grepping the emitted SVG for the hex (see `render-card`). Gotcha: the hero
   wrapper sets `color:#fff` — slotted card content must re-set its own dark color.
+  **Restyling the join page reaches the back office** (noted 2026-10-21): its
+  two building blocks are shared. `OrgIdentityHeader` (packages/ui, banner +
+  circle logo + name) also opens every back-office screen, the receipt and the
+  member card's public page; `MembershipTierCard` (apps/backoffice/src/
+  components) is also the back office's tier view. Scope a join-page-only look
+  through a prop or a class set by the page, not by editing those components.
   Token-name gotcha (hit 2026-09-08): `--sm-accent-ink` is WHITE, the text
   colour ON the green button, not an "ink of the accent" (that is
   `--sm-accent-deep`). Reading it as a dark green made Alert's info variant
