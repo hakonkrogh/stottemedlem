@@ -335,8 +335,8 @@ surface the member happens to be looking at.
   the member sees.
 - **The card's public page opens with the organization.** Above the card
   stands the organization's own identity, the banner, the circled logo and the
-  name, presented exactly as on the [join page](join-page.md) and the
-  [receipt](payment-receipt.md). A member follows the link to their card from
+  name, presented as the same stage that opens the [join page](join-page.md)
+  and the [receipt](payment-receipt.md). A member follows the link to their card from
   the receipt, weeks or years after joining; what they should land on is the
   organization they back, looking the way it looked when they joined, and not
   a bare picture on a site they do not recognise. The card still leads among

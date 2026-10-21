@@ -20,6 +20,10 @@ the organization and without the organization having to answer.
 ## Rules & invariants
 - The page belongs to **one membership** and shows only it. It never exposes
   anything about the organization's other members.
+- **It opens with the organization** (added 2026-10-21): the same stage of
+  banner, circled logo and name that opens the [join page](join-page.md), so
+  a member managing their membership sees whom it is with before anything
+  else. With no images, the organization's name stands alone at the top.
 - **It is the card, then the paperwork.** Under the page's own title comes the
   member's [card](member-card.md), and only then what they pay and how to stop
   it — what they are before what it costs. The card is the largest thing on

@@ -69,8 +69,12 @@ it too, for the reason below.
   (decided 2026-09-21): there the product presents someone else, an
   organization to a stranger or a member to themselves, and its own paper
   colour is one more voice on a page whose colours should be the club's and
-  the member's. Objects lying on either ground, the member card and the
-  receipt slip, are white with a hairline edge and a soft shadow; on the
+  the member's. Where the organization has a banner or a logo, its stage
+  opens the page (the photograph darkening to near-black at its foot, or a
+  plain ink ground for a logo alone) and the white page rises over it
+  ([join page](join-page.md)); the photograph supplies the club's colours,
+  and the product adds none. Objects lying on either ground, the member card
+  and the receipt slip, are white with a hairline edge and a soft shadow; on the
   cream they lift off it, on the white the edge and the shadow alone hold
   them, and the member card's cream footer becomes the warmest thing on the
   page.

@@ -17,6 +17,15 @@ export const PrimaryBlock = {
   args: { block: true, slots: { default: "Opprett og fortsett" } },
 };
 
+/** The one big action on a page: joining with Vipps. */
+export const PrimaryLarge = {
+  args: {
+    block: true,
+    size: "lg",
+    slots: { default: "Bli støttemedlem med Vipps" },
+  },
+};
+
 export const SecondaryBlock = {
   args: {
     variant: "secondary",

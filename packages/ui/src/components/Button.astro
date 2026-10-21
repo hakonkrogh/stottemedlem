@@ -17,6 +17,8 @@ interface Props {
   value?: string;
   /** What the button says while the action it started is still running. */
   busy?: string;
+  /** `lg` is the one big action on a page, such as joining with Vipps. */
+  size?: "md" | "lg";
 }
 const {
   variant = "primary",
@@ -26,12 +28,13 @@ const {
   name,
   value,
   busy,
+  size = "md",
 } = Astro.props;
 const Tag = href ? "a" : "button";
 ---
 
 <Tag
-  class:list={["btn", variant, { block }]}
+  class:list={["btn", variant, { block, lg: size === "lg" }]}
   href={href}
   type={href ? undefined : type}
   name={name}
@@ -64,6 +67,12 @@ const Tag = href ? "a" : "button";
   .btn.block {
     display: flex;
     width: 100%;
+  }
+  .btn.lg {
+    min-height: 3.125rem;
+    padding: 0.7rem 1.1rem;
+    font-size: 1rem;
+    border-radius: var(--sm-radius-lg);
   }
   .btn:focus-visible {
     outline: none;

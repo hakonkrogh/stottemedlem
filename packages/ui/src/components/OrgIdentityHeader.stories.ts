@@ -56,3 +56,18 @@ export const LongName = {
     bannerUrl: FIXTURE_BANNER_URL,
   },
 };
+
+/** The public pages' stage: the banner edge to edge, name and logo on its dark foot. */
+export const Stage = {
+  args: {
+    name: FIXTURE_ORG_NAME,
+    logoUrl: FIXTURE_LOGO_URL,
+    bannerUrl: FIXTURE_BANNER_URL,
+    layout: "stage",
+  },
+};
+
+/** A logo alone gets the stage on a plain dark ground. */
+export const StageLogoOnly = {
+  args: { name: FIXTURE_ORG_NAME, logoUrl: FIXTURE_LOGO_URL, layout: "stage" },
+};

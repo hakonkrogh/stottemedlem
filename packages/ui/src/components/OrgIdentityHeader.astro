@@ -11,6 +11,13 @@
 // The banner stays bounded in height so the page's real content is never
 // pushed far down. Either image is simply omitted when the org has none: the
 // logo alone sits beside the name, and a name alone stands by itself.
+//
+// The public pages show the same identity as a STAGE: the banner edge to edge
+// with a dark fade at its foot, where the logo and the name stand in white.
+// The fade is what lets any photo carry white text. The stage is sized from
+// the screen (a near-square on a tall phone, a band on a short or wide one)
+// and the page below rises over its foot (PublicShell, --sm-stage-lift). The
+// back office keeps the compact row above its work.
 interface Props {
   name: string;
   logoUrl?: string | null;
@@ -29,6 +36,12 @@ interface Props {
   as?: "p" | "h1";
   /** Where the name and logo lead when pressed; nowhere by default. */
   href?: string;
+  /**
+   * `row` is the compact header (back office). `stage` is the public pages'
+   * full-width banner; it needs a banner or a logo, and with no banner the
+   * stage is a plain dark ground for the logo.
+   */
+  layout?: "row" | "stage";
 }
 
 const {
@@ -38,14 +51,17 @@ const {
   bannerFocus = null,
   as: Name = "p",
   href,
+  layout = "row",
 } = Astro.props;
+const stage = layout === "stage";
 const bannerPosition = `${bannerFocus?.x ?? 50}% ${bannerFocus?.y ?? 50}%`;
 ---
 
-<header class:list={["identity", { "has-banner": bannerUrl }]}>
+<header class:list={["identity", { "has-banner": bannerUrl, stage }]}>
   {bannerUrl && (
     <img class="banner" src={bannerUrl} alt="" style={`object-position: ${bannerPosition}`} />
   )}
+  {stage && <div class="fade" aria-hidden="true" />}
   {
     href ? (
       <a class="head linked" href={href}>
@@ -146,5 +162,73 @@ const bannerPosition = `${bannerFocus?.x ?? 50}% ${bannerFocus?.y ?? 50}%`;
   .has-banner .logo {
     margin-top: -3.25rem;
     margin-left: 1rem;
+  }
+
+  /* The stage. Its height follows the screen: 85% of the width, at most 40%
+     of the height, within 220-460px, so a phone opens on a near-square photo
+     and still shows the offer, and a wide screen gets a band. svh where the
+     browser knows it: the height with the browser's own bars showing. */
+  .identity.stage {
+    position: relative;
+    margin: 0;
+    overflow: hidden;
+    height: clamp(13.75rem, min(85vw, 40vh), 28.75rem);
+    height: clamp(13.75rem, min(85vw, 40svh), 28.75rem);
+    background:
+      radial-gradient(
+        110% 80% at 25% 10%,
+        color-mix(in oklch, var(--sm-ink) 80%, white) 0,
+        transparent 65%
+      ),
+      var(--sm-ink);
+  }
+  .stage .banner {
+    position: absolute;
+    inset: 0;
+    height: 100%;
+    aspect-ratio: auto;
+    min-height: 0;
+    max-height: none;
+    border-radius: 0;
+  }
+  .stage .fade {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      180deg,
+      rgb(10 8 6 / 0) 28%,
+      rgb(10 8 6 / 0.35) 58%,
+      rgb(10 8 6 / 0.84) 100%
+    );
+  }
+  /* The name row lines up with the reading column below it. */
+  .stage .head {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: calc(var(--sm-stage-lift, 1.75rem) + 1.125rem);
+    max-width: 38rem;
+    margin-inline: auto;
+    padding-inline: 1.25rem;
+    align-items: center;
+    gap: clamp(0.75rem, 1.4vw, 1.25rem);
+  }
+  .stage .logo {
+    width: clamp(4rem, 7vw, 6.5rem);
+    height: clamp(4rem, 7vw, 6.5rem);
+    padding: clamp(0.3rem, 0.5vw, 0.5rem);
+    margin: 0;
+    box-shadow:
+      0 0 0 1px var(--sm-border),
+      0 6px 18px -6px rgb(0 0 0 / 0.55);
+  }
+  .stage .org-name {
+    color: #fff;
+    font-size: clamp(1.3rem, 2.4vw + 0.75rem, 2.25rem);
+    line-height: 1.12;
+    text-shadow: 0 1px 14px rgb(0 0 0 / 0.45);
+  }
+  .stage .linked:focus-visible {
+    box-shadow: 0 0 0 3px #fff;
   }
 </style>

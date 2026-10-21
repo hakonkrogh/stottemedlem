@@ -20,6 +20,16 @@ and seed local D1 first (`verify-public-routes/seed.sh`).
 | `wait=<sel>` · `sleep=<ms>` | wait for a selector / a delay |
 | `read=<sel>` · `attr=<sel>::<name>` · `count=<sel>` | print text / attribute / match count |
 | `assert=<sel>::<text>` | substring match; PASS/FAIL and the exit code |
+| `fold=<sel>` | PASS when the element is fully on the first screen at the top of the page (e.g. the join page's price and Vipps button; run once per `--viewport`, short screens like 320x568 and 844x390 are where it fails) |
+
+**`fold` needs the BROWSER's viewport, not the phone's screen** (hit
+2026-10-21): an iPhone is 390x844 but Safari with its bars showing leaves
+about **390x664** (about 390x750 once the bars collapse). A mockup measured at
+844 promised a join button that the real page at 664 pushed below the fold.
+Check 390x664 first. For the public pages' stage (banner + logo) the seeded
+org needs images: `verify-public-routes/seed-images.sh` after `seed.sh`, then
+one plain `curl` of the page before measuring, since the join page serves its
+saved copy and refreshes it in the background.
 | `eval=<js>` | run in the page, print the result as JSON |
 | `shot=<path>` · `url=` | full-page PNG / current URL |
 

@@ -121,13 +121,17 @@ one visit and never has to be re-learned.
   Below it, with room to breathe, comes the
   organization's own name, which is what the page is actually about.
 - **Every screen opens with the organization as the public page presents
-  it.** Below the account line stands the very same identity header a
-  supporter meets at the top of the [join page](join-page.md): the banner as
-  a backdrop, the logo in its circle overlapping the banner's edge, the name
-  beside it; and with nothing uploaded, the name alone. It is one thing shown
-  in every place an organization is presented, so what the administrator sees
-  above their work is exactly what a supporter sees, and the back office needs
-  no separate preview of the public page. It also does the work a mark does:
+  it.** Below the account line stands the organization's identity: the same
+  images, focal point and name a supporter meets at the top of the
+  [join page](join-page.md), in the back office's compact arrangement (the
+  banner as a bounded backdrop, the logo in its circle overlapping the
+  banner's edge, the name beside it; with nothing uploaded, the name alone).
+  The public pages show the same identity as a full-width stage
+  ([join page](join-page.md)); the back office keeps it compact so the
+  administrator's work stays at the top. It is one component fed the same
+  stored identity, so what the administrator sees above their work is what a
+  supporter sees, and the back office needs no separate preview of the
+  public page. It also does the work a mark does:
   an administrator who acts for more than one organization never has to read
   a name to know which back office they are in. The name is the page's
   heading and leads back to the front page.

@@ -5,7 +5,7 @@
 //
 // The banner gets a focal-point picker instead of a plain preview: the full
 // image with everything outside a draggable 3:1 frame faded out, showing which
-// part survives the crop to the public page's wide backdrop. The chosen point
+// part survives the crop to the back office's wide backdrop. The chosen point
 // travels as hidden bannerFocusX/bannerFocusY fields (object-position
 // percentages, 0–100).
 import type { Organization } from "@stottemedlem/db";
@@ -95,7 +95,9 @@ const fields = [
   // Focal-point picker for the banner: drag (or tap) to place the visible-crop
   // frame; the position is written to the hidden bannerFocusX/Y inputs as
   // object-position percentages. Selecting a new file previews it immediately
-  // and recentres the frame. Must match the join page banner's aspect-ratio.
+  // and recentres the frame. Matches the compact header's crop (back office);
+  // the public pages' stage crops the same banner to the screen's shape
+  // around the same point, so the point is what carries over, not the frame.
   const ASPECT = 12 / 5;
 
   // Bound on load and again whenever LiveForms swaps the page in place (a

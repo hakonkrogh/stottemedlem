@@ -1,7 +1,6 @@
 ---
 import { periodLabel, referredJoinPath } from "@stottemedlem/core";
 import Heading from "@stottemedlem/ui/components/Heading.astro";
-import OrgIdentityHeader from "@stottemedlem/ui/components/OrgIdentityHeader.astro";
 import Stack from "@stottemedlem/ui/components/Stack.astro";
 import Text from "@stottemedlem/ui/components/Text.astro";
 import TextLink from "@stottemedlem/ui/components/TextLink.astro";
@@ -48,19 +47,18 @@ const description =
 const alt = `Medlemsbevis for ${memberName} i ${org.name}, med ${card.hearts} hjerter.`;
 ---
 
+{/* Opens on the identity the member joined under (specs/concepts/join-page.md):
+    a member following the link to their card arrives at their organization,
+    not at a bare picture on a stranger's site. */}
 <PublicShell
   title={title}
   description={description}
   previewImage={memberCardImageUrl(card)}
   previewImageAlt={alt}
   noindex
+  org={orgIdentity(org)}
 >
   <Stack gap="lg">
-    {/* The same identity the member joined under on the join page and saw
-        again on the receipt (specs/concepts/join-page.md): a member following
-        the link to their card arrives at their organization, not at a bare
-        picture on a stranger's site. */}
-    <OrgIdentityHeader {...orgIdentity(org)} />
     {/* The card, and under it the same offer the thank-you page makes: this
         is the address the receipt email sends the member to when they want to
         show the card, so passing it on belongs here too
