@@ -28,10 +28,7 @@ async function loadChromium() {
   } catch {
     /* not a workspace dep — expected */
   }
-  const pattern = path.join(
-    os.homedir(),
-    ".npm/_npx/*/node_modules/playwright/index.mjs",
-  );
+  const pattern = path.join(os.homedir(), ".npm/_npx/*/node_modules/playwright/index.mjs");
   for await (const entry of glob(pattern)) {
     return (await import(`file://${entry}`)).chromium;
   }
@@ -85,8 +82,7 @@ for (let i = 0; i < argv.length; i++) {
   else if (arg === "--viewport") {
     const [w, h] = argv[++i].split("x");
     viewport = { width: Number(w), height: Number(h) };
-  } else if (arg === "--permissions")
-    permissions = argv[++i].split(",").filter(Boolean);
+  } else if (arg === "--permissions") permissions = argv[++i].split(",").filter(Boolean);
   else if (arg === "--stub") stubs.push(argv[++i]);
   else if (arg === "--route") routes.push(argv[++i]);
   else if (arg === "--delay") delays.push(argv[++i]);
@@ -162,9 +158,7 @@ for (const spec of delays) {
 
 const page = await context.newPage();
 if (showConsole) {
-  page.on("console", (message) =>
-    console.log(`console.${message.type()}: ${message.text()}`),
-  );
+  page.on("console", (message) => console.log(`console.${message.type()}: ${message.text()}`));
   page.on("pageerror", (error) => console.log(`pageerror: ${error.message}`));
 }
 
