@@ -43,9 +43,11 @@ reconstruct one.
   choir is somebody choosing to back it, and a renewal is choosing it again;
   the email opens by saying thank you for exactly that, in the organization's
   name, before it says anything else. The paperwork is in the email, but it is
-  not what the email is about. (It used to open with "your membership is
-  renewed" and a table of the payment's facts, which read as an invoice sent
-  to someone who had just done the organization a favour.)
+  not what the email is about. The words follow the
+  [member voice](member-voice.md): thanks for the act, in the organization's
+  name, never praise of the person. (It used to open with "your membership
+  is renewed" and a table of the payment's facts, which read as an invoice
+  sent to someone who had just done the organization a favour.)
 - **The email shows the card and hands it over.** Where a card can be made,
   the email shows the member's card itself, the very picture it attaches, and
   links the card's public address so the member can look at it and share it.
@@ -129,7 +131,8 @@ reconstruct one.
 - Documents one captured charge of one [membership](membership.md).
 - Delivered to one [supporting member](supporting-member.md), on behalf of one
   [organization](organization.md).
-- The email form is a kind of [member notice](member-notice.md).
+- The email form is a kind of [member notice](member-notice.md), written in
+  the [member voice](member-voice.md).
 - Offers the member's [card](member-card.md) before the paperwork: the page
   shows it; the email shows it, attaches it and links it.
 - The page form is the confirmation step of

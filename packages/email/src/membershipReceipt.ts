@@ -36,11 +36,14 @@ export function membershipReceipt(receipt: MembershipReceipt): EmailMessage {
     : `E-posten er sendt fra en adresse som ikke kan besvares. Har du spørsmål, ta kontakt med ${orgName} direkte.`;
 
   // The thank-you is the message. A renewal is somebody choosing the
-  // organization again, and the lead says so before anything else.
+  // organization again, and the lead says so before anything else: thanks
+  // for the act, in the organization's name, never praise of the person
+  // (specs/concepts/member-voice.md). The support counting year for year is
+  // what the card's hearts show, so the renewal says that.
   const lead =
     receipt.kind === "join"
       ? `Tusen takk for støtten! Du er nå støttemedlem i ${orgName}. ❤️`
-      : `Tusen takk for at du støtter ${orgName} enda et år! Du er fantastisk. ❤️`;
+      : `Tusen takk for at du støtter ${orgName} enda et år! Støtten din teller, år for år. ❤️`;
 
   // The card comes before the paperwork (specs/concepts/member-card.md). It is
   // the attached picture itself the HTML body shows, never a likeness drawn in

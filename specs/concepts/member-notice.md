@@ -64,7 +64,8 @@ decides what they may be charged.
   documentation rather than action — it still carries the way out of the
   membership, which is the only act left after money has moved.
 - It carries the same [brand attribution](brand-attribution.md) as every other
-  member-facing surface.
+  member-facing surface, and is written in the [member voice](member-voice.md):
+  the organization speaking plainly to its member.
 - A member with no contact details cannot be told. The product does not treat
   this as success: an organization is shown who it could not reach, because a
   price change nobody could be told about is the organization's problem to

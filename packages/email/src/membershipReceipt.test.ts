@@ -65,8 +65,10 @@ describe("membershipReceipt", () => {
     const message = membershipReceipt({ ...base, kind: "renewal", paidNok: 1200 });
     expect(message.subject).toBe("Takk for at du støtter Bakvendtland Skolekorps enda et år");
     expect(message.text).toContain(
-      "Tusen takk for at du støtter Bakvendtland Skolekorps enda et år! Du er fantastisk.",
+      "Tusen takk for at du støtter Bakvendtland Skolekorps enda et år! Støtten din teller, år for år.",
     );
+    // Thanks for the act, never praise of the person (specs/concepts/member-voice.md).
+    expect(message.text).not.toMatch(/fantastisk|flott|best/i);
     // The thousands separator is the locale's no-break space, not an ASCII one.
     expect(message.text).toContain("1 200 kr");
   });
@@ -75,6 +77,16 @@ describe("membershipReceipt", () => {
     const message = membershipReceipt(base);
     expect(message.subject).toBe("Velkommen som støttemedlem i Bakvendtland Skolekorps");
     expect(message.text).toContain("Du er nå støttemedlem i Bakvendtland Skolekorps");
+  });
+
+  it("raises its voice once: one heart, one exclamation mark", () => {
+    for (const kind of ["join", "renewal"] as const) {
+      const message = membershipReceipt({ ...withPdf, kind, cardPngBase64: "aGVsbG8=" });
+      // The footer's heart is the brand mark beside the attribution, not the voice.
+      const body = message.text.split("\n---\n")[0] ?? "";
+      expect(body.match(/❤️/g)).toHaveLength(1);
+      expect(body.match(/!/g)).toHaveLength(1);
+    }
   });
 
   it("keeps the amount out of the subject, and every em dash out of the message", () => {

@@ -99,6 +99,7 @@ The one message the product itself sends a member is the necessary
 | [Agent discovery](concepts/agent-discovery.md) | Draft |
 | [Brand mark (the heart)](concepts/brand-mark.md) | Active |
 | [Brand palette](concepts/brand-palette.md) | Active |
+| [Member voice](concepts/member-voice.md) | Active |
 | [Scorecard](concepts/scorecard.md) | Draft |
 
 ---
