@@ -12,7 +12,7 @@ member-card sheets):
 prints the page under print media with the page's own `@page` size and
 backgrounds on, and reports the page count. Then Read the PDF (the Read tool
 renders its pages). The count is the assertion a screenshot cannot make: 14
-cards at six a sheet must be 3 pages, and an off-by-a-millimetre sheet height
+cards at ten a sheet (since 2026-10-26; six before) must be 2 pages, and an off-by-a-millimetre sheet height
 shows up as a blank fourth page. Do not write a scratch playwright script for
 this: a script outside the repo cannot import playwright (it is not a
 workspace dependency; the drive-page pattern of reading it out of npm's `_npx`
