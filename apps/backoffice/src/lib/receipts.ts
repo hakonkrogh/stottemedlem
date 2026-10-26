@@ -1,5 +1,10 @@
 import { env } from "cloudflare:workers";
-import { formatOrganisasjonsnummer, memberSelfServicePath, periodLabel } from "@stottemedlem/core";
+import {
+  formatOrganisasjonsnummer,
+  memberSelfServicePath,
+  periodLabel,
+  receiptPagePath,
+} from "@stottemedlem/core";
 import {
   type CaptureOwedReceipt,
   type Db,
@@ -7,7 +12,13 @@ import {
   type Organization,
   recordMemberNotice,
 } from "@stottemedlem/db";
-import { type EmailMessage, type EmailSender, membershipReceipt } from "@stottemedlem/email";
+import {
+  type EmailMessage,
+  type EmailSender,
+  type MembershipReceipt,
+  membershipReceipt,
+  membershipReceiptPdf,
+} from "@stottemedlem/email";
 import { storedCardPng } from "./cardImage";
 import { loadMemberCardForMemberId, memberCardUrl, renderMemberCardSvg } from "./memberCard";
 
@@ -107,11 +118,12 @@ export async function sendOwedReceipts(
       report.unreachable++;
       continue;
     }
-    // The receipt carries the card as an attachment and links its public
-    // address (specs/concepts/member-card.md); it never redraws it. The card
-    // is assembled from the member's history, so the attached picture is
-    // always current. A card that cannot be drawn must never cost the member
-    // their receipt: the message goes out without it.
+    // The receipt shows the card and carries it as an attachment, one and the
+    // same picture, and links its public address
+    // (specs/concepts/member-card.md); it never redraws it. The card is
+    // assembled from the member's history, so the attached picture is always
+    // current. A card that cannot be drawn must never cost the member their
+    // receipt: the message goes out without it.
     const card = await loadMemberCardForMemberId(db, member.id);
     const cardToken = card?.member.cardToken ?? null;
     let cardPngBase64: string | null = null;
@@ -123,25 +135,35 @@ export async function sendOwedReceipts(
       }
     }
 
-    messages.push(
-      membershipReceipt({
-        orgName: org.name,
-        orgNumber: org.orgnr ? formatOrganisasjonsnummer(org.orgnr) : null,
-        orgContactEmail: org.contactEmail,
-        memberName: member.name,
-        memberEmail: member.email,
-        tierName: membership.tierName,
-        periodText: periodLabel(membership.periodYear),
-        periodStart: membership.periodStart,
-        periodEnd: membership.periodEnd,
-        paidNok: charge.amountNok,
-        paidDate: charge.capturedAt ?? charge.updatedAt,
-        kind: charge.type === "RECURRING" ? "renewal" : "join",
-        manageUrl: `${origin}${memberSelfServicePath(org.slug, agreement.manageToken)}`,
-        cardUrl: cardToken ? memberCardUrl(cardToken) : `${origin}/bli-medlem/${org.slug}`,
-        cardPngBase64,
-      }),
-    );
+    const facts: MembershipReceipt = {
+      orgName: org.name,
+      orgNumber: org.orgnr ? formatOrganisasjonsnummer(org.orgnr) : null,
+      orgContactEmail: org.contactEmail,
+      memberName: member.name,
+      memberEmail: member.email,
+      tierName: membership.tierName,
+      periodText: periodLabel(membership.periodYear),
+      periodStart: membership.periodStart,
+      periodEnd: membership.periodEnd,
+      paidNok: charge.amountNok,
+      paidDate: charge.capturedAt ?? charge.updatedAt,
+      kind: charge.type === "RECURRING" ? "renewal" : "join",
+      manageUrl: `${origin}${memberSelfServicePath(org.slug, agreement.manageToken)}`,
+      receiptUrl: `${origin}${receiptPagePath(org.slug, agreement.manageToken)}`,
+      cardUrl: cardToken ? memberCardUrl(cardToken) : `${origin}/bli-medlem/${org.slug}`,
+      cardPngBase64,
+    };
+    // The paperwork rides along as a PDF (specs/concepts/payment-receipt.md).
+    // Like the card, a PDF that cannot be made must never cost the member
+    // their receipt: the message then carries the facts in its body instead.
+    let receiptPdfBase64: string | null = null;
+    try {
+      receiptPdfBase64 = toBase64(await membershipReceiptPdf(facts));
+    } catch {
+      receiptPdfBase64 = null;
+    }
+
+    messages.push(membershipReceipt({ ...facts, receiptPdfBase64 }));
     recipients.push(capture);
   }
   if (messages.length === 0) return report;

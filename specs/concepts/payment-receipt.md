@@ -12,7 +12,8 @@ one receipt, delivered in two forms that say the same thing:
 - **The confirmation page** the supporter lands on after paying shows the
   receipt whenever the payment is confirmed.
 - **A receipt email** — a [member notice](member-notice.md) of its own kind —
-  is sent to the member's address.
+  is sent to the member's address: a thank-you in the organization's name
+  that carries the member's card and the receipt as a document.
 
 ## Why it exists
 Some supporters keep track: a household budget, an association's books, an
@@ -38,18 +39,37 @@ reconstruct one.
   [card](member-card.md)'s rule; the receipt's rule is only that the offer
   stands between the card and the paperwork, so a member who wants to show
   the card does not have to hunt for it.
-- **The email offers the card; it does not draw one.** The email carries the
-  card as an attached picture where one can be made, and links its public
-  address so the member can look at it and share it. Both come before the
-  payment documentation. The email never redraws the card in text or HTML: a
-  second, plainer likeness of the card would only compete with the picture the
-  member actually keeps, and the member notices the difference between them
-  before they notice either. The confirmation page, which has no attachment to
-  offer, still shows the card itself.
+- **The email is a thank-you first.** A payment to a marching band or a
+  choir is somebody choosing to back it, and a renewal is choosing it again;
+  the email opens by saying thank you for exactly that, in the organization's
+  name, before it says anything else. The paperwork is in the email, but it is
+  not what the email is about. The words follow the
+  [member voice](member-voice.md): thanks for the act, in the organization's
+  name, never praise of the person. (It used to open with "your membership
+  is renewed" and a table of the payment's facts, which read as an invoice
+  sent to someone who had just done the organization a favour.)
+- **The email shows the card and hands it over.** Where a card can be made,
+  the email shows the member's card itself, the very picture it attaches, and
+  links the card's public address so the member can look at it and share it.
+  The card comes before the paperwork. The email never redraws the card in
+  text or HTML: the picture it shows is the picture the member keeps, and a
+  second, plainer likeness beside it would only compete with it. The picture
+  is shown from the attachment rather than fetched from the web, so it is
+  there even in a mail client that will not load remote pictures. Without a
+  card, the email links the card's address only.
+- **The paperwork rides along as a document.** The payment documentation (the
+  lines below) travels as an attached PDF the member can save, print or hand
+  to whoever keeps their books, and the email links the same receipt on the
+  web, the confirmation page, so it can be looked at again without the file.
+  The email's own body states the facts only when no PDF could be made: a
+  member is never sent a receipt that says nothing, and never one that
+  depends on a file that is not there.
 - **The subject line names the organization, not the amount.** A receipt is
   found later by who it is from and what it was for. What was paid belongs in
   the documentation, where the rest of the payment's facts are, and a sum in
   the subject only puts the member's money in every list their inbox shows.
+  The subject reads as the thank-you the email is (a welcome on joining,
+  thanks for another year on renewal), with the organization's name in it.
 - A receipt carries the § 5-1-1 nr. 2–5 information:
   - **nr. 2, the parties** — the organization by name and
     organisasjonsnummer; the member by name (or, failing a name, the address
@@ -99,10 +119,10 @@ reconstruct one.
 - A member without an email address gets no email; the confirmation page
   carries the same content, and the unreachable member is counted, never
   hidden.
-- Page and email present the same facts. The page additionally names the
-  address the email goes to, so the member knows where to look — saying
-  whether it has gone yet or is on its way, never claiming a send that has
-  not happened.
+- Page, document and email present the same facts. The page additionally
+  names the address the email goes to, so the member knows where to look —
+  saying whether it has gone yet or is on its way, never claiming a send that
+  has not happened.
 - A refund does not recall a receipt: the receipt documented a payment that
   really happened, and the refund produces its own trail
   ([refund a payment](../use-cases/refund-a-payment.md)).
@@ -111,9 +131,10 @@ reconstruct one.
 - Documents one captured charge of one [membership](membership.md).
 - Delivered to one [supporting member](supporting-member.md), on behalf of one
   [organization](organization.md).
-- The email form is a kind of [member notice](member-notice.md).
+- The email form is a kind of [member notice](member-notice.md), written in
+  the [member voice](member-voice.md).
 - Offers the member's [card](member-card.md) before the paperwork: the page
-  shows it, the email attaches it and links it.
+  shows it; the email shows it, attaches it and links it.
 - The page form is the confirmation step of
   [joining](../use-cases/join-as-supporting-member.md).
 

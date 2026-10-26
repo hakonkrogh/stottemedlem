@@ -13,7 +13,7 @@ the join back to the member who showed the card.
 
 It is one card per member per organization, and it **follows the member across
 every surface**: it is the first thing on their
-[self-service page](member-self-service.md), it rides along as an attachment on
+[self-service page](member-self-service.md), it is shown in and attached to
 every [receipt](payment-receipt.md) they are sent, and it has a public address
 of its own they can share with anyone.
 
@@ -35,10 +35,10 @@ surface the member happens to be looking at.
   [receipt](payment-receipt.md)'s bookkeeping detail is secondary to it, and
   belongs below it.
 - **A surface that can hand over the card does not also imitate it.** The
-  [receipt](payment-receipt.md) email attaches the card as a picture and links
-  its public address, both above the paperwork, and draws nothing that looks
-  like a card: the attachment is the card, and a text likeness beside it is
-  only a worse one.
+  [receipt](payment-receipt.md) email shows the attached picture itself, above
+  the paperwork, and links the card's public address; it draws nothing else
+  that looks like a card: the attachment is the card, and a text likeness
+  beside it is only a worse one.
 - **What the card shows**, and nothing more: the member's name, their
   [member number](member-number.md), the organization's name and logo, the
   years supported — as a count inside one big heart, the streak

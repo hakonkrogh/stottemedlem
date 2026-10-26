@@ -83,6 +83,7 @@ export function createResendSender(config: ResendConfig): EmailSender {
             filename: attachment.filename,
             content: attachment.contentBase64,
             content_type: attachment.contentType,
+            ...(attachment.contentId ? { content_id: attachment.contentId } : {}),
           })),
         }),
       });
