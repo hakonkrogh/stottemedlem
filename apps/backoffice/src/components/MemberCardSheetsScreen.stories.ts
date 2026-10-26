@@ -86,7 +86,7 @@ const choices = (current: string) =>
   }));
 
 /**
- * Three sheets: two full, one with the last two cards. Under each card, the
+ * Two sheets: one full, one with the last four cards. Under each card, the
  * address for the envelope, and "Adresse mangler" where a member never gave one.
  */
 export const ThisYear = {

@@ -186,6 +186,13 @@ surface the member happens to be looking at.
   chat or a social feed, the card itself is what appears — an image of the
   card, not a bare link. How much of it a given feed shows is that feed's
   business, not a reason to draw a second card (below).
+- **The card has a credit card's shape.** It stands upright with the
+  proportions of a credit card (54 x 85.6 mm) and a credit card's rounded
+  corners, on every surface. A card is a card-shaped thing: printed and cut
+  out at that size, it slips into a wallet's card slot like the cards already
+  there, and on a screen it reads as a card rather than as a tile. The taller
+  shape gave the member's half more room, so the member's name and the streak
+  heart grew into it (2026-10-26). It used to be nearly square (720 x 820).
 - **There is exactly one card, and it is upright.** It is a picture, so it
   cannot reflow, and the surface that decides its shape is a phone: that is
   where a member looks at their card and where its QR code is held up to a
@@ -359,7 +366,7 @@ surface the member happens to be looking at.
   phone, and it may be the card as it stood at the end of an earlier period,
   so a stack for last year can be printed in January. Paper changes two
   things and nothing else: the drawn shadow goes, because paper casts its
-  own, and cut marks stand a little outside each corner.
+  own, and a thin cut line runs along the card's rounded edge.
 - **The QR code carries the member's referral.** Scanning it goes by way of the
   card's scan address (above) and opens the organization's join page, and a
   join completed from that scan counts as a recruit for the member whose card

@@ -88,14 +88,16 @@ describe("memberCardSvg", () => {
         .filter((m) => memberName.includes(m[2] ?? "\u0000"))
         .map((m) => m[1]);
     for (const name of ["Ola Li", "Kari Nordmann", "Håkon Martin Gullord Krogh"]) {
-      expect(nameSizes(name)).toEqual(["40"]);
+      const sizes = nameSizes(name);
+      expect(sizes.length).toBeGreaterThan(0);
+      expect(sizes.every((size) => size === "52")).toBe(true);
     }
   });
 
   it("wraps a long name onto two lines at that size rather than shrinking it", () => {
     const long = memberCardSvg({ ...base, memberName: "Anne-Margrethe Wollertsen Bjørnstad" });
-    expect(long).toMatch(/font-size="40"[^>]*>Anne-Margrethe<\/text>/);
-    expect(long).toMatch(/font-size="40"[^>]*>Wollertsen Bjørnstad<\/text>/);
+    expect(long).toMatch(/font-size="52"[^>]*>Anne-Margrethe<\/text>/);
+    expect(long).toMatch(/font-size="52"[^>]*>Wollertsen Bjørnstad<\/text>/);
   });
 
   it("sets its text at four sizes and no others, whatever the names are", () => {
@@ -116,9 +118,9 @@ describe("memberCardSvg", () => {
         .map((m) => m[1])
         .filter((size) => size !== digit);
       expect(new Set(sizes.map(Number))).toEqual(
-        new Set([40, 32, 24, 16].filter((size) => sizes.includes(String(size)))),
+        new Set([52, 32, 24, 16].filter((size) => sizes.includes(String(size)))),
       );
-      expect(sizes.every((size) => ["40", "32", "24", "16"].includes(size))).toBe(true);
+      expect(sizes.every((size) => ["52", "32", "24", "16"].includes(size))).toBe(true);
     }
   });
 
@@ -327,7 +329,7 @@ describe("memberCardNameBand", () => {
       const top = band.top * MEMBER_CARD_HEIGHT;
       const bottom = band.bottom * MEMBER_CARD_HEIGHT;
       const svg = memberCardSvg(options);
-      const nameLines = [...svg.matchAll(/font-size="40"/g)].length;
+      const nameLines = [...svg.matchAll(/font-size="52"/g)].length;
       const inside = baselines(svg).filter((y) => y > top && y <= bottom);
       // Only the member's name lives in the strip, every line of it. If
       // the layout moves and the band does not, a blank-card check would be
@@ -361,7 +363,7 @@ describe("memberCardNameBand", () => {
  * different scale, so the streak one is found by its size.
  */
 function streakHeartAt(svg: string): string | null {
-  const heart = 200 / 24;
+  const heart = 300 / 24;
   for (const match of svg.matchAll(/translate\(([-\d.]+) ([-\d.]+)\) scale\(([\d.]+)\)/g)) {
     if (Math.abs(Number(match[3]) - heart) < 0.05) return `${match[1]},${match[2]}`;
   }

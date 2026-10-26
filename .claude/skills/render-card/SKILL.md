@@ -14,6 +14,9 @@ description: Draw the member card and the org QR card from real `@stottemedlem/q
 In a FRESH WORKTREE run `pnpm install --frozen-lockfile` first: without
 `node_modules` the rebuild step dies with `Command "turbo" not found` and
 "@stottemedlem/qr failed to build", which looks like a card bug but is not.
+Same after SWITCHING BRANCH in an existing checkout: `--raster` dies with
+`Cannot find module '@resvg/resvg-wasm'` when the new branch added a
+dependency the old `node_modules` lacks (hit 2026-10-26). Install, re-run.
 
 Rebuilds `@stottemedlem/qr` (turbo-cached, ~40ms warm), draws every fixture,
 and writes `card-<case>.svg`, `served-card-<case>.svg`, `raster-*.png` and an

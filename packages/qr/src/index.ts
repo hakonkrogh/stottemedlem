@@ -36,6 +36,8 @@ export { HEART, heartPath } from "./brand.js";
 /** The member's own card — a different owner from the organization's card below. */
 export {
   MEMBER_CARD_HEIGHT,
+  MEMBER_CARD_INSET,
+  MEMBER_CARD_RADIUS,
   MEMBER_CARD_WIDTH,
   type MemberCardOptions,
   memberCardNameBand,

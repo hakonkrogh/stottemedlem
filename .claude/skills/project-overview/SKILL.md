@@ -1116,8 +1116,12 @@ also documents the variants and why the rule exists.
   **The member cards print as A4 sheets since 2026-09-22** (branch
   `hk/member-cards-pdf`, spec `specs/use-cases/print-member-cards.md` NEW):
   `/o/[slug]/medlemmer/medlemsbevis?periode=<key>` renders every member of a
-  period as their card, six per sheet (2x3, the card's edge at a bank card's
-  85.6 mm height), cut marks outside each corner, no shadow. **It is the
+  period as their card, ten per sheet since 2026-10-26 (5x2; the card is a
+  credit card's shape, its edge printed at exactly 53.98 x 85.6 mm with a
+  3.18 mm radius, all derived from `MEMBER_CARD_INSET`/`MEMBER_CARD_RADIUS`
+  exported by `@stottemedlem/qr`), a thin rounded cut line on each card's
+  edge (it replaced corner marks), no shadow. It was six per sheet at a bank
+  card's height until then. **It is the
   browser's print dialog, not a server-made PDF**, decided with the user: one
   rasterization costs ~1 s of Worker CPU, so a real .pdf for a big org would
   hit the CPU limit; the print page is vector, free, and any size. Past
