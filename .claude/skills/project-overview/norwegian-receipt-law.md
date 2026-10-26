@@ -2,8 +2,11 @@
 
 Verified 2026-08-28 against the primary sources (see "How to re-fetch" below).
 This is the legal ground truth behind `specs/concepts/payment-receipt.md` and
-`packages/email/src/membershipReceipt.ts` — read it before changing receipt
-content or answering "what must a kvittering contain?".
+`packages/email/src/receiptFacts.ts` (the lines every form of the receipt
+states), `membershipReceiptPdf.ts` (the attached document) and
+`membershipReceipt.ts` (the email, a thank-you that carries the document) —
+read them before changing receipt content or answering "what must a
+kvittering contain?".
 
 ## The one paragraph written for this product
 

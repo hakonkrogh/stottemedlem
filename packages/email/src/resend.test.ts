@@ -76,6 +76,45 @@ describe("createResendSender", () => {
     expect(results[149]?.to).toBe("m149@eksempel.no");
   });
 
+  it("sends a message with files on its own, naming the part the body shows inline", async () => {
+    const fetchMock = vi.fn(
+      async () => new Response(JSON.stringify({ id: "id-1" }), { status: 200 }),
+    );
+    const sender = createResendSender({
+      apiKey: "re_test",
+      from: "noreply@xn--stttemedlem-hgb.no",
+      fetch: fetchMock as unknown as typeof fetch,
+    });
+
+    const results = await sender.send([
+      {
+        ...message("kari@eksempel.no"),
+        attachments: [
+          {
+            filename: "medlemsbevis.png",
+            contentBase64: "aGVsbG8=",
+            contentType: "image/png",
+            contentId: "medlemsbevis",
+          },
+          { filename: "kvittering.pdf", contentBase64: "JVBERi0=", contentType: "application/pdf" },
+        ],
+      },
+    ]);
+
+    expect(fetchMock.mock.calls[0]?.[0]).toBe("https://api.resend.com/emails");
+    const body = JSON.parse(String(fetchMock.mock.calls[0]?.[1]?.body));
+    expect(body.attachments).toEqual([
+      {
+        filename: "medlemsbevis.png",
+        content: "aGVsbG8=",
+        content_type: "image/png",
+        content_id: "medlemsbevis",
+      },
+      { filename: "kvittering.pdf", content: "JVBERi0=", content_type: "application/pdf" },
+    ]);
+    expect(results).toEqual([{ to: "kari@eksempel.no", sent: true, detail: "id-1" }]);
+  });
+
   it("reports a rejected batch as nobody told", async () => {
     const fetchMock = vi.fn(async () => new Response("rate limited", { status: 429 }));
     const sender = createResendSender({

@@ -18,11 +18,15 @@ const base = {
   paidDate: "2026-03-14T09:30:00.000Z",
   kind: "join" as const,
   manageUrl: "https://app.example/bli-medlem/bakvendtland-skolekorps/min-side?n=tok",
+  receiptUrl: "https://app.example/bli-medlem/bakvendtland-skolekorps/kvittering?n=tok",
   cardUrl: "https://xn--stttemedlem-hgb.no/medlemsbevis/kort-tok",
 };
 
+/** A receipt whose paperwork rides along as a PDF, as it normally does. */
+const withPdf = { ...base, receiptPdfBase64: "JVBERi0=" };
+
 describe("membershipReceipt", () => {
-  it("carries the fields bokføringsforskriften § 5-1-1 nr. 2–5 requires", () => {
+  it("carries the fields bokføringsforskriften § 5-1-1 nr. 2–5 requires when no PDF could be made", () => {
     const message = membershipReceipt(base);
     // nr. 2 — the parties: seller with orgnr, and the buyer by name.
     expect(message.text).toContain("Bakvendtland Skolekorps (org.nr. 918 654 062)");
@@ -57,17 +61,25 @@ describe("membershipReceipt", () => {
     expect(message.html).toContain("post@bakvendtland.example");
   });
 
-  it("reads as a renewal when the payment was one", () => {
+  it("thanks the member for choosing the organization again when the payment was a renewal", () => {
     const message = membershipReceipt({ ...base, kind: "renewal", paidNok: 1200 });
-    expect(message.subject).toBe("Kvittering: fornyet støttemedlemskap i Bakvendtland Skolekorps");
-    expect(message.text).toContain("er fornyet");
+    expect(message.subject).toBe("Takk for at du støtter Bakvendtland Skolekorps enda et år");
+    expect(message.text).toContain(
+      "Tusen takk for at du støtter Bakvendtland Skolekorps enda et år! Du er fantastisk.",
+    );
     // The thousands separator is the locale's no-break space, not an ASCII one.
     expect(message.text).toContain("1 200 kr");
   });
 
+  it("welcomes a first payment", () => {
+    const message = membershipReceipt(base);
+    expect(message.subject).toBe("Velkommen som støttemedlem i Bakvendtland Skolekorps");
+    expect(message.text).toContain("Du er nå støttemedlem i Bakvendtland Skolekorps");
+  });
+
   it("keeps the amount out of the subject, and every em dash out of the message", () => {
     const message = membershipReceipt(base);
-    expect(message.subject).toBe("Kvittering: støttemedlemskap i Bakvendtland Skolekorps");
+    expect(message.subject).toContain("Bakvendtland Skolekorps");
     expect(message.subject).not.toContain("kr");
     expect(message.subject).not.toContain(EM_DASH);
     expect(message.text).not.toContain(EM_DASH);
@@ -90,18 +102,45 @@ describe("membershipReceipt", () => {
   });
 });
 
-describe("membershipReceipt — the member's card", () => {
-  it("offers the card before it says anything about the receipt", () => {
-    const message = membershipReceipt(base);
-    const cardAt = message.text.indexOf(base.cardUrl);
-    const receiptAt = message.text.indexOf("Dette er kvitteringen din");
-    expect(cardAt).toBeGreaterThan(-1);
-    expect(cardAt).toBeLessThan(receiptAt);
-    expect(message.html.indexOf(base.cardUrl)).toBeLessThan(
-      message.html.indexOf("Dette er kvitteringen din"),
-    );
+describe("membershipReceipt — the paperwork", () => {
+  it("sends the facts as a PDF and links the receipt on the web", () => {
+    const message = membershipReceipt(withPdf);
+    expect(message.attachments).toEqual([
+      { filename: "kvittering.pdf", contentBase64: "JVBERi0=", contentType: "application/pdf" },
+    ]);
+    expect(message.text).toContain("ligger vedlagt (kvittering.pdf)");
+    expect(message.text).toContain(base.receiptUrl);
+    expect(message.html).toContain(`href="${base.receiptUrl}"`);
+    // The body is the thank-you, not the paperwork.
+    expect(message.text).not.toContain("Organisasjon:");
+    expect(message.text).not.toContain("Merverdiavgift");
+    expect(message.html).not.toContain("<table");
   });
 
+  it("keeps the facts in the body only when no PDF could be made", () => {
+    const message = membershipReceipt(base);
+    expect(message.attachments).toBeUndefined();
+    expect(message.text).toContain("Dette er kvitteringen din. Ta vare på den.");
+    expect(message.text).toContain("Betalt: 240 kr den 14. mars 2026, via Vipps");
+    expect(message.text).toContain(base.receiptUrl);
+    expect(message.html).toContain("<table");
+  });
+
+  it("leads with the thank-you, then the card, then the paperwork", () => {
+    const message = membershipReceipt({ ...withPdf, cardPngBase64: "aGVsbG8=" });
+    const thanksAt = message.text.indexOf("Tusen takk");
+    const cardAt = message.text.indexOf(base.cardUrl);
+    const receiptAt = message.text.indexOf("Kvitteringen for betalingen");
+    expect(thanksAt).toBeGreaterThan(-1);
+    expect(thanksAt).toBeLessThan(cardAt);
+    expect(cardAt).toBeLessThan(receiptAt);
+    const html = message.html;
+    expect(html.indexOf("Tusen takk")).toBeLessThan(html.indexOf("cid:medlemsbevis"));
+    expect(html.indexOf("cid:medlemsbevis")).toBeLessThan(html.indexOf(base.receiptUrl));
+  });
+});
+
+describe("membershipReceipt — the member's card", () => {
   it("links the card without drawing anything that looks like one", () => {
     const message = membershipReceipt(base);
     expect(message.text).toContain("Se og del medlemsbeviset ditt");
@@ -121,11 +160,20 @@ describe("membershipReceipt — the member's card", () => {
     expect(withCard.text).toContain(base.cardUrl);
   });
 
-  it("attaches the card as a picture when one could be drawn, and not otherwise", () => {
+  it("shows the attached card in the message, one picture shown and kept", () => {
     expect(membershipReceipt(base).attachments).toBeUndefined();
-    const withCard = membershipReceipt({ ...base, cardPngBase64: "aGVsbG8=" });
-    expect(withCard.attachments).toEqual([
-      { filename: "medlemsbevis.png", contentBase64: "aGVsbG8=", contentType: "image/png" },
-    ]);
+    expect(membershipReceipt(base).html).not.toContain("<img");
+    const withCard = membershipReceipt({ ...withPdf, cardPngBase64: "aGVsbG8=" });
+    expect(withCard.attachments?.[0]).toEqual({
+      filename: "medlemsbevis.png",
+      contentBase64: "aGVsbG8=",
+      contentType: "image/png",
+      contentId: "medlemsbevis",
+    });
+    expect(withCard.html).toContain('<img src="cid:medlemsbevis"');
+    // The card is a link to its own page, so a tap on it goes somewhere.
+    expect(withCard.html).toContain(`<a href="${base.cardUrl}"><img`);
+    // The card is the attached picture, never a copy fetched from the web.
+    expect(withCard.html).not.toContain('<img src="http');
   });
 });

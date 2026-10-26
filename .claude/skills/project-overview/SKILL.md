@@ -535,7 +535,12 @@ also documents the variants and why the rule exists.
   AND every renewal — owes its member exactly one receipt, in two same-content
   forms: the `kvittering.astro` page (renders an InfoList when the payment is
   confirmed) and a `membershipReceipt` email (`@stottemedlem/email`,
-  non-declinable member notice, kind `receipt`). Sending is a comparison
+  non-declinable member notice, kind `receipt`). Since 2026-10-26 the email
+  is a thank-you: the member's card shown inline (the attached PNG by
+  `cid:`) and attached, the legal lines in an attached `kvittering.pdf`
+  (`membershipReceiptPdf`, pdf-lib, standard Helvetica) plus a link to the
+  kvittering page; the body carries the lines itself only when the PDF
+  could not be made. Sending is a comparison
   sweep, `sendOwedReceipts` in `src/lib/receipts.ts`: captured charges with no
   `member_notices` row pointing at them (migration 0010 added `charge_id` +
   a partial UNIQUE index = one payment, one receipt), 14-day lookback so a

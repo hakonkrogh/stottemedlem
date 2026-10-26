@@ -37,6 +37,7 @@ import {
   proratedJoinFeeNok,
   quotedPostalAddressReason,
   REFUND_WINDOW_DAYS,
+  receiptPagePath,
   redundantJoinAction,
   referredJoinPath,
   refundRefusal,
@@ -228,6 +229,15 @@ describe("the member's card address", () => {
     // (specs/concepts/member-card.md).
     expect(memberCardPath("tok")).not.toBe(memberSelfServicePath("bakvendtland-skolekorps", "tok"));
     expect(memberCardPath("tok")).not.toContain("min-side");
+  });
+});
+
+describe("the receipt page's address", () => {
+  it("is addressed by the manage token, like the member's own page", () => {
+    expect(receiptPagePath("bakvendtland-skolekorps", "tok")).toBe(
+      "/bli-medlem/bakvendtland-skolekorps/kvittering?n=tok",
+    );
+    expect(receiptPagePath("bakvendtland-skolekorps", "a b")).toContain("?n=a%20b");
   });
 });
 

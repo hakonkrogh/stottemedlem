@@ -97,7 +97,9 @@ organization's list stays accurate as periods turn over.
       arranged it.
 - [ ] A captured renewal yields exactly one
       [receipt](../concepts/payment-receipt.md) email, retried until sent when
-      a send fails.
+      a send fails: a thank-you for choosing the organization again, carrying
+      the member's [card](../concepts/member-card.md) and the payment
+      documentation.
 
 ## Out of scope
 - Mid-period tier upgrades (changing tier takes effect at the next renewal).

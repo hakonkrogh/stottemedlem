@@ -255,6 +255,17 @@ export function memberSelfServicePath(slug: string, manageToken: string): string
 }
 
 /**
+ * The receipt page for one membership (specs/concepts/payment-receipt.md):
+ * where the supporter lands coming back from the payment app, and where the
+ * receipt email sends them to see the same receipt on the web. Addressed by
+ * the manage token like the member's own page, and so, like it, only ever
+ * handed to the member.
+ */
+export function receiptPagePath(slug: string, manageToken: string): string {
+  return `${joinPagePath(slug)}/kvittering?${MEMBER_SELF_SERVICE_TOKEN_PARAM}=${encodeURIComponent(manageToken)}`;
+}
+
+/**
  * The query parameter that carries the manage token on a member's own page
  * and on the receipt page. Named in one place because the token is a secret,
  * and whatever reports a failing request to the operator has to know which

@@ -36,6 +36,14 @@ export interface EmailAttachment {
   /** The file's bytes, base64-encoded — what mail providers take. */
   contentBase64: string;
   contentType: string;
+  /**
+   * Set when the HTML body shows this very file inline (`<img src="cid:…">`):
+   * the member's card is one picture, shown in the message and kept as a file
+   * (specs/concepts/member-card.md). Mail clients show an inline part even
+   * when they refuse to fetch remote pictures, which a card linked from the
+   * web would be. Short and plain: letters, digits and dashes.
+   */
+  contentId?: string;
 }
 
 /**
