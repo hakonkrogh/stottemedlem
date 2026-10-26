@@ -101,7 +101,21 @@ import {
  * member is shown must be the card they share.
  */
 export const MEMBER_CARD_WIDTH = 760;
-export const MEMBER_CARD_HEIGHT = 860;
+/**
+ * The card's edge sits this far in from the canvas, all round: the margin is
+ * room for its shadow.
+ */
+export const MEMBER_CARD_INSET = 20;
+/**
+ * The card has a credit card's shape (ID-1, 53.98 x 85.60 mm, stood upright)
+ * and a credit card's corners (3.18 mm), so the printed card cut along its
+ * edge is a card that fits a wallet's card slot (specs/concepts/member-card.md).
+ */
+const EDGE_WIDTH = MEMBER_CARD_WIDTH - MEMBER_CARD_INSET * 2;
+const EDGE_HEIGHT = Math.round((EDGE_WIDTH * 85.6) / 53.98);
+export const MEMBER_CARD_HEIGHT = EDGE_HEIGHT + MEMBER_CARD_INSET * 2;
+/** The card's corner radius, in the card's own units. */
+export const MEMBER_CARD_RADIUS = Math.round((EDGE_WIDTH * 3.18) / 53.98);
 
 /** The canvas — what an `<img>` needs to reserve space. */
 export function memberCardSize(): { width: number; height: number } {
@@ -174,7 +188,7 @@ function estimateWidth(text: string, size: number): number {
  * sizes). The `title` step exists because the band answers "member of what?"
  * and was reading as a caption at the middle step (2026-09-04).
  */
-const TYPE = { name: 40, title: 32, middle: 24, small: 16 };
+const TYPE = { name: 52, title: 32, middle: 24, small: 16 };
 
 /**
  * The room between the years line and the recruit line under it. Both lines
@@ -520,7 +534,7 @@ function logoCircle(cx: number, cy: number, size: number, dataUri: string): stri
 function cardFrame() {
   const width = MEMBER_CARD_WIDTH;
   const height = MEMBER_CARD_HEIGHT;
-  const inner = 20;
+  const inner = MEMBER_CARD_INSET;
   const pad = 40;
   const left = inner + pad;
   const right = width - inner - pad;
@@ -573,7 +587,7 @@ function memberBlock(
   // one (specs/concepts/scorecard.md). The three lines around it (the name
   // above, the years line and the recruit line below) each sit a step higher
   // on the scale than the band and the footer, because this half is the card.
-  const heartSize = 200;
+  const heartSize = 300;
   const headline =
     content.hearts > 0
       ? fitScaled(content.headline, frame.columnWidth, [TYPE.title, TYPE.middle])
@@ -626,7 +640,7 @@ function drawCard(content: CardContent): string {
     recruitBaseline,
   } = memberBlock(metrics, content);
 
-  return `${frame(width, height, inner, 32, fieldTop)}
+  return `${frame(width, height, inner, MEMBER_CARD_RADIUS, fieldTop)}
 ${hasLogo ? `  ${logoCircle(left + logoSize / 2, bandCenter, logoSize, content.logoDataUri ?? "")}\n` : ""}  ${org.lines
     .map((line, index) =>
       textEl(orgLeft, orgFirstBaseline + index * orgLineGap, line, {
@@ -786,7 +800,7 @@ export function memberCardSkeletonSvg(options?: CardWords): string {
     : "";
 
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}" width="${width}" height="${height}" role="presentation" aria-hidden="true">
-  ${frame(width, height, inner, 32, fieldTop)}
+  ${frame(width, height, inner, MEMBER_CARD_RADIUS, fieldTop)}
   <circle cx="${r(logoCx)}" cy="${r(bandCenter)}" r="${r(logoSize / 2 + 3)}" fill="${WAITING}"/>
   ${waitingBar(orgLeft, bandCenter - 30, orgWidth, 26)}
   ${waitingBar(orgLeft, bandCenter + 6, orgWidth * 0.66, 26)}
