@@ -118,9 +118,9 @@ describe("memberCardSvg", () => {
         .map((m) => m[1])
         .filter((size) => size !== digit);
       expect(new Set(sizes.map(Number))).toEqual(
-        new Set([52, 32, 24, 18].filter((size) => sizes.includes(String(size)))),
+        new Set([52, 36, 24, 18].filter((size) => sizes.includes(String(size)))),
       );
-      expect(sizes.every((size) => ["52", "32", "24", "18"].includes(size))).toBe(true);
+      expect(sizes.every((size) => ["52", "36", "24", "18"].includes(size))).toBe(true);
     }
   });
 
@@ -227,7 +227,7 @@ describe("memberCardSvg", () => {
     expect(svg).not.toContain(">Bakvendtland Skolekorps</text>");
     // Breaking is not shrinking: the band keeps the title step.
     const size = Number(/font-size="([\d.]+)"[^>]*>Bakvendtland</.exec(svg)?.[1]);
-    expect(size).toBe(32);
+    expect(size).toBe(36);
   });
 
   it("keeps a short organization name on one line", () => {
@@ -240,16 +240,16 @@ describe("memberCardSvg", () => {
     // Beside a logo, where the band has the least room.
     const svg = memberCardSvg({
       ...base,
-      organizationName: "Bakvendtland Korps og Ungdomsorkester",
+      organizationName: "Bakvendtland Kor og Ungdomsorkester",
       logoDataUri: "data:image/png;base64,AAAA",
     });
     // Broken between words, and not so that the second line opens with "og".
-    expect(svg).toContain(">Bakvendtland Korps og</text>");
+    expect(svg).toContain(">Bakvendtland Kor og</text>");
     expect(svg).toContain(">Ungdomsorkester</text>");
     // Still at the scale's title step, bigger than the year beside it:
     // wrapping bought the room, so nothing had to shrink.
     const size = Number(/font-size="([\d.]+)"[^>]*>Bakvendtland/.exec(svg)?.[1]);
-    expect(size).toBe(32);
+    expect(size).toBe(36);
   });
 
   it("wraps a very long organization name onto three even lines, never mid-word", () => {

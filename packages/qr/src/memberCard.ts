@@ -189,9 +189,12 @@ function estimateWidth(text: string, size: number): number {
  * and was reading as a caption at the middle step (2026-09-04). The small
  * step grew from 16 to 18 when the footer rose (2026-10-26): the credit-card
  * shape had left room under the member, and the scan caption was the line
- * on the card hardest to read at arm's length.
+ * on the card hardest to read at arm's length. The title step grew from 32
+ * to 36 when the band rose after it (2026-10-26): the footer had grown into
+ * the member's spare room, and the band, the organization's half, was the
+ * smallest thing left on the card.
  */
-const TYPE = { name: 52, title: 32, middle: 24, small: 18 };
+const TYPE = { name: 52, title: 36, middle: 24, small: 18 };
 
 /**
  * The room between the years line and the recruit line under it. Both lines
@@ -424,6 +427,19 @@ const FOOTER_QR_PANEL = 190;
 const FOOTER_QR_SIZE = FOOTER_QR_PANEL - QR_QUIET * 2;
 
 /**
+ * The band across the top: the organization's logo and name, with the
+ * validity in the corner. It rose from 128 to 172 and the logo from 76 to
+ * 100 (2026-10-26), the day after the footer rose: once the footer had taken
+ * its share of the room the credit-card shape left under the member, the
+ * band was the one part of the card still drawn for the smaller card, and
+ * the organization's mark was the smallest picture on it. A band this tall
+ * carries a logo a reader can actually recognize, and a three-line name at
+ * the title step beside it.
+ */
+const BAND_HEIGHT = 172;
+const LOGO_SIZE = 100;
+
+/**
  * The QR code straight on the white card. It used to sit in a white panel of
  * its own when the card was cream; on a white card a panel would be white on
  * white, a frame drawn for its own sake, so the code's quiet zone does the
@@ -547,7 +563,7 @@ function cardFrame() {
   const right = width - inner - pad;
   // The band: logo and organization on the left, validity in the corner, and
   // nothing drawn under it: space divides it from the member.
-  const bandHeight = 128;
+  const bandHeight = BAND_HEIGHT;
   const bandBottom = inner + bandHeight;
   // The footer sits against the bottom of the card on its own field, whose
   // top edge closes the member's half.
@@ -628,7 +644,7 @@ function drawCard(content: CardContent): string {
   const { width, height, inner, left, right, center, bandCenter, footerTop, fieldTop } = metrics;
 
   const hasLogo = Boolean(content.logoDataUri);
-  const logoSize = 76;
+  const logoSize = LOGO_SIZE;
   const corner = validityCorner(right, bandCenter, content.periodText, content.lapsed);
   const orgLeft = hasLogo ? left + logoSize + 22 : left;
   const org = fitOrgName(content.orgName, right - corner.width - 28 - orgLeft);
@@ -796,10 +812,11 @@ export function memberCardSkeletonSvg(options?: CardWords): string {
   const { footerTop, fieldTop } = metrics;
   const block = memberBlock(metrics, words);
 
-  const logoSize = 76;
+  const logoSize = LOGO_SIZE;
   const logoCx = left + logoSize / 2;
   const orgLeft = left + logoSize + 22;
   const orgWidth = Math.min(320, right - 150 - orgLeft);
+  const orgBar = TYPE.title * 0.8;
 
   const heart = block.headline
     ? `<g data-card-heart>${heartPath(center - block.heartSize / 2, block.heartTop, block.heartSize, WAITING_HEART)}</g>
@@ -809,8 +826,8 @@ export function memberCardSkeletonSvg(options?: CardWords): string {
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}" width="${width}" height="${height}" role="presentation" aria-hidden="true">
   ${frame(width, height, inner, MEMBER_CARD_RADIUS, fieldTop)}
   <circle cx="${r(logoCx)}" cy="${r(bandCenter)}" r="${r(logoSize / 2 + 3)}" fill="${WAITING}"/>
-  ${waitingBar(orgLeft, bandCenter - 30, orgWidth, 26)}
-  ${waitingBar(orgLeft, bandCenter + 6, orgWidth * 0.66, 26)}
+  ${waitingBar(orgLeft, bandCenter - orgBar - 6, orgWidth, orgBar)}
+  ${waitingBar(orgLeft, bandCenter + 6, orgWidth * 0.66, orgBar)}
   ${waitingBar(right - 120, bandCenter - 24, 120, 14)}
   ${waitingBar(right - 92, bandCenter + 2, 92, 22)}
 
