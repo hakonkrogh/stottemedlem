@@ -540,7 +540,9 @@ also documents the variants and why the rule exists.
   `cid:`) and attached, the legal lines in an attached `kvittering.pdf`
   (`membershipReceiptPdf`, pdf-lib, standard Helvetica) plus a link to the
   kvittering page; the body carries the lines itself only when the PDF
-  could not be made. Sending is a comparison
+  could not be made. Any member-facing words (pages, notices, card
+  invitation) follow `specs/concepts/member-voice.md`: read it before
+  writing copy. Sending is a comparison
   sweep, `sendOwedReceipts` in `src/lib/receipts.ts`: captured charges with no
   `member_notices` row pointing at them (migration 0010 added `charge_id` +
   a partial UNIQUE index = one payment, one receipt), 14-day lookback so a
