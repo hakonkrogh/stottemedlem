@@ -193,6 +193,12 @@ surface the member happens to be looking at.
   there, and on a screen it reads as a card rather than as a tile. The taller
   shape gave the member's half more room, so the member's name and the streak
   heart grew into it (2026-10-26). It used to be nearly square (720 x 820).
+  The member's half still had room over, so later the same day the footer
+  rose a little into it and spent that room on the two things on the card
+  that are hardest to use when small: the QR code grew by a fifth, so it
+  comes off a smaller screen or a worse camera, and the small step of the
+  type scale grew with it, so the scan invitation and the other captions
+  read at arm's length.
 - **There is exactly one card, and it is upright.** It is a picture, so it
   cannot reflow, and the surface that decides its shape is a phone: that is
   where a member looks at their card and where its QR code is held up to a
@@ -258,7 +264,9 @@ surface the member happens to be looking at.
   little of how small it may be drawn: the card's code stopped scanning below
   a picture 239 px wide before the heart and 266 px after, against the 760 px
   the card is drawn at. That was judged worth it here and would not be at a
-  bigger heart.
+  bigger heart. (Those numbers were measured on the near-square card; the
+  taller card raised the floor to 295 px, and the footer rising to fit a
+  larger code brought it down to 194 px, 2026-10-26.)
 - **The scan address is not the card's address.** A member card has three
   addresses and they do different things, in order of what holding one grants:
   the [self-service page](member-self-service.md) can end the membership and

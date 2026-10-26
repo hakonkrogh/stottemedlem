@@ -186,9 +186,12 @@ function estimateWidth(text: string, size: number): number {
  * a middle step, a small step. Four sizes and no others, so the card reads as
  * one voice rather than a ladder of near-misses (it used to set text at twelve
  * sizes). The `title` step exists because the band answers "member of what?"
- * and was reading as a caption at the middle step (2026-09-04).
+ * and was reading as a caption at the middle step (2026-09-04). The small
+ * step grew from 16 to 18 when the footer rose (2026-10-26): the credit-card
+ * shape had left room under the member, and the scan caption was the line
+ * on the card hardest to read at arm's length.
  */
-const TYPE = { name: 52, title: 32, middle: 24, small: 16 };
+const TYPE = { name: 52, title: 32, middle: 24, small: 18 };
 
 /**
  * The room between the years line and the recruit line under it. Both lines
@@ -412,8 +415,12 @@ const QR_QUIET = 14;
  * ink per module fits in a code a third narrower, and the code moved out of
  * the member's half of the card and into the footer
  * (specs/concepts/member-card.md).
+ *
+ * The footer rose from 160 to 190 (2026-10-26): the credit-card shape left
+ * the member's half more room than it used, so the footer took some back and
+ * spent it on the code, which is a fifth larger and that much easier to scan.
  */
-const FOOTER_QR_PANEL = 160;
+const FOOTER_QR_PANEL = 190;
 const FOOTER_QR_SIZE = FOOTER_QR_PANEL - QR_QUIET * 2;
 
 /**

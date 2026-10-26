@@ -118,9 +118,9 @@ describe("memberCardSvg", () => {
         .map((m) => m[1])
         .filter((size) => size !== digit);
       expect(new Set(sizes.map(Number))).toEqual(
-        new Set([52, 32, 24, 16].filter((size) => sizes.includes(String(size)))),
+        new Set([52, 32, 24, 18].filter((size) => sizes.includes(String(size)))),
       );
-      expect(sizes.every((size) => ["52", "32", "24", "16"].includes(size))).toBe(true);
+      expect(sizes.every((size) => ["52", "32", "24", "18"].includes(size))).toBe(true);
     }
   });
 
