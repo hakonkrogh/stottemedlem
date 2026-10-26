@@ -17,6 +17,12 @@ In a FRESH WORKTREE run `pnpm install --frozen-lockfile` first: without
 Same after SWITCHING BRANCH in an existing checkout: `--raster` dies with
 `Cannot find module '@resvg/resvg-wasm'` when the new branch added a
 dependency the old `node_modules` lacks (hit 2026-10-26). Install, re-run.
+A root `node_modules` being PRESENT proves nothing either: a worktree cut
+from a checkout can have it and still die with `Cannot find package 'qrcode'
+imported from .../packages/qr/dist/brand.js`, because the package-level
+links under `packages/*/node_modules` are missing. `pnpm install
+--frozen-lockfile` answers "Already up to date" and re-links them anyway;
+run it once before deciding the card is broken (hit 2026-10-26).
 
 Rebuilds `@stottemedlem/qr` (turbo-cached, ~40ms warm), draws every fixture,
 and writes `card-<case>.svg`, `served-card-<case>.svg`, `raster-*.png` and an
