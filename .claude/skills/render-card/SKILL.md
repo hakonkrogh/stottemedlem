@@ -274,6 +274,36 @@ Then draw **every** fixture (`--raster`, no `--case`) and look at
 `LongNames` and `VeryLongOrgName`: the fixture you changed the size for is the
 one that always looks fine.
 
+**Raising `TYPE.title` or the logo costs the band's longest word.** The
+organization's name has `right - corner - 28 - (left + logo + 22)` of room
+beside a logo (about 410 with the 100 logo and the "GYLDIG" corner, less
+under "STØTTET T.O.M."), and a word needs `letters × size × 0.57`. At 36 that
+is 19 letters: `VeryLongOrgName`'s "Ungdomssymfoniorkester" (22) no longer
+fits and drops to the middle step, which is the accepted cost (2026-10-26).
+The two-line test's name was changed to one whose most even break still
+fits; check `wrapEvenly`'s cost (spread, plus 8 for a line opening with a
+little word) before picking a replacement name, because the most even break
+wins over the "og" rule, not the other way round.
+
+## Before and after, side by side
+
+A design change is judged against what ships, so render the fixtures into one
+`--out` BEFORE editing and into another after, then put the rasters on one
+page. The same `sips` + one-line HTML trick as above, two columns per case:
+
+    S=$SCRATCH; node .claude/skills/render-card/render.mjs --raster --out $S/before
+    # ...edit the card...
+    node .claude/skills/render-card/render.mjs --raster --out $S/after
+    for c in WithLogo VeryLongOrgName; do for w in before after; do
+      sips -Z 600 $S/$w/raster-card-$c.png --out $S/$w-$c.png >/dev/null; done; done
+    echo "<body style='margin:0;padding:10px;display:flex;gap:16px;background:#faf6ee'>$(
+      for c in WithLogo VeryLongOrgName; do for w in before after; do
+        echo "<div>$w $c<br><img src=$w-$c.png></div>"; done; done)" > $S/ba.html
+    bash .claude/skills/preview-screenshot/shot.sh "file://$S/ba.html" $S/ba.png 1600 650
+
+Send `ba.png` to the user: it is the one picture that shows the trade-off a
+size change makes (which fixture grew, which one stepped down).
+
 ## Exploring colours or a layout twist without touching the shipped code
 
     node .claude/skills/render-card/variants.mjs --init A,B,C --dir $SCRATCH/alt

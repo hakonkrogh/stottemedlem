@@ -198,7 +198,14 @@ surface the member happens to be looking at.
   that are hardest to use when small: the QR code grew by a fifth, so it
   comes off a smaller screen or a worse camera, and the small step of the
   type scale grew with it, so the scan invitation and the other captions
-  read at arm's length.
+  read at arm's length. The band at the top then rose to match (2026-10-26):
+  with the footer grown, the organization's half was the one part of the
+  card still drawn for the smaller card, and its logo was the smallest
+  picture on it. The logo is a third larger, and the organization's name a
+  step up, so the two things that say whose member this is read as readily
+  as the product's signature below. The price is paid only by a name with a
+  single word of more than about nineteen letters beside a logo, which drops
+  to the middle step a little sooner than before.
 - **There is exactly one card, and it is upright.** It is a picture, so it
   cannot reflow, and the surface that decides its shape is a phone: that is
   where a member looks at their card and where its QR code is held up to a
