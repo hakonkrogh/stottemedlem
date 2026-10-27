@@ -56,9 +56,9 @@ describe("memberCardSvg", () => {
     const svg = memberCardSvg(base);
     expect(svg).toContain("Kari Nordmann");
     expect(svg).toContain("Bakvendtland Skolekorps");
-    // The validity corner: a label over the year, green while current.
-    expect(svg).toContain("GYLDIG");
-    expect(svg).toContain(">2026</text>");
+    // The validity corner: the year alone, at the organization name's size.
+    expect(svg).not.toContain("GYLDIG");
+    expect(svg).toMatch(/font-size="36"[^>]*>2026<\/text>/);
   });
 
   it("tells the truth about a member whose period has passed", () => {
@@ -182,7 +182,7 @@ describe("memberCardSvg", () => {
     for (const said of [
       "Kari Nordmann",
       "Bakvendtland Skolekorps",
-      "GYLDIG",
+      ">2026</text>",
       "5 år som støttemedlem!",
       "Vervet 2 medlemmer",
       "Skann og bli støttemedlem",
