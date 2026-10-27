@@ -105,7 +105,7 @@ export function memberCardPicturePath(card: MemberCard, format: "png" | "svg" = 
  * The period the card speaks for: the one it is good for while it is current,
  * and the last one supported once it is not. While a renewal is still being
  * retried that is the period being paid for, not the one that just ended, so
- * the card never says "gyldig" over a year that is over.
+ * the card never shows a year that is over as valid.
  */
 function cardPeriod(card: MemberCard): { periodText: string; lapsed: boolean } {
   return {

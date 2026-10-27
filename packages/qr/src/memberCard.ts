@@ -9,7 +9,7 @@
  *
  * The layout (chosen 2026-09-01 from a field study of wallet passes, badges
  * and streak cards): an identity band across the top — the organization's
- * logo and name on the left, the validity as a label-over-year corner on the
+ * logo and name on the left, the valid year in the corner on the
  * right — then the member's name large, their years as a count inside one big
  * heart (the streak) and a celebratory line, and last a footer carrying the
  * product's name on the left and the QR code on the right.
@@ -370,32 +370,38 @@ function streakHeart(
 }
 
 /**
- * The validity as a wallet-pass corner: a small label over the year, in the
- * band's top right — the one thing you check, in a fixed place. A lapsed card
- * still tells the truth, just without the green.
+ * The validity as a wallet-pass corner in the band's top right: the one thing
+ * you check, in a fixed place. A current card shows the year alone, at the
+ * organization name's title size and on its line, because a year in that
+ * corner already reads as "valid for"; a word over it only made the year
+ * smaller. The year keeps that size even when a long name steps down. A
+ * lapsed card keeps a small label over the year, because there the word is
+ * the news: it still tells the truth, just without the green.
  */
 function validityCorner(rightX: number, centerY: number, periodText: string, lapsed: boolean) {
-  const label = lapsed ? "STØTTET T.O.M." : "GYLDIG";
+  const valueSize = TYPE.title;
+  const value = (y: number) =>
+    textEl(rightX, y, periodText, {
+      size: valueSize,
+      weight: FONT_WEIGHT,
+      fill: lapsed ? MUTED : INK,
+      anchor: "end",
+    });
+  const valueWidth = estimateWidth(periodText, valueSize);
+  if (!lapsed) return { markup: value(centerY + valueSize * 0.35), width: valueWidth };
+
+  const label = "STØTTET T.O.M.";
   const labelSize = TYPE.small;
-  const valueSize = TYPE.middle;
   // letter-spacing widens the label beyond the plain estimate.
-  const width = Math.max(
-    estimateWidth(label, labelSize) + label.length * 2.4,
-    estimateWidth(periodText, valueSize),
-  );
-  const markup = `${textEl(rightX, centerY - 8, label, {
+  const width = Math.max(estimateWidth(label, labelSize) + label.length * 2.4, valueWidth);
+  const markup = `${textEl(rightX, centerY - valueSize * 0.4, label, {
     size: labelSize,
     weight: FONT_WEIGHT,
     fill: FAINT,
     letterSpacing: 2.4,
     anchor: "end",
   })}
-  ${textEl(rightX, centerY + 22, periodText, {
-    size: valueSize,
-    weight: FONT_WEIGHT,
-    fill: lapsed ? MUTED : INK,
-    anchor: "end",
-  })}`;
+  ${value(centerY + valueSize * 0.85)}`;
   return { markup, width };
 }
 

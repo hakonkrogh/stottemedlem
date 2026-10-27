@@ -50,8 +50,13 @@ surface the member happens to be looking at.
 - **The organization owns the top of the card, the member the middle, and the
   product signs the bottom.**
   The card opens with an identity band — the organization's logo and name,
-  with the validity as a small label over the year in its corner, the one
-  thing a checker looks for kept in one fixed place. Then the member is the
+  with the year it is valid for in its corner, the one thing a checker looks
+  for kept in one fixed place. The year stands alone, as large as the
+  organization's name at its full size, and stays that size even when a long
+  name steps down to fit: a year in that corner already reads as "valid
+  for", so the word "Gyldig" over it only made the year small (dropped
+  2026-10-26).
+  Then the member is the
   subject: their name large, their [number](member-number.md) quietly under
   it, and their streak, with nothing else in that half of the card. The number
   belongs with the name because it is the same person said a second way, and
@@ -392,7 +397,7 @@ surface the member happens to be looking at.
 - **A card exists once the membership does.** A supporter who has started but
   not completed a payment has no card yet; there is nothing to prove.
 - **A lapsed card keeps the years and drops the cheer.** The validity corner
-  says "Støttet t.o.m." with the last supported year instead of "Gyldig", the
+  puts a small "Støttet t.o.m." over the last supported year, the
   streak heart goes a neutral grey from the card's own family of tones (not a
   faded red, and not a pink: a heart that is neither red nor ink belongs to
   nothing on the card), and the exclamation mark goes — the years were real
@@ -404,7 +409,7 @@ surface the member happens to be looking at.
   has a member as active, their card does too. So a renewal the payment
   provider has not settled either way keeps the card valid, and the card then
   names the period the renewal is being taken for, not the one that has just
-  ended: a card left saying "Gyldig" over last year would be claiming a
+  ended: a card left showing last year as valid would be claiming a
   validity that has expired. The new heart is not on it yet, because a heart is
   a period paid for and that period is not paid yet; it arrives the moment the
   payment does. (For a while the card flipped to lapsed the day the period
