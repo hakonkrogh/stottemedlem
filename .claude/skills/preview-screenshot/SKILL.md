@@ -1,6 +1,6 @@
 ---
 name: preview-screenshot
-description: Render any local URL (marketing/backoffice dev or preview server) to a PNG via headless Chrome, then Read the PNG to see it. THE visual validation loop for UI work in this repo — use it instead of asking the user for screenshots or relying on the claude-in-chrome extension (often disconnected).
+description: Render any local URL (marketing/backoffice dev or preview server) to a PNG via headless Chrome, then Read the PNG to see it. THE visual validation loop for UI work in this repo — use it instead of asking the user for screenshots or relying on the claude-in-chrome extension (often disconnected). Also how to put a screenshot in a PR (`pr-shots.sh`).
 ---
 # Preview screenshot
 
@@ -469,3 +469,17 @@ in its own first lines of output; `devlog.sh port` reads it back.
   `astro dev logs` for which request actually threw before debugging the page
   (the `dev-logs` skill wraps this: `bash .claude/skills/dev-logs/devlog.sh
   tail|grep` — and its `start` makes a foreground server's logs readable).
+
+## Screenshots in a PR
+
+A PR with a visible change (the card, a page, an email) carries a
+`## Screenshots` section. Upload the PNGs with
+
+    bash .claude/skills/preview-screenshot/pr-shots.sh <branch> <file.png>...
+
+It commits them to the `pr-screenshots` branch (never merged, so PNGs stay
+out of `main`; created 2026-11-02 for PR 154) without touching your checkout,
+and prints the `![...](...?raw=true)` lines to paste into the PR body. Same
+basename again replaces the old file. For a card change, a before/after
+sheet from the render-card skill's "Before and after" recipe is the one
+picture that shows it.

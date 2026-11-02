@@ -270,16 +270,32 @@ Three things break when a size moves, and only the last is visible:
    `TYPE.title` in the name's ladder makes a long name fall a long way in one
    step (48 → 24 became 56 → 32 → 24 on 2026-09-10).
 
+4. **The member's name wraps onto two lines, then three** (`fitMemberName`),
+   and only then is cut. Three lines arrived with the print sizes
+   (2026-11-02): at 68, "Anne-Margrethe Wollertsen Bjørnstad" has no two-line
+   break that fits and was cut with "…". A bigger name size than 68 should
+   re-check that three lines still fit the body above the footer.
+
+**What a size is on paper.** The card is printed upright at credit-card size,
+so its EDGE (720 units, `MEMBER_CARD_WIDTH - 2 * MEMBER_CARD_INSET`) is the
+card's SHORT side, 53.98 mm, not 85.6. One unit is 0.075 mm, so
+**points on paper = units x 0.2125**. The 2026-11-02 scale (52/36/24/18) prints
+at 11 / 7.7 / 5.1 / 3.8 pt; the print scale that replaced it (68/48/34/28)
+prints at 14.5 / 10 / 7.2 / 6 pt. Around 7 to 8 pt is the usual floor for
+small print, which is about 33 to 38 units. Use the short side: taking 85.6 mm as
+the width overstates every size by about 60% (done once on 2026-11-02).
+
 Then draw **every** fixture (`--raster`, no `--case`) and look at
 `LongNames` and `VeryLongOrgName`: the fixture you changed the size for is the
 one that always looks fine.
 
 **Raising `TYPE.title` or the logo costs the band's longest word.** The
 organization's name has `right - corner - 28 - (left + logo + 22)` of room
-beside a logo (about 410 with the 100 logo and the "GYLDIG" corner, less
-under "STØTTET T.O.M."), and a word needs `letters × size × 0.57`. At 36 that
-is 19 letters: `VeryLongOrgName`'s "Ungdomssymfoniorkester" (22) no longer
-fits and drops to the middle step, which is the accepted cost (2026-10-26).
+beside a logo (about 380 with the 100 logo and the year at 48, less under
+"STØTTET T.O.M."), and a word needs `letters × size × 0.57`. At 48 that is
+13 letters: "Ungdomsorkester" (15) drops to the middle step and
+"Ungdomssymfoniorkester" (22) to the small one, which is the accepted cost
+(2026-10-26 at 36, again 2026-11-02 at 48).
 The two-line test's name was changed to one whose most even break still
 fits; check `wrapEvenly`'s cost (spread, plus 8 for a line opening with a
 little word) before picking a replacement name, because the most even break
