@@ -58,7 +58,7 @@ describe("memberCardSvg", () => {
     expect(svg).toContain("Bakvendtland Skolekorps");
     // The validity corner: the year alone, at the organization name's size.
     expect(svg).not.toContain("GYLDIG");
-    expect(svg).toMatch(/font-size="36"[^>]*>2026<\/text>/);
+    expect(svg).toMatch(/font-size="48"[^>]*>2026<\/text>/);
   });
 
   it("tells the truth about a member whose period has passed", () => {
@@ -90,14 +90,24 @@ describe("memberCardSvg", () => {
     for (const name of ["Ola Li", "Kari Nordmann", "Håkon Martin Gullord Krogh"]) {
       const sizes = nameSizes(name);
       expect(sizes.length).toBeGreaterThan(0);
-      expect(sizes.every((size) => size === "52")).toBe(true);
+      expect(sizes.every((size) => size === "68")).toBe(true);
     }
   });
 
   it("wraps a long name onto two lines at that size rather than shrinking it", () => {
+    const long = memberCardSvg({ ...base, memberName: "Håkon Martin Gullord Krogh" });
+    expect(long).toMatch(/font-size="68"[^>]*>Håkon Martin<\/text>/);
+    expect(long).toMatch(/font-size="68"[^>]*>Gullord Krogh<\/text>/);
+  });
+
+  it("wraps onto three lines when two will not hold the name", () => {
+    // "Wollertsen Bjørnstad" is too wide for one line at the name's size, so
+    // no two-line break fits; three lines keep every word whole.
     const long = memberCardSvg({ ...base, memberName: "Anne-Margrethe Wollertsen Bjørnstad" });
-    expect(long).toMatch(/font-size="52"[^>]*>Anne-Margrethe<\/text>/);
-    expect(long).toMatch(/font-size="52"[^>]*>Wollertsen Bjørnstad<\/text>/);
+    expect(long).toMatch(/font-size="68"[^>]*>Anne-Margrethe<\/text>/);
+    expect(long).toMatch(/font-size="68"[^>]*>Wollertsen<\/text>/);
+    expect(long).toMatch(/font-size="68"[^>]*>Bjørnstad<\/text>/);
+    expect(long).not.toContain("…");
   });
 
   it("sets its text at four sizes and no others, whatever the names are", () => {
@@ -118,9 +128,9 @@ describe("memberCardSvg", () => {
         .map((m) => m[1])
         .filter((size) => size !== digit);
       expect(new Set(sizes.map(Number))).toEqual(
-        new Set([52, 36, 24, 18].filter((size) => sizes.includes(String(size)))),
+        new Set([68, 48, 34, 28].filter((size) => sizes.includes(String(size)))),
       );
-      expect(sizes.every((size) => ["52", "36", "24", "18"].includes(size))).toBe(true);
+      expect(sizes.every((size) => ["68", "48", "34", "28"].includes(size))).toBe(true);
     }
   });
 
@@ -227,7 +237,7 @@ describe("memberCardSvg", () => {
     expect(svg).not.toContain(">Bakvendtland Skolekorps</text>");
     // Breaking is not shrinking: the band keeps the title step.
     const size = Number(/font-size="([\d.]+)"[^>]*>Bakvendtland</.exec(svg)?.[1]);
-    expect(size).toBe(36);
+    expect(size).toBe(48);
   });
 
   it("keeps a short organization name on one line", () => {
@@ -240,16 +250,16 @@ describe("memberCardSvg", () => {
     // Beside a logo, where the band has the least room.
     const svg = memberCardSvg({
       ...base,
-      organizationName: "Bakvendtland Kor og Ungdomsorkester",
+      organizationName: "Vestby Kor og Storband",
       logoDataUri: "data:image/png;base64,AAAA",
     });
     // Broken between words, and not so that the second line opens with "og".
-    expect(svg).toContain(">Bakvendtland Kor og</text>");
-    expect(svg).toContain(">Ungdomsorkester</text>");
+    expect(svg).toContain(">Vestby Kor og</text>");
+    expect(svg).toContain(">Storband</text>");
     // Still at the scale's title step, bigger than the year beside it:
     // wrapping bought the room, so nothing had to shrink.
-    const size = Number(/font-size="([\d.]+)"[^>]*>Bakvendtland/.exec(svg)?.[1]);
-    expect(size).toBe(36);
+    const size = Number(/font-size="([\d.]+)"[^>]*>Vestby/.exec(svg)?.[1]);
+    expect(size).toBe(48);
   });
 
   it("wraps a very long organization name onto three even lines, never mid-word", () => {
@@ -294,7 +304,7 @@ describe("memberCardSvg", () => {
     // In the footer it is the product signing the card, not a footnote under
     // it (specs/concepts/brand-attribution.md).
     const size = /font-size="([\d.]+)"[^>]*>støttemedlem.no</.exec(memberCardSvg(base))?.[1];
-    expect(Number(size)).toBe(24);
+    expect(Number(size)).toBe(34);
   });
 
   it("encodes the referral join address in the QR code", () => {
@@ -329,7 +339,7 @@ describe("memberCardNameBand", () => {
       const top = band.top * MEMBER_CARD_HEIGHT;
       const bottom = band.bottom * MEMBER_CARD_HEIGHT;
       const svg = memberCardSvg(options);
-      const nameLines = [...svg.matchAll(/font-size="52"/g)].length;
+      const nameLines = [...svg.matchAll(/font-size="68"/g)].length;
       const inside = baselines(svg).filter((y) => y > top && y <= bottom);
       // Only the member's name lives in the strip, every line of it. If
       // the layout moves and the band does not, a blank-card check would be
@@ -363,7 +373,7 @@ describe("memberCardNameBand", () => {
  * different scale, so the streak one is found by its size.
  */
 function streakHeartAt(svg: string): string | null {
-  const heart = 300 / 24;
+  const heart = 250 / 24;
   for (const match of svg.matchAll(/translate\(([-\d.]+) ([-\d.]+)\) scale\(([\d.]+)\)/g)) {
     if (Math.abs(Number(match[3]) - heart) < 0.05) return `${match[1]},${match[2]}`;
   }

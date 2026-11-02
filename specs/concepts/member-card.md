@@ -143,9 +143,14 @@ surface the member happens to be looking at.
   the next size rather than shrinking a little at a time, so it lands on a
   size the card already uses. The member's name is the exception: it is the
   same size on every card, and a name too wide for one line wraps onto two
-  lines at that size instead of shrinking. Names used to step down to fit, so
+  lines (or three, when two will not hold it) at that size instead of
+  shrinking. Names used to step down to fit, so
   a sheet of printed cards showed short names large and long names small, as
-  if the members were of different rank (changed 2026-09-22). The card does not label itself
+  if the members were of different rank (changed 2026-09-22). The sizes are
+  set for paper, because printing the cards is the card's main use: on a card
+  printed at credit-card size the name is about 14 pt and the smallest text
+  about 6 pt (raised 2026-11-02 from about 11 pt and 4 pt, which was too
+  small to read in print; the heart gave up the room). The card does not label itself
   "støttemedlem" above the name: the QR caption says it, and the card is one.
 - **The card as a picture is drawn once per version of itself.** A card is
   looked at, previewed by every feed it is pasted into, and attached to

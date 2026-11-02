@@ -192,16 +192,19 @@ function estimateWidth(text: string, size: number): number {
  * on the card hardest to read at arm's length. The title step grew from 32
  * to 36 when the band rose after it (2026-10-26): the footer had grown into
  * the member's spare room, and the band, the organization's half, was the
- * smallest thing left on the card.
+ * smallest thing left on the card. Every step grew again for print
+ * (2026-11-02): a card printed at credit-card size is 0.2125 pt per unit, so
+ * the old small step was under 4 pt on paper. The heart gave up the room.
  */
-const TYPE = { name: 52, title: 36, middle: 24, small: 18 };
+const TYPE = { name: 68, title: 48, middle: 34, small: 28 };
 
 /**
  * The room between the years line and the recruit line under it. Both lines
  * grew a step of the scale (2026-09-10, the member's half was reading small
- * beside a 200 pt heart), so the gap grew with them.
+ * beside a 200 pt heart), so the gap grew with them, and again with the
+ * print sizes (2026-11-02).
  */
-const RECRUIT_GAP = 42;
+const RECRUIT_GAP = 56;
 
 /**
  * The room between the member's name and their number under it
@@ -231,7 +234,8 @@ function fitScaled(text: string, maxWidth: number, sizes: number[]) {
  * down the scale to fit, so a short name printed at 56 and a long one at 32,
  * and a sheet of cards for one organization looked like names of different
  * rank. Now a name too wide for one line wraps onto two at the same size,
- * never mid-word; only a name that cannot be broken to fit is cut. The size
+ * or three when two will not hold it (2026-11-02, the print sizes), never
+ * mid-word; only a name that cannot be broken to fit is cut. The size
  * sits between the old two steps: big enough to be the card's subject, small
  * enough that most names still take one line.
  */
@@ -239,7 +243,9 @@ function fitMemberName(name: string, maxWidth: number): { lines: string[]; size:
   const size = TYPE.name;
   const fits = (text: string) => estimateWidth(text, size) <= maxWidth;
   if (fits(name)) return { lines: [name], size };
-  const lines = wrapEvenly(name.split(/\s+/).filter(Boolean), 2, fits);
+  const words = name.split(/\s+/).filter(Boolean);
+  const lines =
+    wrapEvenly(words, 2, fits) ?? (words.length >= 3 ? wrapEvenly(words, 3, fits) : null);
   if (lines) return { lines, size };
   return { lines: [fitScaled(name, maxWidth, [size]).value], size };
 }
@@ -522,8 +528,8 @@ function attribution(left: number, baseline: number): string {
  */
 function cardFooter(left: number, right: number, top: number, qr: QrCode): string {
   const middle = top + FOOTER_QR_PANEL / 2;
-  return `${attribution(left, middle - 6)}
-  ${textEl(left, middle + 28, "Skann og bli støttemedlem", { size: TYPE.small, fill: MUTED })}
+  return `${attribution(left, middle - 10)}
+  ${textEl(left, middle + 40, "Skann og bli støttemedlem", { size: TYPE.small, fill: MUTED })}
   ${qrCode(right - FOOTER_QR_PANEL, top, FOOTER_QR_SIZE, qr)}`;
 }
 
@@ -616,7 +622,7 @@ function memberBlock(
   // one (specs/concepts/scorecard.md). The three lines around it (the name
   // above, the years line and the recruit line below) each sit a step higher
   // on the scale than the band and the footer, because this half is the card.
-  const heartSize = 300;
+  const heartSize = 250;
   const headline =
     content.hearts > 0
       ? fitScaled(content.headline, frame.columnWidth, [TYPE.title, TYPE.middle])
