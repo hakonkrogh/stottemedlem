@@ -9,6 +9,9 @@ import type { Organization, OrganizationImages } from "@stottemedlem/db";
 
 export type OrgImageKind = "logo" | "banner";
 
+/** Said by the server on save, and by the settings form when a drop is refused. */
+export const IMAGE_TYPE_ERROR = "Bildet må være PNG, JPEG eller WebP.";
+
 const MAX_BYTES: Record<OrgImageKind, number> = {
   logo: 2 * 1024 * 1024,
   banner: 5 * 1024 * 1024,
@@ -80,7 +83,7 @@ export async function applyImageField(
     const bytes = new Uint8Array(await file.arrayBuffer());
     const type = sniffImageType(bytes);
     if (!type) {
-      return { error: "Bildet må være PNG, JPEG eller WebP." };
+      return { error: IMAGE_TYPE_ERROR };
     }
     const digest = await crypto.subtle.digest("SHA-256", bytes);
     const hash = [...new Uint8Array(digest).slice(0, 8)]

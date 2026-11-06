@@ -177,6 +177,30 @@ async function text(selector) {
   return ((await page.textContent(selector)) ?? "").trim();
 }
 
+/**
+ * A file dragged in from the desktop, sent as the browser's own input rather
+ * than a synthetic DragEvent, so real listeners get a real dataTransfer.files.
+ * `drop` false stops with the file still held over the element.
+ */
+async function dragFile(selector, file, drop) {
+  const target = page.locator(selector).first();
+  await target.scrollIntoViewIfNeeded();
+  const box = await target.boundingBox();
+  if (!box) throw new Error(`no visible element for ${selector}`);
+  const cdp = await context.newCDPSession(page);
+  const types = drop ? ["dragEnter", "dragOver", "drop"] : ["dragEnter", "dragOver"];
+  for (const type of types) {
+    await cdp.send("Input.dispatchDragEvent", {
+      type,
+      x: box.x + box.width / 2,
+      y: box.y + box.height / 2,
+      data: { items: [], files: [path.resolve(file)], dragOperationsMask: 1 },
+    });
+  }
+  await page.waitForTimeout(200);
+  await cdp.detach();
+}
+
 // Holding a request back is pointless if the drive then waits for it: `goto`
 // waits for the LOAD event by default, which a delayed image is part of, so
 // every step would run after the wait it was meant to observe. With a delay in
@@ -199,6 +223,12 @@ for (const step of steps) {
         break;
       case "press":
         await page.press(a, b);
+        break;
+      case "dragfile":
+        await dragFile(a, b, false);
+        break;
+      case "dropfile":
+        await dragFile(a, b, true);
         break;
       case "wait":
         await page.waitForSelector(a);

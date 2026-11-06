@@ -386,6 +386,8 @@ in its own first lines of output; `devlog.sh port` reads it back.
   script (TS generics stripped) into one file with a local test image, shoot
   it via `file://` — validates geometry/fade visually, but it's a COPY, so
   re-copy after editing the component (verified 2026-08-12).
+  Prefer rendering the REAL component on a scratch route: see `drive-page`
+  (2026-11-05), which also has the tokens and charset that page needs.
   The kvittering page's confirmed-payment states (member card + receipt on
   `/bli-medlem/<slug>/kvittering`) are unreachable this way even though the
   page is public: they need `getVippsForOrg` to return a client (real Vipps

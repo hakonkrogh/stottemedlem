@@ -17,6 +17,7 @@ and seed local D1 first (`verify-public-routes/seed.sh`).
 |------|------|
 | `goto=<url>` | navigate again (the first URL is the positional arg) |
 | `click=<sel>` · `fill=<sel>::<text>` · `press=<sel>::<key>` | act |
+| `dragfile=<sel>::<path>` · `dropfile=<sel>::<path>` | hold a desktop file over an element / drop it there, as real browser input (Chrome only) |
 | `wait=<sel>` · `sleep=<ms>` | wait for a selector / a delay |
 | `read=<sel>` · `attr=<sel>::<name>` · `count=<sel>` | print text / attribute / match count |
 | `assert=<sel>::<text>` | substring match; PASS/FAIL and the exit code |
@@ -209,6 +210,20 @@ Both branches of `MemberCardFigure.astro`, proven end to end (2026-08-31):
   worked. Proof shape: a scratch page whose POST prints what it received, then
   `click=#save url= assert=#landed::…`, run once on the old code (URL goes to
   `[object%20HTMLButtonElement]`, no `#landed`) and once on the new.
+- **A real file drag from the desktop** (2026-11-05, the image fields' drop):
+  use `dragfile=` / `dropfile=`. They send CDP `Input.dispatchDragEvent`, so
+  real listeners get a real `dataTransfer.files`; a synthetic `DragEvent` does
+  not prove what the browser does with an OS drag. Pair with a scratch route
+  when the field is behind login.
+- **A scratch route for an auth-gated component's client script** (same day):
+  render the real component under `src/pages/bli-medlem/<name>/` with a stub
+  org, so its `<script>` goes through the real Astro build. Better than
+  Storybook (scripts arrive uncompiled, so one type annotation kills the whole
+  block) and than the copied file:// harness `preview-screenshot` describes. The
+  page has no layout, so add `<meta charset="utf-8">` and paste `:root` from
+  `packages/ui/src/styles/tokens.css`. Without them `var(--sm-*)` is empty, a
+  highlight simply does not paint, and logic checks still pass while the
+  screenshot shows nothing.
 - **Driving an admin screen in Storybook (done 2026-09-09 for the member
   list's payment-reference search):** start it with
   `.claude/skills/preview-screenshot/story.sh start`, which prints the port.
