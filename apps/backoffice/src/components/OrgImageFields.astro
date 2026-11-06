@@ -10,7 +10,7 @@
 // travels as hidden bannerFocusX/bannerFocusY fields (object-position
 // percentages, 0–100).
 import type { Organization } from "@stottemedlem/db";
-import { orgImageUrl } from "../lib/orgImages";
+import { IMAGE_TYPE_ERROR, orgImageUrl } from "../lib/orgImages";
 
 interface Props {
   org: Organization;
@@ -78,7 +78,7 @@ const fields = [
       />
       <p class="hint">{field.hint}</p>
       <p class="error" data-drop-error role="alert" hidden>
-        Bildet må være PNG, JPEG eller WebP.
+        {IMAGE_TYPE_ERROR}
       </p>
       {field.key && (
         <label class="remove">
@@ -100,8 +100,6 @@ const fields = [
   // file is sent and previewed exactly as a chosen one is. The listeners sit on
   // the document, so they outlive LiveForms swapping the form in place. Plain
   // JS with instanceof narrowing, because Storybook serves this block as is.
-  const ACCEPTED_TYPES = new Set(["image/png", "image/jpeg", "image/webp"]);
-
   const clearHighlight = () => {
     document.querySelectorAll("[data-image-drop].dropping").forEach((zone) => {
       zone.classList.remove("dropping");
@@ -129,27 +127,31 @@ const fields = [
     event.preventDefault();
     clearHighlight();
     const zone = event.target instanceof Element ? event.target.closest("[data-image-drop]") : null;
+    const input = zone?.querySelector('input[type="file"]');
+    if (!zone || !(input instanceof HTMLInputElement)) return;
+    // No file at all happens too: an image dragged from another browser tab can
+    // promise one and hand over nothing.
     const file = event.dataTransfer.files[0];
-    if (!zone || !file) return;
-    if (!ACCEPTED_TYPES.has(file.type)) {
+    if (!file || !input.accept.split(",").includes(file.type)) {
       zone.querySelector("[data-drop-error]")?.removeAttribute("hidden");
       return;
     }
-    const input = zone.querySelector('input[type="file"]');
-    if (!(input instanceof HTMLInputElement)) return;
     const dropped = new DataTransfer();
     dropped.items.add(file);
     input.files = dropped.files;
     input.dispatchEvent(new Event("change", { bubbles: true }));
   });
 
-  // A new file, dropped or chosen, answers an earlier refusal.
+  // A new file, dropped or chosen, answers an earlier refusal, ours or the
+  // server's.
   document.addEventListener("change", (event) => {
     if (!(event.target instanceof HTMLInputElement) || event.target.type !== "file") return;
     event.target
       .closest("[data-image-drop]")
-      ?.querySelector("[data-drop-error]")
-      ?.setAttribute("hidden", "");
+      ?.querySelectorAll(".error")
+      .forEach((message) => {
+        message.setAttribute("hidden", "");
+      });
   });
 </script>
 

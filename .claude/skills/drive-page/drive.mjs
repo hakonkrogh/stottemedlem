@@ -183,7 +183,9 @@ async function text(selector) {
  * `drop` false stops with the file still held over the element.
  */
 async function dragFile(selector, file, drop) {
-  const box = await page.locator(selector).first().boundingBox();
+  const target = page.locator(selector).first();
+  await target.scrollIntoViewIfNeeded();
+  const box = await target.boundingBox();
   if (!box) throw new Error(`no visible element for ${selector}`);
   const cdp = await context.newCDPSession(page);
   const types = drop ? ["dragEnter", "dragOver", "drop"] : ["dragEnter", "dragOver"];
