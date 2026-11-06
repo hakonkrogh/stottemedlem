@@ -1,7 +1,8 @@
 ---
 // Upload fields for the org's visual identity (logo + banner) on the settings
-// page: current image preview, file picker, and a remove checkbox. The POST is
-// handled by the settings page via lib/orgImages.ts.
+// page: current image preview, file picker, and a remove checkbox. An image can
+// also be dropped anywhere on its field. The POST is handled by the settings
+// page via lib/orgImages.ts.
 //
 // The banner gets a focal-point picker instead of a plain preview: the full
 // image with everything outside a draggable 3:1 frame faded out, showing which
@@ -21,7 +22,7 @@ const fields = [
   {
     kind: "logo" as const,
     label: "Logo",
-    hint: "PNG, JPEG eller WebP, maks 2 MB. Vises i en sirkel ved siden av navnet på den offentlige siden.",
+    hint: "PNG, JPEG eller WebP, maks 2 MB. Velg en fil eller dra bildet hit. Vises i en sirkel ved siden av navnet på den offentlige siden.",
     removeLabel: "Fjern logoen",
     key: org.logoKey,
     error: errors.logo,
@@ -29,7 +30,7 @@ const fields = [
   {
     kind: "banner" as const,
     label: "Bannerbilde",
-    hint: "PNG, JPEG eller WebP, maks 5 MB. Vises som et bredt bakteppe øverst på siden. Dra rammen i forhåndsvisningen for å velge hvilken del av bildet som vises.",
+    hint: "PNG, JPEG eller WebP, maks 5 MB. Velg en fil eller dra bildet hit. Vises som et bredt bakteppe øverst på siden. Dra rammen i forhåndsvisningen for å velge hvilken del av bildet som vises.",
     removeLabel: "Fjern bannerbildet",
     key: org.bannerKey,
     error: errors.banner,
@@ -39,7 +40,7 @@ const fields = [
 
 {
   fields.map((field) => (
-    <div class="field">
+    <div class="field" data-image-drop>
       <label for={field.kind}>{field.label}</label>
       {field.kind === "banner" ? (
         <div
@@ -76,6 +77,9 @@ const fields = [
         aria-describedby={field.error ? `${field.kind}-error` : undefined}
       />
       <p class="hint">{field.hint}</p>
+      <p class="error" data-drop-error role="alert" hidden>
+        Bildet må være PNG, JPEG eller WebP.
+      </p>
       {field.key && (
         <label class="remove">
           <input type="checkbox" name={`${field.kind}Remove`} value="1" />
@@ -90,6 +94,64 @@ const fields = [
     </div>
   ))
 }
+
+<script>
+  // Dropping an image on a field fills that field's file input, so a dropped
+  // file is sent and previewed exactly as a chosen one is. The listeners sit on
+  // the document, so they outlive LiveForms swapping the form in place. Plain
+  // JS with instanceof narrowing, because Storybook serves this block as is.
+  const ACCEPTED_TYPES = new Set(["image/png", "image/jpeg", "image/webp"]);
+
+  const clearHighlight = () => {
+    document.querySelectorAll("[data-image-drop].dropping").forEach((zone) => {
+      zone.classList.remove("dropping");
+    });
+  };
+
+  // Outside a field the file is refused rather than left to the browser, which
+  // would open it in place of the form and lose what has been typed.
+  document.addEventListener("dragover", (event) => {
+    if (!event.dataTransfer?.types.includes("Files")) return;
+    event.preventDefault();
+    const zone = event.target instanceof Element ? event.target.closest("[data-image-drop]") : null;
+    event.dataTransfer.dropEffect = zone ? "copy" : "none";
+    if (zone?.classList.contains("dropping")) return;
+    clearHighlight();
+    zone?.classList.add("dropping");
+  });
+
+  document.addEventListener("dragleave", (event) => {
+    if (!event.relatedTarget) clearHighlight();
+  });
+
+  document.addEventListener("drop", (event) => {
+    if (!event.dataTransfer?.types.includes("Files")) return;
+    event.preventDefault();
+    clearHighlight();
+    const zone = event.target instanceof Element ? event.target.closest("[data-image-drop]") : null;
+    const file = event.dataTransfer.files[0];
+    if (!zone || !file) return;
+    if (!ACCEPTED_TYPES.has(file.type)) {
+      zone.querySelector("[data-drop-error]")?.removeAttribute("hidden");
+      return;
+    }
+    const input = zone.querySelector('input[type="file"]');
+    if (!(input instanceof HTMLInputElement)) return;
+    const dropped = new DataTransfer();
+    dropped.items.add(file);
+    input.files = dropped.files;
+    input.dispatchEvent(new Event("change", { bubbles: true }));
+  });
+
+  // A new file, dropped or chosen, answers an earlier refusal.
+  document.addEventListener("change", (event) => {
+    if (!(event.target instanceof HTMLInputElement) || event.target.type !== "file") return;
+    event.target
+      .closest("[data-image-drop]")
+      ?.querySelector("[data-drop-error]")
+      ?.setAttribute("hidden", "");
+  });
+</script>
 
 <script>
   // Focal-point picker for the banner: drag (or tap) to place the visible-crop
@@ -187,6 +249,14 @@ const fields = [
   .field {
     display: grid;
     gap: 0.4rem;
+  }
+  /* Answers a file dragged over the field: the whole field is the target. The
+     outline takes no space, so nothing moves under the pointer. */
+  .field.dropping {
+    background: var(--sm-accent-soft);
+    border-radius: var(--sm-radius-md);
+    outline: 2px dashed var(--sm-accent);
+    outline-offset: 0.35rem;
   }
   label {
     font-size: 0.9rem;

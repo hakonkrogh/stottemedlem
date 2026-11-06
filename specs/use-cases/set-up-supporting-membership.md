@@ -148,7 +148,10 @@ its details (name and profile) and upload a
 [join page](../concepts/join-page.md). For the banner the
 organization can also pick the **focal point** — which part of the image stays
 in view where the page crops it — with a preview that fades the cropped-away
-parts around a draggable visible-area frame. Both images are optional, can
+parts around a draggable visible-area frame. An image can be chosen with the
+file picker or dropped straight onto its field. A file that is not PNG, JPEG
+or WebP is refused on the spot, and a drop that misses the field does nothing,
+so it never costs the form. Both images are optional, can
 be replaced or removed at any time, and changes show on the public page
 immediately. A name change never changes the slug or the public addresses.
 
@@ -255,6 +258,11 @@ the front page.
       join page picks the change up on its own (at the latest from the next
       visit — see [join page](../concepts/join-page.md) freshness),
       and a name change never changes the slug.
+- [ ] An administrator can drop an image on the logo or banner field instead of
+      using the file picker; the field marks itself while the file is over it,
+      the banner preview shows a dropped image at once, a file of another type
+      is refused with a message, and a drop outside the fields leaves the form
+      as it was.
 - [ ] An administrator can choose the banner's focal point by dragging the
       visible-area frame in the settings preview; the join page crops the
       banner around that point.
