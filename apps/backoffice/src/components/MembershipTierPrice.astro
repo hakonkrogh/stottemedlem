@@ -1,0 +1,34 @@
+---
+// The yearly price as a membership card shows it. Its own component because
+// the join page moves it around when a card opens (JoinTierOffer), and a tier
+// must still read the same on every surface (specs/concepts/membership-tier.md).
+interface Props {
+  annualFeeNok: number;
+}
+const { annualFeeNok } = Astro.props;
+
+// Norwegian groups thousands with a space, and it is a non-breaking one so a
+// price never wraps in the middle.
+const price = annualFeeNok.toLocaleString("nb-NO").replace(/\s/g, " ");
+---
+
+<p class="price">
+  {price}&nbsp;kr <span class="per">per år</span>
+</p>
+
+<style>
+  .price {
+    margin: 0;
+    font-family: var(--sm-font-display);
+    font-weight: var(--sm-font-display-weight, 600);
+    font-variation-settings: var(--sm-font-display-variation, normal);
+    font-size: 2.5rem;
+    line-height: 1.05;
+  }
+  .price .per {
+    font-family: var(--sm-font-sans);
+    font-weight: 400;
+    font-size: 1rem;
+    color: var(--sm-muted);
+  }
+</style>

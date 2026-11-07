@@ -84,7 +84,7 @@ The public join page is live and serves a working Vipps button:
 
 ```
 curl -s -L https://app.xn--stttemedlem-hgb.no/bli-medlem/<slug> \
-  | grep -o "Bli støttemedlem med Vipps"
+  | grep -oE "Betal [^<]+ med Vipps"
 ```
 
 ## 5. The ledger

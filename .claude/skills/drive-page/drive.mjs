@@ -54,8 +54,9 @@ flags:
   --delay <glob>::<ms>    hold requests matching <glob> back that long
                      (repeatable): the only way to SEE a page's waiting state,
                      since a local server answers before anything can be read
+  --reduced-motion   a visitor who has asked their device for less motion
   --console          print console messages and page errors
-  --keep-going       do not stop at the first failed assert
+  --keep-going      do not stop at the first failed assert
 
 steps (one argv token each):
   goto=<url>            click=<sel>           fill=<sel>::<text>
@@ -73,12 +74,14 @@ const routes = [];
 const delays = [];
 let showConsole = false;
 let keepGoing = false;
+let reducedMotion = "no-preference";
 const steps = [];
 let url = null;
 
 for (let i = 0; i < argv.length; i++) {
   const arg = argv[i];
   if (arg === "--mobile") viewport = { width: 390, height: 844 };
+  else if (arg === "--reduced-motion") reducedMotion = "reduce";
   else if (arg === "--viewport") {
     const [w, h] = argv[++i].split("x");
     viewport = { width: Number(w), height: Number(h) };
@@ -115,7 +118,7 @@ function contentTypeOf(file) {
 
 const chromium = await loadChromium();
 const browser = await chromium.launch({ channel: "chrome" });
-const context = await browser.newContext({ viewport, permissions });
+const context = await browser.newContext({ viewport, permissions, reducedMotion });
 for (const stub of stubs) await context.addInitScript({ content: stub });
 // A rigged asset. The page, the server and the shipped script stay real; only
 // the bytes of one request are ours, which is how a surface gets driven into a

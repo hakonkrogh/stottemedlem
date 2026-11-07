@@ -1,0 +1,348 @@
+---
+// One membership on the join page: a card that opens in place when chosen, to
+// say what joining costs today and what it costs from the first renewal, and
+// only then goes to Vipps (specs/concepts/join-page.md).
+//
+// The first button is a real submit, and the script below holds it back. So if
+// the script never arrives, the press goes straight to Vipps as it always did,
+// and the closed card has already stated both amounts.
+import { JOIN_REFERRAL_PARAM } from "@stottemedlem/core";
+import Button from "@stottemedlem/ui/components/Button.astro";
+import MembershipTierCard from "./MembershipTierCard.astro";
+import MembershipTierPrice from "./MembershipTierPrice.astro";
+
+interface Props {
+  name: string;
+  annualFeeNok: number;
+  description?: string | null;
+  /** The tier's stable key, which the form carries into joining. */
+  tierKey: string;
+  /** Where the join is posted. */
+  action: string;
+  /** What joining costs today: the fee, pro-rated for what is left of the period. */
+  todayNok: number;
+  /** The current period as people read it: "2026". */
+  periodName: string;
+  /** The first renewal's date as people read it: "1. januar 2027". */
+  renewalDate: string;
+  /** Someone's card brought this visitor here; carried into the payment. */
+  referral?: string | null;
+  /** Start opened. Stories only: the page always starts closed. */
+  open?: boolean;
+}
+const {
+  name,
+  annualFeeNok,
+  description,
+  tierKey,
+  action,
+  todayNok,
+  periodName,
+  renewalDate,
+  referral,
+  open = false,
+} = Astro.props;
+
+const kr = (nok: number) => `${nok.toLocaleString("nb-NO").replace(/\s/g, " ")} kr`;
+const reduced = todayNok !== annualFeeNok;
+const todayNote = reduced
+  ? `Bare for det som er igjen av ${periodName}.`
+  : `For hele ${periodName}.`;
+const stepId = `join-step-${tierKey}`;
+---
+
+<div class="offer" data-join-offer data-state={open ? "open" : "rest"}>
+  <MembershipTierCard name={name} annualFeeNok={annualFeeNok} description={description}>
+    <div slot="fee" class="swap">
+      <div class="cell rest">
+        <div class="clip">
+          <MembershipTierPrice annualFeeNok={annualFeeNok} />
+          {
+            reduced && (
+              <p class="today">
+                <strong>{`${kr(todayNok)} i dag`}</strong>
+                {` for resten av ${periodName}.`}
+              </p>
+            )
+          }
+        </div>
+      </div>
+      <div class="cell step" id={stepId} tabindex="-1" data-join-step>
+        <div class="clip">
+          <ol class="dates" aria-label="Dette betaler du">
+            <li class="date now">
+              <span class="dot" aria-hidden="true"></span>
+              <div>
+                <p class="when">I dag</p>
+                <p class="note">{todayNote}</p>
+              </div>
+              <p class="amount">{kr(todayNok)}</p>
+            </li>
+            <li class="date next">
+              <span class="dot" aria-hidden="true"></span>
+              <div>
+                <p class="when">{renewalDate}</p>
+                <p class="note">Deretter hvert år, med varsel i Vipps først.</p>
+              </div>
+              <p class="amount">{kr(annualFeeNok)}</p>
+            </li>
+          </ol>
+          <p class="note way-out">Vil du ikke fortsette, kan du si opp når du vil.</p>
+        </div>
+      </div>
+    </div>
+    {/* A POST, because choosing a membership creates an agreement with Vipps,
+        and because this page is cached, so it can hold no state of its own. */}
+    <form method="post" action={action} data-submit="native">
+      <input type="hidden" name="medlemskap" value={tierKey} />
+      {referral && <input type="hidden" name={JOIN_REFERRAL_PARAM} value={referral} />}
+      <Button type="submit" busy="Åpner Vipps …" block size="lg">
+        <span class="labels">
+          <span class="label label-rest">Bli støttemedlem</span>
+          <span class="label label-open">{`Betal ${kr(todayNok)} med Vipps`}</span>
+        </span>
+      </Button>
+    </form>
+  </MembershipTierCard>
+</div>
+
+<script>
+  // How long the opening movement lasts, and so how long a press on the button
+  // still counts as the second tap of a double tap. Matches --open-for below.
+  const SETTLE_MS = 450;
+  // The air kept between the pay button, or the amount, and the screen's edge.
+  const EDGE_PX = 16;
+
+  document.addEventListener("click", (event) => {
+    const target = event.target;
+    if (!(target instanceof Element)) return;
+    const button = target.closest("[data-join-offer] button");
+    if (!(button instanceof HTMLButtonElement)) return;
+    const offer = button.closest("[data-join-offer]");
+    if (!(offer instanceof HTMLElement)) return;
+
+    if (offer.dataset.state === "open") {
+      // Open and settled: this is the press that pays, and it goes on as a
+      // plain submit. Before that it is the second tap of a double tap, which
+      // must not skip what the card just opened to say.
+      if (performance.now() < Number(offer.dataset.settlesAt ?? 0)) event.preventDefault();
+      return;
+    }
+
+    event.preventDefault();
+    document.querySelectorAll("[data-join-offer][data-state='open']").forEach((other) => {
+      other.setAttribute("data-state", "rest");
+    });
+    const settlesAt = performance.now() + SETTLE_MS;
+    offer.dataset.state = "open";
+    offer.dataset.settlesAt = String(settlesAt);
+
+    const step = offer.querySelector("[data-join-step]");
+    if (!(step instanceof HTMLElement)) return;
+    // Focus goes to what appeared, so it is read out, and the pay button is
+    // the next stop for a keyboard.
+    step.focus({ preventScroll: true });
+
+    // The page follows the card as it grows, so the pay button never slides
+    // under the bottom of the screen. It stops short of pushing the amount off
+    // the top: on a very small screen the price matters more than the button.
+    // A card closing above this one can lift the amount past the top by itself
+    // (a negative `room`), and then the page comes back down for it.
+    const follow = () => {
+      const overshoot = button.getBoundingClientRect().bottom + EDGE_PX - window.innerHeight;
+      const room = step.getBoundingClientRect().top - EDGE_PX;
+      const by = room < 0 ? room : Math.max(0, Math.min(overshoot, room));
+      if (by !== 0) window.scrollBy(0, by);
+      if (performance.now() < settlesAt) requestAnimationFrame(follow);
+    };
+    requestAnimationFrame(follow);
+  });
+</script>
+
+<style>
+  .offer {
+    --open-for: 450ms;
+    --open-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  /* The closed and the opened content share one place in the card. Each is a
+     one-row grid whose row runs between its own height and nothing, which is
+     what lets a height the browser does not know beforehand be animated. */
+  .swap {
+    display: grid;
+  }
+  .cell {
+    display: grid;
+    transition:
+      grid-template-rows var(--open-for) var(--open-ease),
+      opacity 180ms ease,
+      visibility 0s linear var(--open-for);
+  }
+  .clip {
+    min-height: 0;
+    overflow: hidden;
+  }
+  .step:focus {
+    outline: none;
+  }
+
+  .rest {
+    grid-template-rows: 1fr;
+  }
+  .step {
+    grid-template-rows: 0fr;
+    opacity: 0;
+    visibility: hidden;
+  }
+  /* Coming back into view must not wait: only going away holds its visibility
+     until the movement is over. */
+  [data-state="rest"] .rest {
+    transition:
+      grid-template-rows var(--open-for) var(--open-ease),
+      opacity 180ms ease,
+      visibility 0s;
+  }
+  [data-state="open"] .rest {
+    grid-template-rows: 0fr;
+    opacity: 0;
+    visibility: hidden;
+  }
+  [data-state="open"] .step {
+    grid-template-rows: 1fr;
+    opacity: 1;
+    visibility: visible;
+    transition:
+      grid-template-rows var(--open-for) var(--open-ease),
+      opacity 200ms ease 20ms,
+      visibility 0s;
+  }
+
+  .today {
+    margin: var(--sm-space-sm) 0 0;
+    font-size: 0.9375rem;
+  }
+
+  /* The two dates, as a short line through time. */
+  .dates {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .date {
+    position: relative;
+    display: grid;
+    grid-template-columns: 1rem minmax(0, 1fr) auto;
+    column-gap: 0.625rem;
+    opacity: 0;
+    transform: translateY(0.5rem);
+    transition:
+      opacity 260ms ease,
+      transform 420ms var(--open-ease);
+  }
+  .now {
+    padding-bottom: var(--sm-space-md);
+  }
+  .now::before {
+    content: "";
+    position: absolute;
+    top: 1.25rem;
+    bottom: -0.375rem;
+    left: calc(0.5rem - 1px);
+    width: 2px;
+    background: var(--sm-border-strong);
+    transform: scaleY(0);
+    transform-origin: top;
+    transition: transform 380ms var(--open-ease);
+  }
+  [data-state="open"] .date {
+    opacity: 1;
+    transform: none;
+  }
+  [data-state="open"] .now {
+    transition-delay: 30ms;
+  }
+  [data-state="open"] .next {
+    transition-delay: 100ms;
+  }
+  [data-state="open"] .now::before {
+    transform: none;
+    transition-delay: 90ms;
+  }
+  .dot {
+    justify-self: center;
+    box-sizing: border-box;
+    width: 0.75rem;
+    height: 0.75rem;
+    margin-top: 0.375rem;
+    border-radius: 50%;
+  }
+  .now .dot {
+    background: var(--sm-accent);
+  }
+  .next .dot {
+    border: 2px solid var(--sm-ink);
+    background: var(--sm-surface);
+  }
+  .when {
+    margin: 0;
+    font-weight: 600;
+  }
+  .note {
+    margin: 0;
+    color: var(--sm-muted);
+    font-size: 0.875rem;
+  }
+  .amount {
+    margin: 0;
+    font-family: var(--sm-font-display);
+    font-weight: var(--sm-font-display-weight, 600);
+    font-variation-settings: var(--sm-font-display-variation, normal);
+    font-size: 1.75rem;
+    line-height: 1.1;
+    text-align: right;
+    white-space: nowrap;
+  }
+  .way-out {
+    margin-top: var(--sm-space-md);
+  }
+
+  /* The button's words change in place, one fading into the other. A hidden
+     label is out of the accessibility tree too, so the button only ever has
+     the one name. */
+  .labels {
+    display: inline-grid;
+  }
+  .label {
+    grid-area: 1 / 1;
+    transition:
+      opacity 200ms ease,
+      transform 320ms var(--open-ease),
+      visibility 0s linear 200ms;
+  }
+  .label-open {
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(0.35em);
+  }
+  [data-state="open"] .label-rest {
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-0.35em);
+  }
+  [data-state="open"] .label-open {
+    opacity: 1;
+    visibility: visible;
+    transform: none;
+    transition-delay: 60ms, 60ms, 0s;
+  }
+
+  /* Less motion asked for: the same change, at once. */
+  @media (prefers-reduced-motion: reduce) {
+    .cell,
+    .date,
+    .now::before,
+    .label {
+      transition: none !important;
+    }
+  }
+</style>

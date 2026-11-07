@@ -36,9 +36,19 @@ saved copy and refreshes it in the background.
 
 ## Flags
 
-`--mobile` (390x844) · `--viewport WxH` · `--permissions clipboard-read,clipboard-write`
+`--mobile` (390x844) · `--viewport WxH` · `--reduced-motion` · `--permissions clipboard-read,clipboard-write`
 · `--stub '<js>'` (repeatable) · `--route '<glob>::<file>'` (repeatable)
 · `--delay '<glob>::<ms>'` (repeatable) · `--console` · `--keep-going`
+
+**Looking at an animation** (added 2026-11-07): a screenshot of a running
+transition lands at a random moment, so freeze it. Press, wait one frame, then
+pause every animation at the moment you want and shoot it. This is what showed
+the join card going blank for a moment, which the end states and a height
+trace both hid:
+`'eval=(async()=>{document.querySelector("button").click();await new Promise(requestAnimationFrame);document.getAnimations().forEach(a=>{a.pause();a.currentTime=100})})()' shot=/path/f100.png`.
+To prove it is smooth, sample `getBoundingClientRect()` every animation frame
+inside one `eval` and return the list. Pair a run with `--reduced-motion`,
+where `document.getAnimations().length` should be 0.
 
 **`--stub` is the important one.** Headless Chrome has no share sheet, no
 Vipps, no phone — so stub the API and assert what the page asked it for.

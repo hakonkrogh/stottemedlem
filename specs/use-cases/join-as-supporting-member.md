@@ -19,12 +19,12 @@ paying its annual fee, in one simple flow.
 From the supporter's point of view:
 
 1. The supporter opens the organization's
-   [join page](../concepts/join-page.md) and lands directly in
-   **Vipps**, seeing who they are supporting, the
-   [membership tier](../concepts/membership-tier.md) they are joining (by
-   name), and its [annual fee](../concepts/annual-fee.md). A join link or QR
-   code may point at a specific tier; when the organization has several tiers
-   and the address names none, the supporter chooses one first.
+   [join page](../concepts/join-page.md) and sees who they are supporting, the
+   [membership tiers](../concepts/membership-tier.md) on offer, and each one's
+   [annual fee](../concepts/annual-fee.md). Pressing the button on a tier opens
+   its card in place and shows what they pay today and what the first renewal
+   costs and when, so the price is never first met in **Vipps**. A second
+   press takes them there.
 2. **Before** they can start, the join page tells them what joining shares —
    name, e-mail address and phone number, and what the organization does with
    them — and links the organization's full privacy notice, which is public and
@@ -118,6 +118,9 @@ From the supporter's point of view:
 - [ ] A failed or abandoned payment does not create an active membership.
 - [ ] The join page states which details joining shares, and links a privacy
       notice readable without joining, before the supporter can start.
+- [ ] Before leaving for Vipps, a supporter has been shown what they pay today,
+      the date of the first renewal and what it costs. A double tap cannot skip
+      this; with scripting off, the closed card states both amounts.
 - [ ] A payment that succeeded creates the membership even if the product was
       never notified of it.
 - [ ] A supporter is never left having paid twice for one annual period: a

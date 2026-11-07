@@ -83,7 +83,9 @@ organization sees in the Vipps portal — always names the tier.
   public [join page](join-page.md) and in the back office alike, so
   the membership has one clear, recognizable identity across every surface of
   the product. What the administrator sees when reviewing their offer is what
-  the supporter sees when choosing it.
+  the supporter sees when choosing it. Once a supporter has chosen, the card
+  on the join page opens to spell out the price
+  ([join page](join-page.md)); that is the one thing only the join page does.
 - The back office offers **standard templates** for common tiers (a basic
   supporting membership and a VIP level) so an administrator doesn't have to
   invent the wording: picking one prefills the new tier's name and a standard
