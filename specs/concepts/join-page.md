@@ -99,8 +99,9 @@ resolve to.
   dates: what they pay today and what that covers, then the date of the first
   renewal, what it costs, that it comes every year with a notice in Vipps
   first, and that they can stop whenever they want. The button keeps its words,
-  "Bli støttemedlem", and the second press takes them **into Vipps** to pay. A full-price join opens the same way: the surprise is
-  as much the renewal as the discount.
+  "Bli støttemedlem", and the second press takes them **into Vipps** to pay. A
+  full-price join opens the same way: the surprise is as much the renewal as
+  the discount.
 - **The page is a doorstep, not a queue.** That one opened card is the only
   thing of ours between the choice and the payment: no new page, nothing to
   fill in, no question to answer. Nothing else is added unless it genuinely
@@ -110,11 +111,10 @@ resolve to.
   refund ([joining twice](../use-cases/join-as-supporting-member.md)) stays the
   answer to that.
 - The card opens as **one smooth movement**: the yearly price gives way to the
-  two dates while the card grows, and the page follows so the pay button stays
-  in view, without pushing the amount off the top of a small screen. A reader
-  who has asked for less motion gets the same change at once. A double tap on
-  the first button only opens the card: it can never skip what the card is
-  there to say. With several memberships, opening one closes the one that was
+  two dates while the card grows, and the page follows so the button stays in
+  view, without pushing the amount off the top of a small screen. A reader who
+  has asked for less motion gets the same change at once. A double tap on the
+  button only opens the card: it can never skip what the card is there to say. With several memberships, opening one closes the one that was
   open. Coming back from the payment app, whether the card is still open or
   closed again, it can be pressed again.
 - **Without scripting the first press goes straight to Vipps**, as the page

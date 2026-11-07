@@ -47,7 +47,7 @@ survives the imperfect cases without any help.
   just did, not a correction on arrival
   ([Answering an action](answering-an-action.md)). The same goes for a
   membership card opening on the [join page](join-page.md): the page follows
-  it for that moment, so the pay button does not slide out of view.
+  it for that moment, so the join button does not slide out of view.
 
 ## Relationships
 - Applies to every public surface ([join page](join-page.md),

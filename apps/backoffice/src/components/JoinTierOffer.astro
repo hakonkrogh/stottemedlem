@@ -3,9 +3,9 @@
 // say what joining costs today and what it costs from the first renewal, and
 // only then goes to Vipps (specs/concepts/join-page.md).
 //
-// The first button is a real submit, and the script below holds it back. So if
-// the script never arrives, the press goes straight to Vipps as it always did,
-// and the closed card has already stated both amounts.
+// The button is a real submit, and the script below holds back its first press.
+// So if the script never arrives, the press goes straight to Vipps as it always
+// did, and the closed card has already stated both amounts.
 import { JOIN_REFERRAL_PARAM } from "@stottemedlem/core";
 import Button from "@stottemedlem/ui/components/Button.astro";
 import MembershipTierCard from "./MembershipTierCard.astro";
@@ -107,7 +107,7 @@ const stepId = `join-step-${tierKey}`;
   // How long the opening movement lasts, and so how long a press on the button
   // still counts as the second tap of a double tap. Matches --open-for below.
   const SETTLE_MS = 450;
-  // The air kept between the pay button, or the amount, and the screen's edge.
+  // The air kept between the button, or the amount, and the screen's edge.
   const EDGE_PX = 16;
 
   document.addEventListener("click", (event) => {
@@ -136,11 +136,11 @@ const stepId = `join-step-${tierKey}`;
 
     const step = offer.querySelector("[data-join-step]");
     if (!(step instanceof HTMLElement)) return;
-    // Focus goes to what appeared, so it is read out, and the pay button is
-    // the next stop for a keyboard.
+    // Focus goes to what appeared, so it is read out, and the button is the
+    // next stop for a keyboard.
     step.focus({ preventScroll: true });
 
-    // The page follows the card as it grows, so the pay button never slides
+    // The page follows the card as it grows, so the button never slides
     // under the bottom of the screen. It stops short of pushing the amount off
     // the top: on a very small screen the price matters more than the button.
     // A card closing above this one can lift the amount past the top by itself
