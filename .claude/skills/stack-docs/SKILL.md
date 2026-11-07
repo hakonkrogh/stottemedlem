@@ -541,6 +541,18 @@ real account. Source: developer.vippsmobilepay.com/docs/knowledge-base/test-envi
   agreement id and no externalId (production screenshot, 2026-09-09). The
   charge id is the only key an admin can carry from the portal into our
   data, and we store it on every charge row (refunds run on it).
+- **What the supporter sees before approving, and what `phoneNumber` does**
+  (read from the docs 2026-11-07, NOT verified on a device). Source:
+  developer.vippsmobilepay.com/docs/APIs/recurring-api/recurring-api-guide/.
+  When the initial charge differs from the agreement price, the user first gets
+  an overview of both the agreement and the initial charge, so a pro-rated
+  first year appears there as two amounts. A draft agreement accepts
+  `phoneNumber`, which the guide implies fills the landing page's input. It only
+  RESTRICTS who may accept if Vipps also configures `no_edit_landingpage` for
+  the sales unit (through the Key Account Manager). Without that setting the
+  guide does not say whether the number can be edited, so do not treat a typed
+  number as identity. The guide is long: read on with a character offset past
+  100000 if the answer is not in the first part.
 - **`Idempotency-Key` must be a UUID** (found the hard way 2026-08-20, in the
   join route): passing our own business key — `externalId`, i.e.
   `<tierKey>:<uuid>` — gets `400 … "Invalid value for Idempotency-Key"`. The

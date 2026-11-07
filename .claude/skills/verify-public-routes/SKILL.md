@@ -12,6 +12,12 @@ with the query intact, and the stale-while-revalidate cache must go
 
 ## Read what's actually in local D1
 
+**A production read can be refused by the session's permission mode** (seen
+2026-11-07: an aggregate-only `d1.sh ... production` was denied as a production
+read). Do not route around it. Say which numbers you wanted and let the user
+run the query or allow it. Staging still answers what shapes the data can take,
+but not how often something really happens.
+
     bash .claude/skills/verify-public-routes/d1.sh "<SQL>"     # rows as JSON, nothing else
     bash .claude/skills/verify-public-routes/d1.sh "<SQL>" staging     # the DEPLOYED staging D1
     bash .claude/skills/verify-public-routes/d1.sh "<SQL>" production  # real members, real money

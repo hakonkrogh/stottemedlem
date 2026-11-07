@@ -78,6 +78,13 @@ also documents the variants and why the rule exists.
   member card's public page; `MembershipTierCard` (apps/backoffice/src/
   components) is also the back office's tier view. Scope a join-page-only look
   through a prop or a class set by the page, not by editing those components.
+  **The join page's cards are `components/JoinTierOffer.astro` since 2026-11-07**
+  (rule in `specs/concepts/join-page.md`): it wraps `MembershipTierCard`, fills
+  its `fee` slot, and opens in place to show today's and the renewal's price
+  before Vipps. The first button is a real submit that a click listener holds
+  back, so with no script the press still reaches Vipps. The price itself is
+  `MembershipTierPrice.astro`, so both surfaces share it. Prove any change with
+  `drive-page`, including its note on freezing an animation.
   Token-name gotcha (hit 2026-09-08): `--sm-accent-ink` is WHITE, the text
   colour ON the green button, not an "ink of the accent" (that is
   `--sm-accent-deep`). Reading it as a dark green made Alert's info variant
