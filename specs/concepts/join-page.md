@@ -202,6 +202,11 @@ resolve to.
   browser opens them, with generous air at both ends so they read even when a
   phone browser hands the page over with its top tucked under the status bar
   ([Opening a page](opening-a-page.md)).
+- **A public page carries its own styles and scripts.** On the
+  `støttemedlem.no` address only the page's own paths reach it, so anything
+  fetched from elsewhere on that address can fail while the page itself loads.
+  A page that lost its styles this way showed both faces of the join card at
+  once (2026-11-07), and that is what the rule prevents.
 - Both pages are served **instantly from a saved copy** rather than assembled
   on every request, so they stay fast and stay up even when the rest of the
   product is busy. Every visit refreshes the saved copy in the background:
