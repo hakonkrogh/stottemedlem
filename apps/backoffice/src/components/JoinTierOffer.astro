@@ -146,11 +146,13 @@ const stepId = `join-step-${tierKey}`;
     // The page follows the card as it grows, so the pay button never slides
     // under the bottom of the screen. It stops short of pushing the amount off
     // the top: on a very small screen the price matters more than the button.
+    // A card closing above this one can lift the amount past the top by itself
+    // (a negative `room`), and then the page comes back down for it.
     const follow = () => {
       const overshoot = button.getBoundingClientRect().bottom + EDGE_PX - window.innerHeight;
       const room = step.getBoundingClientRect().top - EDGE_PX;
-      const by = Math.min(overshoot, room);
-      if (by > 0) window.scrollBy(0, by);
+      const by = room < 0 ? room : Math.max(0, Math.min(overshoot, room));
+      if (by !== 0) window.scrollBy(0, by);
       if (performance.now() < settlesAt) requestAnimationFrame(follow);
     };
     requestAnimationFrame(follow);
