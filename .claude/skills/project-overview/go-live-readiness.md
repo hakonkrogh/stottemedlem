@@ -80,11 +80,12 @@ agreements, 0 charges: no real money has ever moved through production.**
           (SELECT count(*) FROM membership_tiers) AS tiers" production
 ```
 
-The public join page is live and serves a working Vipps button:
+The public join page is live and shows its join button (this proves the button
+is there, not that a payment starts):
 
 ```
 curl -s -L https://app.xn--stttemedlem-hgb.no/bli-medlem/<slug> \
-  | grep -oE "Betal [^<]+ med Vipps"
+  | grep -o "Bli støttemedlem</button>"
 ```
 
 ## 5. The ledger

@@ -81,8 +81,9 @@ it too, for the reason below.
 - **The organization's own colours come first.** The palette is deliberately
   quiet so any club's logo and name sit on top of it; the product's green
   never competes with a club's red or yellow.
-- **Vipps is named, not coloured.** The button that goes to pay says "med
-  Vipps" in the product's green. Vipps' own orange appears only where Vipps itself draws it.
+- **Vipps is named, not coloured.** The words under the memberships on the join
+  page say the membership is paid with Vipps, and the join button itself is the
+  product's green. Vipps' own orange appears only where Vipps itself draws it.
 - **The public site is the same palette on a dark ground.** The landing page
   opens on photographs over near-black; the button on it is the same moss, and
   the small chips beside it are pale cream rather than any second accent.
