@@ -40,6 +40,14 @@ saved copy and refreshes it in the background.
 · `--stub '<js>'` (repeatable) · `--route '<glob>::<file>'` (repeatable)
 · `--delay '<glob>::<ms>'` (repeatable) · `--console` · `--keep-going`
 
+**A public page's look is not proven on the dev server** (2026-11-07): dev
+serves styles differently from a build, and PR 156 passed every drive here
+while the live page had no styles. Before merging a change to a public page,
+drive the BUILD as the apex would serve it, where `/_astro/*` is not ours:
+`pnpm --filter ./apps/backoffice run build`, then `pnpm run preview` in
+`apps/backoffice` (port 4321), then add `--route '**/_astro/**::<empty file>'`
+to the drive. After the deploy, run `verify-public-routes`' `apex-routes.mjs --live`.
+
 **Looking at an animation** (added 2026-11-07): a screenshot of a running
 transition lands at a random moment, so freeze it. Press, wait one frame, then
 pause every animation at the moment you want and shoot it. This is what showed

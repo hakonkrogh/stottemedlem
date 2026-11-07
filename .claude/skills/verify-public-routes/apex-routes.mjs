@@ -197,6 +197,40 @@ if (live) {
   }
 }
 
+// A page can answer 200 from the right worker and still be broken: its files
+// live under /_astro/, which on the apex belongs to the MARKETING worker. Read
+// one real join page (the public sitemap names one, no data is touched) and
+// fetch everything it references there. A stylesheet that outgrew Astro's 4 kB
+// inline limit became such a link on 2026-11-07 and 404ed, leaving the page
+// unstyled while every check above passed.
+if (live) {
+  const sitemap = await fetch(`${shareableOrigin}/bli-medlem/sitemap.xml`)
+    .then((response) => (response.ok ? response.text() : ""))
+    .catch(() => "");
+  const page = sitemap.match(/<loc>[^<]*?(\/bli-medlem\/[a-z0-9-]+)<\/loc>/)?.[1];
+  console.log("");
+  if (!page) {
+    console.log("skip  files   no join page in the sitemap to read");
+  } else {
+    const html = await fetch(`${shareableOrigin}${page}`).then((response) => response.text());
+    const files = [
+      ...new Set(
+        [...html.matchAll(/(?:href="|src="|url\()(\/_astro\/[^"')\s]+)/g)].map((match) => match[1]),
+      ),
+    ];
+    for (const file of files) {
+      const { status } = await fetch(`${shareableOrigin}${file}`, { method: "HEAD" });
+      console.log(`${status === 200 ? "ok   " : "FAIL "} files   ${file} ${status}`);
+      if (status !== 200) {
+        failures.push(
+          `${file} is referenced by a join page but ${status} on ${shareableOrigin}. The apex routes no /_astro/* to the backoffice: it must ride inside the page.`,
+        );
+      }
+    }
+    if (files.length === 0) console.log("ok    files   the page references nothing under /_astro/");
+  }
+}
+
 console.log("");
 if (failures.length > 0) {
   for (const failure of failures) console.log(`FAIL  ${failure}`);

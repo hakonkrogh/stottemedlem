@@ -442,6 +442,15 @@ also documents the variants and why the rule exists.
   whole app on one origin) and staging cannot either (it hands out
   `staging.app.…`, a custom domain that serves the whole host), so production
   is the only place it shows: run `apex-routes.mjs` in `verify-public-routes`.
+  **The same trap holds for a page's FILES** (2026-11-07, PR 156 went live
+  unstyled): `/_astro/*` on the apex is marketing's. Astro links a stylesheet
+  over 4 kB instead of inlining it, the join page's reached 4137 bytes, and dev,
+  Storybook and the `app.` host all served it while the apex 404ed. So
+  `astro.config.mjs` sets `inlineStylesheets: "always"`. Scripts are still only
+  inlined under 4 kB, so a public page's script that outgrows that fails the same
+  way. Fraunces only works there because marketing ships the same hashed woff2
+  names. `apex-routes.mjs --live` now fetches a real join page's `/_astro/` files;
+  run it after every deploy that touches a public page.
   Cost the QR card a live 404 on 2026-09-10: `shareableQrCardUrl` had pointed at
   `støttemedlem.no/api/qr/<slug>` since the links went env-aware, with no route
   to answer it. The card MOVED to `/bli-medlem/<slug>/qr` the same day, which
