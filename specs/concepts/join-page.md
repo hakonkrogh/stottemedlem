@@ -98,9 +98,8 @@ resolve to.
   the price when Vipps showed it). The card turns into a short line of two
   dates: what they pay today and what that covers, then the date of the first
   renewal, what it costs, that it comes every year with a notice in Vipps
-  first, and that they can stop whenever they want. The button becomes "Betal
-  45 kr med Vipps", with the real amount, and the second press takes them
-  **into Vipps** to pay. A full-price join opens the same way: the surprise is
+  first, and that they can stop whenever they want. The button keeps its words,
+  "Bli støttemedlem", and the second press takes them **into Vipps** to pay. A full-price join opens the same way: the surprise is
   as much the renewal as the discount.
 - **The page is a doorstep, not a queue.** That one opened card is the only
   thing of ours between the choice and the payment: no new page, nothing to

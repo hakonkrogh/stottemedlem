@@ -97,10 +97,7 @@ const stepId = `join-step-${tierKey}`;
       <input type="hidden" name="medlemskap" value={tierKey} />
       {referral && <input type="hidden" name={JOIN_REFERRAL_PARAM} value={referral} />}
       <Button type="submit" busy="Åpner Vipps …" block size="lg">
-        <span class="labels">
-          <span class="label label-rest">Bli støttemedlem</span>
-          <span class="label label-open">{`Betal ${kr(todayNok)} med Vipps`}</span>
-        </span>
+        Bli støttemedlem
       </Button>
     </form>
   </MembershipTierCard>
@@ -306,42 +303,11 @@ const stepId = `join-step-${tierKey}`;
     margin-top: var(--sm-space-md);
   }
 
-  /* The button's words change in place, one fading into the other. A hidden
-     label is out of the accessibility tree too, so the button only ever has
-     the one name. */
-  .labels {
-    display: inline-grid;
-  }
-  .label {
-    grid-area: 1 / 1;
-    transition:
-      opacity 200ms ease,
-      transform 320ms var(--open-ease),
-      visibility 0s linear 200ms;
-  }
-  .label-open {
-    opacity: 0;
-    visibility: hidden;
-    transform: translateY(0.35em);
-  }
-  [data-state="open"] .label-rest {
-    opacity: 0;
-    visibility: hidden;
-    transform: translateY(-0.35em);
-  }
-  [data-state="open"] .label-open {
-    opacity: 1;
-    visibility: visible;
-    transform: none;
-    transition-delay: 60ms, 60ms, 0s;
-  }
-
   /* Less motion asked for: the same change, at once. */
   @media (prefers-reduced-motion: reduce) {
     .cell,
     .date,
-    .now::before,
-    .label {
+    .now::before {
       transition: none !important;
     }
   }
