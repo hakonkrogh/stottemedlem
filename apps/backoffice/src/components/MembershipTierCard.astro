@@ -3,11 +3,14 @@
 // rule): a tier is shown the same way on every surface — the public landing
 // page and the back office alike — so the membership has one recognizable
 // identity. Name, annual fee, optional description; surface-specific content
-// (the public join CTA, the back office's edit hint) comes via the slot.
+// (the public join CTA, the back office's edit hint) comes via the slot. The
+// `fee` slot is for the join page, whose card opens around the price
+// (JoinTierOffer); every other surface gets the plain price.
 import Card from "@stottemedlem/ui/components/Card.astro";
 import Heading from "@stottemedlem/ui/components/Heading.astro";
 import Stack from "@stottemedlem/ui/components/Stack.astro";
 import Text from "@stottemedlem/ui/components/Text.astro";
+import MembershipTierPrice from "./MembershipTierPrice.astro";
 
 interface Props {
   name: string;
@@ -17,19 +20,15 @@ interface Props {
   headingLevel?: 2 | 3;
 }
 const { name, annualFeeNok, description, headingLevel = 2 } = Astro.props;
-
-// Norwegian groups thousands with a space, and it is a non-breaking one so a
-// price never wraps in the middle.
-const price = annualFeeNok.toLocaleString("nb-NO").replace(/\s/g, "\u00A0");
 ---
 
 <div class="tier-card">
 <Card>
   <Stack gap="md">
     <Heading level={headingLevel}>{name}</Heading>
-    <p class="price">
-      {price}&nbsp;kr <span class="per">per år</span>
-    </p>
+    <slot name="fee">
+      <MembershipTierPrice annualFeeNok={annualFeeNok} />
+    </slot>
     {
       description && (
         <div class="description">
@@ -50,20 +49,6 @@ const price = annualFeeNok.toLocaleString("nb-NO").replace(/\s/g, "\u00A0");
   .tier-card :global(.card) {
     border: 1.5px solid var(--sm-ink);
     box-shadow: 6px 6px 0 var(--sm-ink);
-  }
-  .price {
-    margin: 0;
-    font-family: var(--sm-font-display);
-    font-weight: var(--sm-font-display-weight, 600);
-    font-variation-settings: var(--sm-font-display-variation, normal);
-    font-size: 2.5rem;
-    line-height: 1.05;
-  }
-  .price .per {
-    font-family: var(--sm-font-sans);
-    font-weight: 400;
-    font-size: 1rem;
-    color: var(--sm-muted);
   }
   /* The organization writes the description with line breaks; show it as
      written. `white-space` inherits, so this reaches the slotted Text. */

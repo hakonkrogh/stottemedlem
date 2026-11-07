@@ -45,7 +45,9 @@ survives the imperfect cases without any help.
   answer is brought into view, because otherwise it would be missed at the
   bottom of a long page. That is a deliberate response to something the person
   just did, not a correction on arrival
-  ([Answering an action](answering-an-action.md)).
+  ([Answering an action](answering-an-action.md)). The same goes for a
+  membership card opening on the [join page](join-page.md): the page follows
+  it for that moment, so the pay button does not slide out of view.
 
 ## Relationships
 - Applies to every public surface ([join page](join-page.md),

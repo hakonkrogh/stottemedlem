@@ -25,7 +25,7 @@ it too, for the reason below.
   hearts in a member list. No button, label, link or highlight is red.
 - **One action colour, and it is moss green.** Primary buttons, links that do
   something, the focused field, the selected tier, the small role label on the
-  receipt. It is the same green that says a payment succeeded or a membership
+  receipt, the dot beside what a joining supporter pays today. It is the same green that says a payment succeeded or a membership
   is active, on purpose: acting and succeeding are the same colour.
 - **The green stops at the cards.** Both of them: the
   [member card](member-card.md) and the organization's
@@ -81,8 +81,8 @@ it too, for the reason below.
 - **The organization's own colours come first.** The palette is deliberately
   quiet so any club's logo and name sit on top of it; the product's green
   never competes with a club's red or yellow.
-- **Vipps is named, not coloured.** The join button says "med Vipps" in the
-  product's green. Vipps' own orange appears only where Vipps itself draws it.
+- **Vipps is named, not coloured.** The button that goes to pay says "med
+  Vipps" in the product's green. Vipps' own orange appears only where Vipps itself draws it.
 - **The public site is the same palette on a dark ground.** The landing page
   opens on photographs over near-black; the button on it is the same moss, and
   the small chips beside it are pale cream rather than any second accent.

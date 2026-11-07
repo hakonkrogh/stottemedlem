@@ -14,12 +14,11 @@ import {
   postalAddressReason,
 } from "@stottemedlem/db";
 import Alert from "@stottemedlem/ui/components/Alert.astro";
-import Button from "@stottemedlem/ui/components/Button.astro";
 import Heading from "@stottemedlem/ui/components/Heading.astro";
 import Stack from "@stottemedlem/ui/components/Stack.astro";
 import Text from "@stottemedlem/ui/components/Text.astro";
 import TextLink from "@stottemedlem/ui/components/TextLink.astro";
-import MembershipTierCard from "../../../components/MembershipTierCard.astro";
+import JoinTierOffer from "../../../components/JoinTierOffer.astro";
 import PublicShell from "../../../layouts/PublicShell.astro";
 import { getDb } from "../../../lib/db";
 import { orgIdentity } from "../../../lib/orgImages";
@@ -42,12 +41,19 @@ if (!org) return new Response("Fant ikke organisasjonen", { status: 404 });
 const tiers = await listMembershipTiers(db, org.id);
 
 // What joining costs today: the rest of the current period, pro-rated
-// (specs/concepts/annual-period.md). The page states both numbers, so nobody
-// is surprised by either the amount now or the full fee at renewal.
-const period = periods.periodFor();
-const priceToday = new Map(
-  tiers.map((tier) => [tier.id, periods.proratedJoinFeeNok(tier.annualFeeNok, new Date())]),
-);
+// (specs/concepts/annual-period.md), and when the full fee first falls due.
+// Each card states both, so nobody is surprised by either the amount now or
+// the renewal.
+const now = new Date();
+const period = periods.periodFor(now);
+const renewalDate = new Date(
+  `${periods.fullPeriod(periods.nextPeriodKey(period.year)).start}T00:00:00Z`,
+).toLocaleDateString("nb-NO", {
+  day: "numeric",
+  month: "long",
+  year: "numeric",
+  timeZone: "Europe/Oslo",
+});
 
 const title = `${org.name} — bli støttemedlem`;
 const description = `Bli støttemedlem i ${org.name} og støtt arbeidet med et fast årlig bidrag.`;
@@ -110,30 +116,17 @@ const referral = Astro.url.searchParams.get(JOIN_REFERRAL_PARAM)?.trim() || null
 
     {
       tiers.map((tier) => (
-        <MembershipTierCard
+        <JoinTierOffer
           name={tier.name}
           annualFeeNok={tier.annualFeeNok}
           description={tier.description}
-        >
-          {
-            priceToday.get(tier.id) !== tier.annualFeeNok && (
-              <Text variant="small">
-                Du betaler {priceToday.get(tier.id)} kr nå for resten av {periodLabel(period.year)}, deretter{" "}
-                {tier.annualFeeNok} kr i året.
-              </Text>
-            )
-          }
-          {/* A POST, because choosing a membership creates an agreement with
-              Vipps — and because this page is cached, so it can hold no state
-              of its own. */}
-          <form method="post" action={`/bli-medlem/${org.slug}/start`} data-submit="native">
-            <input type="hidden" name="medlemskap" value={tier.key} />
-            {referral && <input type="hidden" name={JOIN_REFERRAL_PARAM} value={referral} />}
-            <Button type="submit" busy="Åpner Vipps …" block size="lg">
-              Bli støttemedlem med Vipps
-            </Button>
-          </form>
-        </MembershipTierCard>
+          tierKey={tier.key}
+          action={`/bli-medlem/${org.slug}/start`}
+          todayNok={periods.proratedJoinFeeNok(tier.annualFeeNok, now)}
+          periodName={periodLabel(period.year)}
+          renewalDate={renewalDate}
+          referral={referral}
+        />
       ))
     }
     <Stack gap="sm">
